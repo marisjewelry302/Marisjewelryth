@@ -1,0 +1,228 @@
+.journal-library-shell,
+.journal-article-shell {
+  width: min(1100px, 100%);
+}
+
+.journal-library-meta,
+.journal-library-note {
+  font-size: 14px;
+  line-height: 1.8;
+  color: var(--maris-muted);
+}
+
+.journal-library-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1px solid rgba(185, 147, 58, 0.22);
+  background: rgba(255, 250, 246, 0.88);
+}
+
+.journal-library-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.journal-card-link {
+  position: relative;
+  display: grid;
+  gap: 14px;
+  text-decoration: none;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.journal-card-link:hover {
+  transform: translateY(-4px);
+  border-color: rgba(185, 147, 58, 0.36);
+  box-shadow: 0 22px 48px rgba(0, 73, 58, 0.12);
+}
+
+.journal-card-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid rgba(185, 147, 58, 0.26);
+  color: var(--maris-gold);
+  font-size: 12px;
+  letter-spacing: 0.14em;
+}
+
+.journal-card-meta-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.journal-card-read-time {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--maris-muted);
+}
+
+.journal-card-link h2 {
+  margin-bottom: 0;
+}
+
+.journal-card-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: auto;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--maris-teal);
+}
+
+.journal-card-cta::after {
+  content: "→";
+}
+
+.journal-empty {
+  padding: 24px;
+  border: 1px dashed rgba(185, 147, 58, 0.35);
+  background: rgba(255, 250, 246, 0.68);
+  color: var(--maris-muted);
+}
+
+.journal-article-shell {
+  display: grid;
+  gap: 28px;
+}
+
+.journal-article-header {
+  display: grid;
+  gap: 14px;
+}
+
+.journal-article-header h1 {
+  font-size: clamp(40px, 5.4vw, 64px);
+  line-height: 0.98;
+}
+
+.journal-article-dek {
+  max-width: 760px;
+  font-size: 18px;
+  line-height: 1.75;
+  color: var(--maris-muted);
+}
+
+.journal-article-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(260px, 0.55fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.journal-article-content,
+.journal-article-sidebar {
+  display: grid;
+  gap: 18px;
+}
+
+.journal-section,
+.journal-fact-card,
+.journal-note-card {
+  padding: 24px;
+  border: 1px solid rgba(221, 164, 165, 0.3);
+  background: rgba(255, 255, 255, 0.76);
+  box-shadow: 0 16px 38px rgba(0, 73, 58, 0.08);
+}
+
+.journal-section h2,
+.journal-fact-card h2,
+.journal-note-card h2 {
+  margin-bottom: 12px;
+  font-size: clamp(24px, 3vw, 30px);
+  font-weight: 300;
+  line-height: 1.04;
+}
+
+.journal-section p,
+.journal-note-card p {
+  font-size: 15px;
+  line-height: 1.9;
+  color: var(--maris-muted);
+}
+
+.journal-section p + p,
+.journal-note-card p + p {
+  margin-top: 12px;
+}
+
+.journal-bullets {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+  padding-left: 18px;
+  color: var(--maris-muted);
+}
+
+.journal-bullets li {
+  line-height: 1.8;
+}
+
+.journal-fact-list {
+  display: grid;
+  gap: 14px;
+}
+
+.journal-fact-list div + div {
+  padding-top: 14px;
+  border-top: 1px solid rgba(221, 164, 165, 0.26);
+}
+
+.journal-fact-label {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--maris-gold);
+}
+
+.journal-fact-value {
+  margin-top: 6px;
+  font-size: 14px;
+  line-height: 1.75;
+  color: var(--maris-ink);
+}
+
+.journal-page-actions {
+  margin-top: 0;
+}
+
+@media (max-width: 960px) {
+  .journal-library-grid,
+  .journal-article-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .journal-library-shell,
+  .journal-article-shell {
+    width: 100%;
+  }
+
+  .journal-article-dek {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 520px) {
+  .journal-library-meta,
+  .journal-section,
+  .journal-fact-card,
+  .journal-note-card {
+    padding: 20px 18px;
+  }
+
+  .journal-card-meta-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

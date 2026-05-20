@@ -1,0 +1,16 @@
+# Generated browser/runtime artifacts
+docs/runtime/
+docs/temp-previews/
+
+# Visual QA exports and local backups
+docs/screenshots/
+docs/archive/backups/*.backup-*
+
+# Local dependencies and logs
+node_modules/
+*.log
+*.err
+
+# OS cruft
+Thumbs.db
+.DS_Store

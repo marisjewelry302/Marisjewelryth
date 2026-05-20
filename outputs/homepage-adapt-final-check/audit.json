@@ -1,0 +1,442 @@
+﻿[
+    {
+        "name":  "phone-320",
+        "width":  320,
+        "height":  720,
+        "metrics":  {
+                        "viewportW":  320,
+                        "viewportH":  720,
+                        "scrollWidth":  320,
+                        "overflowX":  0,
+                        "hero":  {
+                                     "top":  0,
+                                     "right":  320,
+                                     "bottom":  640,
+                                     "left":  0,
+                                     "width":  320,
+                                     "height":  640
+                                 },
+                        "category":  {
+                                         "top":  640,
+                                         "right":  320,
+                                         "bottom":  1891,
+                                         "left":  0,
+                                         "width":  320,
+                                         "height":  1251
+                                     },
+                        "actions":  {
+                                        "top":  357,
+                                        "right":  298,
+                                        "bottom":  401,
+                                        "left":  22,
+                                        "width":  276,
+                                        "height":  44
+                                    },
+                        "categoryPeek":  80,
+                        "actionsBottomGap":  319,
+                        "smallTargets":  [
+
+                                         ]
+                    }
+    },
+    {
+        "name":  "phone-390",
+        "width":  390,
+        "height":  844,
+        "metrics":  {
+                        "viewportW":  390,
+                        "viewportH":  844,
+                        "scrollWidth":  390,
+                        "overflowX":  0,
+                        "hero":  {
+                                     "top":  0,
+                                     "right":  390,
+                                     "bottom":  640,
+                                     "left":  0,
+                                     "width":  390,
+                                     "height":  640
+                                 },
+                        "category":  {
+                                         "top":  640,
+                                         "right":  390,
+                                         "bottom":  1876,
+                                         "left":  0,
+                                         "width":  390,
+                                         "height":  1236
+                                     },
+                        "actions":  {
+                                        "top":  434,
+                                        "right":  365,
+                                        "bottom":  478,
+                                        "left":  25,
+                                        "width":  340,
+                                        "height":  44
+                                    },
+                        "categoryPeek":  204,
+                        "actionsBottomGap":  366,
+                        "smallTargets":  [
+
+                                         ]
+                    }
+    },
+    {
+        "name":  "phone-landscape-667",
+        "width":  667,
+        "height":  375,
+        "metrics":  {
+                        "viewportW":  667,
+                        "viewportH":  375,
+                        "scrollWidth":  667,
+                        "overflowX":  0,
+                        "hero":  {
+                                     "top":  0,
+                                     "right":  667,
+                                     "bottom":  330,
+                                     "left":  0,
+                                     "width":  667,
+                                     "height":  330
+                                 },
+                        "category":  {
+                                         "top":  330,
+                                         "right":  667,
+                                         "bottom":  1571,
+                                         "left":  0,
+                                         "width":  667,
+                                         "height":  1241
+                                     },
+                        "actions":  {
+                                        "top":  260,
+                                        "right":  346,
+                                        "bottom":  304,
+                                        "left":  26,
+                                        "width":  320,
+                                        "height":  44
+                                    },
+                        "categoryPeek":  45,
+                        "actionsBottomGap":  71,
+                        "smallTargets":  [
+
+                                         ]
+                    }
+    },
+    {
+        "name":  "phone-landscape-844",
+        "width":  844,
+        "height":  390,
+        "metrics":  {
+                        "viewportW":  844,
+                        "viewportH":  390,
+                        "scrollWidth":  844,
+                        "overflowX":  0,
+                        "hero":  {
+                                     "top":  0,
+                                     "right":  844,
+                                     "bottom":  343,
+                                     "left":  0,
+                                     "width":  844,
+                                     "height":  343
+                                 },
+                        "category":  {
+                                         "top":  343,
+                                         "right":  844,
+                                         "bottom":  1584,
+                                         "left":  0,
+                                         "width":  844,
+                                         "height":  1241
+                                     },
+                        "actions":  {
+                                        "top":  273,
+                                        "right":  346,
+                                        "bottom":  317,
+                                        "left":  26,
+                                        "width":  320,
+                                        "height":  44
+                                    },
+                        "categoryPeek":  47,
+                        "actionsBottomGap":  73,
+                        "smallTargets":  [
+
+                                         ]
+                    }
+    },
+    {
+        "name":  "tablet-768",
+        "width":  768,
+        "height":  1024,
+        "metrics":  {
+                        "viewportW":  768,
+                        "viewportH":  1024,
+                        "scrollWidth":  768,
+                        "overflowX":  0,
+                        "hero":  {
+                                     "top":  0,
+                                     "right":  768,
+                                     "bottom":  820,
+                                     "left":  0,
+                                     "width":  768,
+                                     "height":  820
+                                 },
+                        "category":  {
+                                         "top":  820,
+                                         "right":  768,
+                                         "bottom":  1563,
+                                         "left":  0,
+                                         "width":  768,
+                                         "height":  743
+                                     },
+                        "actions":  {
+                                        "top":  543,
+                                        "right":  461,
+                                        "bottom":  591,
+                                        "left":  41,
+                                        "width":  419,
+                                        "height":  48
+                                    },
+                        "categoryPeek":  204,
+                        "actionsBottomGap":  433,
+                        "smallTargets":  [
+
+                                         ]
+                    }
+    },
+    {
+        "name":  "tablet-landscape-1024",
+        "width":  1024,
+        "height":  768,
+        "metrics":  {
+                        "viewportW":  1024,
+                        "viewportH":  768,
+                        "scrollWidth":  1024,
+                        "overflowX":  0,
+                        "hero":  {
+                                     "top":  0,
+                                     "right":  1024,
+                                     "bottom":  693,
+                                     "left":  0,
+                                     "width":  1024,
+                                     "height":  693
+                                 },
+                        "category":  {
+                                         "top":  693,
+                                         "right":  1024,
+                                         "bottom":  1627,
+                                         "left":  0,
+                                         "width":  1024,
+                                         "height":  934
+                                     },
+                        "actions":  {
+                                        "top":  614,
+                                        "right":  541,
+                                        "bottom":  662,
+                                        "left":  55,
+                                        "width":  486,
+                                        "height":  48
+                                    },
+                        "categoryPeek":  75,
+                        "actionsBottomGap":  106,
+                        "smallTargets":  [
+
+                                         ]
+                    }
+    },
+    {
+        "name":  "desktop-1440",
+        "width":  1440,
+        "height":  1000,
+        "metrics":  {
+                        "viewportW":  1440,
+                        "viewportH":  1000,
+                        "scrollWidth":  1425,
+                        "overflowX":  -15,
+                        "hero":  {
+                                     "top":  0,
+                                     "right":  1425,
+                                     "bottom":  820,
+                                     "left":  0,
+                                     "width":  1425,
+                                     "height":  820
+                                 },
+                        "category":  {
+                                         "top":  820,
+                                         "right":  1425,
+                                         "bottom":  1958,
+                                         "left":  0,
+                                         "width":  1425,
+                                         "height":  1138
+                                     },
+                        "actions":  {
+                                        "top":  705,
+                                        "right":  616,
+                                        "bottom":  753,
+                                        "left":  76,
+                                        "width":  540,
+                                        "height":  48
+                                    },
+                        "categoryPeek":  180,
+                        "actionsBottomGap":  247,
+                        "smallTargets":  [
+                                             {
+                                                 "label":  "Show hero image 1",
+                                                 "width":  94,
+                                                 "height":  13,
+                                                 "top":  701,
+                                                 "left":  1259
+                                             },
+                                             {
+                                                 "label":  "Show hero image 2",
+                                                 "width":  94,
+                                                 "height":  13,
+                                                 "top":  724,
+                                                 "left":  1259
+                                             },
+                                             {
+                                                 "label":  "Show hero image 3",
+                                                 "width":  94,
+                                                 "height":  13,
+                                                 "top":  747,
+                                                 "left":  1259
+                                             },
+                                             {
+                                                 "label":  "Account",
+                                                 "width":  34,
+                                                 "height":  34,
+                                                 "top":  54,
+                                                 "left":  1086
+                                             },
+                                             {
+                                                 "label":  "Wishlist",
+                                                 "width":  34,
+                                                 "height":  34,
+                                                 "top":  54,
+                                                 "left":  1136
+                                             },
+                                             {
+                                                 "label":  "Shopping bag",
+                                                 "width":  34,
+                                                 "height":  34,
+                                                 "top":  54,
+                                                 "left":  1186
+                                             },
+                                             {
+                                                 "label":  "EN",
+                                                 "width":  13,
+                                                 "height":  13,
+                                                 "top":  65,
+                                                 "left":  1245
+                                             },
+                                             {
+                                                 "label":  "TH",
+                                                 "width":  14,
+                                                 "height":  13,
+                                                 "top":  65,
+                                                 "left":  1275
+                                             },
+                                             {
+                                                 "label":  "Wedding set",
+                                                 "width":  100,
+                                                 "height":  15,
+                                                 "top":  298,
+                                                 "left":  286
+                                             },
+                                             {
+                                                 "label":  "Engagement rings",
+                                                 "width":  149,
+                                                 "height":  15,
+                                                 "top":  298,
+                                                 "left":  412
+                                             },
+                                             {
+                                                 "label":  "Wedding bands",
+                                                 "width":  120,
+                                                 "height":  15,
+                                                 "top":  298,
+                                                 "left":  588
+                                             },
+                                             {
+                                                 "label":  "Men\u0027s Rings",
+                                                 "width":  93,
+                                                 "height":  15,
+                                                 "top":  298,
+                                                 "left":  736
+                                             },
+                                             {
+                                                 "label":  "Gifts",
+                                                 "width":  43,
+                                                 "height":  15,
+                                                 "top":  298,
+                                                 "left":  856
+                                             },
+                                             {
+                                                 "label":  "Necklaces \u0026 Pendants",
+                                                 "width":  238,
+                                                 "height":  34,
+                                                 "top":  355,
+                                                 "left":  857
+                                             },
+                                             {
+                                                 "label":  "Bracelets",
+                                                 "width":  238,
+                                                 "height":  34,
+                                                 "top":  389,
+                                                 "left":  857
+                                             },
+                                             {
+                                                 "label":  "Earrings",
+                                                 "width":  238,
+                                                 "height":  34,
+                                                 "top":  423,
+                                                 "left":  857
+                                             },
+                                             {
+                                                 "label":  "Rings",
+                                                 "width":  238,
+                                                 "height":  34,
+                                                 "top":  458,
+                                                 "left":  857
+                                             },
+                                             {
+                                                 "label":  "Our expertise",
+                                                 "width":  112,
+                                                 "height":  15,
+                                                 "top":  298,
+                                                 "left":  926
+                                             },
+                                             {
+                                                 "label":  "OEM Jewelry Service",
+                                                 "width":  238,
+                                                 "height":  34,
+                                                 "top":  355,
+                                                 "left":  927
+                                             },
+                                             {
+                                                 "label":  "Wholesale \u0026 Retail",
+                                                 "width":  238,
+                                                 "height":  34,
+                                                 "top":  389,
+                                                 "left":  927
+                                             },
+                                             {
+                                                 "label":  "About Us",
+                                                 "width":  74,
+                                                 "height":  15,
+                                                 "top":  298,
+                                                 "left":  1065
+                                             },
+                                             {
+                                                 "label":  "Contact Us",
+                                                 "width":  238,
+                                                 "height":  34,
+                                                 "top":  355,
+                                                 "left":  1066
+                                             },
+                                             {
+                                                 "label":  "Articles",
+                                                 "width":  238,
+                                                 "height":  34,
+                                                 "top":  389,
+                                                 "left":  1066
+                                             }
+                                         ]
+                    }
+    }
+]

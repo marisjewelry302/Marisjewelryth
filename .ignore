@@ -1,0 +1,10 @@
+# Keep search tools focused on source files instead of generated artifacts
+docs/runtime/
+docs/temp-previews/
+docs/screenshots/
+docs/archive/backups/*.backup-*
+node_modules/
+*.log
+*.err
+Thumbs.db
+.DS_Store

@@ -1,0 +1,506 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Maris Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@300;400;500;600;700&family=Urbanist:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/admin.css">
+</head>
+<body class="admin-page">
+  <header class="admin-topbar">
+    <a class="admin-logo" href="../index.html" aria-label="Go to storefront">
+      <img src="../assets/images/logo.png" alt="Maris Jewelry Logo">
+    </a>
+
+    <div>
+      <p class="admin-kicker">Back Office Prototype</p>
+      <h1>Maris Admin</h1>
+    </div>
+
+    <div class="admin-actions">
+      <div class="language-switch" aria-label="Language selector">
+        <button class="is-active" type="button" data-lang-switch="en">EN</button>
+        <span>/</span>
+        <button type="button" data-lang-switch="th">TH</button>
+      </div>
+      <a href="../index.html">View Storefront</a>
+    </div>
+  </header>
+
+  <main class="admin-shell">
+    <aside class="admin-sidebar" aria-label="Admin navigation">
+      <button class="is-active" type="button" data-admin-tab="dashboard">Dashboard</button>
+      <button type="button" data-admin-tab="products">Products</button>
+      <button type="button" data-admin-tab="inventory">Inventory</button>
+      <button type="button" data-admin-tab="orders">Orders</button>
+      <button type="button" data-admin-tab="customers">Customers</button>
+      <button type="button" data-admin-tab="settings">Settings</button>
+    </aside>
+
+    <section class="admin-content">
+      <section class="admin-panel is-active" data-admin-panel="dashboard">
+        <div class="admin-panel-head">
+          <div>
+            <p class="admin-kicker">Stock-safe foundation</p>
+            <h2>Dashboard</h2>
+          </div>
+          <p class="admin-note">The storefront catalogue now syncs from Google Sheet. Inventory and order figures on this page are still a browser-only prototype until a real database is added.</p>
+        </div>
+
+        <div class="admin-stats">
+          <article>
+            <span data-total-products>0</span>
+            <p>Total Products</p>
+          </article>
+          <article>
+            <span data-total-stock>0</span>
+            <p>Real Stock</p>
+          </article>
+          <article>
+            <span data-total-reserved>0</span>
+            <p>Reserved Stock</p>
+          </article>
+          <article>
+            <span data-low-stock>0</span>
+            <p>Low Stock Alerts</p>
+          </article>
+        </div>
+
+        <div class="admin-explainer">
+          <h3>Stock Rule</h3>
+          <p>Available Stock = Real Stock - Reserved Stock</p>
+          <p>Orders reserve stock first. Real stock is reduced only after payment is marked as paid.</p>
+        </div>
+
+        <div class="admin-grid admin-feed-grid">
+          <article class="admin-card admin-feed-card">
+            <p class="admin-kicker">Live Storefront Source</p>
+            <h3>Google Sheet Feed</h3>
+            <p class="admin-note admin-note-wide">Add or edit products in the published Google Sheet and the catalogue reads them automatically without new code changes.</p>
+            <div class="admin-feed-meta">
+              <div>
+                <span>Status</span>
+                <strong data-sheet-status>Loading...</strong>
+              </div>
+              <div>
+                <span>Rows On Storefront</span>
+                <strong data-sheet-product-count>0</strong>
+              </div>
+              <div>
+                <span>Last Sync</span>
+                <strong data-sheet-last-sync>Waiting...</strong>
+              </div>
+            </div>
+            <a class="admin-feed-link" href="#" target="_blank" rel="noopener noreferrer" data-sheet-feed-link>Open Product Sheet</a>
+          </article>
+
+          <article class="admin-card admin-feed-card">
+            <p class="admin-kicker">Manager Workflow</p>
+            <h3>Add Product In 3 Steps</h3>
+            <ol class="admin-steps">
+              <li>Upload product images to a public URL such as Google Drive, Netlify, or a CDN.</li>
+              <li>Keep the Sheet columns in the current A-Q order so every new row maps into the storefront automatically.</li>
+              <li>Refresh the catalogue page and the new item appears in its collection automatically.</li>
+            </ol>
+            <p class="admin-mini-label">Current Sheet column order</p>
+            <div class="admin-pill-row">
+              <span>A ID</span>
+              <span>B Collection</span>
+              <span>C Type</span>
+              <span>D Center</span>
+              <span>E Malee</span>
+              <span>F Gold Weight</span>
+              <span>G code</span>
+              <span>H name</span>
+              <span>I image_url</span>
+              <span>J top_image_url</span>
+              <span>K front_image_url</span>
+              <span>L side_image_url</span>
+              <span>M yellow_gold_image_url</span>
+              <span>N rose_gold_image_url</span>
+              <span>O price</span>
+              <span>P description</span>
+              <span>Q details</span>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="admin-panel" data-admin-panel="products">
+        <div class="admin-panel-head">
+          <div>
+            <p class="admin-kicker">Catalogue management</p>
+            <h2>Products</h2>
+          </div>
+          <button class="admin-secondary" type="button" data-reset-demo>Reset Demo Data</button>
+        </div>
+
+        <form class="admin-form product-form" data-product-form>
+          <label>
+            SKU
+            <input name="sku" type="text" placeholder="MR-RNG-001" required>
+          </label>
+          <label>
+            Product Name
+            <input name="name" type="text" placeholder="Maris Diamond Halo Ring" required>
+          </label>
+          <label>
+            Category
+            <select name="category" required>
+              <option value="Rings">Rings</option>
+              <option value="Earrings">Earrings</option>
+              <option value="Bracelets">Bracelets</option>
+              <option value="Necklaces & Pendants">Necklaces & Pendants</option>
+              <option value="Engagement Rings">Engagement Rings</option>
+            </select>
+          </label>
+          <label>
+            Price
+            <input name="price" type="text" placeholder="18,900">
+          </label>
+          <label>
+            Real Stock
+            <input name="stockQty" type="number" min="0" value="1">
+          </label>
+          <label>
+            Reserved
+            <input name="reservedQty" type="number" min="0" value="0">
+          </label>
+          <label>
+            Status
+            <select name="status">
+              <option value="Ready">Ready</option>
+              <option value="Sold Out">Sold Out</option>
+              <option value="Preorder">Preorder</option>
+              <option value="Hidden">Hidden</option>
+            </select>
+          </label>
+          <button class="admin-primary" type="submit">Add Product</button>
+        </form>
+
+        <div class="admin-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>SKU</th>
+                <th>Name</th>
+                <th>Category</th>
+                <th>Price</th>
+                <th>Real</th>
+                <th>Reserved</th>
+                <th>Available</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody data-products-table></tbody>
+          </table>
+        </div>
+
+        <div class="admin-subsection">
+          <div class="admin-subsection-head">
+            <div>
+              <p class="admin-kicker">Google Sheet live sync</p>
+              <h3>Sheet-Synced Catalogue</h3>
+            </div>
+            <p class="admin-note">This is the main path for executives. Add a new row in the Google Sheet with product info and public image URLs, then the storefront sorts the product into its collection automatically.</p>
+          </div>
+
+          <div class="admin-inline-note">
+            <strong data-sheet-product-count-inline>0</strong>
+            <span>catalogue items currently coming from Google Sheet</span>
+            <a class="admin-feed-link-inline" href="#" target="_blank" rel="noopener noreferrer" data-sheet-feed-link-inline>Open Sheet</a>
+          </div>
+
+          <div class="admin-guide-grid">
+            <article class="admin-guide-card">
+              <h4>Sheet layout</h4>
+              <p>Use the current sheet order as the standard: <strong>A-Q</strong> = <strong>ID</strong>, <strong>Collection</strong>, <strong>Type</strong>, <strong>Center</strong>, <strong>Malee</strong>, <strong>Gold Weight</strong>, <strong>code</strong>, <strong>name</strong>, image URLs, <strong>price</strong>, <strong>description</strong>, and <strong>details</strong>.</p>
+            </article>
+            <article class="admin-guide-card">
+              <h4>Multi-angle product view</h4>
+              <p>Use <strong>image_url</strong> for White Gold, then <strong>top_image_url</strong>, <strong>front_image_url</strong>, <strong>side_image_url</strong>, <strong>yellow_gold_image_url</strong>, and <strong>rose_gold_image_url</strong> to build the gallery automatically.</p>
+            </article>
+            <article class="admin-guide-card">
+              <h4>Code reference</h4>
+              <p><strong>ID</strong>: <strong>SR</strong> = Stock Ring, <strong>SE</strong> = Stock Earring, <strong>SP</strong> = Stock Pendant. <strong>Type</strong>: <strong>WS</strong> = Wedding set / แหวนแต่งงาน, <strong>ER</strong> = Engagement ring / แหวนหมั้น, <strong>WB</strong> = Wedding band / แหวนแถว, <strong>MB</strong> = Men's wedding band.</p>
+            </article>
+          </div>
+
+          <div class="admin-table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>Collection</th>
+                  <th>Name</th>
+                  <th>Image</th>
+                  <th>Gallery</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody data-sheet-catalogue-table></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="admin-subsection">
+          <div class="admin-subsection-head">
+            <div>
+              <p class="admin-kicker">Local browser prototype</p>
+              <h3>Optional Manual Publish</h3>
+            </div>
+            <p class="admin-note">Keep this only for quick mockups in this browser. The live storefront source of truth is the Google Sheet section above.</p>
+          </div>
+
+          <form class="admin-form admin-form-catalogue" data-catalogue-form>
+            <label>
+              Product Code
+              <input name="code" type="text" placeholder="WS002" required>
+            </label>
+            <label>
+              Collection
+              <select name="collectionKey" required>
+                <option value="wedding-set">Wedding set</option>
+                <option value="engagement-ring">Engagement Rings</option>
+                <option value="wedding-bands">Wedding Bands</option>
+                <option value="mens-wedding-bands">Men's Wedding Bands</option>
+                <option value="necklaces-pendants">Necklaces &amp; Pendants</option>
+                <option value="bracelets">Bracelets</option>
+                <option value="earrings">Earrings</option>
+                <option value="rings">Rings</option>
+              </select>
+            </label>
+            <label>
+              Card Title
+              <input name="title" type="text" placeholder="WS002">
+            </label>
+            <label>
+              Product Name
+              <input name="name" type="text" placeholder="The Infinite Hold Collection" required>
+            </label>
+            <label class="admin-span-2">
+              Description
+              <textarea name="description" rows="4" placeholder="Short product story or technical overview"></textarea>
+            </label>
+            <label class="admin-span-2">
+              Details
+              <textarea name="details" rows="4" placeholder="One detail per line&#10;14K White Gold&#10;Pear Shaped Diamond Wedding Set"></textarea>
+            </label>
+            <label>
+              Price
+              <input name="price" type="text" placeholder="Price on request">
+            </label>
+            <label>
+              Main Image Path
+              <input name="image" type="text" placeholder="../assets/images/catalogue/...png" required>
+            </label>
+            <label>
+              Hover Image Path
+              <input name="hover" type="text" placeholder="../assets/images/catalogue/...png">
+            </label>
+            <label>
+              Image Fit
+              <select name="imagePresentation">
+                <option value="">Auto / Cover</option>
+                <option value="contain">Contain</option>
+              </select>
+            </label>
+            <label>
+              Metal Tag
+              <input name="metal" type="text" placeholder="white-gold">
+            </label>
+            <label>
+              Style Tag
+              <input name="style" type="text" placeholder="bridal-set">
+            </label>
+            <label>
+              Shape Tag
+              <input name="shape" type="text" placeholder="pear">
+            </label>
+            <label class="admin-span-2">
+              Filter Tags
+              <input name="filterValues" type="text" placeholder="white-gold, yellow-gold, rose-gold, bridal-set, pear">
+            </label>
+            <label class="admin-span-2">
+              Gallery
+              <textarea name="gallery" rows="6" placeholder="One row per image&#10;White Gold View | ../assets/images/catalogue/...png | White gold front image&#10;Top View | ../assets/images/catalogue/...png | Top view image"></textarea>
+            </label>
+            <label>
+              Starting Stock
+              <input name="catalogueStockQty" type="number" min="0" value="1">
+            </label>
+            <div class="admin-form-actions admin-span-2">
+              <button class="admin-primary" type="submit">Publish / Update</button>
+              <button class="admin-secondary" type="reset">Clear Form</button>
+            </div>
+          </form>
+
+          <div class="admin-inline-note">
+            <strong data-published-count>0</strong>
+            <span>published catalogue items managed from this browser</span>
+          </div>
+
+          <div class="admin-table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>Collection</th>
+                  <th>Name</th>
+                  <th>Main Image</th>
+                  <th>Gallery</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody data-published-catalogue-table></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="admin-panel" data-admin-panel="inventory">
+        <div class="admin-panel-head">
+          <div>
+            <p class="admin-kicker">Stock movements</p>
+            <h2>Inventory</h2>
+          </div>
+          <p class="admin-note">Every stock change is logged so you can trace what happened later.</p>
+        </div>
+
+        <form class="admin-form inventory-form" data-inventory-form>
+          <label>
+            Product
+            <select name="productId" data-product-select required></select>
+          </label>
+          <label>
+            Movement Type
+            <select name="type" required>
+              <option value="receive">Receive Stock (+ real)</option>
+              <option value="reserve">Reserve Order (+ reserved)</option>
+              <option value="release">Release Reservation (- reserved)</option>
+              <option value="sale">Paid Sale (- real, - reserved)</option>
+              <option value="damage">Damaged Item (- real)</option>
+              <option value="return">Customer Return (+ real)</option>
+            </select>
+          </label>
+          <label>
+            Quantity
+            <input name="qty" type="number" min="1" value="1" required>
+          </label>
+          <label>
+            Note
+            <input name="note" type="text" placeholder="Reason or reference">
+          </label>
+          <button class="admin-primary" type="submit">Save Movement</button>
+        </form>
+
+        <div class="admin-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>SKU</th>
+                <th>Type</th>
+                <th>Qty</th>
+                <th>Note</th>
+              </tr>
+            </thead>
+            <tbody data-inventory-log-table></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="admin-panel" data-admin-panel="orders">
+        <div class="admin-panel-head">
+          <div>
+            <p class="admin-kicker">Order workflow</p>
+            <h2>Orders</h2>
+          </div>
+          <p class="admin-note">Create a test order to reserve stock, then mark it paid or cancel it.</p>
+        </div>
+
+        <form class="admin-form order-form" data-order-form>
+          <label>
+            Product
+            <select name="productId" data-order-product-select required></select>
+          </label>
+          <label>
+            Quantity
+            <input name="qty" type="number" min="1" value="1" required>
+          </label>
+          <label>
+            Customer Name
+            <input name="customerName" type="text" placeholder="Customer name">
+          </label>
+          <button class="admin-primary" type="submit">Create Reserved Order</button>
+        </form>
+
+        <div class="admin-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Order</th>
+                <th>Customer</th>
+                <th>SKU</th>
+                <th>Qty</th>
+                <th>Order Status</th>
+                <th>Payment</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody data-orders-table></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="admin-panel" data-admin-panel="customers">
+        <div class="admin-panel-head">
+          <div>
+            <p class="admin-kicker">Client records</p>
+            <h2>Customers</h2>
+          </div>
+          <p class="admin-note">This section is ready for real account and checkout data later.</p>
+        </div>
+
+        <div class="admin-empty">
+          <h3>Customer CRM will connect after real checkout.</h3>
+          <p>For production, this should store name, phone, email, address, order history, VIP tags, and total spend in a secure database.</p>
+        </div>
+      </section>
+
+      <section class="admin-panel" data-admin-panel="settings">
+        <div class="admin-panel-head">
+          <div>
+            <p class="admin-kicker">Admin settings</p>
+            <h2>Settings</h2>
+          </div>
+        </div>
+
+        <form class="admin-form settings-form" data-settings-form>
+          <label>
+            Low Stock Threshold
+            <input name="lowStockThreshold" type="number" min="0" value="2">
+          </label>
+          <button class="admin-primary" type="submit">Save Settings</button>
+        </form>
+
+        <div class="admin-explainer">
+          <h3>Production Note</h3>
+          <p>A real back office still needs secure admin login, a server database, payment webhooks, image uploads, and permission control.</p>
+        </div>
+      </section>
+
+      <p class="admin-message" data-admin-message role="status" aria-live="polite"></p>
+    </section>
+  </main>
+
+  <script src="../assets/js/product-data.js?v=20260520-imagefix"></script>
+  <script src="../assets/js/admin-page.js"></script>
+  <script src="../assets/js/site-language.js"></script>
+  <script src="../assets/js/footer.js"></script>
+</body>
+</html>
+

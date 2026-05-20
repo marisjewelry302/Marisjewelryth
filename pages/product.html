@@ -1,0 +1,189 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Product | Maris Jewelry</title>
+  <meta name="description" content="View product details, pricing, and related pieces from the Maris Jewelry catalogue.">
+  <meta name="theme-color" content="#00493a">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Maris Jewelry">
+  <meta property="og:title" content="Product | Maris Jewelry">
+  <meta property="og:description" content="View product details, pricing, and related pieces from the Maris Jewelry catalogue.">
+  <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg">
+  <link rel="apple-touch-icon" href="../assets/images/logo.png">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@300;400;500;600;700&family=Urbanist:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/engagement-ring.css">
+  <link rel="stylesheet" href="../assets/css/product.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body class="product-page">
+  <!-- TOP BAR -->
+  <div class="top-bar">
+    <div class="top-left">
+      <a href="tel:0958792659">📞 095-879-2659</a>
+      <a href="mailto:marisjewelryth@gmail.com">📧 marisjewelryth@gmail.com</a>
+    </div>
+    <div class="top-right">
+      <span>TH | EN</span>
+    </div>
+  </div>
+
+  <!-- NAVBAR -->
+  <header class="navbar">
+    <div class="logo">
+      <a href="../index.html" aria-label="Go to homepage">
+        <img src="../assets/images/logo.png" alt="Maris Jewelry Logo">
+      </a>
+    </div>
+
+    <nav class="nav">
+      <a href="engagement-ring.html">Engagement Rings</a>
+      <a href="wedding-bands.html">Wedding Bands</a>
+      <a href="mens-wedding-bands.html">Men's Wedding Bands</a>
+      <div class="nav-item-dropdown">
+        <button class="nav-dropdown-trigger" type="button">Gifts</button>
+        <div class="nav-dropdown" aria-label="Gifts categories">
+          <a href="necklaces-pendants.html">Necklaces and pendants</a>
+          <a href="bracelets.html">Bracelets</a>
+          <a href="earrings.html">Earrings</a>
+          <a href="rings.html">Rings</a>
+        </div>
+      </div>
+      <div class="nav-item-dropdown">
+        <button class="nav-dropdown-trigger" type="button">Our Expertise</button>
+        <div class="nav-dropdown" aria-label="Our expertise">
+          <a href="oem-jewelry.html">OEM Jewelry Service</a>
+          <a href="wholesale-retail.html">Wholesale &amp; Retail</a>
+        </div>
+      </div>
+      <div class="nav-item-dropdown">
+        <a href="about-us.html">About Us</a>
+        <div class="nav-dropdown" aria-label="About Maris">
+          <a href="contact-us.html">Contact Us</a>
+          <a href="articles.html">Articles</a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="icons">
+      <a href="account.html" aria-label="Account"><i class="fa-regular fa-user"></i></a>
+      <a href="wishlist.html" aria-label="Wishlist"><i class="fa-regular fa-heart"></i></a>
+      <a href="shopping-bag.html" aria-label="Shopping bag"><i class="fa-solid fa-bag-shopping"></i><span class="bag-count-badge" data-bag-count-badge hidden>0</span></a>
+    </div>
+  </header>
+
+  <main>
+    <section class="product-detail">
+      <div class="product-gallery-column">
+        <div class="product-gallery" data-product-gallery role="button" tabindex="0" aria-label="Open product image">
+          <button class="product-gallery-nav is-prev" type="button" data-product-gallery-prev aria-label="Previous image">
+            <span class="product-gallery-nav-label">Previous image</span>
+          </button>
+          <img data-product-image src="../assets/images/logo.png" alt="Maris Jewelry product">
+          <button class="product-gallery-nav is-next" type="button" data-product-gallery-next aria-label="Next image">
+            <span class="product-gallery-nav-label">Next image</span>
+          </button>
+        </div>
+        <div class="product-gallery-copy" hidden aria-hidden="true">
+          <p class="product-gallery-label" data-product-image-label>Primary View</p>
+          <p class="product-gallery-note">Select a view to compare angle and metal tone.</p>
+        </div>
+        <div class="product-thumbnails-shell">
+          <button class="product-thumbnails-nav is-prev" type="button" data-product-thumbnails-prev aria-label="Scroll thumbnails left">
+            <span aria-hidden="true">&#8249;</span>
+          </button>
+          <div class="product-thumbnails" data-product-thumbnails aria-label="Product image views"></div>
+          <button class="product-thumbnails-nav is-next" type="button" data-product-thumbnails-next aria-label="Scroll thumbnails right">
+            <span aria-hidden="true">&#8250;</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="product-summary">
+        <p class="product-kicker" data-product-collection>Maris Jewelry</p>
+        <h1 data-product-title>Loading product</h1>
+        <h2 data-product-name>Google Sheet catalogue</h2>
+        <p class="product-description" data-product-description></p>
+        <ul class="product-details-list" data-product-details></ul>
+        <p class="product-price" data-product-price>Price on request</p>
+
+        <div class="product-actions">
+          <button class="product-action" type="button" data-product-add-bag>Add to Bag</button>
+          <button class="product-action is-primary" type="button" data-product-buy-now data-i18n="product.request">Request This Piece</button>
+        </div>
+
+        <p class="product-note">Final price, diamond availability, ring size, and delivery timing will be confirmed by Maris Jewelry before checkout.</p>
+      </div>
+    </section>
+
+    <section class="also-like">
+      <h2>Also You May Like</h2>
+      <div class="also-grid" data-also-like></div>
+    </section>
+  </main>
+
+  <div class="product-lightbox" data-product-lightbox hidden>
+    <button class="product-lightbox-close" type="button" data-product-lightbox-close aria-label="Close image preview">&times;</button>
+    <img data-product-lightbox-image src="../assets/images/logo.png" alt="Maris Jewelry product large preview">
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-container">
+
+      <!-- Contact -->
+      <div class="footer-col">
+        <h3>Contact</h3>
+        <p>Maris Jewelry Co., Ltd.</p>
+        <p>302/9-10 Surawong Road, Si Phraya, Bang Rak ,Bangkok,Thailand 10500</p>
+        <p>Tel: 095-879-2659</p>
+        <p>Mon - fri, 08.30 : - 18:00</p>
+      </div>
+
+      <!-- Info -->
+      <div class="footer-col">
+        <h3>Information</h3>
+        <ul>
+          <li><a href="terms-of-service.html">Terms of Service</a></li>
+          <li><a href="shipping.html">Shipping</a></li>
+          <li><a href="returns.html">Returns</a></li>
+          <li><a href="privacy-policy.html">Privacy Policy</a></li>
+        </ul>
+      </div>
+
+      <!-- Signup -->
+      <div class="footer-col">
+        <h3>Join Us</h3>
+        <p>Receive exclusive updates & offers</p>
+
+        <form class="email-box" action="newsletter.html" method="get">
+          <input type="email" name="email" placeholder="Your email" aria-label="Your email">
+          <button type="submit" aria-label="Join newsletter">→</button>
+        </form>
+
+        <div class="social">
+          <a href="https://www.instagram.com/maris_jewelry_th?igsh=MXNoeHpxN2VkaTU0NA==" aria-label="Instagram" target="_blank" rel="noopener noreferrer"><i class="fab fa-instagram"></i></a>
+          <a href="https://www.facebook.com/share/1JH2idcjPM/" aria-label="Facebook" target="_blank" rel="noopener noreferrer"><i class="fab fa-facebook-f"></i></a>
+          <a href="https://pin.it/5pKmV7MKf" aria-label="Pinterest" target="_blank" rel="noopener noreferrer"><i class="fab fa-pinterest-p"></i></a>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="footer-bottom">
+      <p>© 2026 Maris Jewelry</p>
+    </div>
+  </footer>
+
+  <script src="../assets/js/product-data.js?v=20260520-imagefix"></script>
+  <script src="../assets/js/product-detail.js"></script>
+  <script src="../assets/js/bag-count.js"></script>
+  <script src="../assets/js/site-language.js"></script>
+  <script src="../assets/js/footer.js"></script>
+</body>
+</html>
+

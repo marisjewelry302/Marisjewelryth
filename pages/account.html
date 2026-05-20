@@ -1,0 +1,134 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Account | Maris Jewelry</title>
+  <meta name="description" content="View saved Maris Jewelry details, wishlist pieces, shopping bag selections, and quote requests in this browser-based client area.">
+  <meta name="theme-color" content="#00493a">
+  <link rel="icon" type="image/svg+xml" href="../assets/images/favicon.svg">
+  <link rel="apple-touch-icon" href="../assets/images/logo.png">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@300;400;500;600;700&family=Urbanist:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/placeholder.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="site-logo" href="../index.html"><img src="../assets/images/logo.png" alt="Maris Jewelry Logo"></a>
+    <nav class="site-nav">
+      <a href="../index.html">Home</a>
+      <a href="engagement-ring.html">Engagement Rings</a>
+    </nav>
+  </header>
+
+  <main class="account-main">
+    <section class="account-hero">
+      <p class="eyebrow">Client Access</p>
+      <h1>Account</h1>
+      <p class="lead">A quiet place for saved details, wishlist pieces, and future private appointments.</p>
+    </section>
+
+    <section class="account-shell" aria-label="Account system">
+      <div class="account-auth" data-auth-panel>
+        <div class="account-tabs" role="tablist" aria-label="Account forms">
+          <button class="is-active" type="button" data-account-tab="signin">Sign In</button>
+          <button type="button" data-account-tab="create">Create Account</button>
+        </div>
+
+        <form class="account-form" data-account-form="signin">
+          <h2>Welcome back</h2>
+          <p class="account-form-note">Prototype login for this browser. Your password is only checked as a filled field and is not saved.</p>
+
+          <label for="signin-email">Email</label>
+          <input id="signin-email" name="email" type="email" autocomplete="email" required>
+
+          <label for="signin-password">Password</label>
+          <input id="signin-password" name="password" type="password" autocomplete="current-password" required>
+
+          <button class="account-submit" type="submit">Sign In</button>
+        </form>
+
+        <form class="account-form" data-account-form="create" hidden>
+          <h2>Create your Maris account</h2>
+          <p class="account-form-note">This creates a local prototype account only. For the real site, this will need secure backend authentication.</p>
+
+          <label for="create-name">Full name</label>
+          <input id="create-name" name="name" type="text" autocomplete="name" required>
+
+          <label for="create-email">Email</label>
+          <input id="create-email" name="email" type="email" autocomplete="email" required>
+
+          <label for="create-phone">Phone</label>
+          <input id="create-phone" name="phone" type="tel" autocomplete="tel">
+
+          <label for="create-password">Password</label>
+          <input id="create-password" name="password" type="password" autocomplete="new-password" minlength="6" required>
+
+          <button class="account-submit" type="submit">Create Account</button>
+        </form>
+
+        <p class="account-message" data-account-message role="status" aria-live="polite"></p>
+      </div>
+
+      <div class="account-dashboard" data-account-dashboard hidden>
+        <div class="account-dashboard-head">
+          <div>
+            <p class="eyebrow">My Maris</p>
+            <h2 data-account-name>Welcome</h2>
+            <p data-account-email></p>
+          </div>
+          <button class="account-link-button" type="button" data-account-signout>Sign Out</button>
+        </div>
+
+        <div class="account-summary">
+          <a href="wishlist.html">
+            <span data-account-wishlist-count>0</span>
+            <small>Wishlist Pieces</small>
+          </a>
+          <a href="shopping-bag.html">
+            <span data-account-bag-count>0</span>
+            <small>Shopping Bag</small>
+          </a>
+          <a href="request-quote.html">
+            <span data-account-quote-count>0</span>
+            <small data-i18n="account.quoteRequests">Quote Requests</small>
+          </a>
+        </div>
+
+        <form class="account-profile-form" data-account-profile-form>
+          <h3>Profile details</h3>
+
+          <label for="profile-name">Full name</label>
+          <input id="profile-name" name="name" type="text" autocomplete="name" required>
+
+          <label for="profile-email">Email</label>
+          <input id="profile-email" name="email" type="email" autocomplete="email" required>
+
+          <label for="profile-phone">Phone</label>
+          <input id="profile-phone" name="phone" type="tel" autocomplete="tel">
+
+          <label for="profile-service">Interested in</label>
+          <select id="profile-service" name="service">
+            <option value="Engagement Rings">Engagement Rings</option>
+            <option value="Wedding Bands">Wedding Bands</option>
+            <option value="Men's Wedding Bands">Men's Wedding Bands</option>
+            <option value="Gifts">Gifts</option>
+            <option value="Private Consultation">Private Consultation</option>
+          </select>
+
+          <button class="account-submit" type="submit">Save Details</button>
+        </form>
+
+        <p class="account-message" data-profile-message role="status" aria-live="polite"></p>
+      </div>
+    </section>
+  </main>
+
+  <script src="../assets/js/account-page.js"></script>
+  <script src="../assets/js/site-language.js"></script>
+  <script src="../assets/js/footer.js"></script>
+</body>
+</html>
+
