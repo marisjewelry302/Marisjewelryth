@@ -19,8 +19,8 @@ assert.ok(
 
 assert.match(
   adminHtml,
-  /Google Sheet remains the temporary storefront catalogue source during migration/i,
-  "Admin copy must frame Google Sheet as temporary during Supabase migration"
+  /Supabase is now the storefront catalogue source/i,
+  "Admin copy must frame Supabase as the storefront catalogue source"
 );
 
 assert.doesNotMatch(
@@ -41,6 +41,12 @@ assert.doesNotMatch(
   "Admin products, inventory, and orders must not use browser-local storage or demo reset state"
 );
 
+assert.doesNotMatch(
+  adminJs,
+  /Google Sheet feed|Google Sheet products|Google Sheet still drives|sheet is back online/i,
+  "Admin JavaScript must not describe Google Sheet as the live catalogue source"
+);
+
 assert.match(
   adminJs,
   /loadAdminBackendData\(\)/,
@@ -49,6 +55,6 @@ assert.match(
 
 assert.doesNotMatch(
   productDataJs,
-  /marisPublishedCatalogueProducts|MARIS_PUBLISHED_PRODUCTS|publishedProductsKey/,
-  "Storefront product data must not read browser-local catalogue products as a live source"
+  /marisPublishedCatalogueProducts|MARIS_PUBLISHED_PRODUCTS|publishedProductsKey|docs\.google\.com\/spreadsheets/,
+  "Storefront product data must not read browser-local products or Google Sheet as a live source"
 );

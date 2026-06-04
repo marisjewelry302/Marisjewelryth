@@ -48,10 +48,10 @@
       <section class="admin-panel is-active" data-admin-panel="dashboard">
         <div class="admin-panel-head">
           <div>
-            <p class="admin-kicker">Sheet-led foundation</p>
+            <p class="admin-kicker">Supabase catalogue source</p>
             <h2>Dashboard</h2>
           </div>
-          <p class="admin-note">Google Sheet remains the temporary storefront catalogue source during migration. Admin products, inventory, and order figures now load through protected Supabase APIs.</p>
+          <p class="admin-note">Supabase is now the storefront catalogue source. Admin products, images, inventory, and order figures load through protected Supabase APIs.</p>
         </div>
 
         <div class="admin-stats">
@@ -81,16 +81,16 @@
 
         <div class="admin-grid admin-feed-grid">
           <article class="admin-card admin-feed-card">
-            <p class="admin-kicker">Only Live Storefront Source</p>
-            <h3>Google Sheet Feed</h3>
-            <p class="admin-note admin-note-wide">Add or edit products in the public Google Sheet. The storefront reads that sheet only; sandbox drafts below do not update the live catalogue.</p>
+            <p class="admin-kicker">Live Storefront Source</p>
+            <h3>Supabase Catalogue</h3>
+            <p class="admin-note admin-note-wide">Add or edit products in this admin workspace. The storefront reads published Supabase products through the public catalogue API.</p>
             <div class="admin-feed-meta">
               <div>
                 <span>Status</span>
                 <strong data-sheet-status>Loading...</strong>
               </div>
               <div>
-                <span>Rows On Storefront</span>
+                <span>Products On Storefront</span>
                 <strong data-sheet-product-count>0</strong>
               </div>
               <div>
@@ -98,36 +98,29 @@
                 <strong data-sheet-last-sync>Waiting...</strong>
               </div>
             </div>
-            <a class="admin-feed-link" href="#" target="_blank" rel="noopener noreferrer" data-sheet-feed-link>Open Product Sheet</a>
+            <a class="admin-feed-link" href="/api/catalogue/products" target="_blank" rel="noopener noreferrer" data-sheet-feed-link>Open Catalogue API</a>
           </article>
 
           <article class="admin-card admin-feed-card">
             <p class="admin-kicker">Manager Workflow</p>
             <h3>Add Product In 3 Steps</h3>
             <ol class="admin-steps">
-              <li>Upload product images to a public URL such as Google Drive, Netlify, or a CDN.</li>
-              <li>Keep recognizable column names such as code, name, image_url, price, and details. The loader maps by header name, so the team can reorder columns safely.</li>
+              <li>Create the product in the Supabase entry form and choose its collection, price, status, and visibility.</li>
+              <li>Upload the main product image and optional gallery images directly from this admin page.</li>
               <li>Refresh the catalogue page and the new item appears in its collection automatically.</li>
             </ol>
-            <p class="admin-mini-label">Recommended Sheet headers</p>
+            <p class="admin-mini-label">Supabase catalogue fields</p>
             <div class="admin-pill-row">
-              <span>ID</span>
               <span>Collection</span>
-              <span>Type</span>
-              <span>Center</span>
-              <span>Malee</span>
-              <span>Gold Weight</span>
               <span>code</span>
               <span>name</span>
-              <span>image_url</span>
-              <span>top_image_url</span>
-              <span>front_image_url</span>
-              <span>side_image_url</span>
-              <span>yellow_gold_image_url</span>
-              <span>rose_gold_image_url</span>
               <span>price</span>
               <span>description</span>
               <span>details</span>
+              <span>main image</span>
+              <span>gallery images</span>
+              <span>status</span>
+              <span>visible</span>
             </div>
           </article>
         </div>
@@ -206,26 +199,26 @@
         <div class="admin-subsection">
           <div class="admin-subsection-head">
             <div>
-              <p class="admin-kicker">Google Sheet live source</p>
-              <h3>Sheet-Synced Catalogue</h3>
+              <p class="admin-kicker">Supabase live source</p>
+              <h3>Storefront Catalogue</h3>
             </div>
-            <p class="admin-note">This is the only path that updates the live storefront catalogue. Add a new row in the Google Sheet with product info and public image URLs, then the storefront sorts the product into its collection automatically.</p>
+            <p class="admin-note">This view mirrors the products the storefront receives from Supabase. Product rows and image records saved here are the source for collection pages.</p>
           </div>
 
           <div class="admin-inline-note">
             <strong data-sheet-product-count-inline>0</strong>
-            <span>catalogue items currently coming from Google Sheet</span>
-            <a class="admin-feed-link-inline" href="#" target="_blank" rel="noopener noreferrer" data-sheet-feed-link-inline>Open Sheet</a>
+            <span>catalogue items currently coming from Supabase</span>
+            <a class="admin-feed-link-inline" href="/api/catalogue/products" target="_blank" rel="noopener noreferrer" data-sheet-feed-link-inline>Open API</a>
           </div>
 
           <div class="admin-guide-grid">
             <article class="admin-guide-card">
-              <h4>Column names</h4>
-              <p>Match the header names. Keep <strong>code</strong>, <strong>name</strong>, <strong>image_url</strong>, <strong>price</strong>, <strong>description</strong>, and <strong>details</strong> recognizable so the storefront maps rows safely even when columns move.</p>
+              <h4>Product records</h4>
+              <p>Keep product codes unique, assign one storefront collection, and use status plus visibility to control what appears publicly.</p>
             </article>
             <article class="admin-guide-card">
-              <h4>Multi-angle product view</h4>
-              <p>Use <strong>image_url</strong> for White Gold, then <strong>top_image_url</strong>, <strong>front_image_url</strong>, <strong>side_image_url</strong>, <strong>yellow_gold_image_url</strong>, and <strong>rose_gold_image_url</strong> to build the gallery automatically.</p>
+              <h4>Product images</h4>
+              <p>Upload the main image and optional gallery images from the form below. Supabase Storage hosts the files and `product_images` stores the public URLs.</p>
             </article>
             <article class="admin-guide-card">
               <h4>Code reference</h4>
@@ -256,7 +249,7 @@
               <p class="admin-kicker">Supabase entry</p>
               <h3>Manual Supabase Product</h3>
             </div>
-            <p class="admin-note">Use this to create a Supabase product record for admin inventory and order workflows. The storefront catalogue stays on Google Sheet until the product migration cutover is verified.</p>
+            <p class="admin-note">Use this to create a storefront product record and upload its images to Supabase. Saved products are available to the public catalogue API after the server accepts them.</p>
           </div>
 
           <form class="admin-form admin-form-catalogue" data-catalogue-form>
@@ -477,7 +470,7 @@
             <p class="admin-kicker">Supabase foundation</p>
             <h2>Database</h2>
           </div>
-          <p class="admin-note">This checks the server-side Supabase connection only. It does not change the live storefront source until product migration and CRUD are approved.</p>
+          <p class="admin-note">This checks the server-side Supabase connection that powers admin data and the public storefront catalogue.</p>
         </div>
 
         <div class="admin-grid admin-feed-grid">
@@ -504,7 +497,7 @@
           <article class="admin-card admin-feed-card">
             <p class="admin-kicker">Migration boundary</p>
             <h3>Current Rule</h3>
-            <p class="admin-note admin-note-wide">Supabase is prepared for shared products, variants, images, stock movements, customers, orders, and settings. The public catalogue still reads Google Sheet until the database data is verified.</p>
+            <p class="admin-note admin-note-wide">Supabase is now the production catalogue source for shared products, variants, images, stock movements, customers, orders, and settings. Google Sheet is retained only as a historical reference.</p>
           </article>
         </div>
 

@@ -6,11 +6,12 @@ The repository root is the only deployable Next.js app. Do not point Vercel at a
 
 ## Before You Publish
 
-1. Confirm `npm run check:sheet-images` passes, or run `npm run build` which calls it automatically.
-2. Confirm `npm run build` passes locally.
-3. Replace `https://www.your-domain.com` in [sitemap.xml](./sitemap.xml) with the production domain.
-4. Open the homepage, category pages, product page, and 404 page on desktop and mobile before promoting production.
-5. Confirm contact details, social links, quote request flow, wishlist, and shopping bag behavior.
+1. Confirm `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and `MARIS_ADMIN_SESSION_SECRET` are set in Vercel.
+2. Confirm `npm run test:database` and `npm run test:admin-database-auth` pass locally.
+3. Confirm `npm run build` passes locally.
+4. Replace `https://www.your-domain.com` in [sitemap.xml](./sitemap.xml) with the production domain.
+5. Open the homepage, category pages, product page, `/admin`, and 404 page on desktop and mobile before promoting production.
+6. Confirm contact details, social links, quote request flow, wishlist, and shopping bag behavior.
 
 ## Vercel Git Workflow
 
@@ -39,9 +40,12 @@ The generated `public/` folder is ignored by git. Vercel regenerates it during `
 ```powershell
 npm ci
 npm run dev
-npm run check:sheet-images
+npm run test:database
+npm run test:admin-database-auth
 npm run build
 ```
+
+`npm run check:sheet-images` remains available only for historical Google Sheet diagnostics or one-off legacy imports. It is no longer called by `npm run build`.
 
 If this Windows machine cannot find `npm` or `node`, use:
 

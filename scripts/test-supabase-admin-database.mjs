@@ -723,11 +723,12 @@ assert.match(adminJs, /\/api\/admin\/database\/catalogue/, "Admin JavaScript sho
 assert.match(envExample, /^SUPABASE_URL=/m, ".env.example should include the Supabase project URL");
 assert.match(envExample, /^SUPABASE_SERVICE_ROLE_KEY=/m, ".env.example should include the server-only Supabase service role key");
 assert.match(databaseGuide, /service role key is server-only/i, "Database guide must warn that the service role key stays server-only");
-assert.match(databaseGuide, /Google Sheet remains the live storefront source/i, "Database guide must preserve the current live-source boundary");
+assert.match(databaseGuide, /Supabase is the storefront catalogue source/i, "Database guide must describe Supabase as the storefront catalogue source");
 assert.match(databaseGuide, /supabase\/migrations\/\d+_create_maris_admin_schema\.sql/, "Database guide should point to the schema migration");
 assert.match(databaseGuide, /npm run test:database:live/i, "Database guide should tell operators how to verify the live Supabase tables");
 assert.match(docsReadme, /supabase-admin-database\.md/, "Docs index should link to the Supabase admin database guide");
 assert.equal(packageJson.scripts["test:database:live"], "node scripts/test-supabase-admin-database-live.mjs");
+assert.equal(packageJson.scripts.prebuild, "node scripts/sync-legacy-public.mjs", "Build should no longer run the Google Sheet image checker before Next.js");
 
 for (const tableName of EXPECTED_DATABASE_TABLES) {
   assert.match(

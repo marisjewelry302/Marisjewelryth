@@ -10,7 +10,7 @@ This folder is for project documentation and archived references only.
 ## Current documents
 
 - `guides/LOCAL_ARTIFACTS.md`: local artifact storage, preview helpers, and browser test workflow
-- `google-sheet-catalogue.md`: live storefront catalogue feed contract and header-name mapping guide
+- `google-sheet-catalogue.md`: historical Google Sheet mapping and manual checker reference
 - `supabase-admin-database.md`: protected admin database schema, migration, env setup, and live table-status checks
 
 ## Keep this folder light

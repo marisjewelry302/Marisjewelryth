@@ -127,8 +127,14 @@ assert.doesNotMatch(
   "Google Sheet guide must not tell the team to preserve A-Q column positions"
 );
 
+assert.doesNotMatch(
+  sheetGuide,
+  /only live catalogue source|storefront reads that sheet only|npm run build` also runs this check/i,
+  "Google Sheet guide must not describe the sheet as the live source or build gate"
+);
+
 assert.match(
   sheetGuide,
-  /column names/i,
-  "Google Sheet guide should explicitly tell the team that column names drive mapping"
+  /historical/i,
+  "Google Sheet guide should be retained only as a historical/manual reference"
 );

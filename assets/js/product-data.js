@@ -46,7 +46,6 @@ const marisBaseCollectionMeta = {
 const marisBaseCollectionProducts = {};
 
 (() => {
-  const googleSheetSourceUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQfntxK3qZhO4cfHkqlFtpY5kP7M3xLLzTkjkH6kTPkfJNdl5rgmGDozfyM3OTMBzo9WS0aXbF4U8Xr/pub?output=csv";
   const publicCatalogueApiUrl = "/api/catalogue/products";
   const marisSheetColumnSchema = [
     { header: "ID", key: "id", aliases: ["sku", "stock_id"] },
@@ -124,37 +123,6 @@ const marisBaseCollectionProducts = {};
   function resolveSheetColumnKey(header) {
     const normalizedHeader = normalizeSheetKey(header);
     return sheetColumnLookup.get(normalizedHeader) || normalizedHeader;
-  }
-
-  function resolveGoogleSheetCsvUrl(sourceUrl) {
-    const input = String(sourceUrl || "").trim();
-
-    if (!input) {
-      return "";
-    }
-
-    try {
-      const url = new URL(input);
-
-      if (url.hostname !== "docs.google.com") {
-        return input;
-      }
-
-      if (url.pathname.includes("/pub") && url.searchParams.get("output") === "csv") {
-        return url.toString();
-      }
-
-      const sheetMatch = url.pathname.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/i);
-
-      if (!sheetMatch?.[1]) {
-        return input;
-      }
-
-      const gid = url.searchParams.get("gid") || url.hash.replace(/^#gid=/i, "") || "0";
-      return `https://docs.google.com/spreadsheets/d/${sheetMatch[1]}/export?format=csv&gid=${gid}`;
-    } catch (error) {
-      return input;
-    }
   }
 
   function mapCollectionAlias(value) {

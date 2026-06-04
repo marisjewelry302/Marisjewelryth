@@ -18,7 +18,7 @@
     "test:sheet-images": "node scripts/test-sheet-image-checker.mjs",
     "predev": "node scripts/sync-legacy-public.mjs",
     "dev": "next dev",
-    "prebuild": "npm run check:sheet-images && node scripts/sync-legacy-public.mjs",
+    "prebuild": "node scripts/sync-legacy-public.mjs",
     "build": "next build",
     "start": "next start"
   },

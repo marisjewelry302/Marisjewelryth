@@ -499,12 +499,16 @@
   function renderSheetFeed() {
     const sheetStatus = window.MARIS_SHEET_STATUS || {};
     const statusLabel = {
-      loading: "Loading feed...",
+      loading: "Loading catalogue...",
       ready: "Connected",
-      error: "Feed unavailable"
+      empty: "No products",
+      error: "Catalogue unavailable"
     }[sheetStatus.status] || "Waiting...";
-    const sheetCount = Array.isArray(window.MARIS_SHEET_PRODUCTS) ? window.MARIS_SHEET_PRODUCTS.length : 0;
-    const feedUrl = String(sheetStatus.sheetUrl || window.MARIS_GOOGLE_SHEET_URL || "").trim();
+    const storefrontProducts = Array.isArray(window.MARIS_PRODUCTS) ? window.MARIS_PRODUCTS : [];
+    const sheetCount = Number.isFinite(Number(sheetStatus.productCount))
+      ? Number(sheetStatus.productCount)
+      : storefrontProducts.length;
+    const feedUrl = "/api/catalogue/products";
 
     if (elements.sheetStatus) {
       elements.sheetStatus.textContent = statusLabel;
@@ -539,13 +543,13 @@
       return;
     }
 
-    const sheetProducts = Array.isArray(window.MARIS_SHEET_PRODUCTS) ? window.MARIS_SHEET_PRODUCTS : [];
+    const sheetProducts = Array.isArray(window.MARIS_PRODUCTS) ? window.MARIS_PRODUCTS : [];
     const sheetStatus = window.MARIS_SHEET_STATUS || {};
 
     if (!sheetProducts.length) {
       const emptyMessage = sheetStatus.status === "error"
-        ? "Google Sheet feed is unavailable right now. No catalogue products are available until the sheet is back online."
-        : "No Google Sheet products are synced yet.";
+        ? "Supabase catalogue is unavailable right now. No public catalogue products can be loaded."
+        : "No Supabase catalogue products are available yet.";
       elements.sheetCatalogueTable.innerHTML = `<tr><td colspan="6">${escapeHtml(emptyMessage)}</td></tr>`;
       return;
     }
@@ -729,7 +733,7 @@
       } else if (!databaseCatalogueState.isConfigured) {
         elements.databaseProductsSummary.textContent = `Set ${missingEnv.join(" and ")} before reading products from Supabase.`;
       } else {
-        elements.databaseProductsSummary.textContent = `${products.length} Supabase products loaded read-only. Google Sheet still drives the live storefront.`;
+        elements.databaseProductsSummary.textContent = `${products.length} Supabase products loaded. Supabase drives the live storefront catalogue.`;
       }
     }
 
