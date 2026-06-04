@@ -19,7 +19,6 @@ maris-jewelry/
 |-- docs/
 |   |-- guides/             Working guides for local workflows
 |   `-- archive/backups/    Manual backup files kept for reference
-|-- nginx/                  Nginx config for Docker or Linux hosting
 |-- index.html              Homepage
 |-- 404.html                Static 404 page
 |-- manifest.webmanifest    PWA manifest
@@ -72,7 +71,7 @@ or:
 - `npm run check:sheet-images` is still available as a manual historical Google Sheet diagnostic, but it is no longer part of the build gate.
 - Vercel deploys from the repository root and uses `vercel.json` for `npm ci` plus `npm run build`.
 - Do not create or deploy nested Next.js apps inside this checkout; shared site work belongs in the root app.
-- Legacy Netlify files are no longer part of the main workflow.
+- Legacy Netlify, Docker, and Nginx deploy files are not part of the supported workflow.
 - Generated screenshots, runtime folders, temp previews, and logs are stored outside the repository.
 - Artifact workflow details live in `docs/guides/LOCAL_ARTIFACTS.md`.
 - Documentation structure is summarized in `docs/README.md`.

@@ -1,12 +1,30 @@
 import assert from "node:assert/strict";
+import path from "node:path";
 import { readFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 
 const adminHtml = await readFile(new URL("../pages/admin.html", import.meta.url), "utf8");
 const adminJs = await readFile(new URL("../assets/js/admin-page.js", import.meta.url), "utf8");
+const homepageHtml = await readFile(new URL("../index.html", import.meta.url), "utf8");
+const homepageJs = await readFile(new URL("../assets/js/homepage.js", import.meta.url), "utf8");
+const homepageCss = await readFile(new URL("../assets/css/style.css", import.meta.url), "utf8");
+const contactHtml = await readFile(new URL("../pages/contact-us.html", import.meta.url), "utf8");
+const newsletterHtml = await readFile(new URL("../pages/newsletter.html", import.meta.url), "utf8");
+const quoteHtml = await readFile(new URL("../pages/request-quote.html", import.meta.url), "utf8");
+const formSubmissionsJs = await readFile(new URL("../assets/js/form-submissions.js", import.meta.url), "utf8");
 const productDataJs = await readFile(new URL("../assets/js/product-data.js", import.meta.url), "utf8");
+const sitemapXml = await readFile(new URL("../sitemap.xml", import.meta.url), "utf8");
+const { POST: postPaymentWebhook } = await import("../app/api/webhooks/payment/route.js");
 const { default: nextConfig } = await import("../next.config.mjs");
+const projectRoot = path.resolve(fileURLToPath(new URL("..", import.meta.url)));
 
 const redirects = await nextConfig.redirects();
+
+assert.equal(
+  path.resolve(nextConfig.turbopack?.root || ""),
+  projectRoot,
+  "Next/Turbopack root should stay pinned to this repository, not the parent portfolio workspace"
+);
 
 assert.ok(
   redirects.some((redirectRule) => (
@@ -57,4 +75,82 @@ assert.doesNotMatch(
   productDataJs,
   /marisPublishedCatalogueProducts|MARIS_PUBLISHED_PRODUCTS|publishedProductsKey|docs\.google\.com\/spreadsheets/,
   "Storefront product data must not read browser-local products or Google Sheet as a live source"
+);
+
+assert.doesNotMatch(
+  [contactHtml, newsletterHtml, quoteHtml, formSubmissionsJs].join("\n"),
+  /Netlify|data-netlify|netlify-honeypot|submitToNetlify/i,
+  "Public lead forms must not claim unsupported Netlify form delivery in the Vercel workflow"
+);
+
+assert.match(
+  formSubmissionsJs,
+  /dataset\.submitEndpoint/,
+  "Form submissions should only post to an explicitly configured endpoint"
+);
+
+const paymentWebhookResponse = await postPaymentWebhook();
+const paymentWebhookPayload = await paymentWebhookResponse.json();
+assert.equal(paymentWebhookResponse.status, 501, "Payment webhook must stay disabled until a real gateway integration exists");
+assert.equal(paymentWebhookPayload.error, "payment_webhook_not_configured");
+assert.equal("success" in paymentWebhookPayload, false, "Disabled payment webhook must not report success");
+
+assert.doesNotMatch(
+  sitemapXml,
+  /netlify\.app/i,
+  "Sitemap must not point to the old Netlify deployment domain"
+);
+
+assert.match(
+  sitemapXml,
+  /https:\/\/www\.your-domain\.com\//,
+  "Sitemap should use the documented production-domain placeholder until the real domain is set"
+);
+
+assert.match(
+  homepageHtml,
+  /data-atelier-reveal/,
+  "Homepage should include the Maris Atelier Reveal surprise section"
+);
+
+for (const requiredAtelierHook of [
+  "data-atelier-status",
+  "data-atelier-focus",
+  "data-atelier-products"
+]) {
+  assert.match(
+    homepageHtml,
+    new RegExp(requiredAtelierHook),
+    `Atelier Reveal should expose ${requiredAtelierHook} for read-only catalogue rendering`
+  );
+}
+
+assert.match(
+  homepageJs,
+  /\/api\/catalogue\/products/,
+  "Atelier Reveal should read public catalogue data through the Supabase-backed API"
+);
+
+assert.doesNotMatch(
+  homepageJs,
+  /localStorage|sessionStorage|indexedDB/i,
+  "Homepage surprise must not store catalogue, lead, order, or stock data in browser storage"
+);
+
+assert.match(
+  homepageJs,
+  /atelier-unavailable/,
+  "Atelier Reveal should render an honest unavailable state instead of fake products"
+);
+
+assert.match(
+  homepageCss,
+  /\.atelier-reveal\b/,
+  "Atelier Reveal should have a dedicated visual treatment"
+);
+
+assert.match(
+  homepageCss,
+  /\.atelier-product-grid\b/,
+  "Atelier Reveal should render a stable responsive product grid"
 );

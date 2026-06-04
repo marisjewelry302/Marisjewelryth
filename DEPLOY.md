@@ -11,7 +11,7 @@ The repository root is the only deployable Next.js app. Do not point Vercel at a
 3. Confirm `npm run build` passes locally.
 4. Replace `https://www.your-domain.com` in [sitemap.xml](./sitemap.xml) with the production domain.
 5. Open the homepage, category pages, product page, `/admin`, and 404 page on desktop and mobile before promoting production.
-6. Confirm contact details, social links, quote request flow, wishlist, and shopping bag behavior.
+6. Confirm contact details, social links, quote request summary flow, wishlist, and shopping bag behavior.
 
 ## Vercel Git Workflow
 
@@ -56,4 +56,4 @@ If this Windows machine cannot find `npm` or `node`, use:
 
 ## Important Note
 
-This site is launch-ready as a public brand and catalogue website. It is not yet a full ecommerce backend: account, cart persistence, stock, checkout, payment, and order handling still need production services.
+This site is launch-ready as a public brand and catalogue website. Supabase backs the admin catalogue, inventory, image uploads, and order records. Public account persistence, checkout, payment capture, and automated form delivery still need production services before the site should be described as full ecommerce.

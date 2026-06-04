@@ -1,6 +1,6 @@
 -- Maris Jewelry admin database foundation.
 -- This creates the tables checked by /api/admin/database/status.
--- It does not switch the live storefront away from the Google Sheet feed.
+-- The storefront catalogue now reads published products through /api/catalogue/products.
 
 create extension if not exists pgcrypto;
 
@@ -255,6 +255,6 @@ create trigger set_settings_updated_at
 before update on public.settings
 for each row execute function public.set_maris_updated_at();
 
-comment on table public.products is 'Prepared Maris admin product table. Live storefront still reads Google Sheet until migration is explicitly completed.';
-comment on table public.product_variants is 'Prepared Maris admin variant table for future CRUD and inventory workflows.';
-comment on table public.product_images is 'Prepared Maris admin image mapping table for future Google Sheet reconciliation and uploads.';
+comment on table public.products is 'Maris admin product table used by /admin and the public Supabase catalogue API.';
+comment on table public.product_variants is 'Maris admin variant table used for catalogue options and inventory workflows.';
+comment on table public.product_images is 'Maris admin image mapping table for manual entries and Supabase Storage uploads.';

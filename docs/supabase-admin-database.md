@@ -22,10 +22,9 @@ Set these in local `.env.local` and in Vercel project environment variables:
 MARIS_ADMIN_SESSION_SECRET=replace-with-a-long-random-secret
 SUPABASE_URL=https://your-project-ref.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=replace-with-server-only-service-role-key
-MARIS_PAYMENT_WEBHOOK_SECRET=replace-with-a-webhook-secret
 ```
 
-`MARIS_ADMIN_SESSION_SECRET` signs the HTTP-only admin session cookie. The service role key is server-only. `MARIS_PAYMENT_WEBHOOK_SECRET` is a gateway webhook secret for future payment webhook validation. Do not expose any of these values in browser JavaScript, public HTML, sheet data, or any `NEXT_PUBLIC_` variable.
+`MARIS_ADMIN_SESSION_SECRET` signs the HTTP-only admin session cookie. The service role key is server-only. Do not expose either value in browser JavaScript, public HTML, sheet data, or any `NEXT_PUBLIC_` variable.
 
 ## Storage
 
@@ -98,3 +97,5 @@ npm run test:database:live
 ## Operating Notes
 
 Use `/admin` for catalogue edits and image uploads. Use Supabase directly only for schema maintenance, emergency fixes, or data reconciliation. The old Google Sheet guide is retained as a historical import reference, not as a live publishing path.
+
+Payment capture and public checkout are not live ecommerce services yet. Keep payment webhooks disabled until a real gateway integration verifies signatures, writes payment rows, and updates order status from trusted gateway events only.

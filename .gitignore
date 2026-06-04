@@ -5,6 +5,9 @@ docs/temp-previews/
 # Visual QA exports and local backups
 docs/screenshots/
 docs/archive/backups/*.backup-*
+docs/superpowers/plans/
+outputs/
+assets/images/home/archive/
 
 # Local dependencies and logs
 node_modules/

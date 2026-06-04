@@ -24,8 +24,8 @@
         }
       },
       preview: {
-        en: "Saved in local preview. When this site is deployed on Netlify, the same form will also arrive in Netlify submissions.",
-        th: "ระบบได้บันทึกไว้ใน local preview แล้ว และเมื่อ deploy บน Netlify ฟอร์มนี้จะถูกรับเข้า submissions ได้จริงด้วย"
+        en: "Saved to this browser only. Copy the summary and send it through your preferred Maris contact channel.",
+        th: "บันทึกไว้ในเบราว์เซอร์นี้เท่านั้น กรุณาคัดลอกสรุปและส่งต่อผ่านช่องทางติดต่อ Maris ที่คุณสะดวก"
       }
     },
     newsletter: {
@@ -42,8 +42,8 @@
         }
       },
       preview: {
-        en: "Saved in local preview. When this site is deployed on Netlify, newsletter sign-ups will be collected automatically.",
-        th: "ระบบได้บันทึกไว้ใน local preview แล้ว และเมื่อ deploy บน Netlify ฟอร์มสมัครข่าวสารจะถูกรับอัตโนมัติ"
+        en: "Saved to this browser only. Copy the summary and send it through your preferred Maris contact channel.",
+        th: "บันทึกไว้ในเบราว์เซอร์นี้เท่านั้น กรุณาคัดลอกสรุปและส่งต่อผ่านช่องทางติดต่อ Maris ที่คุณสะดวก"
       }
     },
     quote: {
@@ -60,8 +60,8 @@
         }
       },
       preview: {
-        en: "Saved in local preview. When this site is deployed on Netlify, quote requests will also be received through the site form inbox.",
-        th: "ระบบได้บันทึกไว้ใน local preview แล้ว และเมื่อ deploy บน Netlify คำขอใบเสนอราคาจะถูกส่งเข้ากล่องฟอร์มของเว็บไซต์ด้วย"
+        en: "Saved to this browser only. Copy the summary and send it through your preferred Maris contact channel.",
+        th: "บันทึกไว้ในเบราว์เซอร์นี้เท่านั้น กรุณาคัดลอกสรุปและส่งต่อผ่านช่องทางติดต่อ Maris ที่คุณสะดวก"
       },
       validation: {
         en: "Please select at least one piece before sending a quote request.",
@@ -199,12 +199,12 @@
     resultTarget.hidden = false;
   }
 
-  async function submitToNetlify(form, formData) {
-    if (isLocalPreview()) {
+  async function submitToConfiguredEndpoint(form, formData) {
+    const endpoint = form.dataset.submitEndpoint || "";
+
+    if (!endpoint || isLocalPreview()) {
       return false;
     }
-
-    const endpoint = form.getAttribute("action") || window.location.pathname;
 
     try {
       const response = await fetch(endpoint, {
@@ -280,7 +280,7 @@
         },
         ...readSubmissions()
       ]);
-      const netlifyAccepted = await submitToNetlify(form, formData);
+      const endpointAccepted = await submitToConfiguredEndpoint(form, formData);
       const language = getLanguage();
       const messageSet = formMessages[formType]?.success?.[language];
 
@@ -298,13 +298,13 @@
 
       setStatus(
         statusTarget,
-        isLocalPreview()
-          ? formMessages[formType].preview[language]
-          : messageSet.status,
-        netlifyAccepted || isLocalPreview() ? "success" : "info"
+        endpointAccepted
+          ? messageSet.status
+          : formMessages[formType].preview[language],
+        endpointAccepted ? "success" : "info"
       );
 
-      renderResult(formType, resultTarget, summaryLines, isLocalPreview() || !netlifyAccepted);
+      renderResult(formType, resultTarget, summaryLines, !endpointAccepted);
 
       if (form.dataset.resetOnSuccess !== "false") {
         form.reset();
