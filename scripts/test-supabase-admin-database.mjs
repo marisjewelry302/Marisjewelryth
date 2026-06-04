@@ -6,8 +6,11 @@ const {
   createAdminInventoryLog,
   getSupabaseAdminConfig,
   readAdminCatalogueProducts,
-  readAdminDatabaseStatus
+  readAdminDatabaseStatus,
+  readPublicCatalogueProducts
 } = await import("../app/lib/maris-database.js");
+
+const { GET: getPublicCatalogueProducts } = await import("../app/api/catalogue/products/route.js");
 
 const EXPECTED_DATABASE_TABLES = [
   "admin_users",
@@ -244,6 +247,195 @@ assert.ok(
 const missingCatalogue = await readAdminCatalogueProducts({ env: {} });
 assert.equal(missingCatalogue.isConfigured, false);
 assert.deepEqual(missingCatalogue.products, []);
+
+const publicCatalogueCalls = [];
+const publicCatalogueClient = {
+  from(tableName) {
+    publicCatalogueCalls.push(["from", tableName]);
+
+    return {
+      select(columns) {
+        publicCatalogueCalls.push(["select", tableName, columns]);
+
+        const query = {
+          filters: [],
+          eq(column, value) {
+            this.filters.push([column, value]);
+            publicCatalogueCalls.push(["eq", column, value]);
+            return this;
+          },
+          order(column, options) {
+            publicCatalogueCalls.push(["order", column, options]);
+            return this;
+          },
+          async limit(limit) {
+            publicCatalogueCalls.push(["limit", limit]);
+
+            return {
+              data: [
+                {
+                  id: "product-1",
+                  product_code: "ER1001",
+                  slug: "diamond-ring",
+                  name_en: "Diamond Ring",
+                  name_th: "แหวนเพชร",
+                  category: "Engagement Rings",
+                  collection: "engagement-ring",
+                  description: "Round diamond ring.",
+                  material: "14K Gold",
+                  gold_color: "White Gold",
+                  status: "active",
+                  price_amount: 12900,
+                  currency: "THB",
+                  is_active: true,
+                  stock_quantity: 5,
+                  reserved_quantity: 2,
+                  updated_at: "2026-05-27T00:00:00.000Z",
+                  metadata: {
+                    title: "Featured Diamond Ring",
+                    details: ["14K White Gold", "Round diamond"],
+                    filterValues: ["white-gold", "round"],
+                    imagePresentation: "contain",
+                    internalCost: "never-public"
+                  },
+                  product_variants: [
+                    {
+                      id: "variant-1",
+                      sku: "ER1001-WG-52",
+                      variant_name: "White Gold 52",
+                      metal: "white gold",
+                      size_label: "52",
+                      stock_quantity: 2,
+                      is_active: true
+                    }
+                  ],
+                  product_images: [
+                    {
+                      id: "image-2",
+                      image_url: "https://example.com/ring-side.png",
+                      alt_text: "Diamond Ring side",
+                      sort_order: 1,
+                      is_primary: false,
+                      source: "manual"
+                    },
+                    {
+                      id: "image-1",
+                      image_url: "https://example.com/ring-main.png",
+                      alt_text: "Diamond Ring main",
+                      sort_order: 0,
+                      is_primary: true,
+                      source: "upload"
+                    }
+                  ]
+                }
+              ],
+              error: null
+            };
+          }
+        };
+
+        return query;
+      }
+    };
+  }
+};
+
+const publicCatalogue = await readPublicCatalogueProducts({
+  env: {
+    SUPABASE_URL: "https://maris-test.supabase.co",
+    SUPABASE_SERVICE_ROLE_KEY: "service-role-secret"
+  },
+  client: publicCatalogueClient
+});
+
+assert.equal(publicCatalogue.source, "supabase");
+assert.equal(publicCatalogue.status, "ready");
+assert.equal(publicCatalogue.productCount, 1);
+assert.deepEqual(publicCatalogueCalls.filter((call) => call[0] === "eq"), [
+  ["eq", "is_active", true],
+  ["eq", "status", "active"]
+]);
+assert.ok(
+  publicCatalogueCalls.some((call) => call[0] === "select" && /product_variants/.test(call[2]) && /product_images/.test(call[2])),
+  "Public catalogue reader should request variants and images with products"
+);
+assert.deepEqual(publicCatalogue.products[0], {
+  id: "product-1",
+  code: "ER1001",
+  slug: "diamond-ring",
+  title: "Featured Diamond Ring",
+  name: "Diamond Ring",
+  nameTh: "แหวนเพชร",
+  collectionKey: "engagement-ring",
+  category: "Engagement Rings",
+  description: "Round diamond ring.",
+  details: ["14K White Gold", "Round diamond"],
+  price: "12,900 THB",
+  priceAmount: 12900,
+  currency: "THB",
+  status: "active",
+  stockState: "available",
+  availableQuantity: 3,
+  image: "https://example.com/ring-main.png",
+  hover: "https://example.com/ring-side.png",
+  gallery: [
+    {
+      id: "image-1",
+      label: "Primary View",
+      src: "https://example.com/ring-main.png",
+      alt: "Diamond Ring main",
+      sortOrder: 0,
+      isPrimary: true
+    },
+    {
+      id: "image-2",
+      label: "View 2",
+      src: "https://example.com/ring-side.png",
+      alt: "Diamond Ring side",
+      sortOrder: 1,
+      isPrimary: false
+    }
+  ],
+  filterValues: ["white-gold", "round"],
+  imagePresentation: "contain",
+  updatedAt: "2026-05-27T00:00:00.000Z"
+});
+assert.equal("serviceRoleKey" in publicCatalogue, false);
+assert.equal("isActive" in publicCatalogue.products[0], false);
+assert.equal("stockQuantity" in publicCatalogue.products[0], false);
+assert.equal("reservedQuantity" in publicCatalogue.products[0], false);
+assert.equal("metadata" in publicCatalogue.products[0], false);
+assert.equal("internalCost" in publicCatalogue.products[0], false);
+assert.equal(JSON.stringify(publicCatalogue).includes("service-role-secret"), false);
+
+const missingPublicCatalogue = await readPublicCatalogueProducts({ env: {} });
+assert.equal(missingPublicCatalogue.source, "supabase");
+assert.equal(missingPublicCatalogue.status, "unavailable");
+assert.deepEqual(missingPublicCatalogue.missingEnv, ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]);
+assert.deepEqual(missingPublicCatalogue.products, []);
+
+const previousSupabaseUrl = process.env.SUPABASE_URL;
+const previousSupabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+delete process.env.SUPABASE_URL;
+delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+const missingPublicRouteResponse = await getPublicCatalogueProducts();
+const missingPublicRoutePayload = await missingPublicRouteResponse.json();
+assert.equal(missingPublicRouteResponse.status, 503);
+assert.equal(missingPublicRouteResponse.headers.get("Cache-Control"), "no-store");
+assert.equal(missingPublicRoutePayload.source, "supabase");
+assert.equal(missingPublicRoutePayload.status, "unavailable");
+assert.deepEqual(missingPublicRoutePayload.products, []);
+assert.equal("serviceRoleKey" in missingPublicRoutePayload, false);
+if (previousSupabaseUrl === undefined) {
+  delete process.env.SUPABASE_URL;
+} else {
+  process.env.SUPABASE_URL = previousSupabaseUrl;
+}
+if (previousSupabaseServiceRoleKey === undefined) {
+  delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+} else {
+  process.env.SUPABASE_SERVICE_ROLE_KEY = previousSupabaseServiceRoleKey;
+}
 
 function createInventoryMovementClient() {
   const state = {

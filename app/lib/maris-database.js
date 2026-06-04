@@ -49,6 +49,42 @@ const ADMIN_CATALOGUE_SELECT = `
     source
   )
 `;
+const PUBLIC_CATALOGUE_SELECT = `
+  id,
+  product_code,
+  slug,
+  name_en,
+  name_th,
+  category,
+  collection,
+  description,
+  material,
+  gold_color,
+  status,
+  price_amount,
+  currency,
+  stock_quantity,
+  reserved_quantity,
+  updated_at,
+  metadata,
+  product_variants (
+    id,
+    sku,
+    variant_name,
+    metal,
+    size_label,
+    stock_quantity,
+    is_active
+  ),
+  product_images (
+    id,
+    image_url,
+    alt_text,
+    sort_order,
+    is_primary,
+    source
+  )
+`;
 
 function cleanEnvValue(value) {
   const cleanValue = String(value || "").trim();
@@ -241,6 +277,93 @@ function sortImages(left, right) {
   return left.sortOrder - right.sortOrder;
 }
 
+function slugify(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function normalizePublicStringArray(value, separatorPattern = /[\n,]/) {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item || "").trim()).filter(Boolean);
+  }
+
+  return String(value || "")
+    .split(separatorPattern)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function readPublicMetadata(row) {
+  const metadata = row?.metadata;
+
+  return metadata && typeof metadata === "object" && !Array.isArray(metadata)
+    ? metadata
+    : {};
+}
+
+function formatPublicPrice(amount, currency = "THB") {
+  if (amount === null || amount === undefined || amount === "") {
+    return "Price on request";
+  }
+
+  const numericAmount = Number(amount);
+
+  if (!Number.isFinite(numericAmount)) {
+    return "Price on request";
+  }
+
+  return `${numericAmount.toLocaleString("en-US")} ${currency || "THB"}`;
+}
+
+function normalizePublicGallery(images, productName) {
+  return images
+    .filter((image) => image.imageUrl)
+    .map((image, index) => ({
+      id: image.id,
+      label: image.isPrimary ? "Primary View" : `View ${index + 1}`,
+      src: image.imageUrl,
+      alt: image.altText || `${productName} view ${index + 1}`,
+      sortOrder: image.sortOrder,
+      isPrimary: image.isPrimary
+    }));
+}
+
+function getPublicFilterValues(row, metadata) {
+  const metadataFilters = metadata.filterValues ?? metadata.filter_values;
+  const filters = normalizePublicStringArray(metadataFilters, /[\n,|]/);
+
+  if (filters.length) {
+    return Array.from(new Set(filters));
+  }
+
+  return Array.from(new Set([
+    row.material,
+    row.gold_color
+  ].map((item) => slugify(item)).filter(Boolean)));
+}
+
+function getPublicStockState(row, availableQuantity, metadata) {
+  const metadataStockState = String(metadata.stockState || metadata.stock_state || metadata.availability || "").trim().toLowerCase();
+
+  if (metadataStockState === "preorder" || metadataStockState === "pre-order") {
+    return "preorder";
+  }
+
+  if (availableQuantity <= 0) {
+    return "sold-out";
+  }
+
+  if (availableQuantity <= 2) {
+    return "low-stock";
+  }
+
+  return "available";
+}
+
 function normalizeProduct(row) {
   const variants = Array.isArray(row.product_variants)
     ? row.product_variants.map(normalizeVariant)
@@ -273,6 +396,87 @@ function normalizeProduct(row) {
     totalStock: variants.reduce((total, variant) => total + variant.stockQuantity, 0),
     variants,
     images
+  };
+}
+
+function normalizePublicProduct(row) {
+  const metadata = readPublicMetadata(row);
+  const images = Array.isArray(row.product_images)
+    ? row.product_images.map(normalizeImage).sort(sortImages)
+    : [];
+  const gallery = normalizePublicGallery(images, row.name_en || row.product_code || "Product");
+  const primaryImage = gallery[0] || null;
+  const hoverImage = gallery[1] || primaryImage;
+  const stockQuantity = Number(row.stock_quantity) || 0;
+  const reservedQuantity = Number(row.reserved_quantity) || 0;
+  const availableQuantity = Math.max(0, stockQuantity - reservedQuantity);
+  const currency = row.currency || "THB";
+  const name = row.name_en || row.product_code || "";
+  const details = normalizePublicStringArray(metadata.details || metadata.detailLines || metadata.detail_lines);
+
+  return {
+    id: row.id,
+    code: row.product_code || "",
+    slug: row.slug || slugify(row.product_code || name),
+    title: String(metadata.title || row.product_code || name || "").trim(),
+    name,
+    nameTh: row.name_th || "",
+    collectionKey: row.collection || slugify(row.category),
+    category: row.category || "",
+    description: row.description || metadata.description || "",
+    details,
+    price: formatPublicPrice(row.price_amount, currency),
+    priceAmount: row.price_amount === null || row.price_amount === undefined ? null : Number(row.price_amount),
+    currency,
+    status: "active",
+    stockState: getPublicStockState(row, availableQuantity, metadata),
+    availableQuantity,
+    image: primaryImage?.src || "",
+    hover: hoverImage?.src || primaryImage?.src || "",
+    gallery,
+    filterValues: getPublicFilterValues(row, metadata),
+    imagePresentation: metadata.imagePresentation || metadata.image_presentation || "",
+    updatedAt: row.updated_at || null
+  };
+}
+
+export async function readPublicCatalogueProducts({ env = process.env, client, limit = 100 } = {}) {
+  const config = getSupabaseAdminConfig(env);
+  const checkedAt = new Date().toISOString();
+
+  if (!config.isConfigured) {
+    return {
+      source: "supabase",
+      status: "unavailable",
+      error: "Supabase catalogue is not configured.",
+      missingEnv: config.missingEnv,
+      checkedAt,
+      productCount: 0,
+      products: []
+    };
+  }
+
+  const supabase = client || createSupabaseAdminClient(env);
+  const { data, error } = await supabase
+    .from("products")
+    .select(PUBLIC_CATALOGUE_SELECT)
+    .eq("is_active", true)
+    .eq("status", "active")
+    .order("updated_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    throw new Error(error.message || "Supabase public catalogue products could not be loaded.");
+  }
+
+  const products = Array.isArray(data) ? data.map(normalizePublicProduct) : [];
+
+  return {
+    source: "supabase",
+    status: products.length ? "ready" : "empty",
+    checkedAt,
+    productCount: products.length,
+    products
   };
 }
 
