@@ -47,6 +47,7 @@ const marisBaseCollectionProducts = {};
 
 (() => {
   const googleSheetSourceUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQfntxK3qZhO4cfHkqlFtpY5kP7M3xLLzTkjkH6kTPkfJNdl5rgmGDozfyM3OTMBzo9WS0aXbF4U8Xr/pub?output=csv";
+  const publicCatalogueApiUrl = "/api/catalogue/products";
   const marisSheetColumnSchema = [
     { header: "ID", key: "id", aliases: ["sku", "stock_id"] },
     { header: "Collection", key: "collection", aliases: ["category", "page_category"] },
@@ -1133,27 +1134,57 @@ const marisBaseCollectionProducts = {};
       .filter(Boolean);
   }
 
-  async function fetchGoogleSheetProducts(baseProducts) {
+  function normalizeApiProduct(product) {
+    return normalizeProductRecord({
+      code: product.code,
+      title: product.title || product.code || product.name,
+      name: product.name || product.title || product.code,
+      nameTh: product.nameTh || "",
+      collectionKey: product.collectionKey || mapCollectionAlias(product.category),
+      category: product.category || "",
+      description: product.description || "",
+      details: Array.isArray(product.details) ? product.details : [],
+      price: product.price || "Price on request",
+      image: product.image || "",
+      hover: product.hover || product.image || "",
+      gallery: Array.isArray(product.gallery) ? product.gallery : [],
+      filterValues: Array.isArray(product.filterValues) ? product.filterValues : [],
+      imagePresentation: product.imagePresentation || "",
+      stockState: product.stockState || "",
+      availableQuantity: product.availableQuantity,
+      updatedAt: product.updatedAt || ""
+    });
+  }
+
+  async function fetchPublicCatalogueProducts() {
     try {
-      const response = await fetch(googleSheetCsvUrl, {
+      const response = await fetch(publicCatalogueApiUrl, {
         method: "GET",
         cache: "no-store"
       });
 
       if (!response.ok) {
-        throw new Error(`Sheet request failed with ${response.status}`);
+        throw new Error(`Catalogue request failed with ${response.status}`);
       }
 
-      const csvText = await response.text();
+      const payload = await response.json();
+      const products = Array.isArray(payload.products)
+        ? payload.products.map((product) => normalizeApiProduct(product)).filter(Boolean)
+        : [];
+
       return {
-        products: buildSheetProductsFromCsv(csvText, baseProducts),
-        status: "ready"
+        products,
+        status: payload.status || (products.length ? "ready" : "empty"),
+        source: payload.source || "supabase",
+        checkedAt: payload.checkedAt || new Date().toISOString()
       };
     } catch (error) {
-      console.warn("Maris Google Sheet feed could not be loaded.", error);
+      console.warn("Maris Supabase catalogue could not be loaded.", error);
       return {
         products: [],
-        status: "error"
+        status: "error",
+        source: "supabase",
+        checkedAt: new Date().toISOString()
       };
     }
   }
@@ -1169,17 +1200,16 @@ const marisBaseCollectionProducts = {};
     window.MARIS_BASE_COLLECTION_PRODUCTS = Object.fromEntries(
       Object.entries(marisBaseCollectionProducts).map(([key, codes]) => [key, [...codes]])
     );
-    window.MARIS_SHEET_PRODUCTS = sheetProducts;
+    window.MARIS_SHEET_PRODUCTS = Array.isArray(options.sheetProducts) ? options.sheetProducts : [];
     window.MARIS_COLLECTION_META = { ...marisBaseCollectionMeta };
     window.MARIS_PRODUCTS = mergeProducts(activeBaseProducts, overrideProducts);
     window.MARIS_COLLECTION_PRODUCTS = mergeCollectionProducts(baseCollectionProducts, overrideProducts);
   }
 
-  const googleSheetCsvUrl = resolveGoogleSheetCsvUrl(googleSheetSourceUrl);
   const normalizedBaseProducts = marisBaseProducts.map((product) => normalizeProductRecord(product)).filter(Boolean);
 
-  window.MARIS_GOOGLE_SHEET_SOURCE_URL = googleSheetSourceUrl;
-  window.MARIS_GOOGLE_SHEET_URL = googleSheetCsvUrl;
+  window.MARIS_GOOGLE_SHEET_SOURCE_URL = "";
+  window.MARIS_GOOGLE_SHEET_URL = "";
   window.MARIS_SHEET_COLUMN_SCHEMA = marisSheetColumnSchema.map((column) => ({ ...column }));
   window.MARIS_SHEET_SCHEMA = {
     canonicalColumns: window.MARIS_SHEET_COLUMN_SCHEMA,
@@ -1192,51 +1222,51 @@ const marisBaseCollectionProducts = {};
   };
   window.MARIS_SHEET_HEADERS = [];
   window.MARIS_SHEET_STATUS = {
-    source: "google-sheet",
+    source: "supabase",
     status: "loading",
-    sheetUrl: googleSheetCsvUrl,
+    sheetUrl: "",
     sheetProductCount: 0,
     productCount: normalizedBaseProducts.length,
     updatedAt: new Date().toISOString()
   };
   applyCatalogueState(normalizedBaseProducts, []);
-  window.MARIS_DATA_READY = fetchGoogleSheetProducts(normalizedBaseProducts)
-    .then(({ products: sheetProducts, status }) => {
-      applyCatalogueState(normalizedBaseProducts, sheetProducts, {
-        preferSheetProducts: status === "ready"
+  window.MARIS_DATA_READY = fetchPublicCatalogueProducts()
+    .then(({ products: apiProducts, status, source, checkedAt }) => {
+      applyCatalogueState(normalizedBaseProducts, apiProducts, {
+        preferSheetProducts: status === "ready" || status === "empty"
       });
       window.MARIS_SHEET_STATUS = {
-        source: status === "ready" ? "google-sheet" : "fallback",
+        source,
         status,
-        sheetUrl: googleSheetCsvUrl,
-        sheetProductCount: sheetProducts.length,
+        sheetUrl: "",
+        sheetProductCount: 0,
         productCount: window.MARIS_PRODUCTS.length,
-        updatedAt: new Date().toISOString()
+        updatedAt: checkedAt || new Date().toISOString()
       };
       window.dispatchEvent(new CustomEvent("maris:catalogue-data-updated", {
         detail: {
-          source: status === "ready" ? "google-sheet" : "fallback",
+          source,
           status,
-          sheetUrl: googleSheetCsvUrl,
-          sheetProductCount: sheetProducts.length,
+          sheetUrl: "",
+          sheetProductCount: 0,
           productCount: window.MARIS_PRODUCTS.length
         }
       }));
     })
     .catch(() => {
       window.MARIS_SHEET_STATUS = {
-        source: "fallback",
+        source: "supabase",
         status: "error",
-        sheetUrl: googleSheetCsvUrl,
+        sheetUrl: "",
         sheetProductCount: 0,
         productCount: window.MARIS_PRODUCTS.length,
         updatedAt: new Date().toISOString()
       };
       window.dispatchEvent(new CustomEvent("maris:catalogue-data-updated", {
         detail: {
-          source: "fallback",
+          source: "supabase",
           status: "error",
-          sheetUrl: googleSheetCsvUrl,
+          sheetUrl: "",
           sheetProductCount: 0,
           productCount: window.MARIS_PRODUCTS.length
         }
