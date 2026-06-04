@@ -962,6 +962,7 @@
     "Back Office Prototype": "ต้นแบบระบบหลังบ้าน",
     "Maris Admin": "Maris Admin",
     "View Storefront": "ดูหน้าร้าน",
+    "Log Out": "ออกจากระบบ",
     "Admin navigation": "เมนูหลังบ้าน",
     "Dashboard": "แดชบอร์ด",
     "Products": "สินค้า",

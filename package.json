@@ -1,0 +1,34 @@
+{
+  "name": "maris-jewelry",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "npm@11.12.1",
+  "engines": {
+    "node": ">=20.9.0"
+  },
+  "scripts": {
+    "sync:legacy": "node scripts/sync-legacy-public.mjs",
+    "check:sheet-images": "node scripts/check-sheet-images.mjs",
+    "test:admin-auth": "node scripts/test-admin-auth.mjs",
+    "test:admin-database-auth": "node scripts/test-admin-database-auth.mjs",
+    "test:admin-clarity": "node scripts/test-admin-clarity.mjs",
+    "test:database": "node scripts/test-supabase-admin-database.mjs",
+    "test:database:live": "node scripts/test-supabase-admin-database-live.mjs",
+    "test:sheet-images": "node scripts/test-sheet-image-checker.mjs",
+    "predev": "node scripts/sync-legacy-public.mjs",
+    "dev": "next dev",
+    "prebuild": "npm run check:sheet-images && node scripts/sync-legacy-public.mjs",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.106.2",
+    "next": "16.2.6",
+    "react": "19.2.6",
+    "react-dom": "19.2.6"
+  },
+  "overrides": {
+    "postcss": "^8.5.15"
+  }
+}

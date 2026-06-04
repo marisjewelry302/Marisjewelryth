@@ -8,8 +8,13 @@ docs/archive/backups/*.backup-*
 
 # Local dependencies and logs
 node_modules/
+.next/
+public/
 *.log
 *.err
+.env
+.env.local
+.env*.local
 
 # OS cruft
 Thumbs.db

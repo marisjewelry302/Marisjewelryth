@@ -1,80 +1,55 @@
-# Maris Jewelry Soft Launch
+# Maris Jewelry Vercel Deploy
 
-This project is ready for a static soft launch as a public catalogue site.
+This project now runs as a Next.js app for Vercel.
+
+The repository root is the only deployable Next.js app. Do not point Vercel at a nested scaffold or create a second app folder for Maris site work.
 
 ## Before You Publish
 
-1. Choose your hosting:
-   - Cloudflare Pages
-   - Netlify
-2. Prepare your public domain.
-3. Replace `https://www.your-domain.com` in [sitemap.xml](./sitemap.xml) with your real domain.
-4. Open the homepage, category pages, product page, and 404 page on desktop and mobile once before publishing.
+1. Confirm `npm run check:sheet-images` passes, or run `npm run build` which calls it automatically.
+2. Confirm `npm run build` passes locally.
+3. Replace `https://www.your-domain.com` in [sitemap.xml](./sitemap.xml) with the production domain.
+4. Open the homepage, category pages, product page, and 404 page on desktop and mobile before promoting production.
+5. Confirm contact details, social links, quote request flow, wishlist, and shopping bag behavior.
 
-## Fastest Option: Netlify Manual Deploy
+## Vercel Git Workflow
 
-1. Create a Netlify account.
-2. In Netlify, choose `Add new site` then `Deploy manually`.
-3. Drag the whole project folder into Netlify.
-4. After the first deploy, you will get a public `*.netlify.app` URL.
-5. Add your real domain in Netlify domain settings when you are ready.
+1. Push the repository to GitHub.
+2. In Vercel, choose `Add New Project` and import the repository.
+3. Set the root directory to the repository root.
+4. Vercel should auto-detect Next.js. This repo also includes `vercel.json` so the build stays pinned to the intended root Next.js app.
+5. Keep the default settings:
+   - Framework preset: `Next.js`
+   - Install command: `npm ci`
+   - Build command: `npm run build`
+   - Output directory: leave default
+6. Every branch or pull request gets a Preview Deployment.
+7. Merging to `main` creates the Production Deployment.
 
-## Best Long-Term Option: Cloudflare Pages
+## How The Legacy Site Builds
 
-1. Push this project to GitHub.
-2. Create a Cloudflare account and open Pages.
-3. Create a new project and connect the GitHub repository.
-4. Use these settings:
-   - Framework preset: `None`
-   - Build command: leave blank
-   - Output directory: `/`
-5. Deploy the project.
-6. Add your custom domain in the Pages project settings.
+The HTML/CSS/JS site is still stored in the root `index.html`, `pages/`, and `assets/` folders. Before `next dev` and `next build`, `scripts/sync-legacy-public.mjs` copies the public site surface into `public/`.
 
-## Run On Linux
+The generated `public/` folder is ignored by git. Vercel regenerates it during `npm run build`.
 
-### Quick local preview
+`next.config.mjs` also sets production cache headers for legacy image, CSS, and JS assets. The cache values stay conservative because these files are not fingerprinted yet.
 
-If you only want to preview the site on a Linux machine, run:
+## Local Commands
 
-```bash
-cd maris-jewelry
-python3 -m http.server 8080
+```powershell
+npm ci
+npm run dev
+npm run check:sheet-images
+npm run build
 ```
 
-Then open [http://localhost:8080](http://localhost:8080).
+If this Windows machine cannot find `npm` or `node`, use:
 
-### Docker + Nginx
-
-This project now includes a `Dockerfile` and an `nginx` config so you can run it on a Linux server or VPS without adding a build step.
-
-```bash
-cd maris-jewelry
-docker build -t maris-jewelry .
-docker run --rm -p 8080:80 maris-jewelry
+```powershell
+.\tools\start-next-dev.cmd
+.\tools\build-next.cmd
 ```
-
-Then open [http://localhost:8080](http://localhost:8080).
-
-### Plain Nginx on Linux
-
-If you already manage your own Nginx server, copy the project files to your web root and use the config in [nginx/default.conf](./nginx/default.conf) as the site server block base.
-
-Important:
-
-1. Keep filenames and links exactly the same letter case when moving to Linux.
-2. Upload the whole project root, including `assets`, `pages`, `404.html`, `manifest.webmanifest`, and `sitemap.xml`.
-3. Make sure your server serves UTF-8 filenames correctly because some catalogue assets use Thai characters in the filename.
-
-## Soft Launch Checklist
-
-1. Check that all social links open correctly.
-2. Check that category pages, product page, wishlist, and bag links work as expected.
-3. Confirm that contact email and phone number are correct.
-4. Confirm that all placeholder pages you do not want public are hidden or removed.
-5. Decide which pages should stay public and which should remain blocked from search.
 
 ## Important Note
 
-This site is launch-ready as a public brand and catalogue website.
-It is not yet ready for full ecommerce operations because account, cart, stock, checkout, payment, and order handling still need a real backend.
+This site is launch-ready as a public brand and catalogue website. It is not yet a full ecommerce backend: account, cart persistence, stock, checkout, payment, and order handling still need production services.

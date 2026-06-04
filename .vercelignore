@@ -1,0 +1,16 @@
+.git/
+.next/
+node_modules/
+public/
+
+docs/runtime/
+docs/screenshots/
+docs/temp-previews/
+outputs/
+nginx/
+
+assets/images/home/archive/
+*.log
+*.err
+Thumbs.db
+.DS_Store

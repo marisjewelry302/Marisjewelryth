@@ -1,10 +1,8 @@
 (() => {
-  const productsKey = "marisAdminProducts";
-  const logsKey = "marisInventoryLogs";
-  const ordersKey = "marisAdminOrders";
-  const settingsKey = "marisAdminSettings";
-  const publishedCatalogueKey = "marisPublishedCatalogueProducts";
   const collectionMeta = window.MARIS_COLLECTION_META || {};
+  const settingsState = {
+    lowStockThreshold: 2
+  };
 
   const elements = {
     panels: Array.from(document.querySelectorAll("[data-admin-panel]")),
@@ -15,49 +13,46 @@
     orderForm: document.querySelector("[data-order-form]"),
     settingsForm: document.querySelector("[data-settings-form]"),
     productsTable: document.querySelector("[data-products-table]"),
-    publishedCatalogueTable: document.querySelector("[data-published-catalogue-table]"),
+    catalogueDraftTable: document.querySelector("[data-catalogue-draft-table]"),
     logsTable: document.querySelector("[data-inventory-log-table]"),
     ordersTable: document.querySelector("[data-orders-table]"),
     productSelect: document.querySelector("[data-product-select]"),
     orderProductSelect: document.querySelector("[data-order-product-select]"),
     message: document.querySelector("[data-admin-message]"),
     resetDemo: document.querySelector("[data-reset-demo]"),
-    publishedCount: document.querySelector("[data-published-count]"),
+    catalogueDraftCount: document.querySelector("[data-catalogue-draft-count]"),
     sheetStatus: document.querySelector("[data-sheet-status]"),
     sheetProductCount: document.querySelector("[data-sheet-product-count]"),
     sheetProductCountInline: document.querySelector("[data-sheet-product-count-inline]"),
     sheetLastSync: document.querySelector("[data-sheet-last-sync]"),
     sheetFeedLinks: Array.from(document.querySelectorAll("[data-sheet-feed-link], [data-sheet-feed-link-inline]")),
     sheetCatalogueTable: document.querySelector("[data-sheet-catalogue-table]"),
+    databaseStatus: document.querySelector("[data-database-status]"),
+    databaseProject: document.querySelector("[data-database-project]"),
+    databaseChecked: document.querySelector("[data-database-checked]"),
+    databaseSummary: document.querySelector("[data-database-summary]"),
+    databaseTableStatus: document.querySelector("[data-database-table-status]"),
+    databaseProductsSummary: document.querySelector("[data-database-products-summary]"),
+    databaseProductsTable: document.querySelector("[data-database-products-table]"),
     totalProducts: document.querySelector("[data-total-products]"),
     totalStock: document.querySelector("[data-total-stock]"),
     totalReserved: document.querySelector("[data-total-reserved]"),
     lowStock: document.querySelector("[data-low-stock]")
   };
 
-  const categoryNames = {
-    ER: "Engagement ring - แหวนหมั้น",
-    DR: "Engagement Rings",
-    WS: "Wedding set - แหวนแต่งงาน",
-    WB: "Wedding band - แหวนแถว",
-    MB: "Men's Wedding Bands",
-    NP: "Necklaces & Pendants",
-    BR: "Bracelets",
-    EA: "Earrings",
-    RG: "Rings"
+  let databaseStatusState = {
+    isLoading: true,
+    isConfigured: false,
+    missingEnv: [],
+    tables: []
   };
 
-  function readJson(key, fallback) {
-    try {
-      return JSON.parse(localStorage.getItem(key)) || fallback;
-    } catch (error) {
-      return fallback;
-    }
-  }
-
-  function writeJson(key, value) {
-    localStorage.setItem(key, JSON.stringify(value));
-  }
+  let databaseCatalogueState = {
+    isLoading: true,
+    isConfigured: false,
+    missingEnv: [],
+    products: []
+  };
 
   function escapeHtml(value) {
     return String(value)
@@ -68,53 +63,83 @@
       .replaceAll("'", "&#039;");
   }
 
-  function getPrefix(code) {
-    return String(code).match(/^[A-Z]+/)?.[0] || "MR";
-  }
+  const ADMIN_API_PREFIX = "/api/admin";
+  const adminCache = {
+    products: [],
+    orders: [],
+    logs: [],
+    isLoading: true,
+    isReady: false,
+    error: ""
+  };
 
-  function getDefaultStock(product, index) {
-    if (product.code.startsWith("ER") || product.code.startsWith("DR")) {
-      return index < 8 ? 3 : 2;
+  async function fetchAdminApi(path, options = {}) {
+    const url = `${ADMIN_API_PREFIX}${path}`;
+    const response = await fetch(url, {
+      credentials: "same-origin",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json"
+      },
+      ...options
+    });
+
+    const payload = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      const error = new Error(payload.error || `API request failed with HTTP ${response.status}.`);
+      error.status = response.status;
+      error.payload = payload;
+      throw error;
     }
 
-    return 4;
+    return payload;
   }
 
-  function buildSeedProducts() {
-    const activeProducts = Array.isArray(window.MARIS_PRODUCTS) ? window.MARIS_PRODUCTS : [];
-    const sheetProducts = Array.isArray(window.MARIS_SHEET_PRODUCTS) ? window.MARIS_SHEET_PRODUCTS : [];
-    const merged = new Map();
+  async function loadAdminBackendData() {
+    adminCache.isLoading = true;
+    adminCache.error = "";
 
-    (activeProducts.length ? activeProducts : sheetProducts).forEach((product) => {
-      if (product?.code) {
-        merged.set(product.code, product);
-      }
-    });
+    try {
+      const [productsPayload, ordersPayload, logsPayload] = await Promise.all([
+        fetchAdminApi("/products"),
+        fetchAdminApi("/orders"),
+        fetchAdminApi("/inventory-logs")
+      ]);
 
-    return Array.from(merged.values()).map((product, index) => {
-      const prefix = getPrefix(product.code);
-      const stockQty = getDefaultStock(product, index);
-      const category = product.collectionKey ? getCollectionLabel(product.collectionKey) : (categoryNames[prefix] || "Fine Jewelry");
+      adminCache.products = Array.isArray(productsPayload.products) ? productsPayload.products : [];
+      adminCache.orders = Array.isArray(ordersPayload.orders) ? ordersPayload.orders : [];
+      adminCache.logs = Array.isArray(logsPayload.logs) ? logsPayload.logs : [];
+      adminCache.isReady = true;
+    } catch (error) {
+      adminCache.products = [];
+      adminCache.orders = [];
+      adminCache.logs = [];
+      adminCache.isReady = false;
+      adminCache.error = error instanceof Error ? error.message : "Supabase admin data could not be loaded.";
+    } finally {
+      adminCache.isLoading = false;
+    }
+  }
 
-      return {
-        id: product.code,
-        sku: product.code,
-        name: product.name,
-        category,
-        price: product.price,
-        stockQty,
-        reservedQty: 0,
-        status: stockQty > 0 ? "Ready" : "Sold Out",
-        createdAt: new Date().toISOString()
-      };
-    });
+  function getCachedProducts() {
+    return Array.isArray(adminCache.products) ? adminCache.products : [];
+  }
+
+  function getCachedOrders() {
+    return Array.isArray(adminCache.orders) ? adminCache.orders : [];
+  }
+
+  function getCachedLogs() {
+    return Array.isArray(adminCache.logs) ? adminCache.logs : [];
+  }
+
+  function getStoredSettings() {
+    return { ...settingsState };
   }
 
   function getSettings() {
-    return {
-      lowStockThreshold: 2,
-      ...readJson(settingsKey, {})
-    };
+    return { ...settingsState };
   }
 
   function setMessage(message, isError = false) {
@@ -126,115 +151,61 @@
     elements.message.style.color = isError ? "var(--maris-red)" : "var(--maris-teal)";
   }
 
+  function ensureAdminDataReady() {
+    if (adminCache.isReady) {
+      return true;
+    }
+
+    const message = adminCache.error
+      || "Connect Supabase before saving admin products, inventory, or orders.";
+    setMessage(message, true);
+    return false;
+  }
+
   function readProducts() {
-    const storedProducts = readJson(productsKey, null);
-
-    if (Array.isArray(storedProducts) && storedProducts.length) {
-      return storedProducts;
-    }
-
-    const seedProducts = buildSeedProducts();
-    writeJson(productsKey, seedProducts);
-    return seedProducts;
-  }
-
-  function syncProductsWithSeed() {
-    const storedProducts = readJson(productsKey, null);
-    const seedProducts = buildSeedProducts();
-
-    if (!Array.isArray(storedProducts) || !storedProducts.length) {
-      writeProducts(seedProducts);
-      return seedProducts;
-    }
-
-    const storedById = new Map(storedProducts.map((product) => [product.id, product]));
-    const syncedProducts = [];
-    const seenIds = new Set();
-    let changed = false;
-
-    seedProducts.forEach((seedProduct) => {
-      const existingProduct = storedById.get(seedProduct.id);
-
-      if (!existingProduct) {
-        syncedProducts.push(seedProduct);
-        seenIds.add(seedProduct.id);
-        changed = true;
-        return;
-      }
-
-      const mergedProduct = {
-        ...existingProduct,
-        sku: seedProduct.sku,
-        name: seedProduct.name,
-        category: seedProduct.category,
-        price: seedProduct.price
-      };
-
-      syncedProducts.push(mergedProduct);
-      seenIds.add(seedProduct.id);
-
-      if (
-        mergedProduct.sku !== existingProduct.sku
-        || mergedProduct.name !== existingProduct.name
-        || mergedProduct.category !== existingProduct.category
-        || mergedProduct.price !== existingProduct.price
-      ) {
-        changed = true;
-      }
-    });
-
-    if (changed || syncedProducts.length !== storedProducts.length) {
-      writeProducts(syncedProducts);
-      return syncedProducts;
-    }
-
-    return storedProducts;
-  }
-
-  function writeProducts(products) {
-    writeJson(productsKey, products);
+    return getCachedProducts();
   }
 
   function readLogs() {
-    return readJson(logsKey, []);
-  }
-
-  function writeLogs(logs) {
-    writeJson(logsKey, logs);
+    return getCachedLogs();
   }
 
   function readOrders() {
-    return readJson(ordersKey, []);
+    return getCachedOrders();
   }
 
-  function writeOrders(orders) {
-    writeJson(ordersKey, orders);
-  }
-
-  function readPublishedCatalogueProducts() {
-    return readJson(publishedCatalogueKey, []);
-  }
-
-  function writePublishedCatalogueProducts(products) {
-    writeJson(publishedCatalogueKey, products);
+  function readCatalogueDrafts() {
+    return [];
   }
 
   function getAvailable(product) {
     return Math.max(0, Number(product.stockQty) - Number(product.reservedQty));
   }
 
-  function addLog(product, type, qty, note) {
-    const logs = readLogs();
-    logs.unshift({
-      id: `LOG-${Date.now()}`,
-      productId: product.id,
-      sku: product.sku,
-      type,
-      qty: Number(qty),
-      note: note || "",
-      createdAt: new Date().toISOString()
-    });
-    writeLogs(logs.slice(0, 80));
+  function getProductSku(product) {
+    return product.sku || product.productCode || product.code || product.id || "";
+  }
+
+  function getProductName(product) {
+    return product.name || product.nameEn || product.nameTh || getProductSku(product);
+  }
+
+  function getProductCategory(product) {
+    return product.category || getCollectionLabel(product.collection) || "Fine Jewelry";
+  }
+
+  function getProductPrice(product) {
+    if (product.price) {
+      return product.price;
+    }
+
+    if (product.priceAmount === null || product.priceAmount === undefined) {
+      return "Price on request";
+    }
+
+    const amount = Number(product.priceAmount);
+    const formattedAmount = Number.isFinite(amount) ? amount.toLocaleString() : String(product.priceAmount);
+    return `${formattedAmount} ${product.currency || "THB"}`;
   }
 
   function getMovementLabel(type) {
@@ -258,58 +229,6 @@
     return collectionMeta[collectionKey]?.href || "engagement-ring.html";
   }
 
-  function applyMovement(productId, type, qty, note) {
-    const products = readProducts();
-    const product = products.find((item) => item.id === productId);
-    const amount = Number(qty);
-
-    if (!product || !amount || amount < 1) {
-      return { ok: false, message: "Please choose a product and valid quantity." };
-    }
-
-    if (type === "receive" || type === "return") {
-      product.stockQty += amount;
-    }
-
-    if (type === "reserve") {
-      if (getAvailable(product) < amount) {
-        return { ok: false, message: "Not enough available stock to reserve." };
-      }
-
-      product.reservedQty += amount;
-    }
-
-    if (type === "release") {
-      if (product.reservedQty < amount) {
-        return { ok: false, message: "Reserved stock is lower than this quantity." };
-      }
-
-      product.reservedQty -= amount;
-    }
-
-    if (type === "sale") {
-      if (product.stockQty < amount || product.reservedQty < amount) {
-        return { ok: false, message: "Paid sale needs enough real and reserved stock." };
-      }
-
-      product.stockQty -= amount;
-      product.reservedQty -= amount;
-    }
-
-    if (type === "damage") {
-      if (product.stockQty < amount) {
-        return { ok: false, message: "Real stock is lower than this quantity." };
-      }
-
-      product.stockQty -= amount;
-    }
-
-    product.status = product.stockQty > 0 ? (product.status === "Sold Out" ? "Ready" : product.status) : "Sold Out";
-    writeProducts(products);
-    addLog(product, type, amount, note);
-    return { ok: true, message: "Inventory movement saved." };
-  }
-
   function splitTextareaLines(value) {
     return String(value || "")
       .split(/\r?\n/)
@@ -322,20 +241,6 @@
       .split(/[,\n]/)
       .map((item) => item.trim())
       .filter(Boolean);
-  }
-
-  function serializeLines(items) {
-    return Array.isArray(items) ? items.join("\n") : "";
-  }
-
-  function serializeGallery(gallery) {
-    if (!Array.isArray(gallery) || !gallery.length) {
-      return "";
-    }
-
-    return gallery
-      .map((item) => [item.label || "", item.src || "", item.alt || ""].join(" | "))
-      .join("\n");
   }
 
   function parseGallery(value, fallbackName, fallbackImage, fallbackHover) {
@@ -381,7 +286,7 @@
     return fallbackGallery;
   }
 
-  function buildPublishedProduct(formData) {
+  function buildCatalogueDraft(formData) {
     const code = String(formData.get("code") || "").trim().toUpperCase();
     const collectionKey = String(formData.get("collectionKey") || "").trim();
     const title = String(formData.get("title") || code).trim() || code;
@@ -438,63 +343,6 @@
     };
   }
 
-  function upsertAdminProductFromCatalogue(catalogueProduct, stockQty) {
-    const products = readProducts();
-    const existingProduct = products.find((product) => product.id === catalogueProduct.code);
-    const category = getCollectionLabel(catalogueProduct.collectionKey);
-
-    if (existingProduct) {
-      existingProduct.sku = catalogueProduct.code;
-      existingProduct.name = catalogueProduct.name;
-      existingProduct.category = category;
-      existingProduct.price = catalogueProduct.price;
-      writeProducts(products);
-      return;
-    }
-
-    const product = {
-      id: catalogueProduct.code,
-      sku: catalogueProduct.code,
-      name: catalogueProduct.name,
-      category,
-      price: catalogueProduct.price,
-      stockQty,
-      reservedQty: 0,
-      status: stockQty > 0 ? "Ready" : "Sold Out",
-      createdAt: new Date().toISOString()
-    };
-
-    products.unshift(product);
-    writeProducts(products);
-
-    if (stockQty > 0) {
-      addLog(product, "receive", stockQty, "Initial stock from catalogue publish");
-    }
-  }
-
-  function fillCatalogueForm(product) {
-    if (!elements.catalogueForm) {
-      return;
-    }
-
-    elements.catalogueForm.elements.code.value = product.code || "";
-    elements.catalogueForm.elements.collectionKey.value = product.collectionKey || "engagement-ring";
-    elements.catalogueForm.elements.title.value = product.title || "";
-    elements.catalogueForm.elements.name.value = product.name || "";
-    elements.catalogueForm.elements.description.value = product.description || "";
-    elements.catalogueForm.elements.details.value = serializeLines(product.details);
-    elements.catalogueForm.elements.price.value = product.price || "Price on request";
-    elements.catalogueForm.elements.image.value = product.image || "";
-    elements.catalogueForm.elements.hover.value = product.hover || "";
-    elements.catalogueForm.elements.imagePresentation.value = product.imagePresentation || "";
-    elements.catalogueForm.elements.metal.value = product.metal || "";
-    elements.catalogueForm.elements.style.value = product.style || "";
-    elements.catalogueForm.elements.shape.value = product.shape || "";
-    elements.catalogueForm.elements.filterValues.value = Array.isArray(product.filterValues) ? product.filterValues.join(", ") : "";
-    elements.catalogueForm.elements.gallery.value = serializeGallery(product.gallery);
-    elements.catalogueForm.elements.catalogueStockQty.value = "1";
-  }
-
   function renderStats() {
     const products = readProducts();
     const settings = getSettings();
@@ -511,31 +359,46 @@
   function renderSelects() {
     const products = readProducts();
     const options = products
-      .map((product) => `<option value="${escapeHtml(product.id)}">${escapeHtml(product.sku)} - ${escapeHtml(product.name)} (${getAvailable(product)} available)</option>`)
+      .map((product) => `<option value="${escapeHtml(product.id)}">${escapeHtml(getProductSku(product))} - ${escapeHtml(getProductName(product))} (${getAvailable(product)} available)</option>`)
       .join("");
+    const fallback = adminCache.isLoading
+      ? `<option value="">Loading Supabase products...</option>`
+      : `<option value="">No Supabase products available</option>`;
 
     if (elements.productSelect) {
-      elements.productSelect.innerHTML = options;
+      elements.productSelect.innerHTML = options || fallback;
     }
 
     if (elements.orderProductSelect) {
-      elements.orderProductSelect.innerHTML = options;
+      elements.orderProductSelect.innerHTML = options || fallback;
     }
   }
 
   function renderProductsTable() {
     const settings = getSettings();
-    const rows = readProducts()
+    const products = readProducts();
+
+    if (adminCache.isLoading) {
+      elements.productsTable.innerHTML = `<tr><td colspan="8">Loading Supabase products...</td></tr>`;
+      return;
+    }
+
+    if (!adminCache.isReady) {
+      elements.productsTable.innerHTML = `<tr><td colspan="8">${escapeHtml(adminCache.error || "Connect Supabase before managing admin products.")}</td></tr>`;
+      return;
+    }
+
+    const rows = products
       .map((product) => {
         const available = getAvailable(product);
         const stockClass = available <= settings.lowStockThreshold ? "stock-low" : "stock-ok";
 
         return `
           <tr>
-            <td><strong>${escapeHtml(product.sku)}</strong></td>
-            <td>${escapeHtml(product.name)}</td>
-            <td>${escapeHtml(product.category)}</td>
-            <td>${escapeHtml(product.price || "Price on request")}</td>
+            <td><strong>${escapeHtml(getProductSku(product))}</strong></td>
+            <td>${escapeHtml(getProductName(product))}</td>
+            <td>${escapeHtml(getProductCategory(product))}</td>
+            <td>${escapeHtml(getProductPrice(product))}</td>
             <td>${product.stockQty}</td>
             <td>${product.reservedQty}</td>
             <td class="${stockClass}">${available}</td>
@@ -545,21 +408,21 @@
       })
       .join("");
 
-    elements.productsTable.innerHTML = rows;
+    elements.productsTable.innerHTML = rows || `<tr><td colspan="8">No Supabase products yet.</td></tr>`;
   }
 
-  function renderPublishedCatalogueTable() {
-    if (!elements.publishedCatalogueTable) {
+  function renderCatalogueDraftTable() {
+    if (!elements.catalogueDraftTable) {
       return;
     }
 
-    const publishedProducts = readPublishedCatalogueProducts();
+    const catalogueDrafts = readCatalogueDrafts();
 
-    if (elements.publishedCount) {
-      elements.publishedCount.textContent = String(publishedProducts.length);
+    if (elements.catalogueDraftCount) {
+      elements.catalogueDraftCount.textContent = String(catalogueDrafts.length);
     }
 
-    const rows = publishedProducts
+    const rows = catalogueDrafts
       .map((product) => {
         const href = `product.html?collection=${encodeURIComponent(product.collectionKey || "engagement-ring")}&id=${encodeURIComponent(product.code)}`;
 
@@ -575,8 +438,8 @@
             <td>${Array.isArray(product.gallery) ? product.gallery.length : 0}</td>
             <td>
               <div class="admin-row-actions">
-                <button type="button" data-catalogue-edit="${escapeHtml(product.code)}">Edit</button>
-                <button type="button" data-catalogue-delete="${escapeHtml(product.code)}">Unpublish</button>
+                <button type="button" data-catalogue-draft-edit="${escapeHtml(product.code)}">Edit</button>
+                <button type="button" data-catalogue-draft-delete="${escapeHtml(product.code)}">Remove Draft</button>
                 <a class="admin-secondary" href="${href}" target="_blank" rel="noopener noreferrer">Preview</a>
               </div>
             </td>
@@ -585,7 +448,7 @@
       })
       .join("");
 
-    elements.publishedCatalogueTable.innerHTML = rows || `<tr><td colspan="6">No published catalogue items yet.</td></tr>`;
+    elements.catalogueDraftTable.innerHTML = rows || `<tr><td colspan="6">Browser-local catalogue drafts have been retired. Use Supabase product saving instead.</td></tr>`;
   }
 
   function formatSyncTimestamp(value) {
@@ -682,17 +545,263 @@
     elements.sheetCatalogueTable.innerHTML = rows;
   }
 
-  function renderLogsTable() {
-    const rows = readLogs()
-      .map((log) => `
+  function getDatabaseStatusLabel() {
+    if (databaseStatusState.isLoading) {
+      return "Checking...";
+    }
+
+    if (databaseStatusState.error) {
+      return "Check failed";
+    }
+
+    if (!databaseStatusState.isConfigured) {
+      return "Needs env";
+    }
+
+    const tables = Array.isArray(databaseStatusState.tables) ? databaseStatusState.tables : [];
+    const hasTableErrors = tables.some((table) => !table.isReachable);
+
+    return hasTableErrors ? "Partial access" : "Connected";
+  }
+
+  function renderDatabaseStatus() {
+    if (!elements.databaseTableStatus) {
+      return;
+    }
+
+    const tables = Array.isArray(databaseStatusState.tables) ? databaseStatusState.tables : [];
+    const missingEnv = Array.isArray(databaseStatusState.missingEnv) ? databaseStatusState.missingEnv : [];
+    const statusLabel = getDatabaseStatusLabel();
+    const state = databaseStatusState.isLoading
+      ? "loading"
+      : databaseStatusState.error || !databaseStatusState.isConfigured || tables.some((table) => !table.isReachable)
+        ? "error"
+        : "ready";
+
+    if (elements.databaseStatus) {
+      elements.databaseStatus.textContent = statusLabel;
+      elements.databaseStatus.dataset.databaseState = state;
+    }
+
+    if (elements.databaseProject) {
+      elements.databaseProject.textContent = databaseStatusState.projectRef || "-";
+    }
+
+    if (elements.databaseChecked) {
+      elements.databaseChecked.textContent = formatSyncTimestamp(databaseStatusState.checkedAt);
+    }
+
+    if (elements.databaseSummary) {
+      if (databaseStatusState.isLoading) {
+        elements.databaseSummary.textContent = "Checking Supabase through the protected admin API.";
+      } else if (databaseStatusState.error) {
+        elements.databaseSummary.textContent = databaseStatusState.error;
+      } else if (!databaseStatusState.isConfigured) {
+        elements.databaseSummary.textContent = `Set ${missingEnv.join(" and ")} before using the shared database.`;
+      } else {
+        elements.databaseSummary.textContent = "Server-side Supabase connection is available for the next CRUD step.";
+      }
+    }
+
+    if (databaseStatusState.isLoading) {
+      elements.databaseTableStatus.innerHTML = `<tr><td colspan="4">Checking database tables...</td></tr>`;
+      return;
+    }
+
+    if (databaseStatusState.error) {
+      elements.databaseTableStatus.innerHTML = `<tr><td colspan="4">${escapeHtml(databaseStatusState.error)}</td></tr>`;
+      return;
+    }
+
+    if (!databaseStatusState.isConfigured) {
+      elements.databaseTableStatus.innerHTML = `<tr><td colspan="4">Missing environment variables: ${escapeHtml(missingEnv.join(", "))}</td></tr>`;
+      return;
+    }
+
+    elements.databaseTableStatus.innerHTML = tables
+      .map((table) => `
         <tr>
-          <td>${new Date(log.createdAt).toLocaleString()}</td>
-          <td><strong>${escapeHtml(log.sku)}</strong></td>
-          <td>${escapeHtml(getMovementLabel(log.type))}</td>
-          <td>${log.qty}</td>
-          <td>${escapeHtml(log.note || "-")}</td>
+          <td><strong>${escapeHtml(table.name)}</strong></td>
+          <td class="${table.isReachable ? "stock-ok" : "stock-low"}">${table.isReachable ? "Reachable" : "Needs attention"}</td>
+          <td>${table.rowCount === null || table.rowCount === undefined ? "-" : escapeHtml(table.rowCount)}</td>
+          <td>${escapeHtml(table.error || "Ready for server-side admin workflows")}</td>
         </tr>
       `)
+      .join("");
+  }
+
+  async function loadDatabaseStatus() {
+    if (!elements.databaseTableStatus) {
+      return;
+    }
+
+    renderDatabaseStatus();
+
+    try {
+      const response = await fetch("/api/admin/database/status", {
+        credentials: "same-origin",
+        headers: {
+          Accept: "application/json"
+        }
+      });
+      const payload = await response.json().catch(() => ({}));
+
+      databaseStatusState = {
+        isLoading: false,
+        ...payload,
+        error: !response.ok && response.status !== 503
+          ? (payload.error || `Database status request failed with HTTP ${response.status}.`)
+          : null
+      };
+    } catch (error) {
+      databaseStatusState = {
+        isLoading: false,
+        isConfigured: false,
+        missingEnv: [],
+        tables: [],
+        error: error instanceof Error ? error.message : "Database status request failed."
+      };
+    }
+
+    renderDatabaseStatus();
+  }
+
+  function formatDatabasePrice(product) {
+    if (product.priceAmount === null || product.priceAmount === undefined) {
+      return "Price on request";
+    }
+
+    const amount = Number(product.priceAmount);
+    const formattedAmount = Number.isFinite(amount) ? amount.toLocaleString() : String(product.priceAmount);
+
+    return `${formattedAmount} ${product.currency || "THB"}`;
+  }
+
+  function renderDatabaseProducts() {
+    if (!elements.databaseProductsTable) {
+      return;
+    }
+
+    const products = Array.isArray(databaseCatalogueState.products) ? databaseCatalogueState.products : [];
+    const missingEnv = Array.isArray(databaseCatalogueState.missingEnv) ? databaseCatalogueState.missingEnv : [];
+
+    if (elements.databaseProductsSummary) {
+      if (databaseCatalogueState.isLoading) {
+        elements.databaseProductsSummary.textContent = "Checking Supabase products through the protected admin API.";
+      } else if (databaseCatalogueState.error) {
+        elements.databaseProductsSummary.textContent = databaseCatalogueState.error;
+      } else if (!databaseCatalogueState.isConfigured) {
+        elements.databaseProductsSummary.textContent = `Set ${missingEnv.join(" and ")} before reading products from Supabase.`;
+      } else {
+        elements.databaseProductsSummary.textContent = `${products.length} Supabase products loaded read-only. Google Sheet still drives the live storefront.`;
+      }
+    }
+
+    if (databaseCatalogueState.isLoading) {
+      elements.databaseProductsTable.innerHTML = `<tr><td colspan="8">Checking Supabase products...</td></tr>`;
+      return;
+    }
+
+    if (databaseCatalogueState.error) {
+      elements.databaseProductsTable.innerHTML = `<tr><td colspan="8">${escapeHtml(databaseCatalogueState.error)}</td></tr>`;
+      return;
+    }
+
+    if (!databaseCatalogueState.isConfigured) {
+      elements.databaseProductsTable.innerHTML = `<tr><td colspan="8">Missing environment variables: ${escapeHtml(missingEnv.join(", "))}</td></tr>`;
+      return;
+    }
+
+    const rows = products
+      .map((product) => {
+        const imageLink = product.primaryImageUrl
+          ? `<a class="admin-link-inline" href="${escapeHtml(product.primaryImageUrl)}" target="_blank" rel="noopener noreferrer">Open image</a>`
+          : "-";
+
+        return `
+          <tr>
+            <td><strong>${escapeHtml(product.productCode || product.id)}</strong></td>
+            <td>
+              <strong>${escapeHtml(product.nameEn || product.nameTh || product.productCode)}</strong>
+              <div>${escapeHtml(product.category || "-")}</div>
+            </td>
+            <td class="${product.isActive ? "stock-ok" : "stock-low"}">${escapeHtml(product.status || "draft")}</td>
+            <td>${escapeHtml(formatDatabasePrice(product))}</td>
+            <td>${escapeHtml(product.variantCount || 0)}</td>
+            <td>${escapeHtml(product.imageCount || 0)}</td>
+            <td>${escapeHtml(product.totalStock || 0)}</td>
+            <td>${imageLink}</td>
+          </tr>
+        `;
+      })
+      .join("");
+
+    elements.databaseProductsTable.innerHTML = rows || `<tr><td colspan="8">No Supabase products found yet.</td></tr>`;
+  }
+
+  async function loadDatabaseCatalogue() {
+    if (!elements.databaseProductsTable) {
+      return;
+    }
+
+    renderDatabaseProducts();
+
+    try {
+      const response = await fetch("/api/admin/database/catalogue", {
+        credentials: "same-origin",
+        headers: {
+          Accept: "application/json"
+        }
+      });
+      const payload = await response.json().catch(() => ({}));
+
+      databaseCatalogueState = {
+        isLoading: false,
+        ...payload,
+        error: !response.ok && response.status !== 503
+          ? (payload.error || `Supabase catalogue request failed with HTTP ${response.status}.`)
+          : null
+      };
+    } catch (error) {
+      databaseCatalogueState = {
+        isLoading: false,
+        isConfigured: false,
+        missingEnv: [],
+        products: [],
+        error: error instanceof Error ? error.message : "Supabase catalogue request failed."
+      };
+    }
+
+    renderDatabaseProducts();
+  }
+
+  function renderLogsTable() {
+    if (adminCache.isLoading) {
+      elements.logsTable.innerHTML = `<tr><td colspan="5">Loading Supabase inventory logs...</td></tr>`;
+      return;
+    }
+
+    if (!adminCache.isReady) {
+      elements.logsTable.innerHTML = `<tr><td colspan="5">${escapeHtml(adminCache.error || "Connect Supabase before managing inventory.")}</td></tr>`;
+      return;
+    }
+
+    const rows = readLogs()
+      .map((log) => {
+        const createdAt = log.createdAt ? new Date(log.createdAt).toLocaleString() : "-";
+        const movementType = log.type || log.changeType;
+        const quantity = log.qty ?? log.quantity ?? 0;
+
+        return `
+          <tr>
+            <td>${escapeHtml(createdAt)}</td>
+            <td><strong>${escapeHtml(log.sku || log.productCode || log.productId || "-")}</strong></td>
+            <td>${escapeHtml(getMovementLabel(movementType))}</td>
+            <td>${escapeHtml(quantity)}</td>
+            <td>${escapeHtml(log.note || "-")}</td>
+          </tr>
+        `;
+      })
       .join("");
 
     elements.logsTable.innerHTML = rows || `<tr><td colspan="5">No stock movement yet.</td></tr>`;
@@ -701,23 +810,34 @@
   function renderOrdersTable() {
     const products = readProducts();
     const productById = new Map(products.map((product) => [product.id, product]));
+
+    if (adminCache.isLoading) {
+      elements.ordersTable.innerHTML = `<tr><td colspan="7">Loading Supabase orders...</td></tr>`;
+      return;
+    }
+
+    if (!adminCache.isReady) {
+      elements.ordersTable.innerHTML = `<tr><td colspan="7">${escapeHtml(adminCache.error || "Connect Supabase before managing orders.")}</td></tr>`;
+      return;
+    }
+
     const rows = readOrders()
       .map((order) => {
         const product = productById.get(order.productId);
-        const canAct = order.orderStatus === "Pending";
+        const orderStatus = order.orderStatus || order.status || "draft";
+        const canCancel = orderStatus === "Pending" || orderStatus === "draft" || orderStatus === "quoted";
 
         return `
           <tr>
-            <td><strong>${escapeHtml(order.id)}</strong></td>
+            <td><strong>${escapeHtml(order.orderNumber || order.id)}</strong></td>
             <td>${escapeHtml(order.customerName || "Guest")}</td>
-            <td>${escapeHtml(product?.sku || order.productId)}</td>
+            <td>${escapeHtml(product ? getProductSku(product) : (order.productCode || order.productId))}</td>
             <td>${order.qty}</td>
-            <td>${escapeHtml(order.orderStatus)}</td>
-            <td>${escapeHtml(order.paymentStatus)}</td>
+            <td>${escapeHtml(orderStatus)}</td>
+            <td>${escapeHtml(order.paymentStatus || order.payment_status || "unpaid")}</td>
             <td>
               <div class="admin-row-actions">
-                <button type="button" data-order-paid="${escapeHtml(order.id)}" ${canAct ? "" : "disabled"}>Mark Paid</button>
-                <button type="button" data-order-cancel="${escapeHtml(order.id)}" ${canAct ? "" : "disabled"}>Cancel</button>
+                <button type="button" data-order-cancel="${escapeHtml(order.id)}" ${canCancel ? "" : "disabled"}>Cancel</button>
               </div>
             </td>
           </tr>
@@ -738,13 +858,14 @@
   }
 
   function renderAll() {
-    syncProductsWithSeed();
     renderStats();
     renderSelects();
     renderProductsTable();
     renderSheetFeed();
     renderSheetProductsTable();
-    renderPublishedCatalogueTable();
+    renderCatalogueDraftTable();
+    renderDatabaseStatus();
+    renderDatabaseProducts();
     renderLogsTable();
     renderOrdersTable();
     renderSettings();
@@ -766,8 +887,13 @@
     });
   });
 
-  elements.productForm?.addEventListener("submit", (event) => {
+  elements.productForm?.addEventListener("submit", async (event) => {
     event.preventDefault();
+
+    if (!ensureAdminDataReady()) {
+      return;
+    }
+
     const formData = new FormData(event.currentTarget);
     const sku = String(formData.get("sku")).trim().toUpperCase();
     const name = String(formData.get("name")).trim();
@@ -780,7 +906,7 @@
       return;
     }
 
-    if (products.some((product) => product.sku.toLowerCase() === sku.toLowerCase())) {
+    if (products.some((product) => getProductSku(product).toLowerCase() === sku.toLowerCase())) {
       setMessage("This SKU already exists.", true);
       return;
     }
@@ -791,7 +917,6 @@
     }
 
     const product = {
-      id: sku,
       sku,
       name,
       category: String(formData.get("category")),
@@ -802,191 +927,189 @@
       createdAt: new Date().toISOString()
     };
 
-    products.unshift(product);
-    writeProducts(products);
-
-    if (stockQty > 0) {
-      addLog(product, "receive", stockQty, "Initial product stock");
-    }
-
-    event.currentTarget.reset();
-    renderAll();
-    setMessage("Product added.");
-  });
-
-  elements.catalogueForm?.addEventListener("submit", (event) => {
-    event.preventDefault();
-    const result = buildPublishedProduct(new FormData(event.currentTarget));
-
-    if (!result.ok) {
-      setMessage(result.message, true);
-      return;
-    }
-
-    const publishedProducts = readPublishedCatalogueProducts();
-    const existingIndex = publishedProducts.findIndex((product) => String(product.code).toUpperCase() === result.product.code);
-
-    if (existingIndex >= 0) {
-      publishedProducts[existingIndex] = {
-        ...publishedProducts[existingIndex],
-        ...result.product
-      };
-    } else {
-      publishedProducts.unshift({
-        ...result.product,
-        createdAt: new Date().toISOString()
+    try {
+      await fetchAdminApi("/products", {
+        method: "POST",
+        body: JSON.stringify(product)
       });
+      await loadAdminBackendData();
+      event.currentTarget.reset();
+      renderAll();
+      setMessage("Product saved in Supabase.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Unable to save product in Supabase.", true);
     }
-
-    writePublishedCatalogueProducts(publishedProducts);
-    upsertAdminProductFromCatalogue(result.product, result.stockQty);
-    event.currentTarget.reset();
-    renderAll();
-    setMessage("Catalogue product published. Reload storefront pages to view the new item.");
   });
 
-  elements.inventoryForm?.addEventListener("submit", (event) => {
+  elements.catalogueForm?.addEventListener("submit", async (event) => {
     event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    const result = applyMovement(
-      String(formData.get("productId")),
-      String(formData.get("type")),
-      Number(formData.get("qty")),
-      String(formData.get("note")).trim()
-    );
+
+    if (!ensureAdminDataReady()) {
+      return;
+    }
+
+    const result = buildCatalogueDraft(new FormData(event.currentTarget));
 
     if (!result.ok) {
       setMessage(result.message, true);
       return;
     }
 
-    event.currentTarget.elements.note.value = "";
-    renderAll();
-    setMessage(result.message);
+    try {
+      await fetchAdminApi("/products", {
+        method: "POST",
+        body: JSON.stringify({
+          sku: result.product.code,
+          name: result.product.name,
+          category: getCollectionLabel(result.product.collectionKey),
+          collection: result.product.collectionKey,
+          price: result.product.price,
+          stockQty: result.stockQty,
+          reservedQty: 0,
+          status: result.stockQty > 0 ? "Ready" : "Sold Out",
+          metadata: {
+            source: "admin_catalogue_form",
+            title: result.product.title,
+            description: result.product.description,
+            details: result.product.details,
+            image: result.product.image,
+            hover: result.product.hover,
+            gallery: result.product.gallery,
+            filterValues: result.product.filterValues,
+            imagePresentation: result.product.imagePresentation
+          }
+        })
+      });
+      await loadAdminBackendData();
+      event.currentTarget.reset();
+      renderAll();
+      setMessage("Catalogue product saved in Supabase.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Unable to save catalogue product in Supabase.", true);
+    }
   });
 
-  elements.orderForm?.addEventListener("submit", (event) => {
+  elements.inventoryForm?.addEventListener("submit", async (event) => {
     event.preventDefault();
+
+    if (!ensureAdminDataReady()) {
+      return;
+    }
+
+    const formData = new FormData(event.currentTarget);
+    const productId = String(formData.get("productId"));
+    const type = String(formData.get("type"));
+    const qty = Number(formData.get("qty"));
+    const note = String(formData.get("note")).trim();
+
+    if (!productId || !qty || qty < 1) {
+      setMessage("Please choose a product and valid quantity.", true);
+      return;
+    }
+
+    try {
+      await fetchAdminApi("/inventory-logs", {
+        method: "POST",
+        body: JSON.stringify({
+          productId,
+          movementType: type,
+          quantity: qty,
+          note
+        })
+      });
+      await loadAdminBackendData();
+      event.currentTarget.elements.note.value = "";
+      renderAll();
+      setMessage("Inventory movement saved in Supabase.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Unable to save inventory movement in Supabase.", true);
+    }
+  });
+
+  elements.orderForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    if (!ensureAdminDataReady()) {
+      return;
+    }
+
     const formData = new FormData(event.currentTarget);
     const productId = String(formData.get("productId"));
     const qty = Math.max(1, Number(formData.get("qty")) || 1);
-    const reserveResult = applyMovement(productId, "reserve", qty, "Reserved by test order");
 
-    if (!reserveResult.ok) {
-      setMessage(reserveResult.message, true);
+    if (!productId) {
+      setMessage("Please choose a product before creating an order.", true);
       return;
     }
 
-    const orders = readOrders();
-    orders.unshift({
-      id: `ORD-${Date.now()}`,
+    const newOrder = {
       productId,
       qty,
       customerName: String(formData.get("customerName")).trim() || "Guest",
       orderStatus: "Pending",
       paymentStatus: "Unpaid",
       createdAt: new Date().toISOString()
-    });
-    writeOrders(orders);
-    event.currentTarget.reset();
-    renderAll();
-    setMessage("Reserved order created.");
+    };
+
+    try {
+      await fetchAdminApi("/orders", {
+        method: "POST",
+        body: JSON.stringify(newOrder)
+      });
+      await loadAdminBackendData();
+      event.currentTarget.reset();
+      renderAll();
+      setMessage("Reserved order created in Supabase.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Unable to save order in Supabase.", true);
+    }
   });
 
-  elements.ordersTable?.addEventListener("click", (event) => {
-    const paidButton = event.target.closest("[data-order-paid]");
+  elements.ordersTable?.addEventListener("click", async (event) => {
     const cancelButton = event.target.closest("[data-order-cancel]");
-    const orderId = paidButton?.dataset.orderPaid || cancelButton?.dataset.orderCancel;
+    const orderId = cancelButton?.dataset.orderCancel;
 
     if (!orderId) {
       return;
     }
 
+    if (!ensureAdminDataReady()) {
+      return;
+    }
+
     const orders = readOrders();
     const order = orders.find((item) => item.id === orderId);
+    const orderStatus = order?.orderStatus || order?.status;
 
-    if (!order || order.orderStatus !== "Pending") {
+    if (!order || (orderStatus !== "Pending" && orderStatus !== "draft" && orderStatus !== "quoted")) {
       return;
     }
 
-    if (paidButton) {
-      const result = applyMovement(order.productId, "sale", order.qty, `Paid order ${order.id}`);
-
-      if (!result.ok) {
-        setMessage(result.message, true);
-        return;
-      }
-
-      order.orderStatus = "Paid";
-      order.paymentStatus = "Paid";
-      setMessage("Order marked as paid. Real stock was reduced.");
-    }
-
-    if (cancelButton) {
-      const result = applyMovement(order.productId, "release", order.qty, `Cancelled order ${order.id}`);
-
-      if (!result.ok) {
-        setMessage(result.message, true);
-        return;
-      }
-
-      order.orderStatus = "Cancelled";
-      order.paymentStatus = "Cancelled";
-      setMessage("Order cancelled. Reserved stock was released.");
-    }
-
-    writeOrders(orders);
-    renderAll();
-  });
-
-  elements.publishedCatalogueTable?.addEventListener("click", (event) => {
-    const editButton = event.target.closest("[data-catalogue-edit]");
-    const deleteButton = event.target.closest("[data-catalogue-delete]");
-    const code = editButton?.dataset.catalogueEdit || deleteButton?.dataset.catalogueDelete;
-
-    if (!code) {
-      return;
-    }
-
-    const publishedProducts = readPublishedCatalogueProducts();
-    const product = publishedProducts.find((item) => String(item.code).toUpperCase() === String(code).toUpperCase());
-
-    if (!product) {
-      return;
-    }
-
-    if (editButton) {
-      fillCatalogueForm(product);
-      activatePanel("products");
-      elements.catalogueForm?.scrollIntoView({ behavior: "smooth", block: "start" });
-      setMessage(`Loaded ${product.code} into the catalogue form.`);
-      return;
-    }
-
-    if (deleteButton) {
-      writePublishedCatalogueProducts(
-        publishedProducts.filter((item) => String(item.code).toUpperCase() !== String(code).toUpperCase())
-      );
+    try {
+      await fetchAdminApi(`/orders?id=${encodeURIComponent(orderId)}`, {
+        method: "PATCH",
+        body: JSON.stringify({ status: "cancelled", paymentStatus: "cancelled" })
+      });
+      await loadAdminBackendData();
       renderAll();
-      setMessage(`Catalogue product ${product.code} was unpublished.`);
+      setMessage("Order cancelled in Supabase.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not cancel order in Supabase.", true);
     }
   });
 
   elements.settingsForm?.addEventListener("submit", (event) => {
     event.preventDefault();
     const lowStockThreshold = Math.max(0, Number(new FormData(event.currentTarget).get("lowStockThreshold")) || 0);
-    writeJson(settingsKey, { lowStockThreshold });
+    settingsState.lowStockThreshold = lowStockThreshold;
     renderAll();
-    setMessage("Settings saved.");
+    setMessage("Settings applied for this admin view.");
   });
 
-  elements.resetDemo?.addEventListener("click", () => {
-    writeProducts(buildSeedProducts());
-    writeLogs([]);
-    writeOrders([]);
-    writeJson(settingsKey, { lowStockThreshold: 2 });
+  elements.resetDemo?.addEventListener("click", async () => {
+    await loadAdminBackendData();
     renderAll();
-    setMessage("Demo admin data reset.");
+    setMessage(adminCache.isReady ? "Supabase admin data refreshed." : (adminCache.error || "Supabase admin data could not be refreshed."), !adminCache.isReady);
   });
 
   window.addEventListener("maris:catalogue-data-updated", () => {
@@ -995,7 +1118,11 @@
 
   Promise.resolve(window.MARIS_DATA_READY)
     .catch(() => null)
-    .then(() => {
+    .then(async () => {
       renderAll();
+      await loadAdminBackendData();
+      renderAll();
+      loadDatabaseStatus();
+      loadDatabaseCatalogue();
     });
 })();

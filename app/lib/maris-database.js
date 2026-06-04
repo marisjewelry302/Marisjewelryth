@@ -1,0 +1,986 @@
+import { createClient } from "@supabase/supabase-js";
+
+export const MARIS_DATABASE_TABLES = Object.freeze([
+  "admin_users",
+  "customers",
+  "inventory_movements",
+  "inventory_logs",
+  "orders",
+  "order_items",
+  "payments",
+  "product_images",
+  "product_variants",
+  "products",
+  "settings"
+]);
+
+const SUPABASE_URL_ENV = "SUPABASE_URL";
+const SUPABASE_SERVICE_ROLE_KEY_ENV = "SUPABASE_SERVICE_ROLE_KEY";
+const ADMIN_CATALOGUE_SELECT = `
+  id,
+  product_code,
+  slug,
+  name_en,
+  name_th,
+  category,
+  collection,
+  status,
+  price_amount,
+  currency,
+  is_active,
+  stock_quantity,
+  reserved_quantity,
+  updated_at,
+  product_variants (
+    id,
+    sku,
+    variant_name,
+    metal,
+    size_label,
+    stock_quantity,
+    is_active
+  ),
+  product_images (
+    id,
+    image_url,
+    alt_text,
+    sort_order,
+    is_primary,
+    source
+  )
+`;
+
+function cleanEnvValue(value) {
+  const cleanValue = String(value || "").trim();
+
+  if (
+    !cleanValue
+    || /^replace-with-/i.test(cleanValue)
+    || /^your[_-]/i.test(cleanValue)
+    || /^https:\/\/your-project/i.test(cleanValue)
+  ) {
+    return "";
+  }
+
+  return cleanValue;
+}
+
+function getProjectRef(url) {
+  try {
+    const hostname = new URL(url).hostname;
+    const [projectRef] = hostname.split(".");
+
+    return projectRef || null;
+  } catch (error) {
+    return null;
+  }
+}
+
+function readSupabaseAdminEnv(env = process.env) {
+  return {
+    url: cleanEnvValue(env[SUPABASE_URL_ENV]),
+    serviceRoleKey: cleanEnvValue(env[SUPABASE_SERVICE_ROLE_KEY_ENV])
+  };
+}
+
+export function getSupabaseAdminConfig(env = process.env) {
+  const { url, serviceRoleKey } = readSupabaseAdminEnv(env);
+  const missingEnv = [];
+
+  if (!url) {
+    missingEnv.push(SUPABASE_URL_ENV);
+  }
+
+  if (!serviceRoleKey) {
+    missingEnv.push(SUPABASE_SERVICE_ROLE_KEY_ENV);
+  }
+
+  return {
+    isConfigured: missingEnv.length === 0,
+    url,
+    projectRef: url ? getProjectRef(url) : null,
+    hasServiceRoleKey: Boolean(serviceRoleKey),
+    missingEnv,
+    tables: [...MARIS_DATABASE_TABLES]
+  };
+}
+
+export function createSupabaseAdminClient(env = process.env) {
+  const { url, serviceRoleKey } = readSupabaseAdminEnv(env);
+  const config = getSupabaseAdminConfig(env);
+
+  if (!config.isConfigured) {
+    throw new Error(`Supabase admin database is not configured. Set ${config.missingEnv.join(", ")}.`);
+  }
+
+  return createClient(url, serviceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+      persistSession: false
+    },
+    global: {
+      headers: {
+        "X-Client-Info": "maris-jewelry-admin"
+      }
+    }
+  });
+}
+
+export async function readAdminDatabaseStatus({ env = process.env, client } = {}) {
+  const config = getSupabaseAdminConfig(env);
+
+  if (!config.isConfigured) {
+    return {
+      isConfigured: false,
+      projectRef: config.projectRef,
+      missingEnv: config.missingEnv,
+      tables: [],
+      checkedAt: new Date().toISOString()
+    };
+  }
+
+  const supabase = client || createSupabaseAdminClient(env);
+  const tables = await Promise.all(MARIS_DATABASE_TABLES.map(async (tableName) => {
+    try {
+      const { count, error } = await supabase
+        .from(tableName)
+        .select("*", { count: "exact", head: true });
+
+      if (error) {
+        return {
+          name: tableName,
+          isReachable: false,
+          rowCount: null,
+          error: error.message || String(error)
+        };
+      }
+
+      return {
+        name: tableName,
+        isReachable: true,
+        rowCount: typeof count === "number" ? count : null,
+        error: null
+      };
+    } catch (error) {
+      return {
+        name: tableName,
+        isReachable: false,
+        rowCount: null,
+        error: error instanceof Error ? error.message : String(error)
+      };
+    }
+  }));
+
+  return {
+    isConfigured: true,
+    projectRef: config.projectRef,
+    missingEnv: [],
+    tables,
+    checkedAt: new Date().toISOString()
+  };
+}
+
+function normalizeVariant(row) {
+  return {
+    id: row.id,
+    sku: row.sku || "",
+    variantName: row.variant_name || "",
+    metal: row.metal || "",
+    sizeLabel: row.size_label || "",
+    stockQuantity: Number(row.stock_quantity) || 0,
+    isActive: row.is_active !== false
+  };
+}
+
+function normalizeImage(row) {
+  return {
+    id: row.id,
+    imageUrl: row.image_url || "",
+    altText: row.alt_text || "",
+    sortOrder: Number(row.sort_order) || 0,
+    isPrimary: row.is_primary === true,
+    source: row.source || "manual"
+  };
+}
+
+function parseMoneyAmount(value) {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+
+  const normalized = String(value).replace(/,/g, "").trim();
+  const amount = Number(normalized);
+
+  return Number.isFinite(amount) ? amount : null;
+}
+
+function normalizeAdminProductStatus(value) {
+  const status = String(value || "").trim().toLowerCase();
+
+  if (status === "ready" || status === "preorder" || status === "sold out") {
+    return "active";
+  }
+
+  if (status === "hidden") {
+    return "archived";
+  }
+
+  if (["draft", "active", "archived"].includes(status)) {
+    return status;
+  }
+
+  return "draft";
+}
+
+function sortImages(left, right) {
+  if (left.isPrimary !== right.isPrimary) {
+    return left.isPrimary ? -1 : 1;
+  }
+
+  return left.sortOrder - right.sortOrder;
+}
+
+function normalizeProduct(row) {
+  const variants = Array.isArray(row.product_variants)
+    ? row.product_variants.map(normalizeVariant)
+    : [];
+  const images = Array.isArray(row.product_images)
+    ? row.product_images.map(normalizeImage).sort(sortImages)
+    : [];
+  const primaryImage = images.find((image) => image.isPrimary) || images[0] || null;
+
+  return {
+    id: row.id,
+    productCode: row.product_code || "",
+    slug: row.slug || "",
+    nameEn: row.name_en || "",
+    nameTh: row.name_th || "",
+    category: row.category || "",
+    collection: row.collection || "",
+    status: row.status || "draft",
+    priceAmount: row.price_amount === null || row.price_amount === undefined ? null : Number(row.price_amount),
+    currency: row.currency || "THB",
+    isActive: row.is_active !== false,
+    stockQuantity: Number(row.stock_quantity) || 0,
+    reservedQuantity: Number(row.reserved_quantity) || 0,
+    stockQty: Number(row.stock_quantity) || 0,
+    reservedQty: Number(row.reserved_quantity) || 0,
+    updatedAt: row.updated_at || null,
+    primaryImageUrl: primaryImage?.imageUrl || "",
+    imageCount: images.length,
+    variantCount: variants.length,
+    totalStock: variants.reduce((total, variant) => total + variant.stockQuantity, 0),
+    variants,
+    images
+  };
+}
+
+export async function readAdminCatalogueProducts({ env = process.env, client, limit = 100 } = {}) {
+  const config = getSupabaseAdminConfig(env);
+
+  if (!config.isConfigured) {
+    return {
+      isConfigured: false,
+      projectRef: config.projectRef,
+      missingEnv: config.missingEnv,
+      products: [],
+      checkedAt: new Date().toISOString()
+    };
+  }
+
+  const supabase = client || createSupabaseAdminClient(env);
+  const { data, error } = await supabase
+    .from("products")
+    .select(ADMIN_CATALOGUE_SELECT)
+    .order("updated_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    throw new Error(error.message || "Supabase catalogue products could not be loaded.");
+  }
+
+  return {
+    isConfigured: true,
+    projectRef: config.projectRef,
+    missingEnv: [],
+    products: Array.isArray(data) ? data.map(normalizeProduct) : [],
+    checkedAt: new Date().toISOString()
+  };
+}
+
+const ADMIN_ORDER_SELECT = `
+  id,
+  order_number,
+  customer_id,
+  status,
+  payment_status,
+  channel,
+  subtotal_amount,
+  discount_amount,
+  shipping_amount,
+  total_amount,
+  currency,
+  placed_at,
+  notes,
+  metadata,
+  created_at,
+  updated_at,
+  customers (
+    id,
+    full_name,
+    email,
+    phone
+  ),
+  order_items (
+    id,
+    product_id,
+    variant_id,
+    product_code,
+    item_name,
+    quantity,
+    unit_price_amount,
+    total_amount
+  )
+`;
+
+function normalizeOrder(row) {
+  if (!row) {
+    return null;
+  }
+
+  const productItem = Array.isArray(row.order_items) ? row.order_items[0] : null;
+
+  return {
+    id: row.id,
+    orderNumber: row.order_number || "",
+    status: row.status || "draft",
+    paymentStatus: row.payment_status || "unpaid",
+    channel: row.channel || "admin",
+    subtotalAmount: Number(row.subtotal_amount) || 0,
+    discountAmount: Number(row.discount_amount) || 0,
+    shippingAmount: Number(row.shipping_amount) || 0,
+    totalAmount: Number(row.total_amount) || 0,
+    currency: row.currency || "THB",
+    placedAt: row.placed_at || null,
+    notes: row.notes || "",
+    customerName: row.customers?.full_name || "Guest",
+    customerEmail: row.customers?.email || "",
+    customerPhone: row.customers?.phone || "",
+    productId: productItem?.product_id || null,
+    productCode: productItem?.product_code || "",
+    qty: Number(productItem?.quantity) || 0,
+    items: Array.isArray(row.order_items) ? row.order_items : [],
+    createdAt: row.created_at || null,
+    updatedAt: row.updated_at || null
+  };
+}
+
+function normalizeInventoryLog(row) {
+  if (!row) {
+    return null;
+  }
+
+  const product = row.products || row.product || null;
+  const metadata = row.metadata || {};
+  const stockQuantity = product?.stock_quantity ?? metadata.stockQuantity ?? metadata.stock_quantity ?? null;
+  const reservedQuantity = product?.reserved_quantity ?? metadata.reservedQuantity ?? metadata.reserved_quantity ?? null;
+
+  return {
+    id: row.id,
+    productId: row.product_id || null,
+    variantId: row.variant_id || null,
+    productCode: product?.product_code || row.product_code || "",
+    sku: product?.product_code || row.product_code || "",
+    changeType: row.change_type || row.movement_type || "adjustment",
+    type: row.change_type || row.movement_type || "adjustment",
+    quantity: Number(row.quantity) || 0,
+    qty: Number(row.quantity) || 0,
+    note: row.note || "",
+    metadata,
+    stockQuantity: stockQuantity === null || stockQuantity === undefined ? null : Number(stockQuantity),
+    reservedQuantity: reservedQuantity === null || reservedQuantity === undefined ? null : Number(reservedQuantity),
+    referenceType: row.reference_type || null,
+    referenceId: row.reference_id || null,
+    createdBy: row.created_by || null,
+    createdAt: row.created_at || null
+  };
+}
+
+function normalizeCustomer(row) {
+  if (!row) {
+    return null;
+  }
+
+  return {
+    id: row.id,
+    fullName: row.full_name || "",
+    phone: row.phone || "",
+    email: row.email || "",
+    lineId: row.line_id || "",
+    address: row.address || {},
+    tags: Array.isArray(row.tags) ? row.tags : [],
+    notes: row.notes || "",
+    metadata: row.metadata || {},
+    createdAt: row.created_at || null,
+    updatedAt: row.updated_at || null
+  };
+}
+
+function normalizePayment(row) {
+  if (!row) {
+    return null;
+  }
+
+  return {
+    id: row.id,
+    orderId: row.order_id || null,
+    customerId: row.customer_id || null,
+    gateway: row.payment_gateway || "",
+    transactionId: row.gateway_transaction_id || "",
+    amount: Number(row.amount) || 0,
+    currency: row.currency || "THB",
+    status: row.status || "pending",
+    capturedAt: row.captured_at || null,
+    receivedAt: row.received_at || null,
+    metadata: row.metadata || {},
+    createdAt: row.created_at || null,
+    updatedAt: row.updated_at || null
+  };
+}
+
+export async function readAdminOrders({ env = process.env, client, limit = 100 } = {}) {
+  const config = getSupabaseAdminConfig(env);
+
+  if (!config.isConfigured) {
+    return {
+      isConfigured: false,
+      projectRef: config.projectRef,
+      missingEnv: config.missingEnv,
+      orders: [],
+      checkedAt: new Date().toISOString()
+    };
+  }
+
+  const supabase = client || createSupabaseAdminClient(env);
+  const { data, error } = await supabase
+    .from("orders")
+    .select(ADMIN_ORDER_SELECT)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    throw new Error(error.message || "Supabase orders could not be loaded.");
+  }
+
+  return {
+    isConfigured: true,
+    projectRef: config.projectRef,
+    missingEnv: [],
+    orders: Array.isArray(data) ? data.map(normalizeOrder) : [],
+    checkedAt: new Date().toISOString()
+  };
+}
+
+export async function readAdminInventoryLogs({ env = process.env, client, limit = 100 } = {}) {
+  const config = getSupabaseAdminConfig(env);
+
+  if (!config.isConfigured) {
+    return {
+      isConfigured: false,
+      projectRef: config.projectRef,
+      missingEnv: config.missingEnv,
+      logs: [],
+      checkedAt: new Date().toISOString()
+    };
+  }
+
+  const supabase = client || createSupabaseAdminClient(env);
+  const { data, error } = await supabase
+    .from("inventory_logs")
+    .select("*, products ( id, product_code, name_en, stock_quantity, reserved_quantity )")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    throw new Error(error.message || "Supabase inventory logs could not be loaded.");
+  }
+
+  return {
+    isConfigured: true,
+    projectRef: config.projectRef,
+    missingEnv: [],
+    logs: Array.isArray(data) ? data.map(normalizeInventoryLog) : [],
+    checkedAt: new Date().toISOString()
+  };
+}
+
+export async function readAdminCustomers({ env = process.env, client, limit = 100 } = {}) {
+  const config = getSupabaseAdminConfig(env);
+
+  if (!config.isConfigured) {
+    return {
+      isConfigured: false,
+      projectRef: config.projectRef,
+      missingEnv: config.missingEnv,
+      customers: [],
+      checkedAt: new Date().toISOString()
+    };
+  }
+
+  const supabase = client || createSupabaseAdminClient(env);
+  const { data, error } = await supabase
+    .from("customers")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    throw new Error(error.message || "Supabase customers could not be loaded.");
+  }
+
+  return {
+    isConfigured: true,
+    projectRef: config.projectRef,
+    missingEnv: [],
+    customers: Array.isArray(data) ? data.map(normalizeCustomer) : [],
+    checkedAt: new Date().toISOString()
+  };
+}
+
+export async function readAdminPayments({ env = process.env, client, limit = 100 } = {}) {
+  const config = getSupabaseAdminConfig(env);
+
+  if (!config.isConfigured) {
+    return {
+      isConfigured: false,
+      projectRef: config.projectRef,
+      missingEnv: config.missingEnv,
+      payments: [],
+      checkedAt: new Date().toISOString()
+    };
+  }
+
+  const supabase = client || createSupabaseAdminClient(env);
+  const { data, error } = await supabase
+    .from("payments")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    throw new Error(error.message || "Supabase payments could not be loaded.");
+  }
+
+  return {
+    isConfigured: true,
+    projectRef: config.projectRef,
+    missingEnv: [],
+    payments: Array.isArray(data) ? data.map(normalizePayment) : [],
+    checkedAt: new Date().toISOString()
+  };
+}
+
+export async function createAdminProduct(product, { env = process.env, client } = {}) {
+  const config = getSupabaseAdminConfig(env);
+  if (!config.isConfigured) {
+    throw new Error(`Supabase admin database is not configured. Set ${config.missingEnv.join(", ")}.`);
+  }
+
+  const supabase = client || createSupabaseAdminClient(env);
+  const payload = {
+    product_code: product.sku,
+    slug: product.slug || product.sku?.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
+    name_en: product.name,
+    category: product.category,
+    collection: product.collection || null,
+    price_amount: parseMoneyAmount(product.price),
+    currency: product.currency || "THB",
+    status: normalizeAdminProductStatus(product.status),
+    is_active: product.isActive !== false && String(product.status || "").toLowerCase() !== "hidden",
+    stock_quantity: Number(product.stockQty) || 0,
+    reserved_quantity: Number(product.reservedQty) || 0,
+    metadata: product.metadata || {}
+  };
+
+  const { data, error } = await supabase
+    .from("products")
+    .insert(payload)
+    .select(ADMIN_CATALOGUE_SELECT)
+    .single();
+
+  if (error) {
+    throw new Error(error.message || "Product could not be created.");
+  }
+
+  return normalizeProduct(data);
+}
+
+export async function updateAdminProduct(productId, updates, { env = process.env, client } = {}) {
+  const config = getSupabaseAdminConfig(env);
+  if (!config.isConfigured) {
+    throw new Error(`Supabase admin database is not configured. Set ${config.missingEnv.join(", ")}.`);
+  }
+
+  const supabase = client || createSupabaseAdminClient(env);
+  const payload = {
+    slug: updates.slug,
+    name_en: updates.name,
+    category: updates.category,
+    collection: updates.collection,
+    price_amount: updates.price === undefined ? undefined : parseMoneyAmount(updates.price),
+    currency: updates.currency || "THB",
+    status: updates.status === undefined ? undefined : normalizeAdminProductStatus(updates.status),
+    is_active: updates.isActive,
+    stock_quantity: updates.stockQty !== undefined ? Number(updates.stockQty) : undefined,
+    reserved_quantity: updates.reservedQty !== undefined ? Number(updates.reservedQty) : undefined,
+    metadata: updates.metadata
+  };
+
+  const cleanedPayload = Object.fromEntries(
+    Object.entries(payload).filter(([, value]) => value !== undefined)
+  );
+
+  const { data, error } = await supabase
+    .from("products")
+    .update(cleanedPayload)
+    .eq("id", productId)
+    .select(ADMIN_CATALOGUE_SELECT)
+    .single();
+
+  if (error) {
+    throw new Error(error.message || "Product could not be updated.");
+  }
+
+  return normalizeProduct(data);
+}
+
+function calculateInventoryQuantities(product, changeType, quantity) {
+  const stockQuantity = Number(product.stock_quantity || 0);
+  const reservedQuantity = Number(product.reserved_quantity || 0);
+  const amount = Number(quantity) || 0;
+
+  if (amount <= 0) {
+    throw new Error("Inventory quantity must be greater than zero.");
+  }
+
+  if (changeType === "receive" || changeType === "return") {
+    return {
+      stockQuantity: stockQuantity + amount,
+      reservedQuantity
+    };
+  }
+
+  if (changeType === "reserve") {
+    if (stockQuantity - reservedQuantity < amount) {
+      throw new Error("Not enough available stock to reserve.");
+    }
+
+    return {
+      stockQuantity,
+      reservedQuantity: reservedQuantity + amount
+    };
+  }
+
+  if (changeType === "release") {
+    if (reservedQuantity < amount) {
+      throw new Error("Reserved stock is lower than this quantity.");
+    }
+
+    return {
+      stockQuantity,
+      reservedQuantity: reservedQuantity - amount
+    };
+  }
+
+  if (changeType === "sale") {
+    if (stockQuantity < amount || reservedQuantity < amount) {
+      throw new Error("Paid sale needs enough real and reserved stock.");
+    }
+
+    return {
+      stockQuantity: stockQuantity - amount,
+      reservedQuantity: reservedQuantity - amount
+    };
+  }
+
+  if (changeType === "damage") {
+    if (stockQuantity < amount) {
+      throw new Error("Real stock is lower than this quantity.");
+    }
+
+    return {
+      stockQuantity: stockQuantity - amount,
+      reservedQuantity
+    };
+  }
+
+  if (changeType === "adjustment") {
+    const nextStockQuantity = stockQuantity + amount;
+
+    if (nextStockQuantity < reservedQuantity) {
+      throw new Error("Adjusted stock cannot be lower than reserved stock.");
+    }
+
+    return {
+      stockQuantity: nextStockQuantity,
+      reservedQuantity
+    };
+  }
+
+  throw new Error("Unsupported inventory movement type.");
+}
+
+export async function createAdminInventoryLog(log, { env = process.env, client } = {}) {
+  const config = getSupabaseAdminConfig(env);
+  if (!config.isConfigured) {
+    throw new Error(`Supabase admin database is not configured. Set ${config.missingEnv.join(", ")}.`);
+  }
+
+  const supabase = client || createSupabaseAdminClient(env);
+  const changeType = log.changeType || log.movementType || "adjustment";
+  const quantity = Number(log.quantity) || 0;
+  const productId = log.productId || null;
+
+  if (!productId) {
+    throw new Error("Product id is required for inventory movement.");
+  }
+
+  const productResult = await supabase
+    .from("products")
+    .select("id, product_code, name_en, stock_quantity, reserved_quantity")
+    .eq("id", productId)
+    .limit(1)
+    .maybeSingle();
+
+  if (productResult.error || !productResult.data) {
+    throw new Error(productResult.error?.message || "Product not found for inventory movement.");
+  }
+
+  const nextQuantities = calculateInventoryQuantities(productResult.data, changeType, quantity);
+  const productUpdate = {
+    stock_quantity: nextQuantities.stockQuantity,
+    reserved_quantity: nextQuantities.reservedQuantity,
+    updated_at: new Date().toISOString()
+  };
+  const updateResult = await supabase
+    .from("products")
+    .update(productUpdate)
+    .eq("id", productId);
+
+  if (updateResult.error) {
+    throw new Error(updateResult.error.message || "Product stock could not be updated.");
+  }
+
+  const payload = {
+    product_id: productId,
+    variant_id: log.variantId || null,
+    change_type: changeType,
+    quantity,
+    note: log.note || "",
+    reference_type: log.referenceType || null,
+    reference_id: log.referenceId || null,
+    metadata: {
+      ...(log.metadata || {}),
+      stockQuantity: nextQuantities.stockQuantity,
+      reservedQuantity: nextQuantities.reservedQuantity
+    },
+    created_by: log.createdBy || null
+  };
+
+  const { data, error } = await supabase
+    .from("inventory_logs")
+    .insert(payload)
+    .select("*, products ( id, product_code, name_en, stock_quantity, reserved_quantity )")
+    .single();
+
+  if (error) {
+    throw new Error(error.message || "Inventory log could not be created.");
+  }
+
+  return normalizeInventoryLog(data);
+}
+
+export async function createAdminOrder(orderData, { env = process.env, client } = {}) {
+  const config = getSupabaseAdminConfig(env);
+  if (!config.isConfigured) {
+    throw new Error(`Supabase admin database is not configured. Set ${config.missingEnv.join(", ")}.`);
+  }
+
+  const supabase = client || createSupabaseAdminClient(env);
+
+  const productResult = await supabase
+    .from("products")
+    .select("id, product_code, name_en, stock_quantity, reserved_quantity")
+    .eq("id", orderData.productId)
+    .limit(1)
+    .maybeSingle();
+
+  if (productResult.error || !productResult.data) {
+    throw new Error(productResult.error?.message || "Product not found for order.");
+  }
+
+  const product = productResult.data;
+  const available = Number(product.stock_quantity || 0) - Number(product.reserved_quantity || 0);
+  const quantity = Number(orderData.qty) || 1;
+
+  if (available < quantity) {
+    throw new Error("Not enough available stock to reserve for this order.");
+  }
+
+  const orderNumber = `ORD-${Date.now()}`;
+
+  const orderPayload = {
+    order_number: orderNumber,
+    status: "draft",
+    payment_status: "unpaid",
+    channel: orderData.channel || "admin",
+    subtotal_amount: Number(orderData.subtotalAmount || 0) || 0,
+    discount_amount: Number(orderData.discountAmount || 0) || 0,
+    shipping_amount: Number(orderData.shippingAmount || 0) || 0,
+    total_amount: Number(orderData.totalAmount || 0) || 0,
+    currency: orderData.currency || "THB",
+    placed_at: orderData.placedAt || null,
+    notes: orderData.notes || "",
+    created_at: new Date().toISOString()
+  };
+
+  const { data: order, error: orderError } = await supabase
+    .from("orders")
+    .insert(orderPayload)
+    .select("*")
+    .single();
+
+  if (orderError) {
+    throw new Error(orderError.message || "Order could not be created.");
+  }
+
+  const orderItemPayload = {
+    order_id: order.id,
+    product_id: product.id,
+    product_code: product.product_code,
+    item_name: product.name_en || product.product_code,
+    quantity,
+    unit_price_amount: Number(orderData.unitPriceAmount || 0) || 0,
+    total_amount: Number(orderData.totalAmount || 0) || 0,
+    metadata: orderData.metadata || {}
+  };
+
+  const { data: itemData, error: itemError } = await supabase
+    .from("order_items")
+    .insert(orderItemPayload)
+    .select("*")
+    .single();
+
+  if (itemError) {
+    throw new Error(itemError.message || "Order item could not be created.");
+  }
+
+  await createAdminInventoryLog({
+    productId: product.id,
+    changeType: "reserve",
+    quantity,
+    note: `Reserved by order ${orderNumber}`
+  }, { env, client: supabase });
+
+  const orderWithItems = {
+    ...order,
+    order_items: [itemData],
+    customers: { full_name: orderData.customerName || "Guest", email: orderData.customerEmail || "", phone: orderData.customerPhone || "" }
+  };
+
+  return normalizeOrder(orderWithItems);
+}
+
+export async function updateAdminOrder(orderId, updates, { env = process.env, client } = {}) {
+  const config = getSupabaseAdminConfig(env);
+  if (!config.isConfigured) {
+    throw new Error(`Supabase admin database is not configured. Set ${config.missingEnv.join(", ")}.`);
+  }
+
+  const supabase = client || createSupabaseAdminClient(env);
+
+  if (updates.status === "paid") {
+    throw new Error("Payment status must be updated by the payment gateway webhook only.");
+  }
+
+  const { data: existingOrder, error: existingOrderError } = await supabase
+    .from("orders")
+    .select("*, order_items(*)")
+    .eq("id", orderId)
+    .limit(1)
+    .maybeSingle();
+
+  if (existingOrderError || !existingOrder) {
+    throw new Error(existingOrderError?.message || "Order not found.");
+  }
+
+  if (updates.status === "cancelled" && existingOrder.status !== "cancelled") {
+    const item = Array.isArray(existingOrder.order_items) ? existingOrder.order_items[0] : null;
+
+    if (item && item.product_id) {
+      await createAdminInventoryLog({
+        productId: item.product_id,
+        changeType: "release",
+        quantity: Number(item.quantity || 0),
+        note: `Released reservation for cancelled order ${existingOrder.order_number}`
+      }, { env, client: supabase });
+    }
+  }
+
+  const payload = {
+    status: updates.status,
+    payment_status: updates.paymentStatus,
+    notes: updates.notes,
+    updated_at: new Date().toISOString()
+  };
+
+  const cleanedPayload = Object.fromEntries(
+    Object.entries(payload).filter(([, value]) => value !== undefined)
+  );
+
+  const { data, error } = await supabase
+    .from("orders")
+    .update(cleanedPayload)
+    .eq("id", orderId)
+    .select(ADMIN_ORDER_SELECT)
+    .single();
+
+  if (error) {
+    throw new Error(error.message || "Order could not be updated.");
+  }
+
+  return normalizeOrder(data);
+}
+
+export async function createAdminPayment(payment, { env = process.env, client } = {}) {
+  const config = getSupabaseAdminConfig(env);
+  if (!config.isConfigured) {
+    throw new Error(`Supabase admin database is not configured. Set ${config.missingEnv.join(", ")}.`);
+  }
+
+  const supabase = client || createSupabaseAdminClient(env);
+  const payload = {
+    order_id: payment.orderId || null,
+    customer_id: payment.customerId || null,
+    payment_gateway: payment.gateway || "manual",
+    gateway_transaction_id: payment.transactionId || null,
+    amount: Number(payment.amount) || 0,
+    currency: payment.currency || "THB",
+    status: payment.status || "pending",
+    captured_at: payment.capturedAt || null,
+    metadata: payment.metadata || {}
+  };
+
+  const { data, error } = await supabase
+    .from("payments")
+    .insert(payload)
+    .select("*")
+    .single();
+
+  if (error) {
+    throw new Error(error.message || "Payment record could not be created.");
+  }
+
+  return normalizePayment(data);
+}

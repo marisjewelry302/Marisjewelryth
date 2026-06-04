@@ -4,6 +4,8 @@ The storefront can read product rows from this published CSV:
 
 `https://docs.google.com/spreadsheets/d/e/2PACX-1vQfntxK3qZhO4cfHkqlFtpY5kP7M3xLLzTkjkH6kTPkfJNdl5rgmGDozfyM3OTMBzo9WS0aXbF4U8Xr/pub?output=csv`
 
+This Google Sheet is the only live catalogue source for the storefront. Admin sandbox drafts are browser-local only and do not publish products to visitors.
+
 ## Minimum columns
 
 Use these columns when adding new web products:
@@ -14,30 +16,32 @@ Use these columns when adding new web products:
 
 Use `web_code` when a sheet row should update an existing storefront item that already has a Maris code on the site.
 
-## Current sheet layout
+## Header-name mapping
 
-You can keep the current product-spec sheet exactly like this:
+The loader maps rows by column names in the header row. The team can move columns around, insert internal notes, or hide columns as long as the visible header names stay recognizable.
 
-- `A`: `ID`
-- `B`: `Collection`
-- `C`: `Type`
-- `D`: `Center`
-- `E`: `Malee`
-- `F`: `Gold Weight`
+The current product-spec columns can stay anywhere in the sheet:
 
-Then add website columns from `G` onward:
+- `ID`
+- `Collection`
+- `Type`
+- `Center`
+- `Malee`
+- `Gold Weight`
 
-- `G`: `code`
-- `H`: `name`
-- `I`: `image_url`
-- `J`: `top_image_url`
-- `K`: `front_image_url`
-- `L`: `side_image_url`
-- `M`: `yellow_gold_image_url`
-- `N`: `rose_gold_image_url`
-- `O`: `price`
-- `P`: `description`
-- `Q`: `details`
+Keep these website headers available wherever they fit the team's workflow:
+
+- `code`
+- `name`
+- `image_url`
+- `top_image_url`
+- `front_image_url`
+- `side_image_url`
+- `yellow_gold_image_url`
+- `rose_gold_image_url`
+- `price`
+- `description`
+- `details`
 
 ## Recommended columns
 
@@ -87,12 +91,29 @@ The storefront accepts any public image URL.
 Recommended options:
 
 - Google Drive public file URL
-- Netlify-hosted image URL
+- Vercel-hosted image URL
 - Cloudinary or other public CDN URL
 
 Google Drive share links are supported if the file is public. The loader converts common Drive share URLs into direct image URLs automatically.
 
 Important: the sheet itself must still be accessible as a public CSV feed. A normal private `edit` link is not enough for the storefront to read it.
+
+## Pre-deploy image check
+
+Run this before deploy when product rows or image filenames change:
+
+```powershell
+npm run check:sheet-images
+```
+
+`npm run build` also runs this check automatically before Next.js builds. The checker reads the live Google Sheet CSV, scans `image_url`, `hover_image_url`, `gallery`, and the angle image columns, then verifies each value against either:
+
+- a real local file under deployed `assets/...` image paths, using exact case-sensitive names for Vercel/Linux
+- a reachable public `http` or `https` image URL
+
+If a row uses only a filename, such as `ring-main.png`, the checker accepts it only when that filename matches one deployed image unambiguously. If the path is almost right but the letter case, extension, or filename differs, the summary lists the row, column, value, and closest matching file.
+
+Repeated image headers are still treated as image columns. For example, if several columns are all named `image_url`, every value under those headers must be an image path or URL. Rename angle columns to `top_image_url`, `front_image_url`, `side_image_url`, `yellow_gold_image_url`, or `rose_gold_image_url`, and keep `price` under a real `price` header.
 
 ## `details` format
 
@@ -140,4 +161,4 @@ The storefront turns those columns into the product gallery automatically in tha
 - If `hover_image_url` is empty, the main image is reused.
 - If `gallery` is empty, the main image is used as the first product view.
 - Existing technical columns like `ID`, `Collection`, `Type`, `Center`, `Malee`, and `Gold Weight` are still read and can be used to generate fallback product text.
-- Open the site through `http://127.0.0.1:4173/` or the deployed site when testing. Some browsers restrict remote feed loading from `file:///` pages.
+- Open the site through the Next.js dev server, usually `http://127.0.0.1:3000/`, or the deployed site when testing. Some browsers restrict remote feed loading from `file:///` pages.

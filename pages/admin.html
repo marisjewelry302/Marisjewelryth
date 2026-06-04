@@ -16,7 +16,7 @@
     </a>
 
     <div>
-      <p class="admin-kicker">Back Office Prototype</p>
+      <p class="admin-kicker">Protected Back Office Gate</p>
       <h1>Maris Admin</h1>
     </div>
 
@@ -27,6 +27,9 @@
         <button type="button" data-lang-switch="th">TH</button>
       </div>
       <a href="../index.html">View Storefront</a>
+      <form method="post" action="/api/admin/logout">
+        <button class="admin-logout" type="submit">Log Out</button>
+      </form>
     </div>
   </header>
 
@@ -37,6 +40,7 @@
       <button type="button" data-admin-tab="inventory">Inventory</button>
       <button type="button" data-admin-tab="orders">Orders</button>
       <button type="button" data-admin-tab="customers">Customers</button>
+      <button type="button" data-admin-tab="database">Database</button>
       <button type="button" data-admin-tab="settings">Settings</button>
     </aside>
 
@@ -44,10 +48,10 @@
       <section class="admin-panel is-active" data-admin-panel="dashboard">
         <div class="admin-panel-head">
           <div>
-            <p class="admin-kicker">Stock-safe foundation</p>
+            <p class="admin-kicker">Sheet-led foundation</p>
             <h2>Dashboard</h2>
           </div>
-          <p class="admin-note">The storefront catalogue now syncs from Google Sheet. Inventory and order figures on this page are still a browser-only prototype until a real database is added.</p>
+          <p class="admin-note">Google Sheet remains the temporary storefront catalogue source during migration. Admin products, inventory, and order figures now load through protected Supabase APIs.</p>
         </div>
 
         <div class="admin-stats">
@@ -77,9 +81,9 @@
 
         <div class="admin-grid admin-feed-grid">
           <article class="admin-card admin-feed-card">
-            <p class="admin-kicker">Live Storefront Source</p>
+            <p class="admin-kicker">Only Live Storefront Source</p>
             <h3>Google Sheet Feed</h3>
-            <p class="admin-note admin-note-wide">Add or edit products in the published Google Sheet and the catalogue reads them automatically without new code changes.</p>
+            <p class="admin-note admin-note-wide">Add or edit products in the public Google Sheet. The storefront reads that sheet only; sandbox drafts below do not update the live catalogue.</p>
             <div class="admin-feed-meta">
               <div>
                 <span>Status</span>
@@ -102,28 +106,28 @@
             <h3>Add Product In 3 Steps</h3>
             <ol class="admin-steps">
               <li>Upload product images to a public URL such as Google Drive, Netlify, or a CDN.</li>
-              <li>Keep the Sheet columns in the current A-Q order so every new row maps into the storefront automatically.</li>
+              <li>Keep recognizable column names such as code, name, image_url, price, and details. The loader maps by header name, so the team can reorder columns safely.</li>
               <li>Refresh the catalogue page and the new item appears in its collection automatically.</li>
             </ol>
-            <p class="admin-mini-label">Current Sheet column order</p>
+            <p class="admin-mini-label">Recommended Sheet headers</p>
             <div class="admin-pill-row">
-              <span>A ID</span>
-              <span>B Collection</span>
-              <span>C Type</span>
-              <span>D Center</span>
-              <span>E Malee</span>
-              <span>F Gold Weight</span>
-              <span>G code</span>
-              <span>H name</span>
-              <span>I image_url</span>
-              <span>J top_image_url</span>
-              <span>K front_image_url</span>
-              <span>L side_image_url</span>
-              <span>M yellow_gold_image_url</span>
-              <span>N rose_gold_image_url</span>
-              <span>O price</span>
-              <span>P description</span>
-              <span>Q details</span>
+              <span>ID</span>
+              <span>Collection</span>
+              <span>Type</span>
+              <span>Center</span>
+              <span>Malee</span>
+              <span>Gold Weight</span>
+              <span>code</span>
+              <span>name</span>
+              <span>image_url</span>
+              <span>top_image_url</span>
+              <span>front_image_url</span>
+              <span>side_image_url</span>
+              <span>yellow_gold_image_url</span>
+              <span>rose_gold_image_url</span>
+              <span>price</span>
+              <span>description</span>
+              <span>details</span>
             </div>
           </article>
         </div>
@@ -132,10 +136,10 @@
       <section class="admin-panel" data-admin-panel="products">
         <div class="admin-panel-head">
           <div>
-            <p class="admin-kicker">Catalogue management</p>
+            <p class="admin-kicker">Catalogue source</p>
             <h2>Products</h2>
           </div>
-          <button class="admin-secondary" type="button" data-reset-demo>Reset Demo Data</button>
+          <button class="admin-secondary" type="button" data-reset-demo>Refresh Supabase Data</button>
         </div>
 
         <form class="admin-form product-form" data-product-form>
@@ -202,10 +206,10 @@
         <div class="admin-subsection">
           <div class="admin-subsection-head">
             <div>
-              <p class="admin-kicker">Google Sheet live sync</p>
+              <p class="admin-kicker">Google Sheet live source</p>
               <h3>Sheet-Synced Catalogue</h3>
             </div>
-            <p class="admin-note">This is the main path for executives. Add a new row in the Google Sheet with product info and public image URLs, then the storefront sorts the product into its collection automatically.</p>
+            <p class="admin-note">This is the only path that updates the live storefront catalogue. Add a new row in the Google Sheet with product info and public image URLs, then the storefront sorts the product into its collection automatically.</p>
           </div>
 
           <div class="admin-inline-note">
@@ -216,8 +220,8 @@
 
           <div class="admin-guide-grid">
             <article class="admin-guide-card">
-              <h4>Sheet layout</h4>
-              <p>Use the current sheet order as the standard: <strong>A-Q</strong> = <strong>ID</strong>, <strong>Collection</strong>, <strong>Type</strong>, <strong>Center</strong>, <strong>Malee</strong>, <strong>Gold Weight</strong>, <strong>code</strong>, <strong>name</strong>, image URLs, <strong>price</strong>, <strong>description</strong>, and <strong>details</strong>.</p>
+              <h4>Column names</h4>
+              <p>Match the header names. Keep <strong>code</strong>, <strong>name</strong>, <strong>image_url</strong>, <strong>price</strong>, <strong>description</strong>, and <strong>details</strong> recognizable so the storefront maps rows safely even when columns move.</p>
             </article>
             <article class="admin-guide-card">
               <h4>Multi-angle product view</h4>
@@ -249,10 +253,10 @@
         <div class="admin-subsection">
           <div class="admin-subsection-head">
             <div>
-              <p class="admin-kicker">Local browser prototype</p>
-              <h3>Optional Manual Publish</h3>
+              <p class="admin-kicker">Supabase entry</p>
+              <h3>Manual Supabase Product</h3>
             </div>
-            <p class="admin-note">Keep this only for quick mockups in this browser. The live storefront source of truth is the Google Sheet section above.</p>
+            <p class="admin-note">Use this to create a Supabase product record for admin inventory and order workflows. The storefront catalogue stays on Google Sheet until the product migration cutover is verified.</p>
           </div>
 
           <form class="admin-form admin-form-catalogue" data-catalogue-form>
@@ -333,14 +337,14 @@
               <input name="catalogueStockQty" type="number" min="0" value="1">
             </label>
             <div class="admin-form-actions admin-span-2">
-              <button class="admin-primary" type="submit">Publish / Update</button>
-              <button class="admin-secondary" type="reset">Clear Form</button>
+              <button class="admin-primary" type="submit">Save To Supabase</button>
+              <button class="admin-secondary" type="reset">Clear Draft</button>
             </div>
           </form>
 
           <div class="admin-inline-note">
-            <strong data-published-count>0</strong>
-            <span>published catalogue items managed from this browser</span>
+            <strong data-catalogue-draft-count>0</strong>
+            <span>browser-local drafts retired; Supabase products appear in the products table</span>
           </div>
 
           <div class="admin-table-wrap">
@@ -355,7 +359,7 @@
                   <th>Action</th>
                 </tr>
               </thead>
-              <tbody data-published-catalogue-table></tbody>
+              <tbody data-catalogue-draft-table></tbody>
             </table>
           </div>
         </div>
@@ -468,6 +472,100 @@
         <div class="admin-empty">
           <h3>Customer CRM will connect after real checkout.</h3>
           <p>For production, this should store name, phone, email, address, order history, VIP tags, and total spend in a secure database.</p>
+        </div>
+      </section>
+
+      <section class="admin-panel" data-admin-panel="database">
+        <div class="admin-panel-head">
+          <div>
+            <p class="admin-kicker">Supabase foundation</p>
+            <h2>Database</h2>
+          </div>
+          <p class="admin-note">This checks the server-side Supabase connection only. It does not change the live storefront source until product migration and CRUD are approved.</p>
+        </div>
+
+        <div class="admin-grid admin-feed-grid">
+          <article class="admin-card admin-feed-card">
+            <p class="admin-kicker">Connection</p>
+            <h3>Admin Database</h3>
+            <div class="admin-feed-meta admin-database-meta">
+              <div>
+                <span>Status</span>
+                <strong data-database-status data-database-state="loading">Checking...</strong>
+              </div>
+              <div>
+                <span>Project</span>
+                <strong data-database-project>Waiting...</strong>
+              </div>
+              <div>
+                <span>Last Check</span>
+                <strong data-database-checked>Waiting...</strong>
+              </div>
+            </div>
+            <p class="admin-note admin-note-wide" data-database-summary>Waiting for the protected database status API.</p>
+          </article>
+
+          <article class="admin-card admin-feed-card">
+            <p class="admin-kicker">Migration boundary</p>
+            <h3>Current Rule</h3>
+            <p class="admin-note admin-note-wide">Supabase is prepared for shared products, variants, images, stock movements, customers, orders, and settings. The public catalogue still reads Google Sheet until the database data is verified.</p>
+          </article>
+        </div>
+
+        <div class="admin-subsection">
+          <div class="admin-subsection-head">
+            <div>
+              <p class="admin-kicker">Table health</p>
+              <h3>Supabase Tables</h3>
+            </div>
+            <p class="admin-note">Expected tables match the database structure shown in Supabase: admin users, customers, inventory movements, order items, orders, product images, product variants, products, and settings.</p>
+          </div>
+
+          <div class="admin-table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Table</th>
+                  <th>Status</th>
+                  <th>Rows</th>
+                  <th>Note</th>
+                </tr>
+              </thead>
+              <tbody data-database-table-status>
+                <tr><td colspan="4">Checking database tables...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="admin-subsection">
+          <div class="admin-subsection-head">
+            <div>
+              <p class="admin-kicker">Supabase catalogue</p>
+              <h3>Products, Variants, Images</h3>
+            </div>
+            <p class="admin-note" data-database-products-summary>Waiting for Supabase catalogue data. This is read-only until live database verification passes.</p>
+          </div>
+
+          <div class="admin-table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>Name</th>
+                  <th>Status</th>
+                  <th>Price</th>
+                  <th>Variants</th>
+                  <th>Images</th>
+                  <th>Stock</th>
+                  <th>Primary image</th>
+                </tr>
+              </thead>
+              <tbody data-database-products-table>
+                <tr><td colspan="8">Checking Supabase products...</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
 

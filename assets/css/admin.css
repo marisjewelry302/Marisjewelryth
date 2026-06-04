@@ -92,10 +92,16 @@ a {
   gap: 14px;
 }
 
+.admin-actions form {
+  margin: 0;
+}
+
 .admin-actions a,
+.admin-logout,
 .language-switch {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   min-height: 38px;
   padding: 0 14px;
   border: 1px solid rgba(0, 73, 58, 0.18);
@@ -103,6 +109,11 @@ a {
   color: var(--maris-ink);
   font-size: 12px;
   text-decoration: none;
+}
+
+.admin-logout {
+  cursor: pointer;
+  font: inherit;
 }
 
 .language-switch {
@@ -300,6 +311,18 @@ a {
 }
 
 [data-sheet-status][data-sheet-state="loading"] {
+  color: var(--maris-gold);
+}
+
+[data-database-status][data-database-state="ready"] {
+  color: var(--maris-teal);
+}
+
+[data-database-status][data-database-state="error"] {
+  color: var(--maris-red);
+}
+
+[data-database-status][data-database-state="loading"] {
   color: var(--maris-gold);
 }
 

@@ -46,35 +46,26 @@ const marisBaseCollectionMeta = {
 const marisBaseCollectionProducts = {};
 
 (() => {
-  const publishedProductsKey = "marisPublishedCatalogueProducts";
   const googleSheetSourceUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQfntxK3qZhO4cfHkqlFtpY5kP7M3xLLzTkjkH6kTPkfJNdl5rgmGDozfyM3OTMBzo9WS0aXbF4U8Xr/pub?output=csv";
   const marisSheetColumnSchema = [
-    { letter: "A", header: "ID", key: "id" },
-    { letter: "B", header: "Collection", key: "collection" },
-    { letter: "C", header: "Type", key: "type" },
-    { letter: "D", header: "Center", key: "center" },
-    { letter: "E", header: "Malee", key: "malee" },
-    { letter: "F", header: "Gold Weight", key: "gold_weight" },
-    { letter: "G", header: "code", key: "code" },
-    { letter: "H", header: "name", key: "name" },
-    { letter: "I", header: "image_url", key: "image_url" },
-    { letter: "J", header: "top_image_url", key: "top_image_url" },
-    { letter: "K", header: "front_image_url", key: "front_image_url" },
-    { letter: "L", header: "side_image_url", key: "side_image_url" },
-    { letter: "M", header: "yellow_gold_image_url", key: "yellow_gold_image_url" },
-    { letter: "N", header: "rose_gold_image_url", key: "rose_gold_image_url" },
-    { letter: "O", header: "price", key: "price" },
-    { letter: "P", header: "description", key: "description" },
-    { letter: "Q", header: "details", key: "details" }
+    { header: "ID", key: "id", aliases: ["sku", "stock_id"] },
+    { header: "Collection", key: "collection", aliases: ["category", "page_category"] },
+    { header: "Type", key: "type", aliases: ["product_type"] },
+    { header: "Center", key: "center", aliases: ["center_stone"] },
+    { header: "Malee", key: "malee", aliases: ["side_stones"] },
+    { header: "Gold Weight", key: "gold_weight", aliases: ["goldweight"] },
+    { header: "code", key: "code", aliases: ["web_code", "site_code", "product_code", "website_code"], required: true },
+    { header: "name", key: "name", aliases: ["product_name", "display_name"], required: true },
+    { header: "image_url", key: "image_url", aliases: ["image", "main_image", "main_image_url", "cover_image", "cover_image_url", "white_gold", "white_gold_image", "white_gold_image_url"], required: true },
+    { header: "top_image_url", key: "top_image_url", aliases: ["top", "top_image", "top_url", "top_view", "top_view_image"] },
+    { header: "front_image_url", key: "front_image_url", aliases: ["front", "front_image", "front_url", "front_view", "front_view_image"] },
+    { header: "side_image_url", key: "side_image_url", aliases: ["side", "side_image", "side_url", "side_view", "side_view_image"] },
+    { header: "yellow_gold_image_url", key: "yellow_gold_image_url", aliases: ["yellow_gold", "yellow_gold_image", "yellow_gold_url", "yellow_gold_view", "yellow_gold_view_image"] },
+    { header: "rose_gold_image_url", key: "rose_gold_image_url", aliases: ["rose_gold", "rose_gold_image", "rose_gold_url", "rose_gold_view", "rose_gold_view_image"] },
+    { header: "price", key: "price", aliases: ["price_label"] },
+    { header: "description", key: "description", aliases: ["product_description"] },
+    { header: "details", key: "details", aliases: ["detail_lines"] }
   ];
-
-  function readJson(key, fallback) {
-    try {
-      return JSON.parse(localStorage.getItem(key)) || fallback;
-    } catch (error) {
-      return fallback;
-    }
-  }
 
   function normalizeStringArray(value, separatorPattern = /[\n,]/) {
     if (Array.isArray(value)) {
@@ -107,6 +98,31 @@ const marisBaseCollectionProducts = {};
 
   function normalizeSheetKey(value) {
     return slugify(value).replace(/-/g, "_");
+  }
+
+  function getSheetColumnAliases(column) {
+    return Array.from(new Set([column.key, column.header, ...(column.aliases || [])].map((item) => normalizeSheetKey(item)).filter(Boolean)));
+  }
+
+  function buildSheetColumnLookup() {
+    const lookup = new Map();
+
+    marisSheetColumnSchema.forEach((column) => {
+      getSheetColumnAliases(column).forEach((alias) => {
+        if (!lookup.has(alias)) {
+          lookup.set(alias, column.key);
+        }
+      });
+    });
+
+    return lookup;
+  }
+
+  const sheetColumnLookup = buildSheetColumnLookup();
+
+  function resolveSheetColumnKey(header) {
+    const normalizedHeader = normalizeSheetKey(header);
+    return sheetColumnLookup.get(normalizedHeader) || normalizedHeader;
   }
 
   function resolveGoogleSheetCsvUrl(sourceUrl) {
@@ -559,28 +575,69 @@ const marisBaseCollectionProducts = {};
     const interestingHeaders = marisSheetColumnSchema.map((column) => column.key);
 
     return rows.findIndex((row) => {
-      const normalized = row.map((cell) => normalizeSheetKey(cell));
+      const normalized = row.map((cell) => resolveSheetColumnKey(cell));
       return normalized.some((cell) => interestingHeaders.includes(cell));
     });
   }
 
   function buildSheetSchemaState(rawHeaders) {
     const actualHeaders = rawHeaders.map((header) => String(header || "").trim());
-    const normalizedActualHeaders = actualHeaders.map((header) => normalizeSheetKey(header));
     const canonicalKeys = marisSheetColumnSchema.map((column) => column.key);
+    const columnMapping = {};
+    const extraHeaders = [];
+
+    actualHeaders.forEach((header, index) => {
+      const normalizedHeader = normalizeSheetKey(header);
+      const resolvedKey = resolveSheetColumnKey(header);
+
+      if (!normalizedHeader) {
+        return;
+      }
+
+      if (canonicalKeys.includes(resolvedKey)) {
+        if (!columnMapping[resolvedKey]) {
+          columnMapping[resolvedKey] = {
+            key: resolvedKey,
+            header,
+            index
+          };
+        }
+
+        return;
+      }
+
+      extraHeaders.push(header);
+    });
 
     return {
       canonicalColumns: marisSheetColumnSchema.map((column) => ({ ...column })),
       actualHeaders,
-      followsCanonicalPrefix: canonicalKeys.every((key, index) => normalizedActualHeaders[index] === key),
-      missingKeys: canonicalKeys.filter((key) => !normalizedActualHeaders.includes(key)),
-      extraHeaders: actualHeaders.filter((header, index) => !canonicalKeys.includes(normalizedActualHeaders[index]))
+      mapsByHeaderName: true,
+      columnMapping,
+      missingKeys: canonicalKeys.filter((key) => !columnMapping[key]),
+      missingRequiredKeys: marisSheetColumnSchema.filter((column) => column.required && !columnMapping[column.key]).map((column) => column.key),
+      extraHeaders
     };
   }
 
   function rowToRecord(headers, row) {
     return headers.reduce((record, header, index) => {
-      record[header] = sanitizeSheetCellValue(row[index]);
+      const normalizedHeader = normalizeSheetKey(header);
+      const resolvedKey = resolveSheetColumnKey(header);
+      const value = sanitizeSheetCellValue(row[index]);
+
+      if (!resolvedKey) {
+        return record;
+      }
+
+      if (!String(record[resolvedKey] || "").trim()) {
+        record[resolvedKey] = value;
+      }
+
+      if (normalizedHeader && normalizedHeader !== resolvedKey && !String(record[normalizedHeader] || "").trim()) {
+        record[normalizedHeader] = value;
+      }
+
       return record;
     }, {});
   }
@@ -855,10 +912,10 @@ const marisBaseCollectionProducts = {};
     return normalized;
   }
 
-  function mergeProducts(baseProducts, publishedProducts) {
+  function mergeProducts(baseProducts, sourceProducts) {
     const merged = new Map(baseProducts.map((product) => [product.code, normalizeProductRecord(product)]));
 
-    publishedProducts.forEach((product) => {
+    sourceProducts.forEach((product) => {
       const normalized = normalizeProductRecord(product);
 
       if (!normalized) {
@@ -871,21 +928,21 @@ const marisBaseCollectionProducts = {};
     return Array.from(merged.values()).filter(Boolean);
   }
 
-  function mergeCollectionProducts(baseCollectionProducts, publishedProducts) {
+  function mergeCollectionProducts(baseCollectionProducts, sourceProducts) {
     const merged = Object.fromEntries(
       Object.entries(baseCollectionProducts).map(([key, codes]) => [key, Array.isArray(codes) ? [...codes] : []])
     );
-    const publishedCodes = new Set();
-    const publishedByCollection = {};
+    const sourceCodes = new Set();
+    const sourceByCollection = {};
 
-    publishedProducts.forEach((product) => {
+    sourceProducts.forEach((product) => {
       const normalized = normalizeProductRecord(product);
 
       if (!normalized) {
         return;
       }
 
-      publishedCodes.add(normalized.code);
+      sourceCodes.add(normalized.code);
 
       const collectionKey = inferCollectionKey(normalized);
 
@@ -893,20 +950,20 @@ const marisBaseCollectionProducts = {};
         return;
       }
 
-      if (!publishedByCollection[collectionKey]) {
-        publishedByCollection[collectionKey] = [];
+      if (!sourceByCollection[collectionKey]) {
+        sourceByCollection[collectionKey] = [];
       }
 
-      if (!publishedByCollection[collectionKey].includes(normalized.code)) {
-        publishedByCollection[collectionKey].push(normalized.code);
+      if (!sourceByCollection[collectionKey].includes(normalized.code)) {
+        sourceByCollection[collectionKey].push(normalized.code);
       }
     });
 
     Object.keys(merged).forEach((key) => {
-      merged[key] = merged[key].filter((code) => !publishedCodes.has(code));
+      merged[key] = merged[key].filter((code) => !sourceCodes.has(code));
     });
 
-    Object.entries(publishedByCollection).forEach(([collectionKey, codes]) => {
+    Object.entries(sourceByCollection).forEach(([collectionKey, codes]) => {
       if (!merged[collectionKey]) {
         merged[collectionKey] = [];
       }
@@ -977,12 +1034,11 @@ const marisBaseCollectionProducts = {};
     }
 
     const rawHeaders = rows[headerRowIndex];
-    const headers = rawHeaders.map((cell) => normalizeSheetKey(cell));
     window.MARIS_SHEET_SCHEMA = buildSheetSchemaState(rawHeaders);
     window.MARIS_SHEET_HEADERS = window.MARIS_SHEET_SCHEMA.actualHeaders;
     const dataRows = rows
       .slice(headerRowIndex + 1)
-      .map((row) => rowToRecord(headers, row))
+      .map((row) => rowToRecord(rawHeaders, row))
       .filter((record) => Object.values(record).some((value) => String(value || "").trim()));
 
     return dataRows
@@ -1102,7 +1158,7 @@ const marisBaseCollectionProducts = {};
     }
   }
 
-  function applyCatalogueState(baseProducts, sheetProducts, publishedProducts, options = {}) {
+  function applyCatalogueState(baseProducts, sheetProducts, options = {}) {
     const preferSheetProducts = options.preferSheetProducts === true && sheetProducts.length > 0;
     const activeBaseProducts = [];
     const overrideProducts = preferSheetProducts ? sheetProducts : [];
@@ -1114,7 +1170,6 @@ const marisBaseCollectionProducts = {};
       Object.entries(marisBaseCollectionProducts).map(([key, codes]) => [key, [...codes]])
     );
     window.MARIS_SHEET_PRODUCTS = sheetProducts;
-    window.MARIS_PUBLISHED_PRODUCTS = publishedProducts;
     window.MARIS_COLLECTION_META = { ...marisBaseCollectionMeta };
     window.MARIS_PRODUCTS = mergeProducts(activeBaseProducts, overrideProducts);
     window.MARIS_COLLECTION_PRODUCTS = mergeCollectionProducts(baseCollectionProducts, overrideProducts);
@@ -1122,9 +1177,6 @@ const marisBaseCollectionProducts = {};
 
   const googleSheetCsvUrl = resolveGoogleSheetCsvUrl(googleSheetSourceUrl);
   const normalizedBaseProducts = marisBaseProducts.map((product) => normalizeProductRecord(product)).filter(Boolean);
-  const publishedProducts = readJson(publishedProductsKey, [])
-    .map((product) => normalizeProductRecord(product))
-    .filter(Boolean);
 
   window.MARIS_GOOGLE_SHEET_SOURCE_URL = googleSheetSourceUrl;
   window.MARIS_GOOGLE_SHEET_URL = googleSheetCsvUrl;
@@ -1132,8 +1184,10 @@ const marisBaseCollectionProducts = {};
   window.MARIS_SHEET_SCHEMA = {
     canonicalColumns: window.MARIS_SHEET_COLUMN_SCHEMA,
     actualHeaders: [],
-    followsCanonicalPrefix: false,
+    mapsByHeaderName: true,
+    columnMapping: {},
     missingKeys: marisSheetColumnSchema.map((column) => column.key),
+    missingRequiredKeys: marisSheetColumnSchema.filter((column) => column.required).map((column) => column.key),
     extraHeaders: []
   };
   window.MARIS_SHEET_HEADERS = [];
@@ -1145,10 +1199,10 @@ const marisBaseCollectionProducts = {};
     productCount: normalizedBaseProducts.length,
     updatedAt: new Date().toISOString()
   };
-  applyCatalogueState(normalizedBaseProducts, [], publishedProducts);
+  applyCatalogueState(normalizedBaseProducts, []);
   window.MARIS_DATA_READY = fetchGoogleSheetProducts(normalizedBaseProducts)
     .then(({ products: sheetProducts, status }) => {
-      applyCatalogueState(normalizedBaseProducts, sheetProducts, publishedProducts, {
+      applyCatalogueState(normalizedBaseProducts, sheetProducts, {
         preferSheetProducts: status === "ready"
       });
       window.MARIS_SHEET_STATUS = {
