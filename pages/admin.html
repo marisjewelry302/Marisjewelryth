@@ -298,12 +298,12 @@
               <input name="price" type="text" placeholder="Price on request">
             </label>
             <label>
-              Main Image Path
-              <input name="image" type="text" placeholder="../assets/images/catalogue/...png" required>
+              Main Product Image
+              <input name="mainImageFile" type="file" accept="image/jpeg,image/png,image/webp" required>
             </label>
-            <label>
-              Hover Image Path
-              <input name="hover" type="text" placeholder="../assets/images/catalogue/...png">
+            <label class="admin-span-2">
+              Gallery Images
+              <input name="galleryImageFiles" type="file" accept="image/jpeg,image/png,image/webp" multiple>
             </label>
             <label>
               Image Fit
@@ -327,10 +327,6 @@
             <label class="admin-span-2">
               Filter Tags
               <input name="filterValues" type="text" placeholder="white-gold, yellow-gold, rose-gold, bridal-set, pear">
-            </label>
-            <label class="admin-span-2">
-              Gallery
-              <textarea name="gallery" rows="6" placeholder="One row per image&#10;White Gold View | ../assets/images/catalogue/...png | White gold front image&#10;Top View | ../assets/images/catalogue/...png | Top view image"></textarea>
             </label>
             <label>
               Starting Stock

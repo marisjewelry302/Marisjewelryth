@@ -210,6 +210,7 @@ delete process.env.MARIS_ADMIN_SESSION_SECRET;
 const envExample = await readFile(new URL("../.env.example", import.meta.url), "utf8");
 const loginRoute = await readFile(new URL("../app/api/admin/login/route.js", import.meta.url), "utf8");
 const setupRoute = await readFile(new URL("../app/api/admin/setup/route.js", import.meta.url), "utf8");
+const uploadRoute = await readFile(new URL("../app/api/admin/uploads/product-image/route.js", import.meta.url), "utf8");
 const setupPage = await readFile(new URL("../app/admin/setup/page.js", import.meta.url), "utf8");
 
 assert.doesNotMatch(envExample, /^MARIS_ADMIN_PASSWORD=/m, "Admin password should no longer be configured through env");
@@ -217,3 +218,6 @@ assert.match(envExample, /^MARIS_ADMIN_SESSION_SECRET=/m, "Session signing secre
 assert.match(loginRoute, /authenticateAdminUser/, "Login route should authenticate against admin_users");
 assert.match(setupRoute, /createInitialAdminUser/, "Setup route should create the first database owner");
 assert.match(setupPage, /Create Owner Account/, "Setup page should exist for the first owner account");
+assert.match(uploadRoute, /verifyAdminSession/, "Product image upload route must verify the admin session");
+assert.match(uploadRoute, /request\.formData/, "Product image upload route should parse multipart form data");
+assert.match(uploadRoute, /uploadAdminProductImage/, "Product image upload route should delegate Storage writes to the database helper");

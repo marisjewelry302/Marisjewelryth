@@ -75,13 +75,16 @@
 
   async function fetchAdminApi(path, options = {}) {
     const url = `${ADMIN_API_PREFIX}${path}`;
+    const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData;
+    const headers = {
+      Accept: "application/json",
+      ...(isFormData ? {} : { "Content-Type": "application/json" }),
+      ...(options.headers || {})
+    };
     const response = await fetch(url, {
       credentials: "same-origin",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json"
-      },
-      ...options
+      ...options,
+      headers
     });
 
     const payload = await response.json().catch(() => ({}));
@@ -243,6 +246,10 @@
       .filter(Boolean);
   }
 
+  function isSelectedFile(file) {
+    return file && typeof file === "object" && typeof file.size === "number" && file.size > 0;
+  }
+
   function parseGallery(value, fallbackName, fallbackImage, fallbackHover) {
     const lines = splitTextareaLines(value);
     const gallery = lines
@@ -291,8 +298,8 @@
     const collectionKey = String(formData.get("collectionKey") || "").trim();
     const title = String(formData.get("title") || code).trim() || code;
     const name = String(formData.get("name") || "").trim();
-    const image = String(formData.get("image") || "").trim();
-    const hover = String(formData.get("hover") || image).trim() || image;
+    const mainImageFile = formData.get("mainImageFile");
+    const galleryImageFiles = formData.getAll("galleryImageFiles").filter(isSelectedFile);
     const description = String(formData.get("description") || "").trim();
     const details = splitTextareaLines(formData.get("details"));
     const price = String(formData.get("price") || "Price on request").trim() || "Price on request";
@@ -302,13 +309,12 @@
     const imagePresentation = String(formData.get("imagePresentation") || "").trim();
     const manualFilters = splitTags(formData.get("filterValues"));
     const filterValues = Array.from(new Set([...manualFilters, metal, style, shape].filter(Boolean)));
-    const gallery = parseGallery(formData.get("gallery"), name || title, image, hover);
     const stockQty = Math.max(0, Number(formData.get("catalogueStockQty")) || 0);
 
-    if (!code || !collectionKey || !name || !image) {
+    if (!code || !collectionKey || !name || !isSelectedFile(mainImageFile)) {
       return {
         ok: false,
-        message: "Product code, collection, product name, and main image path are required."
+        message: "Product code, collection, product name, and main product image are required."
       };
     }
 
@@ -327,20 +333,50 @@
         name,
         details,
         description,
-        image,
-        hover,
+        image: "",
+        hover: "",
         price,
         metal,
         style,
         shape,
         filterValues,
-        gallery,
+        gallery: [],
         imagePresentation,
         collectionKey,
         updatedAt: new Date().toISOString()
       },
+      mainImageFile,
+      galleryImageFiles,
       stockQty
     };
+  }
+
+  async function uploadProductImage(productId, file, options = {}) {
+    const uploadFormData = new FormData();
+    uploadFormData.set("productId", productId);
+    uploadFormData.set("file", file);
+    uploadFormData.set("altText", options.altText || file.name || "Product image");
+    uploadFormData.set("sortOrder", String(options.sortOrder || 0));
+    uploadFormData.set("isPrimary", options.isPrimary ? "true" : "false");
+
+    return fetchAdminApi("/uploads/product-image", {
+      method: "POST",
+      body: uploadFormData
+    });
+  }
+
+  async function uploadCatalogueImages(product, result) {
+    await uploadProductImage(product.id, result.mainImageFile, {
+      altText: `${result.product.name || result.product.code} primary image`,
+      sortOrder: 0,
+      isPrimary: true
+    });
+
+    await Promise.all(result.galleryImageFiles.map((file, index) => uploadProductImage(product.id, file, {
+      altText: `${result.product.name || result.product.code} gallery image ${index + 1}`,
+      sortOrder: index + 1,
+      isPrimary: false
+    })));
   }
 
   function renderStats() {
@@ -956,7 +992,7 @@
     }
 
     try {
-      await fetchAdminApi("/products", {
+      const payload = await fetchAdminApi("/products", {
         method: "POST",
         body: JSON.stringify({
           sku: result.product.code,
@@ -972,20 +1008,19 @@
             title: result.product.title,
             description: result.product.description,
             details: result.product.details,
-            image: result.product.image,
-            hover: result.product.hover,
-            gallery: result.product.gallery,
             filterValues: result.product.filterValues,
             imagePresentation: result.product.imagePresentation
           }
         })
       });
+      await uploadCatalogueImages(payload.product, result);
       await loadAdminBackendData();
+      loadDatabaseCatalogue();
       event.currentTarget.reset();
       renderAll();
-      setMessage("Catalogue product saved in Supabase.");
+      setMessage("Catalogue product and images saved in Supabase.");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Unable to save catalogue product in Supabase.", true);
+      setMessage(error instanceof Error ? error.message : "Unable to save catalogue product and images in Supabase.", true);
     }
   });
 

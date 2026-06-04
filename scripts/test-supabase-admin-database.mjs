@@ -7,7 +7,8 @@ const {
   getSupabaseAdminConfig,
   readAdminCatalogueProducts,
   readAdminDatabaseStatus,
-  readPublicCatalogueProducts
+  readPublicCatalogueProducts,
+  uploadAdminProductImage
 } = await import("../app/lib/maris-database.js");
 
 const { GET: getPublicCatalogueProducts } = await import("../app/api/catalogue/products/route.js");
@@ -436,6 +437,137 @@ if (previousSupabaseServiceRoleKey === undefined) {
 } else {
   process.env.SUPABASE_SERVICE_ROLE_KEY = previousSupabaseServiceRoleKey;
 }
+
+function createProductImageUploadClient() {
+  const state = {
+    uploads: [],
+    insertedImages: [],
+    selectedColumns: []
+  };
+
+  return {
+    state,
+    storage: {
+      from(bucketName) {
+        assert.equal(bucketName, "product-images");
+
+        return {
+          async upload(path, buffer, options) {
+            state.uploads.push({ path, buffer, options });
+            return {
+              data: {
+                path,
+                fullPath: `${bucketName}/${path}`
+              },
+              error: null
+            };
+          },
+          getPublicUrl(path) {
+            return {
+              data: {
+                publicUrl: `https://example.supabase.co/storage/v1/object/public/product-images/${path}`
+              }
+            };
+          }
+        };
+      }
+    },
+    from(tableName) {
+      assert.equal(tableName, "product_images");
+
+      return {
+        insert(payload) {
+          state.insertedImages.push(payload);
+
+          return {
+            select(columns) {
+              state.selectedColumns.push(columns);
+
+              return {
+                async single() {
+                  return {
+                    data: {
+                      id: "image-1",
+                      ...payload
+                    },
+                    error: null
+                  };
+                }
+              };
+            }
+          };
+        }
+      };
+    }
+  };
+}
+
+const uploadClient = createProductImageUploadClient();
+const uploadedImage = await uploadAdminProductImage({
+  productId: "product-1",
+  fileName: "Main Ring.png",
+  contentType: "image/png",
+  buffer: Buffer.from("fake-image"),
+  altText: "Main ring",
+  sortOrder: 0,
+  isPrimary: true
+}, {
+  env: {
+    SUPABASE_URL: "https://maris-test.supabase.co",
+    SUPABASE_SERVICE_ROLE_KEY: "service-role-secret"
+  },
+  client: uploadClient,
+  now: () => 1710000000000
+});
+
+assert.equal(uploadClient.state.uploads[0].path, "products/product-1/1710000000000-main-ring.png");
+assert.equal(uploadClient.state.uploads[0].options.contentType, "image/png");
+assert.equal(uploadClient.state.uploads[0].options.upsert, false);
+assert.equal(uploadClient.state.insertedImages[0].product_id, "product-1");
+assert.equal(uploadClient.state.insertedImages[0].image_url, "https://example.supabase.co/storage/v1/object/public/product-images/products/product-1/1710000000000-main-ring.png");
+assert.equal(uploadClient.state.insertedImages[0].source, "upload");
+assert.equal(uploadClient.state.insertedImages[0].metadata.storageBucket, "product-images");
+assert.equal(uploadClient.state.insertedImages[0].metadata.storagePath, "products/product-1/1710000000000-main-ring.png");
+assert.deepEqual(uploadedImage, {
+  id: "image-1",
+  imageUrl: "https://example.supabase.co/storage/v1/object/public/product-images/products/product-1/1710000000000-main-ring.png",
+  altText: "Main ring",
+  sortOrder: 0,
+  isPrimary: true,
+  source: "upload"
+});
+
+await assert.rejects(
+  () => uploadAdminProductImage({
+    productId: "product-1",
+    fileName: "notes.txt",
+    contentType: "text/plain",
+    buffer: Buffer.from("not an image")
+  }, {
+    env: {
+      SUPABASE_URL: "https://maris-test.supabase.co",
+      SUPABASE_SERVICE_ROLE_KEY: "service-role-secret"
+    },
+    client: createProductImageUploadClient()
+  }),
+  (error) => error.statusCode === 400 && /image/i.test(error.message)
+);
+
+await assert.rejects(
+  () => uploadAdminProductImage({
+    productId: "product-1",
+    fileName: "huge.png",
+    contentType: "image/png",
+    buffer: Buffer.alloc((5 * 1024 * 1024) + 1)
+  }, {
+    env: {
+      SUPABASE_URL: "https://maris-test.supabase.co",
+      SUPABASE_SERVICE_ROLE_KEY: "service-role-secret"
+    },
+    client: createProductImageUploadClient()
+  }),
+  (error) => error.statusCode === 413 && /5 MB/i.test(error.message)
+);
 
 function createInventoryMovementClient() {
   const state = {

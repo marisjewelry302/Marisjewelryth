@@ -16,6 +16,13 @@ export const MARIS_DATABASE_TABLES = Object.freeze([
 
 const SUPABASE_URL_ENV = "SUPABASE_URL";
 const SUPABASE_SERVICE_ROLE_KEY_ENV = "SUPABASE_SERVICE_ROLE_KEY";
+export const PRODUCT_IMAGE_BUCKET = "product-images";
+export const MAX_ADMIN_PRODUCT_IMAGE_BYTES = 5 * 1024 * 1024;
+const PRODUCT_IMAGE_CONTENT_TYPES = new Map([
+  ["image/jpeg", ".jpg"],
+  ["image/png", ".png"],
+  ["image/webp", ".webp"]
+]);
 const ADMIN_CATALOGUE_SELECT = `
   id,
   product_code,
@@ -85,6 +92,14 @@ const PUBLIC_CATALOGUE_SELECT = `
     source
   )
 `;
+
+export class AdminProductImageUploadError extends Error {
+  constructor(message, statusCode = 400) {
+    super(message);
+    this.name = "AdminProductImageUploadError";
+    this.statusCode = statusCode;
+  }
+}
 
 function cleanEnvValue(value) {
   const cleanValue = String(value || "").trim();
@@ -511,6 +526,107 @@ export async function readAdminCatalogueProducts({ env = process.env, client, li
     products: Array.isArray(data) ? data.map(normalizeProduct) : [],
     checkedAt: new Date().toISOString()
   };
+}
+
+function sanitizeStorageFileName(fileName, contentType) {
+  const fallbackExtension = PRODUCT_IMAGE_CONTENT_TYPES.get(contentType) || "";
+  const originalName = String(fileName || "product-image").trim().toLowerCase();
+  const extensionMatch = originalName.match(/\.[a-z0-9]+$/i);
+  const extension = fallbackExtension || extensionMatch?.[0] || "";
+  const basename = originalName
+    .replace(/\.[a-z0-9]+$/i, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    || "product-image";
+
+  return `${basename}${extension}`;
+}
+
+function assertValidProductImageUpload({ productId, fileName, contentType, buffer }) {
+  if (!String(productId || "").trim()) {
+    throw new AdminProductImageUploadError("Product id is required.", 400);
+  }
+
+  if (!buffer || typeof buffer.byteLength !== "number" || buffer.byteLength <= 0) {
+    throw new AdminProductImageUploadError("Product image file is required.", 400);
+  }
+
+  if (buffer.byteLength > MAX_ADMIN_PRODUCT_IMAGE_BYTES) {
+    throw new AdminProductImageUploadError("Product image must be 5 MB or smaller.", 413);
+  }
+
+  if (!PRODUCT_IMAGE_CONTENT_TYPES.has(String(contentType || "").toLowerCase())) {
+    throw new AdminProductImageUploadError("Product image must be a JPG, PNG, or WebP image.", 400);
+  }
+
+  if (!String(fileName || "").trim()) {
+    throw new AdminProductImageUploadError("Product image filename is required.", 400);
+  }
+}
+
+export async function uploadAdminProductImage(image, { env = process.env, client, now = () => Date.now() } = {}) {
+  const config = getSupabaseAdminConfig(env);
+  if (!config.isConfigured) {
+    throw new Error(`Supabase admin database is not configured. Set ${config.missingEnv.join(", ")}.`);
+  }
+
+  const contentType = String(image.contentType || "").toLowerCase();
+  assertValidProductImageUpload({
+    productId: image.productId,
+    fileName: image.fileName,
+    contentType,
+    buffer: image.buffer
+  });
+
+  const supabase = client || createSupabaseAdminClient(env);
+  const productId = String(image.productId).trim();
+  const storageFileName = sanitizeStorageFileName(image.fileName, contentType);
+  const storagePath = `products/${productId}/${now()}-${storageFileName}`;
+  const storage = supabase.storage.from(PRODUCT_IMAGE_BUCKET);
+  const uploadResult = await storage.upload(storagePath, image.buffer, {
+    contentType,
+    cacheControl: "3600",
+    upsert: false
+  });
+
+  if (uploadResult.error) {
+    throw new Error(uploadResult.error.message || "Product image could not be uploaded.");
+  }
+
+  const publicUrlResult = storage.getPublicUrl(storagePath);
+  const publicUrl = publicUrlResult?.data?.publicUrl || "";
+
+  if (!publicUrl) {
+    throw new Error("Product image public URL could not be created.");
+  }
+
+  const payload = {
+    product_id: productId,
+    image_url: publicUrl,
+    alt_text: String(image.altText || "").trim(),
+    sort_order: Number(image.sortOrder) || 0,
+    is_primary: image.isPrimary === true || image.isPrimary === "true",
+    source: "upload",
+    metadata: {
+      storageBucket: PRODUCT_IMAGE_BUCKET,
+      storagePath,
+      originalFileName: String(image.fileName || ""),
+      contentType,
+      size: image.buffer.byteLength
+    }
+  };
+
+  const { data, error } = await supabase
+    .from("product_images")
+    .insert(payload)
+    .select("id, image_url, alt_text, sort_order, is_primary, source")
+    .single();
+
+  if (error) {
+    throw new Error(error.message || "Product image record could not be created.");
+  }
+
+  return normalizeImage(data);
 }
 
 const ADMIN_ORDER_SELECT = `
