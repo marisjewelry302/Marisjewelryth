@@ -17,7 +17,7 @@ export async function GET() {
   try {
     const catalogue = await readPublicCatalogueProducts();
 
-    return json(catalogue, catalogue.status === "unavailable" ? 503 : 200);
+    return json(catalogue);
   } catch (error) {
     return json({
       source: "supabase",

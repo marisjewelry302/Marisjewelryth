@@ -22,3 +22,5 @@ public/
 # OS cruft
 Thumbs.db
 .DS_Store
+
+.vercel

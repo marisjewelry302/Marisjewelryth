@@ -421,7 +421,7 @@ delete process.env.SUPABASE_URL;
 delete process.env.SUPABASE_SERVICE_ROLE_KEY;
 const missingPublicRouteResponse = await getPublicCatalogueProducts();
 const missingPublicRoutePayload = await missingPublicRouteResponse.json();
-assert.equal(missingPublicRouteResponse.status, 503);
+assert.equal(missingPublicRouteResponse.status, 200);
 assert.equal(missingPublicRouteResponse.headers.get("Cache-Control"), "no-store");
 assert.equal(missingPublicRoutePayload.source, "supabase");
 assert.equal(missingPublicRoutePayload.status, "unavailable");
