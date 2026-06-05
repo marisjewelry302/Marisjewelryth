@@ -12,5 +12,7 @@ nginx/
 assets/images/home/archive/
 *.log
 *.err
+.env
+.env.*
 Thumbs.db
 .DS_Store
