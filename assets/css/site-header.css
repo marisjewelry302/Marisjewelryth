@@ -6,16 +6,18 @@
   --maris-ink: #102923;
   --maris-paper: #fffaf6;
   --maris-white: #ffffff;
+  --maris-font-sans: "Urbanist", "Anuphan", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --maris-font-thai: "Anuphan", "Urbanist", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 .top-bar,
 .navbar {
-  font-family: "Urbanist", "Anuphan", sans-serif;
+  font-family: var(--maris-font-sans);
 }
 
 html[lang="th"] .top-bar,
 html[lang="th"] .navbar {
-  font-family: "Anuphan", "Urbanist", sans-serif;
+  font-family: var(--maris-font-thai);
 }
 
 .top-bar {

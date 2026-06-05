@@ -14,6 +14,18 @@ const quoteHtml = await readFile(new URL("../pages/request-quote.html", import.m
 const formSubmissionsJs = await readFile(new URL("../assets/js/form-submissions.js", import.meta.url), "utf8");
 const productDataJs = await readFile(new URL("../assets/js/product-data.js", import.meta.url), "utf8");
 const sitemapXml = await readFile(new URL("../sitemap.xml", import.meta.url), "utf8");
+const typographySource = (await Promise.all([
+  "../index.html",
+  "../404.html",
+  "../assets/css/style.css",
+  "../assets/css/engagement-ring.css",
+  "../assets/css/placeholder.css",
+  "../assets/css/admin.css",
+  "../assets/css/product.css",
+  "../assets/css/site-header.css",
+  "../assets/css/footer.css",
+  "../app/admin/login/login.module.css"
+].map((sourcePath) => readFile(new URL(sourcePath, import.meta.url), "utf8")))).join("\n");
 const { POST: postPaymentWebhook } = await import("../app/api/webhooks/payment/route.js");
 const { default: nextConfig } = await import("../next.config.mjs");
 const projectRoot = path.resolve(fileURLToPath(new URL("..", import.meta.url)));
@@ -153,4 +165,10 @@ assert.match(
   homepageCss,
   /\.atelier-product-grid\b/,
   "Atelier Reveal should render a stable responsive product grid"
+);
+
+assert.doesNotMatch(
+  typographySource,
+  /Cormorant|Georgia|Arial|letter-spacing:\s*-/i,
+  "Maris typography should stay on the shared Urbanist/Anuphan stack without clashing legacy fonts or negative tracking"
 );

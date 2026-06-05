@@ -1,4 +1,4 @@
-﻿.product-page {
+.product-page {
   background:
     radial-gradient(circle at top right, rgba(249, 207, 209, 0.2), transparent 34%),
     linear-gradient(180deg, var(--maris-paper) 0%, var(--maris-white) 46%, var(--maris-silver) 100%);
@@ -298,7 +298,7 @@
 }
 
 .product-summary h1 {
-  font-family: 'Urbanist', sans-serif;
+  font-family: var(--maris-font-sans);
   font-size: clamp(46px, 6vw, 76px);
   font-weight: 300;
   line-height: 0.95;
@@ -333,7 +333,7 @@
 }
 
 .product-price {
-  font-family: 'Urbanist', sans-serif;
+  font-family: var(--maris-font-sans);
   font-size: clamp(30px, 4vw, 44px);
   line-height: 1;
   color: var(--maris-teal);
@@ -387,7 +387,7 @@
 
 .also-like h2 {
   margin-bottom: 20px;
-  font-family: 'Urbanist', sans-serif;
+  font-family: var(--maris-font-sans);
   font-size: clamp(31px, 4.2vw, 49px);
   font-weight: 300;
   color: var(--maris-teal);
