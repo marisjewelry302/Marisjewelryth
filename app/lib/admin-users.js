@@ -63,6 +63,9 @@ function getAdminUsersClient({ env = process.env, client } = {}) {
 
 async function countAdminUsers({ env = process.env, client } = {}) {
   const { config, client: supabase } = getAdminUsersClient({ env, client });
+  console.log("CONFIG", config);
+  console.log("MISSING ENV", config?.missingEnv);
+  console.log("IS CONFIGURED", config?.isConfigured);
 
   if (!config.isConfigured) {
     return {
@@ -77,6 +80,7 @@ async function countAdminUsers({ env = process.env, client } = {}) {
     .select("id", { count: "exact", head: true });
 
   if (error) {
+    console.error("SUPABASE ERROR", error);
     throw new Error(error.message || "Admin users could not be counted.");
   }
 
