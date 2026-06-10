@@ -19,16 +19,13 @@ const NEXT_PUBLIC_SUPABASE_URL_ENV = "NEXT_PUBLIC_SUPABASE_URL";
 const SUPABASE_SERVICE_ROLE_KEY_ENV = "SUPABASE_SERVICE_ROLE_KEY";
 const ADMIN_CATALOGUE_SELECT = `
   id,
-  product_code,
+  sku,
   slug,
-  name_en,
-  name_th,
+  name,
   category,
   collection,
   status,
-  price_amount,
-  currency,
-  is_active,
+  base_price,
   stock_quantity,
   reserved_quantity,
   updated_at,
@@ -36,8 +33,8 @@ const ADMIN_CATALOGUE_SELECT = `
     id,
     sku,
     variant_name,
-    metal,
-    size_label,
+    material,
+    size,
     stock_quantity,
     is_active
   ),
@@ -52,21 +49,19 @@ const ADMIN_CATALOGUE_SELECT = `
 `;
 const PUBLIC_CATALOGUE_SELECT = `
   id,
-  product_code,
+  sku,
   slug,
-  name_en,
-  name_th,
+  name,
   category,
   collection,
   status,
-  price_amount,
-  currency,
+  base_price,
   product_variants (
     id,
     sku,
     variant_name,
-    metal,
-    size_label,
+    material,
+    size,
     is_active
   ),
   product_images (
@@ -214,8 +209,8 @@ function normalizeVariant(row) {
     id: row.id,
     sku: row.sku || "",
     variantName: row.variant_name || "",
-    metal: row.metal || "",
-    sizeLabel: row.size_label || "",
+    material: row.material || "",
+    size: row.size || "",
     stockQuantity: Number(row.stock_quantity) || 0,
     isActive: row.is_active !== false
   };
@@ -285,16 +280,13 @@ function normalizeProduct(row) {
 
   return {
     id: row.id,
-    productCode: row.product_code || "",
+    sku: row.sku || "",
     slug: row.slug || "",
-    nameEn: row.name_en || "",
-    nameTh: row.name_th || "",
+    name: row.name || "",
     category: row.category || "",
     collection: row.collection || "",
     status: row.status || "draft",
-    priceAmount: row.price_amount === null || row.price_amount === undefined ? null : Number(row.price_amount),
-    currency: row.currency || "THB",
-    isActive: row.is_active !== false,
+    basePrice: row.base_price === null || row.base_price === undefined ? null : Number(row.base_price),
     stockQuantity: Number(row.stock_quantity) || 0,
     reservedQuantity: Number(row.reserved_quantity) || 0,
     stockQty: Number(row.stock_quantity) || 0,
@@ -314,8 +306,8 @@ function normalizePublicVariant(row) {
     id: row.id,
     sku: row.sku || "",
     variantName: row.variant_name || "",
-    metal: row.metal || "",
-    sizeLabel: row.size_label || ""
+    material: row.material || "",
+    size: row.size || ""
   };
 }
 
@@ -340,15 +332,13 @@ function normalizePublicProduct(row) {
 
   return {
     id: row.id,
-    productCode: row.product_code || "",
+    sku: row.sku || "",
     slug: row.slug || "",
-    nameEn: row.name_en || "",
-    nameTh: row.name_th || "",
+    name: row.name || "",
     category: row.category || "",
     collection: row.collection || "",
     status: row.status || "active",
-    priceAmount: row.price_amount === null || row.price_amount === undefined ? null : Number(row.price_amount),
-    currency: row.currency || "THB",
+    basePrice: row.base_price === null || row.base_price === undefined ? null : Number(row.base_price),
     primaryImageUrl: primaryImage?.imageUrl || "",
     images,
     variants
@@ -407,7 +397,6 @@ export async function readPublicCatalogueProducts({ env = process.env, client, l
     .from("products")
     .select(PUBLIC_CATALOGUE_SELECT)
     .eq("status", "active")
-    .eq("is_active", true)
     .order("updated_at", { ascending: false })
     .limit(limit);
 
@@ -508,8 +497,8 @@ function normalizeInventoryLog(row) {
     id: row.id,
     productId: row.product_id || null,
     variantId: row.variant_id || null,
-    productCode: product?.product_code || row.product_code || "",
-    sku: product?.product_code || row.product_code || "",
+    productCode: product?.sku || row.product_code || "",
+    sku: product?.sku || row.product_code || "",
     changeType: row.change_type || row.movement_type || "adjustment",
     type: row.change_type || row.movement_type || "adjustment",
     quantity: Number(row.quantity) || 0,
@@ -616,7 +605,7 @@ export async function readAdminInventoryLogs({ env = process.env, client, limit 
   const supabase = client || createSupabaseAdminClient(env);
   const { data, error } = await supabase
     .from("inventory_logs")
-    .select("*, products ( id, product_code, name_en, stock_quantity, reserved_quantity )")
+    .select("*, products ( id, sku, name, stock_quantity, reserved_quantity )")
     .order("created_at", { ascending: false })
     .limit(limit);
 
@@ -708,18 +697,15 @@ export async function createAdminProduct(product, { env = process.env, client } 
   const supabase = client || createSupabaseAdminClient(env);
   const status = normalizeAdminProductStatus(product.status);
   const payload = {
-    product_code: product.sku,
+    sku: product.sku,
     slug: product.slug || product.sku?.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
-    name_en: product.name,
+    name: product.name,
     category: product.category,
     collection: product.collection || null,
-    price_amount: parseMoneyAmount(product.price),
-    currency: product.currency || "THB",
+    base_price: parseMoneyAmount(product.price),
     status,
-    is_active: status === "active" && product.isActive !== false,
     stock_quantity: Number(product.stockQty) || 0,
-    reserved_quantity: Number(product.reservedQty) || 0,
-    metadata: product.metadata || {}
+    reserved_quantity: Number(product.reservedQty) || 0
   };
 
   const { data, error } = await supabase
@@ -770,13 +756,11 @@ export async function updateAdminProduct(productId, updates, { env = process.env
       : status === "active";
   const payload = {
     slug: updates.slug,
-    name_en: updates.name,
+    name: updates.name,
     category: updates.category,
     collection: updates.collection,
-    price_amount: updates.price === undefined ? undefined : parseMoneyAmount(updates.price),
-    currency: updates.currency || "THB",
+    base_price: updates.price === undefined ? undefined : parseMoneyAmount(updates.price),
     status,
-    is_active: isActive,
     stock_quantity: updates.stockQty !== undefined ? Number(updates.stockQty) : undefined,
     reserved_quantity: updates.reservedQty !== undefined ? Number(updates.reservedQty) : undefined,
     metadata: updates.metadata
@@ -893,7 +877,7 @@ export async function createAdminInventoryLog(log, { env = process.env, client }
 
   const productResult = await supabase
     .from("products")
-    .select("id, product_code, name_en, stock_quantity, reserved_quantity")
+    .select("id, sku, name, stock_quantity, reserved_quantity")
     .eq("id", productId)
     .limit(1)
     .maybeSingle();
@@ -936,7 +920,7 @@ export async function createAdminInventoryLog(log, { env = process.env, client }
   const { data, error } = await supabase
     .from("inventory_logs")
     .insert(payload)
-    .select("*, products ( id, product_code, name_en, stock_quantity, reserved_quantity )")
+    .select("*, products ( id, sku, name, stock_quantity, reserved_quantity )")
     .single();
 
   if (error) {
@@ -956,7 +940,7 @@ export async function createAdminOrder(orderData, { env = process.env, client } 
 
   const productResult = await supabase
     .from("products")
-    .select("id, product_code, name_en, stock_quantity, reserved_quantity")
+    .select("id, sku, name, stock_quantity, reserved_quantity")
     .eq("id", orderData.productId)
     .limit(1)
     .maybeSingle();
@@ -1003,8 +987,8 @@ export async function createAdminOrder(orderData, { env = process.env, client } 
   const orderItemPayload = {
     order_id: order.id,
     product_id: product.id,
-    product_code: product.product_code,
-    item_name: product.name_en || product.product_code,
+    product_code: product.sku,
+    item_name: product.name || product.sku,
     quantity,
     unit_price_amount: Number(orderData.unitPriceAmount || 0) || 0,
     total_amount: Number(orderData.totalAmount || 0) || 0,
