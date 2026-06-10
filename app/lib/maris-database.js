@@ -1113,3 +1113,77 @@ export async function createAdminPayment(payment, { env = process.env, client } 
 
   return normalizePayment(data);
 }
+
+export class AdminProductImageUploadError extends Error {
+  constructor(message, statusCode = 400) {
+    super(message);
+    this.name = "AdminProductImageUploadError";
+    this.statusCode = statusCode;
+  }
+}
+
+export async function uploadAdminProductImage(
+  { productId, fileName, contentType, buffer, altText, sortOrder, isPrimary },
+  { env = process.env, client } = {}
+) {
+  const supabase = client || createSupabaseAdminClient(env);
+  const config = getSupabaseAdminConfig(env);
+
+  if (!config.isConfigured) {
+    throw new Error("Supabase admin database is not configured");
+  }
+
+  if (!productId) {
+    throw new AdminProductImageUploadError("Product ID is required.", 400);
+  }
+
+  if (!buffer || !fileName) {
+    throw new AdminProductImageUploadError("File is required.", 400);
+  }
+
+  const ext = fileName.split(".").pop()?.toLowerCase() || "jpg";
+  const uniqueName = `${productId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+
+  const { data: uploadData, error: uploadError } = await supabase.storage
+    .from("product-images")
+    .upload(uniqueName, buffer, {
+      contentType: contentType || "image/jpeg",
+      upsert: false
+    });
+
+  if (uploadError) {
+    throw new AdminProductImageUploadError(uploadError.message || "Image could not be uploaded.", 500);
+  }
+
+  const { data: publicUrlData } = supabase.storage
+    .from("product-images")
+    .getPublicUrl(uploadData.path);
+
+  const imageUrl = publicUrlData?.publicUrl || "";
+
+  const { data, error } = await supabase
+    .from("product_images")
+    .insert({
+      product_id: productId,
+      image_url: imageUrl,
+      alt_text: altText || "",
+      sort_order: Number(sortOrder) || 0,
+      is_primary: isPrimary === true,
+      source: "upload"
+    })
+    .select("*")
+    .single();
+
+  if (error) {
+    throw new AdminProductImageUploadError(error.message || "Image record could not be saved.", 500);
+  }
+
+  return {
+    id: data.id,
+    imageUrl: data.image_url,
+    altText: data.alt_text || "",
+    sortOrder: data.sort_order,
+    isPrimary: data.is_primary,
+    source: data.source
+  };
+}
