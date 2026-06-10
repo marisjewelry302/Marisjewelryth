@@ -15,14 +15,8 @@ export const MARIS_DATABASE_TABLES = Object.freeze([
 ]);
 
 const SUPABASE_URL_ENV = "SUPABASE_URL";
+const NEXT_PUBLIC_SUPABASE_URL_ENV = "NEXT_PUBLIC_SUPABASE_URL";
 const SUPABASE_SERVICE_ROLE_KEY_ENV = "SUPABASE_SERVICE_ROLE_KEY";
-export const PRODUCT_IMAGE_BUCKET = "product-images";
-export const MAX_ADMIN_PRODUCT_IMAGE_BYTES = 5 * 1024 * 1024;
-const PRODUCT_IMAGE_CONTENT_TYPES = new Map([
-  ["image/jpeg", ".jpg"],
-  ["image/png", ".png"],
-  ["image/webp", ".webp"]
-]);
 const ADMIN_CATALOGUE_SELECT = `
   id,
   product_code,
@@ -42,7 +36,7 @@ const ADMIN_CATALOGUE_SELECT = `
     id,
     sku,
     variant_name,
-    material,
+    metal,
     size_label,
     stock_quantity,
     is_active
@@ -64,23 +58,15 @@ const PUBLIC_CATALOGUE_SELECT = `
   name_th,
   category,
   collection,
-  description,
-  material,
-  gold_color,
   status,
   price_amount,
   currency,
-  stock_quantity,
-  reserved_quantity,
-  updated_at,
-  metadata,
   product_variants (
     id,
     sku,
     variant_name,
-    material,
+    metal,
     size_label,
-    stock_quantity,
     is_active
   ),
   product_images (
@@ -88,18 +74,9 @@ const PUBLIC_CATALOGUE_SELECT = `
     image_url,
     alt_text,
     sort_order,
-    is_primary,
-    source
+    is_primary
   )
 `;
-
-export class AdminProductImageUploadError extends Error {
-  constructor(message, statusCode = 400) {
-    super(message);
-    this.name = "AdminProductImageUploadError";
-    this.statusCode = statusCode;
-  }
-}
 
 function cleanEnvValue(value) {
   const cleanValue = String(value || "").trim();
@@ -129,7 +106,7 @@ function getProjectRef(url) {
 
 function readSupabaseAdminEnv(env = process.env) {
   return {
-    url: cleanEnvValue(env[SUPABASE_URL_ENV]),
+    url: cleanEnvValue(env[SUPABASE_URL_ENV] || env[NEXT_PUBLIC_SUPABASE_URL_ENV]),
     serviceRoleKey: cleanEnvValue(env[SUPABASE_SERVICE_ROLE_KEY_ENV])
   };
 }
@@ -237,7 +214,7 @@ function normalizeVariant(row) {
     id: row.id,
     sku: row.sku || "",
     variantName: row.variant_name || "",
-    material: row.material  || "",
+    metal: row.metal || "",
     sizeLabel: row.size_label || "",
     stockQuantity: Number(row.stock_quantity) || 0,
     isActive: row.is_active !== false
@@ -266,6 +243,11 @@ function parseMoneyAmount(value) {
   return Number.isFinite(amount) ? amount : null;
 }
 
+function cleanOptionalText(value) {
+  const text = String(value || "").trim();
+  return text || null;
+}
+
 function normalizeAdminProductStatus(value) {
   const status = String(value || "").trim().toLowerCase();
 
@@ -290,93 +272,6 @@ function sortImages(left, right) {
   }
 
   return left.sortOrder - right.sortOrder;
-}
-
-function slugify(value) {
-  return String(value || "")
-    .trim()
-    .toLowerCase()
-    .replace(/&/g, " and ")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
-
-function normalizePublicStringArray(value, separatorPattern = /[\n,]/) {
-  if (Array.isArray(value)) {
-    return value.map((item) => String(item || "").trim()).filter(Boolean);
-  }
-
-  return String(value || "")
-    .split(separatorPattern)
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
-
-function readPublicMetadata(row) {
-  const metadata = row?.metadata;
-
-  return metadata && typeof metadata === "object" && !Array.isArray(metadata)
-    ? metadata
-    : {};
-}
-
-function formatPublicPrice(amount, currency = "THB") {
-  if (amount === null || amount === undefined || amount === "") {
-    return "Price on request";
-  }
-
-  const numericAmount = Number(amount);
-
-  if (!Number.isFinite(numericAmount)) {
-    return "Price on request";
-  }
-
-  return `${numericAmount.toLocaleString("en-US")} ${currency || "THB"}`;
-}
-
-function normalizePublicGallery(images, productName) {
-  return images
-    .filter((image) => image.imageUrl)
-    .map((image, index) => ({
-      id: image.id,
-      label: image.isPrimary ? "Primary View" : `View ${index + 1}`,
-      src: image.imageUrl,
-      alt: image.altText || `${productName} view ${index + 1}`,
-      sortOrder: image.sortOrder,
-      isPrimary: image.isPrimary
-    }));
-}
-
-function getPublicFilterValues(row, metadata) {
-  const metadataFilters = metadata.filterValues ?? metadata.filter_values;
-  const filters = normalizePublicStringArray(metadataFilters, /[\n,|]/);
-
-  if (filters.length) {
-    return Array.from(new Set(filters));
-  }
-
-  return Array.from(new Set([
-    row.material,
-    row.gold_color
-  ].map((item) => slugify(item)).filter(Boolean)));
-}
-
-function getPublicStockState(row, availableQuantity, metadata) {
-  const metadataStockState = String(metadata.stockState || metadata.stock_state || metadata.availability || "").trim().toLowerCase();
-
-  if (metadataStockState === "preorder" || metadataStockState === "pre-order") {
-    return "preorder";
-  }
-
-  if (availableQuantity <= 0) {
-    return "sold-out";
-  }
-
-  if (availableQuantity <= 2) {
-    return "low-stock";
-  }
-
-  return "available";
 }
 
 function normalizeProduct(row) {
@@ -414,84 +309,49 @@ function normalizeProduct(row) {
   };
 }
 
-function normalizePublicProduct(row) {
-  const metadata = readPublicMetadata(row);
-  const images = Array.isArray(row.product_images)
-    ? row.product_images.map(normalizeImage).sort(sortImages)
-    : [];
-  const gallery = normalizePublicGallery(images, row.name_en || row.product_code || "Product");
-  const primaryImage = gallery[0] || null;
-  const hoverImage = gallery[1] || primaryImage;
-  const stockQuantity = Number(row.stock_quantity) || 0;
-  const reservedQuantity = Number(row.reserved_quantity) || 0;
-  const availableQuantity = Math.max(0, stockQuantity - reservedQuantity);
-  const currency = row.currency || "THB";
-  const name = row.name_en || row.product_code || "";
-  const details = normalizePublicStringArray(metadata.details || metadata.detailLines || metadata.detail_lines);
-
+function normalizePublicVariant(row) {
   return {
     id: row.id,
-    code: row.product_code || "",
-    slug: row.slug || slugify(row.product_code || name),
-    title: String(metadata.title || row.product_code || name || "").trim(),
-    name,
-    nameTh: row.name_th || "",
-    collectionKey: row.collection || slugify(row.category),
-    category: row.category || "",
-    description: row.description || metadata.description || "",
-    details,
-    price: formatPublicPrice(row.price_amount, currency),
-    priceAmount: row.price_amount === null || row.price_amount === undefined ? null : Number(row.price_amount),
-    currency,
-    status: "active",
-    stockState: getPublicStockState(row, availableQuantity, metadata),
-    availableQuantity,
-    image: primaryImage?.src || "",
-    hover: hoverImage?.src || primaryImage?.src || "",
-    gallery,
-    filterValues: getPublicFilterValues(row, metadata),
-    imagePresentation: metadata.imagePresentation || metadata.image_presentation || "",
-    updatedAt: row.updated_at || null
+    sku: row.sku || "",
+    variantName: row.variant_name || "",
+    metal: row.metal || "",
+    sizeLabel: row.size_label || ""
   };
 }
 
-export async function readPublicCatalogueProducts({ env = process.env, client, limit = 100 } = {}) {
-  const config = getSupabaseAdminConfig(env);
-  const checkedAt = new Date().toISOString();
+function normalizePublicImage(row) {
+  return {
+    id: row.id,
+    imageUrl: row.image_url || "",
+    altText: row.alt_text || "",
+    sortOrder: Number(row.sort_order) || 0,
+    isPrimary: row.is_primary === true
+  };
+}
 
-  if (!config.isConfigured) {
-    return {
-      source: "supabase",
-      status: "unavailable",
-      error: "Supabase catalogue is not configured.",
-      missingEnv: config.missingEnv,
-      checkedAt,
-      productCount: 0,
-      products: []
-    };
-  }
-
-  const supabase = client || createSupabaseAdminClient(env);
-  const { data, error } = await supabase
-    .from("products")
-    .select(PUBLIC_CATALOGUE_SELECT)
-    .eq("is_active", true)
-    .eq("status", "active")
-    .order("updated_at", { ascending: false })
-    .limit(limit);
-
-  if (error) {
-    throw new Error(error.message || "Supabase public catalogue products could not be loaded.");
-  }
-
-  const products = Array.isArray(data) ? data.map(normalizePublicProduct) : [];
+function normalizePublicProduct(row) {
+  const variants = Array.isArray(row.product_variants)
+    ? row.product_variants.filter((variant) => variant.is_active !== false).map(normalizePublicVariant)
+    : [];
+  const images = Array.isArray(row.product_images)
+    ? row.product_images.map(normalizePublicImage).sort(sortImages)
+    : [];
+  const primaryImage = images.find((image) => image.isPrimary) || images[0] || null;
 
   return {
-    source: "supabase",
-    status: products.length ? "ready" : "empty",
-    checkedAt,
-    productCount: products.length,
-    products
+    id: row.id,
+    productCode: row.product_code || "",
+    slug: row.slug || "",
+    nameEn: row.name_en || "",
+    nameTh: row.name_th || "",
+    category: row.category || "",
+    collection: row.collection || "",
+    status: row.status || "active",
+    priceAmount: row.price_amount === null || row.price_amount === undefined ? null : Number(row.price_amount),
+    currency: row.currency || "THB",
+    primaryImageUrl: primaryImage?.imageUrl || "",
+    images,
+    variants
   };
 }
 
@@ -528,105 +388,43 @@ export async function readAdminCatalogueProducts({ env = process.env, client, li
   };
 }
 
-function sanitizeStorageFileName(fileName, contentType) {
-  const fallbackExtension = PRODUCT_IMAGE_CONTENT_TYPES.get(contentType) || "";
-  const originalName = String(fileName || "product-image").trim().toLowerCase();
-  const extensionMatch = originalName.match(/\.[a-z0-9]+$/i);
-  const extension = fallbackExtension || extensionMatch?.[0] || "";
-  const basename = originalName
-    .replace(/\.[a-z0-9]+$/i, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    || "product-image";
-
-  return `${basename}${extension}`;
-}
-
-function assertValidProductImageUpload({ productId, fileName, contentType, buffer }) {
-  if (!String(productId || "").trim()) {
-    throw new AdminProductImageUploadError("Product id is required.", 400);
-  }
-
-  if (!buffer || typeof buffer.byteLength !== "number" || buffer.byteLength <= 0) {
-    throw new AdminProductImageUploadError("Product image file is required.", 400);
-  }
-
-  if (buffer.byteLength > MAX_ADMIN_PRODUCT_IMAGE_BYTES) {
-    throw new AdminProductImageUploadError("Product image must be 5 MB or smaller.", 413);
-  }
-
-  if (!PRODUCT_IMAGE_CONTENT_TYPES.has(String(contentType || "").toLowerCase())) {
-    throw new AdminProductImageUploadError("Product image must be a JPG, PNG, or WebP image.", 400);
-  }
-
-  if (!String(fileName || "").trim()) {
-    throw new AdminProductImageUploadError("Product image filename is required.", 400);
-  }
-}
-
-export async function uploadAdminProductImage(image, { env = process.env, client, now = () => Date.now() } = {}) {
+export async function readPublicCatalogueProducts({ env = process.env, client, limit = 100 } = {}) {
   const config = getSupabaseAdminConfig(env);
-  if (!config.isConfigured) {
-    throw new Error(`Supabase admin database is not configured. Set ${config.missingEnv.join(", ")}.`);
-  }
 
-  const contentType = String(image.contentType || "").toLowerCase();
-  assertValidProductImageUpload({
-    productId: image.productId,
-    fileName: image.fileName,
-    contentType,
-    buffer: image.buffer
-  });
+  if (!config.isConfigured) {
+    return {
+      source: "supabase",
+      status: "unavailable",
+      projectRef: config.projectRef,
+      missingEnv: config.missingEnv,
+      products: [],
+      checkedAt: new Date().toISOString()
+    };
+  }
 
   const supabase = client || createSupabaseAdminClient(env);
-  const productId = String(image.productId).trim();
-  const storageFileName = sanitizeStorageFileName(image.fileName, contentType);
-  const storagePath = `products/${productId}/${now()}-${storageFileName}`;
-  const storage = supabase.storage.from(PRODUCT_IMAGE_BUCKET);
-  const uploadResult = await storage.upload(storagePath, image.buffer, {
-    contentType,
-    cacheControl: "3600",
-    upsert: false
-  });
-
-  if (uploadResult.error) {
-    throw new Error(uploadResult.error.message || "Product image could not be uploaded.");
-  }
-
-  const publicUrlResult = storage.getPublicUrl(storagePath);
-  const publicUrl = publicUrlResult?.data?.publicUrl || "";
-
-  if (!publicUrl) {
-    throw new Error("Product image public URL could not be created.");
-  }
-
-  const payload = {
-    product_id: productId,
-    image_url: publicUrl,
-    alt_text: String(image.altText || "").trim(),
-    sort_order: Number(image.sortOrder) || 0,
-    is_primary: image.isPrimary === true || image.isPrimary === "true",
-    source: "upload",
-    metadata: {
-      storageBucket: PRODUCT_IMAGE_BUCKET,
-      storagePath,
-      originalFileName: String(image.fileName || ""),
-      contentType,
-      size: image.buffer.byteLength
-    }
-  };
-
   const { data, error } = await supabase
-    .from("product_images")
-    .insert(payload)
-    .select("id, image_url, alt_text, sort_order, is_primary, source")
-    .single();
+    .from("products")
+    .select(PUBLIC_CATALOGUE_SELECT)
+    .eq("status", "active")
+    .eq("is_active", true)
+    .order("updated_at", { ascending: false })
+    .limit(limit);
 
   if (error) {
-    throw new Error(error.message || "Product image record could not be created.");
+    throw new Error(error.message || "Supabase public catalogue products could not be loaded.");
   }
 
-  return normalizeImage(data);
+  const products = Array.isArray(data) ? data.map(normalizePublicProduct) : [];
+
+  return {
+    source: "supabase",
+    status: products.length > 0 ? "ready" : "empty",
+    projectRef: config.projectRef,
+    missingEnv: [],
+    products,
+    checkedAt: new Date().toISOString()
+  };
 }
 
 const ADMIN_ORDER_SELECT = `
@@ -908,6 +706,7 @@ export async function createAdminProduct(product, { env = process.env, client } 
   }
 
   const supabase = client || createSupabaseAdminClient(env);
+  const status = normalizeAdminProductStatus(product.status);
   const payload = {
     product_code: product.sku,
     slug: product.slug || product.sku?.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
@@ -916,8 +715,8 @@ export async function createAdminProduct(product, { env = process.env, client } 
     collection: product.collection || null,
     price_amount: parseMoneyAmount(product.price),
     currency: product.currency || "THB",
-    status: normalizeAdminProductStatus(product.status),
-    is_active: product.isActive !== false && String(product.status || "").toLowerCase() !== "hidden",
+    status,
+    is_active: status === "active" && product.isActive !== false,
     stock_quantity: Number(product.stockQty) || 0,
     reserved_quantity: Number(product.reservedQty) || 0,
     metadata: product.metadata || {}
@@ -933,6 +732,26 @@ export async function createAdminProduct(product, { env = process.env, client } 
     throw new Error(error.message || "Product could not be created.");
   }
 
+  const imageUrl = cleanOptionalText(product.imageUrl || product.primaryImageUrl || product.image);
+
+  if (imageUrl) {
+    const imagePayload = {
+      product_id: data.id,
+      image_url: imageUrl,
+      alt_text: cleanOptionalText(product.imageAlt || product.altText) || `${product.name} main image`,
+      sort_order: 0,
+      is_primary: true,
+      source: product.imageSource || "manual"
+    };
+    const imageResult = await supabase
+      .from("product_images")
+      .insert(imagePayload);
+
+    if (imageResult.error) {
+      throw new Error(imageResult.error.message || "Product image could not be created.");
+    }
+  }
+
   return normalizeProduct(data);
 }
 
@@ -943,6 +762,12 @@ export async function updateAdminProduct(productId, updates, { env = process.env
   }
 
   const supabase = client || createSupabaseAdminClient(env);
+  const status = updates.status === undefined ? undefined : normalizeAdminProductStatus(updates.status);
+  const isActive = updates.isActive !== undefined
+    ? updates.isActive
+    : status === undefined
+      ? undefined
+      : status === "active";
   const payload = {
     slug: updates.slug,
     name_en: updates.name,
@@ -950,8 +775,8 @@ export async function updateAdminProduct(productId, updates, { env = process.env
     collection: updates.collection,
     price_amount: updates.price === undefined ? undefined : parseMoneyAmount(updates.price),
     currency: updates.currency || "THB",
-    status: updates.status === undefined ? undefined : normalizeAdminProductStatus(updates.status),
-    is_active: updates.isActive,
+    status,
+    is_active: isActive,
     stock_quantity: updates.stockQty !== undefined ? Number(updates.stockQty) : undefined,
     reserved_quantity: updates.reservedQty !== undefined ? Number(updates.reservedQty) : undefined,
     metadata: updates.metadata
