@@ -42,7 +42,7 @@ const ADMIN_CATALOGUE_SELECT = `
     id,
     sku,
     variant_name,
-    metal,
+    material,
     size_label,
     stock_quantity,
     is_active
@@ -78,7 +78,7 @@ const PUBLIC_CATALOGUE_SELECT = `
     id,
     sku,
     variant_name,
-    metal,
+    material,
     size_label,
     stock_quantity,
     is_active
@@ -237,7 +237,7 @@ function normalizeVariant(row) {
     id: row.id,
     sku: row.sku || "",
     variantName: row.variant_name || "",
-    metal: row.metal || "",
+    material: row.material  || "",
     sizeLabel: row.size_label || "",
     stockQuantity: Number(row.stock_quantity) || 0,
     isActive: row.is_active !== false
