@@ -1,0 +1,9 @@
+assets/images/home/archive/
+docs/
+outputs/
+nginx/
+node_modules/
+*.log
+*.err
+Thumbs.db
+.DS_Store
