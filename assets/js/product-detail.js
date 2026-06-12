@@ -14,6 +14,17 @@ Promise.resolve(window.MARIS_DATA_READY)
   const collectionKey = params.get("collection") || "engagement-ring";
   const collection = collectionMap[collectionKey] || collectionMap["engagement-ring"] || Object.values(collectionMap)[0];
 
+  const suffixCollectionMap = {
+    "ER": "engagement-ring",
+    "WS": "wedding-set",
+    "WB": "wedding-bands",
+    "MR": "mens-wedding-bands",
+    "NP": "necklaces-pendants",
+    "BR": "bracelets",
+    "EA": "earrings",
+    "RG": "rings"
+  };
+
   function inferCollectionKey(item) {
     const configuredCollection = Object.entries(collectionProducts).find(([, codes]) => Array.isArray(codes) && codes.includes(item.code));
 
@@ -21,27 +32,26 @@ Promise.resolve(window.MARIS_DATA_READY)
       return configuredCollection[0];
     }
 
-    if (item.code.startsWith("WS")) {
-      return "wedding-set";
+    const upper = String(item.code || "").toUpperCase();
+
+    // suffix ลงท้าย SKU กำหนด collection เช่น SR0033ER → engagement-ring
+    for (const [suffix, col] of Object.entries(suffixCollectionMap)) {
+      if (upper.endsWith(suffix) && upper.length > suffix.length) {
+        return col;
+      }
     }
 
-    if (item.code.startsWith("NP")) {
-      return "necklaces-pendants";
-    }
+    // ถ้าไม่มี suffix ดู prefix
+    if (upper.startsWith("ER") || upper.startsWith("DR")) return "engagement-ring";
+    if (upper.startsWith("WS")) return "wedding-set";
+    if (upper.startsWith("WB")) return "wedding-bands";
+    if (upper.startsWith("MB") || upper.startsWith("MR")) return "mens-wedding-bands";
+    if (upper.startsWith("NP")) return "necklaces-pendants";
+    if (upper.startsWith("BR")) return "bracelets";
+    if (upper.startsWith("EA")) return "earrings";
+    if (upper.startsWith("RG")) return "rings";
 
-    if (item.code.startsWith("BR")) {
-      return "bracelets";
-    }
-
-    if (item.code.startsWith("EA")) {
-      return "earrings";
-    }
-
-    if (item.code.startsWith("RG")) {
-      return "rings";
-    }
-
-    return "engagement-ring";
+    return "rings";
   }
 
   function getDefaultProductCode(key) {
@@ -54,7 +64,7 @@ Promise.resolve(window.MARIS_DATA_READY)
     return products.find((item) => inferCollectionKey(item) === key)?.code || products[0]?.code || "";
   }
 
-  const productCode = String(params.get("id") || getDefaultProductCode(collectionKey)).toUpperCase();
+  const productCode = String(params.get("id") || params.get("product") || getDefaultProductCode(collectionKey)).toUpperCase();
 
   function getLookupCodes(code, key) {
     const normalizedCode = String(code || "").trim().toUpperCase();

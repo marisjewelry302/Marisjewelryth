@@ -1103,19 +1103,39 @@ const marisBaseCollectionProducts = {};
   }
 
   function normalizeApiProduct(product) {
+    // Supabase returns: sku, primaryImageUrl, images[], basePrice, collection, slug
+    const primaryImage = product.primaryImageUrl
+      || (Array.isArray(product.images) && product.images.length > 0 ? product.images[0].imageUrl : "")
+      || product.image
+      || "";
+
+    const gallery = Array.isArray(product.images) && product.images.length > 0
+      ? product.images.map((img) => ({
+          src: img.imageUrl || "",
+          alt: img.altText || "",
+          label: img.isPrimary ? "Primary View" : `View ${(img.sortOrder || 0) + 1}`,
+          presentation: ""
+        }))
+      : Array.isArray(product.gallery) ? product.gallery : [];
+
+    const price = product.basePrice != null && product.basePrice !== ""
+      ? `฿${Number(product.basePrice).toLocaleString()}`
+      : (product.price || "Price on request");
+
     return normalizeProductRecord({
-      code: product.code,
-      title: product.title || product.code || product.name,
-      name: product.name || product.title || product.code,
+      code: product.sku || product.code,
+      title: product.name || product.sku || product.code,
+      name: product.name || product.title || product.sku || product.code,
       nameTh: product.nameTh || "",
-      collectionKey: product.collectionKey || mapCollectionAlias(product.category),
+      collectionKey: product.collectionKey
+        || mapCollectionAlias(product.collection || product.category || ""),
       category: product.category || "",
       description: product.description || "",
       details: Array.isArray(product.details) ? product.details : [],
-      price: product.price || "Price on request",
-      image: product.image || "",
-      hover: product.hover || product.image || "",
-      gallery: Array.isArray(product.gallery) ? product.gallery : [],
+      price,
+      image: primaryImage,
+      hover: (gallery[1] && gallery[1].src) || primaryImage,
+      gallery,
       filterValues: Array.isArray(product.filterValues) ? product.filterValues : [],
       imagePresentation: product.imagePresentation || "",
       stockState: product.stockState || "",

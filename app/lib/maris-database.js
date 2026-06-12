@@ -702,7 +702,7 @@ export async function createAdminProduct(product, { env = process.env, client } 
     name: product.name,
     category: product.category,
     collection: product.collection || null,
-    base_price: parseMoneyAmount(product.price),
+    base_price: parseMoneyAmount(product.price) ?? null,
     status,
     stock_quantity: Number(product.stockQty) || 0,
     reserved_quantity: Number(product.reservedQty) || 0

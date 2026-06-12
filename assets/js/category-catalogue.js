@@ -12,30 +12,59 @@ Promise.resolve(window.MARIS_DATA_READY)
   }
 
   const category = grid.dataset.categoryProducts;
+
+  // suffix ลงท้าย SKU กำหนด collection เช่น SR0033ER → engagement-ring
+  const suffixCollectionMap = {
+    "ER": "engagement-ring",
+    "WS": "wedding-set",
+    "WB": "wedding-bands",
+    "MR": "mens-wedding-bands",
+    "NP": "necklaces-pendants",
+    "BR": "bracelets",
+    "EA": "earrings",
+    "RG": "rings"
+  };
+
+  // prefix แบบเดิมสำหรับ SKU ที่ไม่มี suffix (เช่น ER0001, WB0002)
   const prefixes = {
     "engagement-ring": ["ER", "DR"],
-    "wedding-bands": "WB",
-    "mens-wedding-bands": "MB",
-    "wedding-set": "WS",
-    "necklaces-pendants": "NP",
-    bracelets: "BR",
-    earrings: "EA",
-    rings: "RG"
+    "wedding-bands": ["WB"],
+    "mens-wedding-bands": ["MB", "MR"],
+    "wedding-set": ["WS"],
+    "necklaces-pendants": ["NP"],
+    "bracelets": ["BR"],
+    "earrings": ["EA"],
+    "rings": ["RG"]
   };
+
+  function inferCollectionFromCode(code) {
+    const upper = String(code || "").toUpperCase();
+    // ตรวจ suffix ก่อน: SR0033ER → suffix ER → engagement-ring
+    for (const [suffix, col] of Object.entries(suffixCollectionMap)) {
+      if (upper.endsWith(suffix) && upper.length > suffix.length) {
+        return col;
+      }
+    }
+    // ถ้าไม่มี suffix ดู prefix แบบเดิม
+    for (const [col, pfxList] of Object.entries(prefixes)) {
+      if ([pfxList].flat().some((pfx) => upper.startsWith(pfx))) {
+        return col;
+      }
+    }
+    return "rings"; // default
+  }
+
   const productMap = new Map(products.map((product) => [product.code, product]));
   const configuredCodes = Array.isArray(collectionProducts[category]) ? collectionProducts[category] : [];
-  const categoryPrefixes = [prefixes[category]].flat().filter(Boolean);
 
   const categoryProducts = configuredCodes.length
     ? configuredCodes
       .map((code) => productMap.get(code))
       .filter(Boolean)
       .map((product, index) => ({ ...product, order: index + 1 }))
-    : categoryPrefixes.length
-      ? products
-        .filter((product) => categoryPrefixes.some((prefix) => product.code.startsWith(prefix)))
-        .map((product, index) => ({ ...product, order: index + 1 }))
-      : [];
+    : products
+      .filter((product) => inferCollectionFromCode(product.code) === category)
+      .map((product, index) => ({ ...product, order: index + 1 }));
 
   if (!categoryProducts.length) {
     grid.innerHTML = "";
