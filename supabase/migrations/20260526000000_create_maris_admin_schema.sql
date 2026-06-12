@@ -159,19 +159,7 @@ create table if not exists public.inventory_logs (
   created_at timestamptz not null default now()
 );
 
-create table if not exists public.inventory_movements (
-  id uuid primary key default gen_random_uuid(),
-  product_id uuid references public.products(id) on delete set null,
-  variant_id uuid references public.product_variants(id) on delete set null,
-  movement_type text not null check (movement_type in ('stock_in', 'stock_out', 'adjustment', 'reservation', 'release')),
-  quantity_delta integer not null check (quantity_delta <> 0),
-  reference_type text,
-  reference_id uuid,
-  note text,
-  metadata jsonb not null default '{}'::jsonb,
-  created_by uuid references public.admin_users(id) on delete set null,
-  created_at timestamptz not null default now()
-);
+
 
 create table if not exists public.settings (
   key text primary key,
@@ -198,13 +186,10 @@ create index if not exists idx_payments_order_id on public.payments(order_id);
 create index if not exists idx_payments_customer_id on public.payments(customer_id);
 create index if not exists idx_inventory_logs_product_id on public.inventory_logs(product_id);
 create index if not exists idx_inventory_logs_variant_id on public.inventory_logs(variant_id);
-create index if not exists idx_inventory_movements_product_id on public.inventory_movements(product_id);
-create index if not exists idx_inventory_movements_variant_id on public.inventory_movements(variant_id);
 
 alter table public.admin_users enable row level security;
 alter table public.customers enable row level security;
 alter table public.inventory_logs enable row level security;
-alter table public.inventory_movements enable row level security;
 alter table public.order_items enable row level security;
 alter table public.orders enable row level security;
 alter table public.payments enable row level security;
@@ -256,4 +241,5 @@ for each row execute function public.set_maris_updated_at();
 comment on table public.products is 'Maris admin product table used by /admin and the public Supabase catalogue API.';
 comment on table public.product_variants is 'Maris admin variant table used for catalogue options and inventory workflows.';
 comment on table public.product_images is 'Maris admin image mapping table for manual entries and Supabase Storage uploads.';
+
 
