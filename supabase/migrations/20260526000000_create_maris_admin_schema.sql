@@ -28,37 +28,37 @@ create table if not exists public.admin_users (
 
 create table if not exists public.customers (
   id uuid primary key default gen_random_uuid(),
-  full_name text not null,
+  name text,
   phone text,
   email text,
   line_id text,
-  address jsonb not null default '{}'::jsonb,
-  notes text,
-  tags text[] not null default '{}'::text[],
-  metadata jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
 
 create table if not exists public.products (
   id uuid primary key default gen_random_uuid(),
-  product_code text not null unique,
+  sku text not null unique,
   slug text unique,
-  name_en text not null,
-  name_th text,
+  name text not null,
   category text not null,
   collection text,
+  short_description text,
   description text,
-  material text,
-  gold_color text,
+  details text,
+  center_stone text,
+  malee text,
+  gold_weight text,
+  base_price numeric(12, 2),
+  compare_at_price numeric(12, 2),
+  craftsmanship text,
+  warranty text,
+  certificate text,
+  seo_title text,
+  seo_description text,
   status text not null default 'draft' check (status in ('draft', 'active', 'archived')),
-  google_sheet_row_id text,
-  sheet_updated_at timestamptz,
-  price_amount numeric(12, 2),
-  currency char(3) not null default 'THB',
   stock_quantity integer not null default 0 check (stock_quantity >= 0),
   reserved_quantity integer not null default 0 check (reserved_quantity >= 0),
-  is_active boolean not null default true,
   metadata jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -90,7 +90,6 @@ create table if not exists public.product_images (
   sort_order integer not null default 0,
   is_primary boolean not null default false,
   source text not null default 'manual' check (source in ('google_sheet', 'manual', 'upload')),
-  google_sheet_image_key text,
   metadata jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -121,11 +120,10 @@ create table if not exists public.order_items (
   product_id uuid references public.products(id) on delete set null,
   variant_id uuid references public.product_variants(id) on delete set null,
   product_code text,
-  item_name text not null,
+  item_name text,
   quantity integer not null default 1 check (quantity > 0),
   unit_price_amount numeric(12, 2) not null default 0,
   total_amount numeric(12, 2) not null default 0,
-  production_notes text,
   metadata jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -141,7 +139,6 @@ create table if not exists public.payments (
   currency char(3) not null default 'THB',
   status text not null default 'pending' check (status in ('pending', 'paid', 'failed', 'refunded', 'cancelled')),
   captured_at timestamptz,
-  received_at timestamptz not null default now(),
   metadata jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -185,7 +182,7 @@ create table if not exists public.settings (
   updated_at timestamptz not null default now()
 );
 
-create index if not exists idx_products_code on public.products(product_code);
+create index if not exists idx_products_sku on public.products(sku);
 create index if not exists idx_products_category_status on public.products(category, status);
 create index if not exists idx_product_variants_product_id on public.product_variants(product_id);
 create index if not exists idx_product_images_product_id on public.product_images(product_id);
