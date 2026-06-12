@@ -574,6 +574,8 @@
             <td>${galleryCount}</td>
             <td>
               <div class="admin-row-actions">
+                <button type="button" data-catalogue-edit="${escapeHtml(product.code)}" data-product-id="${escapeHtml(product.id || "")}">Edit</button>
+                <button type="button" data-catalogue-delete="${escapeHtml(product.code)}" data-product-id="${escapeHtml(product.id || "")}">Delete</button>
                 <a class="admin-secondary" href="${href}" target="_blank" rel="noopener noreferrer">Preview</a>
               </div>
             </td>
@@ -583,6 +585,96 @@
       .join("");
 
     elements.sheetCatalogueTable.innerHTML = rows;
+  }
+
+  function handleCatalogueTableActions(event) {
+    const editBtn = event.target.closest("[data-catalogue-edit]");
+    const deleteBtn = event.target.closest("[data-catalogue-delete]");
+
+    if (editBtn) {
+      const code = editBtn.dataset.catalogueEdit;
+      const productId = editBtn.dataset.productId;
+      const product = (window.MARIS_PRODUCTS || []).find((p) => p.code === code);
+      if (product) {
+        prefillCatalogueForm(product, productId);
+        document.querySelector("[data-catalogue-form]")?.scrollIntoView({ behavior: "smooth" });
+      }
+      return;
+    }
+
+    if (deleteBtn) {
+      const code = deleteBtn.dataset.catalogueDelete;
+      const productId = deleteBtn.dataset.productId;
+      if (!productId) {
+        alert("Product ID not found. Cannot delete.");
+        return;
+      }
+      if (!confirm(`Delete product ${code}? This cannot be undone.`)) {
+        return;
+      }
+      deleteSupabaseProduct(productId, code);
+    }
+  }
+
+  function prefillCatalogueForm(product, productId) {
+    const form = document.querySelector("[data-catalogue-form]");
+    if (!form) return;
+
+    const setValue = (name, value) => {
+      const el = form.elements.namedItem(name);
+      if (el) el.value = value || "";
+    };
+
+    setValue("code", product.code);
+    setValue("collectionKey", product.collectionKey || "engagement-ring");
+    setValue("title", product.title || product.name);
+    setValue("name", product.name);
+    setValue("description", product.description);
+    setValue("price", product.price === "Price on request" ? "" : product.price);
+    setValue("metal", Array.isArray(product.filterValues) ? product.filterValues[0] : "");
+
+    // Mark form as edit mode
+    form.dataset.editProductId = productId;
+    form.dataset.editProductCode = product.code;
+
+    const saveBtn = form.querySelector("[data-catalogue-save]") || form.querySelector("button[type=submit]");
+    if (saveBtn) saveBtn.textContent = "Update in Supabase";
+
+    const cancelBtn = form.querySelector("[data-catalogue-cancel-edit]");
+    if (!cancelBtn && saveBtn) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.textContent = "Cancel Edit";
+      btn.dataset.catalogueCancelEdit = "true";
+      btn.style.marginLeft = "8px";
+      btn.addEventListener("click", () => {
+        delete form.dataset.editProductId;
+        delete form.dataset.editProductCode;
+        form.reset();
+        if (saveBtn) saveBtn.textContent = "Save to Supabase";
+        btn.remove();
+      });
+      saveBtn.after(btn);
+    }
+  }
+
+  async function deleteSupabaseProduct(productId, code) {
+    try {
+      const response = await fetch(`/api/admin/products/${productId}`, {
+        method: "DELETE",
+        credentials: "same-origin"
+      });
+
+      if (response.ok) {
+        alert(`Product ${code} deleted.`);
+        loadAdminCache();
+      } else {
+        const payload = await response.json().catch(() => ({}));
+        alert(`Delete failed: ${payload.error || response.statusText}`);
+      }
+    } catch (error) {
+      alert(`Delete error: ${error.message}`);
+    }
   }
 
   function getDatabaseStatusLabel() {
@@ -1150,6 +1242,10 @@
     renderAll();
     setMessage(adminCache.isReady ? "Supabase admin data refreshed." : (adminCache.error || "Supabase admin data could not be refreshed."), !adminCache.isReady);
   });
+
+  if (elements.sheetCatalogueTable) {
+    elements.sheetCatalogueTable.addEventListener("click", handleCatalogueTableActions);
+  }
 
   window.addEventListener("maris:catalogue-data-updated", () => {
     renderAll();
