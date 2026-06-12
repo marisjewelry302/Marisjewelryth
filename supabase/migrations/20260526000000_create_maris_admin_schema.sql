@@ -1,3 +1,4 @@
+-- Updated: 2026-06-12 14:52
 -- Maris Jewelry admin database foundation.
 -- This creates the tables checked by /api/admin/database/status.
 -- The storefront catalogue now reads published products through /api/catalogue/products.
@@ -255,3 +256,4 @@ for each row execute function public.set_maris_updated_at();
 comment on table public.products is 'Maris admin product table used by /admin and the public Supabase catalogue API.';
 comment on table public.product_variants is 'Maris admin variant table used for catalogue options and inventory workflows.';
 comment on table public.product_images is 'Maris admin image mapping table for manual entries and Supabase Storage uploads.';
+
