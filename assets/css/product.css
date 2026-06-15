@@ -7,7 +7,7 @@
 .product-detail {
   display: grid;
   grid-template-columns: minmax(0, 1.05fr) minmax(360px, 0.95fr);
-  gap: clamp(28px, 5vw, 76px);
+  gap: clamp(20px, 3.5vw, 48px);
   width: min(1320px, calc(100% - 48px));
   margin: 0 auto;
   padding: 34px 0 82px;
@@ -284,29 +284,30 @@
   top: 118px;
   display: grid;
   gap: 20px;
-  padding: clamp(28px, 4vw, 48px);
+  padding: clamp(16px, 2.5vw, 28px);
   background: transparent;
   border: 0;
   box-shadow: none;
 }
 
 .product-kicker {
-  font-size: 12px;
-  letter-spacing: 0.18em;
+  font-size: 10px;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--maris-gold);
 }
 
 .product-summary h1 {
   font-family: var(--maris-font-sans);
-  font-size: clamp(46px, 6vw, 76px);
-  font-weight: 300;
-  line-height: 0.95;
-  color: var(--maris-teal);
+  font-size: clamp(18px, 2vw, 24px);
+  font-weight: 400;
+  line-height: 1.1;
+  color: var(--maris-muted);
+  letter-spacing: 0.1em;
 }
 
 .product-summary h2 {
-  font-size: clamp(20px, 2vw, 28px);
+  font-size: clamp(22px, 2.4vw, 32px);
   font-weight: 400;
   line-height: 1.25;
 }
@@ -334,7 +335,7 @@
 
 .product-price {
   font-family: var(--maris-font-sans);
-  font-size: clamp(30px, 4vw, 44px);
+  font-size: clamp(20px, 2.4vw, 28px);
   line-height: 1;
   color: var(--maris-teal);
 }
@@ -346,13 +347,13 @@
 }
 
 .product-action {
-  min-height: 52px;
+  min-height: 42px;
   border: 1px solid var(--maris-teal);
   background: transparent;
   color: var(--maris-ink);
   font: inherit;
-  font-size: 13px;
-  letter-spacing: 0.08em;
+  font-size: 11px;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   cursor: pointer;
   transition: background 0.25s ease, color 0.25s ease, transform 0.25s ease;
@@ -388,7 +389,7 @@
 .also-like h2 {
   margin-bottom: 20px;
   font-family: var(--maris-font-sans);
-  font-size: clamp(31px, 4.2vw, 49px);
+  font-size: clamp(20px, 2.4vw, 28px);
   font-weight: 300;
   color: var(--maris-teal);
   text-align: center;
