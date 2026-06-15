@@ -1,0 +1,1264 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Maris Admin Preview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@300;400;500;600&family=Urbanist:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --admin-ink: oklch(23% 0.045 170);
+      --admin-quiet: oklch(42% 0.015 180);
+      --admin-line: oklch(88% 0.025 28);
+      --admin-panel: oklch(99% 0.006 65 / 0.76);
+      --admin-paper: oklch(98.7% 0.014 70);
+      --admin-soft: oklch(96.5% 0.012 80);
+      --admin-accent: oklch(52% 0.115 165);
+      --admin-gold: oklch(58% 0.115 78);
+      --admin-danger: oklch(58% 0.19 28);
+      --admin-shadow: oklch(44% 0.035 165 / 0.12);
+      --admin-font: "Anuphan", "Urbanist", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      font-family: var(--admin-font);
+      color: var(--admin-ink);
+      background:
+        linear-gradient(120deg, oklch(99.2% 0.01 65) 0%, oklch(98.4% 0.013 50) 44%, oklch(99% 0.006 112) 100%);
+    }
+
+    button,
+    a {
+      font: inherit;
+      color: inherit;
+    }
+
+    .admin-preview {
+      min-height: 100vh;
+      min-width: 0;
+      padding: 52px clamp(28px, 4.8vw, 96px) 42px;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: 132px minmax(0, 1fr) auto;
+      align-items: start;
+      gap: 28px;
+      margin-bottom: 0;
+    }
+
+    .logo-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding-top: 4px;
+      text-decoration: none;
+    }
+
+    .logo-link img {
+      width: 108px;
+      height: auto;
+      display: block;
+    }
+
+    .title-block {
+      display: grid;
+      gap: 8px;
+    }
+
+    .admin-kicker,
+    .form-label,
+    th {
+      color: var(--admin-gold);
+      font-size: 13px;
+      font-weight: 400;
+      letter-spacing: 0.08em;
+      line-height: 1.25;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      color: var(--admin-ink);
+      font-family: "Urbanist", var(--admin-font);
+      font-size: clamp(42px, 4.7vw, 70px);
+      font-weight: 300;
+      letter-spacing: 0;
+      line-height: 0.92;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 22px;
+      padding-top: 2px;
+    }
+
+    .top-actions a,
+    .top-actions button,
+    .language-switch {
+      min-width: 112px;
+      min-height: 58px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid color-mix(in oklch, var(--admin-line), var(--admin-ink) 7%);
+      background: oklch(99.2% 0.006 65 / 0.68);
+      text-decoration: none;
+      color: var(--admin-ink);
+      font-size: 15px;
+      font-weight: 400;
+      cursor: pointer;
+    }
+
+    .language-switch {
+      gap: 8px;
+    }
+
+    .language-switch button {
+      min-width: 0;
+      min-height: 0;
+      border: 0;
+      background: transparent;
+      padding: 0;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(220px, 286px) minmax(0, 1fr);
+      gap: 18px;
+      align-items: start;
+      min-width: 0;
+    }
+
+    .sidebar,
+    .content-panel,
+    .metric-card,
+    .info-panel,
+    .fields-panel {
+      border: 1px solid var(--admin-line);
+      background: var(--admin-panel);
+      min-width: 0;
+    }
+
+    .sidebar {
+      min-height: 514px;
+      padding: 38px 30px;
+      display: grid;
+      align-content: start;
+      gap: 42px;
+    }
+
+    .nav-item {
+      display: grid;
+      grid-template-columns: 34px minmax(0, 1fr);
+      align-items: center;
+      gap: 18px;
+      min-height: 38px;
+      border: 0;
+      background: transparent;
+      color: var(--admin-quiet);
+      text-align: left;
+      font-size: 19px;
+      font-weight: 400;
+      cursor: pointer;
+    }
+
+    .nav-item[data-active="true"] {
+      color: var(--admin-ink);
+    }
+
+    .nav-item svg {
+      width: 31px;
+      height: 31px;
+      stroke-width: 1.85;
+    }
+
+    .content-panel {
+      min-height: 690px;
+      padding: 40px 32px 22px;
+    }
+
+    .content-section {
+      padding-top: 34px;
+    }
+
+    .content-section + .content-section {
+      margin-top: 74px;
+      border-top: 1px solid var(--admin-line);
+    }
+
+    .section-head {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 32px;
+      align-items: start;
+      margin-bottom: 36px;
+    }
+
+    .section-head h2,
+    .subsection-head h2 {
+      color: var(--admin-ink);
+      font-family: "Urbanist", var(--admin-font);
+      font-size: 44px;
+      font-weight: 400;
+      line-height: 1.05;
+      letter-spacing: 0;
+    }
+
+    .section-head p,
+    .subsection-head p,
+    .guide-card p,
+    .inline-summary,
+    td {
+      color: var(--admin-quiet);
+      font-size: 17px;
+      line-height: 1.6;
+    }
+
+    .section-copy {
+      max-width: 590px;
+      padding-top: 2px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 18px 18px;
+      align-items: end;
+    }
+
+    .form-field {
+      display: grid;
+      gap: 9px;
+      min-width: 0;
+    }
+
+    .span-2 {
+      grid-column: span 2;
+    }
+
+    .span-3 {
+      grid-column: span 3;
+    }
+
+    .span-4 {
+      grid-column: span 4;
+    }
+
+    .input,
+    .select,
+    .textarea {
+      width: 100%;
+      min-height: 60px;
+      border: 1px solid color-mix(in oklch, var(--admin-line), var(--admin-ink) 10%);
+      border-radius: 0;
+      background: oklch(99.5% 0.005 80 / 0.72);
+      color: var(--admin-ink);
+      font: inherit;
+      font-size: 15px;
+      padding: 0 17px;
+    }
+
+    .textarea {
+      min-height: 162px;
+      padding: 17px;
+      resize: vertical;
+    }
+
+    .textarea.compact {
+      min-height: 74px;
+    }
+
+    .button {
+      min-height: 60px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--admin-ink);
+      background: transparent;
+      color: var(--admin-ink);
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      line-height: 1;
+      padding: 0 24px;
+      text-decoration: none;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .button.primary {
+      background: var(--admin-ink);
+      color: oklch(99% 0.006 75);
+    }
+
+    .button.soft {
+      min-width: 270px;
+    }
+
+    .table-wrap {
+      margin-top: 38px;
+      max-width: 100%;
+      overflow-x: auto;
+      border: 1px solid var(--admin-line);
+      background: oklch(99.5% 0.005 70 / 0.48);
+    }
+
+    table {
+      width: 100%;
+      min-width: 940px;
+      border-collapse: collapse;
+    }
+
+    th,
+    td {
+      padding: 19px 24px;
+      border-bottom: 1px solid var(--admin-line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    tbody tr:last-child td {
+      border-bottom: 0;
+    }
+
+    td strong {
+      color: var(--admin-ink);
+      font-weight: 600;
+    }
+
+    .danger {
+      color: var(--admin-danger);
+    }
+
+    .action-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .action-row .button {
+      min-height: 60px;
+      min-width: 78px;
+      padding: 0 20px;
+    }
+
+    .subsection {
+      margin-top: 42px;
+      padding-top: 42px;
+      border-top: 1px solid var(--admin-line);
+    }
+
+    .subsection-head {
+      display: grid;
+      grid-template-columns: minmax(0, 0.95fr) minmax(260px, 0.55fr);
+      gap: 42px;
+      align-items: start;
+      margin-bottom: 28px;
+    }
+
+    .inline-summary {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: baseline;
+      margin: 4px 0 24px;
+    }
+
+    .inline-summary strong {
+      color: var(--admin-ink);
+      font-family: "Urbanist", var(--admin-font);
+      font-size: 38px;
+      font-weight: 600;
+      line-height: 1;
+    }
+
+    .inline-link {
+      color: var(--admin-ink);
+      text-decoration: none;
+    }
+
+    .guide-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+      margin: 24px 0 24px;
+    }
+
+    .guide-card {
+      min-height: 208px;
+      padding: 30px;
+      border: 1px solid var(--admin-line);
+      background: oklch(99.4% 0.005 75 / 0.54);
+    }
+
+    .guide-card h3 {
+      margin-bottom: 14px;
+      color: var(--admin-ink);
+      font-size: 24px;
+      font-weight: 500;
+      line-height: 1.25;
+    }
+
+    .form-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      align-items: center;
+      margin-top: 18px;
+    }
+
+    .draft-summary {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      margin: 34px 0 18px;
+      color: var(--admin-quiet);
+      font-size: 17px;
+      line-height: 1.5;
+    }
+
+    .draft-summary strong {
+      color: var(--admin-ink);
+      font-family: "Urbanist", var(--admin-font);
+      font-size: 38px;
+      line-height: 1;
+    }
+
+    .preview-footer {
+      margin: 84px calc(clamp(28px, 4.8vw, 96px) * -1) -42px;
+      padding: 92px clamp(28px, 12vw, 220px);
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 72px;
+      background: var(--admin-ink);
+      color: oklch(98% 0.01 80);
+    }
+
+    .preview-footer h2 {
+      margin-bottom: 30px;
+      font-size: 22px;
+      font-weight: 600;
+      line-height: 1.4;
+    }
+
+    .preview-footer p,
+    .preview-footer a {
+      color: inherit;
+      font-size: 20px;
+      line-height: 1.85;
+      text-decoration: none;
+    }
+
+    .newsletter-line {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 40px;
+      align-items: center;
+      max-width: 430px;
+      margin-top: 28px;
+      border-bottom: 1px solid oklch(98% 0.01 80 / 0.54);
+      color: oklch(98% 0.01 80 / 0.78);
+    }
+
+    .social-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .social-row span {
+      width: 45px;
+      height: 45px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid oklch(98% 0.01 80 / 0.42);
+      border-radius: 999px;
+      font-weight: 600;
+    }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 26px;
+    }
+
+    .metric-card {
+      min-height: 168px;
+      padding: 34px 30px 26px;
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      column-gap: 30px;
+      align-items: start;
+    }
+
+    .metric-card svg {
+      width: 44px;
+      height: 44px;
+      margin-top: 5px;
+      stroke-width: 1.85;
+      color: var(--admin-ink);
+    }
+
+    .metric-value {
+      color: var(--admin-ink);
+      font-family: "Urbanist", var(--admin-font);
+      font-size: 62px;
+      font-weight: 300;
+      line-height: 0.82;
+    }
+
+    .metric-label {
+      grid-column: 2;
+      margin-top: 24px;
+      color: var(--admin-ink);
+      font-size: 16px;
+      font-weight: 400;
+      line-height: 1.55;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.3fr);
+      gap: 26px;
+      margin-top: 30px;
+    }
+
+    .info-panel {
+      min-height: 306px;
+      padding: 31px 30px;
+    }
+
+    .panel-title {
+      display: grid;
+      grid-template-columns: 50px minmax(0, 1fr);
+      align-items: center;
+      gap: 20px;
+      color: var(--admin-ink);
+      font-size: 22px;
+      font-weight: 500;
+      line-height: 1.25;
+    }
+
+    .title-icon {
+      width: 44px;
+      height: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid color-mix(in oklch, var(--admin-line), var(--admin-ink) 8%);
+      border-radius: 999px;
+      background: oklch(99% 0.005 60 / 0.62);
+    }
+
+    .title-icon svg {
+      width: 24px;
+      height: 24px;
+      stroke-width: 1.9;
+    }
+
+    .catalogue-meta {
+      display: grid;
+      grid-template-columns: 0.85fr 0.78fr 0.72fr;
+      gap: 28px;
+      margin-top: 50px;
+      max-width: 560px;
+    }
+
+    .meta-label {
+      margin-bottom: 10px;
+      color: var(--admin-quiet);
+      font-size: 13px;
+      font-weight: 400;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .status {
+      display: inline-grid;
+      grid-template-columns: 12px auto;
+      gap: 12px;
+      align-items: center;
+      color: var(--admin-ink);
+      font-size: 16px;
+    }
+
+    .status::before {
+      content: "";
+      width: 12px;
+      height: 12px;
+      border-radius: 999px;
+      background: var(--admin-accent);
+    }
+
+    .meta-value {
+      color: var(--admin-ink);
+      font-size: 17px;
+      font-weight: 500;
+      line-height: 1.4;
+    }
+
+    .api-link {
+      min-width: 226px;
+      min-height: 51px;
+      margin-top: 30px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid color-mix(in oklch, var(--admin-line), var(--admin-ink) 12%);
+      background: oklch(99.4% 0.006 70 / 0.72);
+      color: var(--admin-ink);
+      text-decoration: none;
+      font-size: 16px;
+    }
+
+    .steps {
+      margin-top: 29px;
+      display: grid;
+      gap: 19px;
+      color: var(--admin-quiet);
+      font-size: 15px;
+      line-height: 1.55;
+      list-style: none;
+      max-width: 690px;
+    }
+
+    .steps li {
+      display: grid;
+      grid-template-columns: 38px minmax(0, 1fr);
+      gap: 20px;
+      align-items: start;
+    }
+
+    .steps span {
+      width: 36px;
+      height: 36px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid color-mix(in oklch, var(--admin-line), var(--admin-ink) 8%);
+      border-radius: 999px;
+      color: var(--admin-ink);
+      background: oklch(99% 0.005 60 / 0.62);
+      font-family: "Urbanist", var(--admin-font);
+      font-size: 17px;
+    }
+
+    .fields-panel {
+      margin-top: 28px;
+      padding: 18px 29px 20px;
+    }
+
+    .fields-panel h2 {
+      margin-bottom: 16px;
+      font-size: 19px;
+      font-weight: 500;
+      line-height: 1.3;
+    }
+
+    .field-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px 14px;
+    }
+
+    .field-chip {
+      min-height: 37px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 18px;
+      border: 1px solid color-mix(in oklch, var(--admin-line), var(--admin-ink) 7%);
+      background: oklch(99.5% 0.005 70 / 0.74);
+      color: var(--admin-ink);
+      font-size: 15px;
+      line-height: 1;
+    }
+
+    @media (max-width: 1220px) {
+      .admin-preview {
+        padding-inline: 28px;
+      }
+
+      .metric-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .info-grid,
+      .guide-grid,
+      .subsection-head {
+        grid-template-columns: 1fr;
+      }
+
+      .form-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .span-3,
+      .span-4 {
+        grid-column: span 2;
+      }
+
+      .preview-footer {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 860px) {
+      .topbar,
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar {
+        gap: 18px;
+        margin-bottom: 28px;
+      }
+
+      .top-actions {
+        flex-wrap: wrap;
+      }
+
+      .sidebar {
+        position: static;
+        min-height: auto;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 18px;
+      }
+    }
+
+    @media (max-width: 620px) {
+      .admin-preview {
+        padding: 28px 16px;
+      }
+
+      .top-actions,
+      .metric-grid,
+      .catalogue-meta,
+      .sidebar {
+        grid-template-columns: 1fr;
+      }
+
+      .top-actions {
+        display: grid;
+      }
+
+      .top-actions a,
+      .top-actions button,
+      .language-switch {
+        width: 100%;
+      }
+
+      .content-panel {
+        padding: 20px 14px;
+      }
+
+      .section-head,
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .span-2,
+      .span-3,
+      .span-4 {
+        grid-column: auto;
+      }
+
+      .metric-card {
+        min-height: 140px;
+        padding: 26px 22px;
+      }
+
+      .info-panel {
+        padding: 24px 20px;
+      }
+
+      .section-head h2,
+      .subsection-head h2 {
+        font-size: 34px;
+      }
+
+      .button {
+        width: 100%;
+      }
+
+      .preview-footer {
+        margin-inline: -16px;
+        padding: 56px 28px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="admin-preview">
+    <header class="topbar">
+      <a class="logo-link" href="../index.html" aria-label="Maris Jewelry">
+        <img src="../assets/images/logo.png" alt="Maris Jewelry">
+      </a>
+      <div class="title-block">
+        <p class="admin-kicker">Protected Back Office Gate</p>
+        <h1>Maris Admin</h1>
+      </div>
+      <nav class="top-actions" aria-label="Admin actions">
+        <div class="language-switch" aria-label="Language switch">
+          <button type="button">EN</button>
+          <span>/</span>
+          <button type="button">TH</button>
+        </div>
+        <a href="../index.html">ดูหน้าร้าน</a>
+        <button type="button">ออกจากระบบ</button>
+      </nav>
+    </header>
+
+    <main class="workspace">
+      <aside class="sidebar" aria-label="Admin navigation">
+        <button class="nav-item" type="button" data-active="true">
+          <i data-lucide="tag"></i>
+          <span>สินค้า</span>
+        </button>
+        <button class="nav-item" type="button">
+          <i data-lucide="badge"></i>
+          <span>สต็อก</span>
+        </button>
+        <button class="nav-item" type="button">
+          <i data-lucide="package"></i>
+          <span>ออเดอร์</span>
+        </button>
+        <button class="nav-item" type="button">
+          <i data-lucide="user-round"></i>
+          <span>ลูกค้า</span>
+        </button>
+        <button class="nav-item" type="button">
+          <i data-lucide="database"></i>
+          <span>DATABASE</span>
+        </button>
+        <button class="nav-item" type="button">
+          <i data-lucide="store"></i>
+          <span>ตั้งค่า</span>
+        </button>
+      </aside>
+
+      <section class="content-panel" aria-label="Admin dashboard preview">
+        <section class="metric-grid" aria-label="Dashboard metrics">
+          <article class="metric-card">
+            <i data-lucide="shopping-bag"></i>
+            <strong class="metric-value">3</strong>
+            <p class="metric-label">จำนวนสินค้า</p>
+          </article>
+          <article class="metric-card">
+            <i data-lucide="box"></i>
+            <strong class="metric-value">4</strong>
+            <p class="metric-label">สต็อกจริง</p>
+          </article>
+          <article class="metric-card">
+            <i data-lucide="clipboard-list"></i>
+            <strong class="metric-value">0</strong>
+            <p class="metric-label">สต็อกที่จองไว้</p>
+          </article>
+          <article class="metric-card">
+            <i data-lucide="bell"></i>
+            <strong class="metric-value">3</strong>
+            <p class="metric-label">แจ้งเตือนใกล้หมด</p>
+          </article>
+        </section>
+
+        <section class="info-grid">
+          <article class="info-panel">
+            <h2 class="panel-title">
+              <span class="title-icon"><i data-lucide="link"></i></span>
+              <span>Supabase Catalogue</span>
+            </h2>
+            <div class="catalogue-meta">
+              <div>
+                <p class="meta-label">สถานะ</p>
+                <p class="status">Connected</p>
+              </div>
+              <div>
+                <p class="meta-label">Products On Storefront</p>
+                <p class="meta-value">3</p>
+              </div>
+              <div>
+                <p class="meta-label">Last Sync</p>
+                <p class="meta-value">15/6/2569<br>13:24:47</p>
+              </div>
+            </div>
+            <a class="api-link" href="/api/catalogue/products" target="_blank" rel="noopener noreferrer">Open Catalogue API</a>
+          </article>
+
+          <article class="info-panel">
+            <h2 class="panel-title">
+              <span class="title-icon"><i data-lucide="circle-plus"></i></span>
+              <span>Add Product In 3 Steps</span>
+            </h2>
+            <ol class="steps">
+              <li>
+                <span>1</span>
+                <p>Create the product in the Supabase entry form and choose its collection, price, status, and visibility.</p>
+              </li>
+              <li>
+                <span>2</span>
+                <p>Upload the main product image and optional gallery images directly from this admin page.</p>
+              </li>
+              <li>
+                <span>3</span>
+                <p>Refresh the catalogue page and the new item appears in its collection automatically.</p>
+              </li>
+            </ol>
+          </article>
+        </section>
+
+        <section class="fields-panel">
+          <h2>Supabase Catalogue Fields</h2>
+          <div class="field-list" aria-label="Catalogue fields">
+            <span class="field-chip">Collection</span>
+            <span class="field-chip">code</span>
+            <span class="field-chip">name</span>
+            <span class="field-chip">price</span>
+            <span class="field-chip">description</span>
+            <span class="field-chip">details</span>
+            <span class="field-chip">main image</span>
+            <span class="field-chip">gallery images</span>
+            <span class="field-chip">status</span>
+            <span class="field-chip">visible</span>
+          </div>
+        </section>
+
+        <section class="content-section" aria-label="Products management preview">
+          <div class="section-head">
+            <div>
+              <p class="admin-kicker">Catalogue Source</p>
+              <h2>สินค้า</h2>
+            </div>
+            <a class="button soft" href="#storefront-catalogue">Refresh Supabase Data</a>
+          </div>
+
+          <form class="form-grid">
+            <label class="form-field">
+              <span class="form-label">รหัส SKU</span>
+              <input class="input" type="text" value="MR-RNG-001">
+            </label>
+            <label class="form-field">
+              <span class="form-label">ชื่อสินค้า</span>
+              <input class="input" type="text" value="Maris Diamond Halo Ring">
+            </label>
+            <label class="form-field">
+              <span class="form-label">หมวดหมู่</span>
+              <select class="select">
+                <option>แหวน</option>
+                <option>แหวนหมั้น</option>
+                <option>แหวนแต่งงาน</option>
+              </select>
+            </label>
+            <label class="form-field">
+              <span class="form-label">ราคา</span>
+              <input class="input" type="text" value="18,900">
+            </label>
+            <label class="form-field">
+              <span class="form-label">สต็อกจริง</span>
+              <input class="input" type="number" value="1">
+            </label>
+            <label class="form-field">
+              <span class="form-label">จองไว้</span>
+              <input class="input" type="number" value="0">
+            </label>
+            <label class="form-field">
+              <span class="form-label">สถานะ</span>
+              <select class="select">
+                <option>พร้อมขาย</option>
+                <option>หมดสต็อก</option>
+                <option>ซ่อนสินค้า</option>
+              </select>
+            </label>
+            <button class="button primary" type="button">เพิ่มสินค้า</button>
+          </form>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>รหัส SKU</th>
+                  <th>ชื่อ</th>
+                  <th>หมวดหมู่</th>
+                  <th>ราคา</th>
+                  <th>จริง</th>
+                  <th>จองไว้</th>
+                  <th>ขายได้</th>
+                  <th>สถานะ</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>SR0033WS</strong></td>
+                  <td>The infinite hold collection Round Brilliant WS</td>
+                  <td>แหวนแต่งงาน</td>
+                  <td>สอบถามราคา</td>
+                  <td>2</td>
+                  <td>0</td>
+                  <td class="danger">2</td>
+                  <td>active</td>
+                </tr>
+                <tr>
+                  <td><strong>SR0033ER</strong></td>
+                  <td>The infinite hold collection Round Brilliant</td>
+                  <td>แหวนหมั้น</td>
+                  <td>สอบถามราคา</td>
+                  <td>1</td>
+                  <td>0</td>
+                  <td class="danger">1</td>
+                  <td>active</td>
+                </tr>
+                <tr>
+                  <td><strong>SR0033</strong></td>
+                  <td>The infinite hold collection Round Brilliant</td>
+                  <td>แหวน</td>
+                  <td>สอบถามราคา</td>
+                  <td>1</td>
+                  <td>0</td>
+                  <td class="danger">1</td>
+                  <td>active</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="subsection" id="storefront-catalogue" aria-label="Storefront catalogue preview">
+          <div class="subsection-head">
+            <div>
+              <p class="admin-kicker">Supabase Live Source</p>
+              <h2>Storefront Catalogue</h2>
+            </div>
+            <p class="section-copy">This view mirrors the products the storefront receives from Supabase. Product rows and image records saved here are the source for collection pages.</p>
+          </div>
+
+          <p class="inline-summary"><strong>3</strong> catalogue items currently coming from Supabase <a class="inline-link" href="/api/catalogue/products">Open API</a></p>
+
+          <div class="guide-grid">
+            <article class="guide-card">
+              <h3>Product records</h3>
+              <p>Keep product codes unique, assign one storefront collection, and use status plus visibility to control what appears publicly.</p>
+            </article>
+            <article class="guide-card">
+              <h3>Product images</h3>
+              <p>Upload the main image and optional gallery images from the form below. Supabase Storage hosts the files and product_images stores the public URLs.</p>
+            </article>
+            <article class="guide-card">
+              <h3>Code reference</h3>
+              <p><strong>ID</strong>: <strong>SR</strong> = Stock Ring, <strong>SE</strong> = Stock Earring, <strong>SP</strong> = Stock Pendant. <strong>ประเภท</strong>: <strong>WS</strong> = Wedding set / แหวนแต่งงาน, <strong>ER</strong> = Engagement ring / แหวนหมั้น, <strong>WB</strong> = Wedding band / แหวนแถว, <strong>MB</strong> = Men's wedding band.</p>
+            </article>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>Collection</th>
+                  <th>ชื่อ</th>
+                  <th>Image</th>
+                  <th>Gallery</th>
+                  <th>การทำงาน</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>SR0033WS</strong></td>
+                  <td>แหวนแต่งงาน</td>
+                  <td><strong>The infinite hold collection Round Brilliant WS</strong><br>สอบถามราคา</td>
+                  <td><a class="inline-link" href="#">Open image</a></td>
+                  <td>7</td>
+                  <td>
+                    <div class="action-row">
+                      <button class="button" type="button">Edit</button>
+                      <button class="button" type="button">Delete</button>
+                      <button class="button" type="button">Preview</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>SR0033ER</strong></td>
+                  <td>แหวนหมั้น</td>
+                  <td><strong>The infinite hold collection Round Brilliant</strong><br>สอบถามราคา</td>
+                  <td><a class="inline-link" href="#">Open image</a></td>
+                  <td>6</td>
+                  <td>
+                    <div class="action-row">
+                      <button class="button" type="button">Edit</button>
+                      <button class="button" type="button">Delete</button>
+                      <button class="button" type="button">Preview</button>
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>SR0033</strong></td>
+                  <td>แหวน</td>
+                  <td><strong>The infinite hold collection Round Brilliant</strong><br>฿30,000</td>
+                  <td>-</td>
+                  <td>0</td>
+                  <td>
+                    <div class="action-row">
+                      <button class="button" type="button">Edit</button>
+                      <button class="button" type="button">Delete</button>
+                      <button class="button" type="button">Preview</button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="subsection" aria-label="Manual Supabase product preview">
+          <div class="subsection-head">
+            <div>
+              <p class="admin-kicker">Supabase Entry</p>
+              <h2>Manual Supabase Product</h2>
+            </div>
+            <p class="section-copy">Use this to create a storefront product record and upload its images to Supabase. Saved products are available to the public catalogue API after the server accepts them.</p>
+          </div>
+
+          <form class="form-grid">
+            <label class="form-field">
+              <span class="form-label">Product Code</span>
+              <input class="input" type="text" value="WS002">
+            </label>
+            <label class="form-field">
+              <span class="form-label">Collection</span>
+              <select class="select">
+                <option>แหวนแต่งงาน</option>
+                <option>แหวนหมั้น</option>
+                <option>แหวน</option>
+              </select>
+            </label>
+            <label class="form-field">
+              <span class="form-label">Card Title</span>
+              <input class="input" type="text" value="WS002">
+            </label>
+            <label class="form-field">
+              <span class="form-label">ชื่อสินค้า</span>
+              <input class="input" type="text" value="The Infinite Hold Collection">
+            </label>
+            <label class="form-field span-2">
+              <span class="form-label">Description</span>
+              <textarea class="textarea">Short product story or technical overview</textarea>
+            </label>
+            <label class="form-field span-2">
+              <span class="form-label">Details</span>
+              <textarea class="textarea">One detail per line
+14K White Gold
+Pear Shaped Diamond Wedding Set</textarea>
+            </label>
+            <label class="form-field">
+              <span class="form-label">ราคา</span>
+              <input class="input" type="text" value="สอบถามราคา">
+            </label>
+            <label class="form-field">
+              <span class="form-label">Main Product Image</span>
+              <input class="input" type="file">
+            </label>
+            <label class="form-field span-2">
+              <span class="form-label">Gallery Images</span>
+              <input class="input" type="file" multiple>
+            </label>
+            <label class="form-field">
+              <span class="form-label">Image Fit</span>
+              <select class="select">
+                <option>Auto / Cover</option>
+                <option>Contain</option>
+              </select>
+            </label>
+            <label class="form-field">
+              <span class="form-label">Metal Tag</span>
+              <input class="input" type="text" value="white-gold">
+            </label>
+            <label class="form-field">
+              <span class="form-label">Style Tag</span>
+              <input class="input" type="text" value="bridal-set">
+            </label>
+            <label class="form-field">
+              <span class="form-label">Shape Tag</span>
+              <input class="input" type="text" value="pear">
+            </label>
+            <label class="form-field span-2">
+              <span class="form-label">Filter Tags</span>
+              <textarea class="textarea compact">white-gold, yellow-gold, rose-gold, bridal-set, pear</textarea>
+            </label>
+            <label class="form-field">
+              <span class="form-label">Starting Stock</span>
+              <input class="input" type="number" value="1">
+            </label>
+          </form>
+
+          <div class="form-actions">
+            <button class="button primary" type="button">Save To Supabase</button>
+            <button class="button" type="button">Clear Draft</button>
+          </div>
+
+          <p class="draft-summary"><strong>0</strong> browser-local drafts retired; Supabase products appear in the products table</p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>Collection</th>
+                  <th>ชื่อ</th>
+                  <th>Main Image</th>
+                  <th>Gallery</th>
+                  <th>การทำงาน</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colspan="6">Browser-local catalogue drafts have been retired. Use Supabase product saving instead.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <footer class="preview-footer">
+      <section>
+        <h2>ติดต่อเรา</h2>
+        <p>บริษัท มาริส จิวเวลรี่ จำกัด<br>302/9-10 ถนนสุรวงศ์ แขวงสี่พระยา เขตบางรัก<br>กรุงเทพมหานคร 10500<br>โทร: 095-879-2659<br>marisjewelryth@gmail.com<br>จันทร์ - ศุกร์, 08.30 - 18.00 น.</p>
+      </section>
+      <section>
+        <h2>ข้อมูล</h2>
+        <p><a href="#">เงื่อนไขการให้บริการ</a><br><a href="#">การจัดส่ง</a><br><a href="#">การคืนสินค้า</a><br><a href="#">นโยบายความเป็นส่วนตัว</a></p>
+      </section>
+      <section>
+        <h2>ร่วมติดตาม</h2>
+        <p>รับข่าวสารและข้อเสนอพิเศษ</p>
+        <div class="newsletter-line">
+          <span>อีเมลของคุณ</span>
+          <span aria-hidden="true">→</span>
+        </div>
+        <div class="social-row" aria-label="Social links">
+          <span>◎</span>
+          <span>f</span>
+          <span>p</span>
+        </div>
+      </section>
+    </footer>
+  </div>
+
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <script>
+    if (window.lucide) {
+      window.lucide.createIcons();
+    }
+  </script>
+</body>
+</html>

@@ -159,8 +159,8 @@
       const href = `pages/product.html?product=${encodeURIComponent(productSlug)}&collection=${encodeURIComponent(collectionKey)}`;
 
       return `
-        <a class="atelier-product" href="${href}" style="--atelier-delay: ${index * 90}ms">
-          ${image ? `<img src="${escapeHtml(image)}" alt="${escapeHtml(title)}" loading="lazy" decoding="async">` : "<span class=\"atelier-product__image-fallback\">Maris</span>"}
+        <a class="atelier-product${image ? "" : " atelier-product--fallback"}" href="${href}" style="--atelier-delay: ${index * 90}ms">
+          ${image ? `<img src="${escapeHtml(image)}" alt="${escapeHtml(title)}" loading="lazy" decoding="async">` : "<span class=\"atelier-product__image-fallback\" aria-hidden=\"true\">Maris catalogue</span>"}
           <span>${escapeHtml(collection)}</span>
           <strong>${escapeHtml(title)}</strong>
           <p>${escapeHtml(product.stockState === "available" ? "Available for enquiry" : "Contact to confirm availability")}</p>
