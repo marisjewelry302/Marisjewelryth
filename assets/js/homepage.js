@@ -98,29 +98,29 @@
   }
 
   function formatProductTitle(product) {
-    return product.title || product.name || product.nameEn || product.productCode || product.code || "Maris catalogue piece";
+    return product.title || product.name || product.nameEn || product.productCode || product.code || "Maris piece";
   }
 
   function formatCollection(product) {
-    return product.collectionKey || product.collection || product.category || "Maris Jewelry";
+    return product.collectionKey || product.collection || product.category || "Maris";
   }
 
-  function renderAtelierUnavailable(message = "Catalogue preview is waiting for Supabase data. No local product data is stored here.") {
+  function renderAtelierUnavailable(message = "Catalogue preview is unavailable right now.") {
     if (!atelierReveal || !atelierFocus || !atelierProducts || !atelierStatus) {
       return;
     }
 
     atelierReveal.dataset.atelierState = "unavailable";
     atelierFocus.innerHTML = `
-      <p class="atelier-reveal__status" data-atelier-status>Catalogue preview unavailable</p>
-      <h3>Supabase catalogue is not available yet.</h3>
+      <p class="atelier-reveal__status" data-atelier-status>Preview unavailable</p>
+      <h3>Selected pieces are not available yet.</h3>
       <p>${escapeHtml(message)}</p>
     `;
     atelierProducts.innerHTML = `
       <article class="atelier-product atelier-unavailable">
-        <span>Read-only</span>
-        <strong>No fallback products</strong>
-        <p>Maris will show live pieces here after the public catalogue API returns published records.</p>
+        <span>Preview</span>
+        <strong>Pieces coming soon</strong>
+        <p>Enquire with Maris for current pieces.</p>
       </article>
     `;
   }
@@ -135,7 +135,7 @@
       .slice(0, 3);
 
     if (visibleProducts.length === 0) {
-      renderAtelierUnavailable("The catalogue API responded, but there are no published pieces to reveal yet.");
+      renderAtelierUnavailable("No selected pieces are published yet.");
       return;
     }
 
@@ -145,10 +145,10 @@
 
     atelierReveal.dataset.atelierState = "ready";
     atelierFocus.innerHTML = `
-      <p class="atelier-reveal__status" data-atelier-status>${visibleProducts.length} live catalogue piece${visibleProducts.length === 1 ? "" : "s"} revealed</p>
+      <p class="atelier-reveal__status" data-atelier-status>${visibleProducts.length} catalogue piece${visibleProducts.length === 1 ? "" : "s"}</p>
       <p class="atelier-reveal__label">${escapeHtml(featuredCollection)}</p>
       <h3>${escapeHtml(featuredTitle)}</h3>
-      <p>${escapeHtml(featuredProduct.price || "Contact Maris to confirm pricing and availability.")}</p>
+      <p>${escapeHtml(featuredProduct.price || "Price on request.")}</p>
     `;
     atelierProducts.innerHTML = visibleProducts.map((product, index) => {
       const title = formatProductTitle(product);
@@ -160,10 +160,10 @@
 
       return `
         <a class="atelier-product${image ? "" : " atelier-product--fallback"}" href="${href}" style="--atelier-delay: ${index * 90}ms">
-          ${image ? `<img src="${escapeHtml(image)}" alt="${escapeHtml(title)}" loading="lazy" decoding="async">` : "<span class=\"atelier-product__image-fallback\" aria-hidden=\"true\">Maris catalogue</span>"}
+          ${image ? `<img src="${escapeHtml(image)}" alt="${escapeHtml(title)}" loading="lazy" decoding="async">` : "<span class=\"atelier-product__image-fallback\" aria-hidden=\"true\">Catalogue</span>"}
           <span>${escapeHtml(collection)}</span>
           <strong>${escapeHtml(title)}</strong>
-          <p>${escapeHtml(product.stockState === "available" ? "Available for enquiry" : "Contact to confirm availability")}</p>
+          <p>${escapeHtml(product.stockState === "available" ? "Available to enquire" : "Confirm availability")}</p>
         </a>
       `;
     }).join("");
@@ -184,13 +184,13 @@
       const payload = await response.json();
 
       if (!response.ok || payload.status === "unavailable") {
-        renderAtelierUnavailable(payload.error || "The public catalogue API is unavailable right now.");
+        renderAtelierUnavailable("Current pieces are being refreshed.");
         return;
       }
 
       renderAtelierProducts(Array.isArray(payload.products) ? payload.products : []);
     } catch (error) {
-      renderAtelierUnavailable(error instanceof Error ? error.message : "The public catalogue API could not be reached.");
+      renderAtelierUnavailable("Current pieces are being refreshed.");
     }
   }
 
