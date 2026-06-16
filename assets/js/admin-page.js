@@ -666,14 +666,16 @@
 
   async function deleteSupabaseProduct(productId, code) {
     try {
-      const response = await fetch(`/api/admin/products/${productId}`, {
+      const response = await fetch(`/api/admin/products?id=${encodeURIComponent(productId)}`, {
         method: "DELETE",
         credentials: "same-origin"
       });
 
       if (response.ok) {
         alert(`Product ${code} deleted.`);
-        loadAdminCache();
+        await loadAdminBackendData();
+        loadDatabaseCatalogue();
+        renderAll();
       } else {
         const payload = await response.json().catch(() => ({}));
         alert(`Delete failed: ${payload.error || response.statusText}`);

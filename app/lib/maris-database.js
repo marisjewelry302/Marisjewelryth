@@ -784,6 +784,63 @@ export async function updateAdminProduct(productId, updates, { env = process.env
   return normalizeProduct(data);
 }
 
+export async function deleteAdminProduct(productId, { env = process.env, client } = {}) {
+  const config = getSupabaseAdminConfig(env);
+  if (!config.isConfigured) {
+    throw new Error(`Supabase admin database is not configured. Set ${config.missingEnv.join(", ")}.`);
+  }
+
+  if (!productId) {
+    throw new Error("Product id is required.");
+  }
+
+  const supabase = client || createSupabaseAdminClient(env);
+
+  const existingResult = await supabase
+    .from("products")
+    .select("id")
+    .eq("id", productId)
+    .limit(1)
+    .maybeSingle();
+
+  if (existingResult.error) {
+    throw new Error(existingResult.error.message || "Product could not be looked up.");
+  }
+
+  if (!existingResult.data) {
+    throw new Error("Product not found.");
+  }
+
+  const imagesResult = await supabase
+    .from("product_images")
+    .delete()
+    .eq("product_id", productId);
+
+  if (imagesResult.error) {
+    throw new Error(imagesResult.error.message || "Product images could not be deleted.");
+  }
+
+  const variantsResult = await supabase
+    .from("product_variants")
+    .delete()
+    .eq("product_id", productId);
+
+  if (variantsResult.error) {
+    throw new Error(variantsResult.error.message || "Product variants could not be deleted.");
+  }
+
+  const productResult = await supabase
+    .from("products")
+    .delete()
+    .eq("id", productId);
+
+  if (productResult.error) {
+    throw new Error(productResult.error.message || "Product could not be deleted.");
+  }
+
+  return { id: productId, deleted: true };
+}
+
 function calculateInventoryQuantities(product, changeType, quantity) {
   const stockQuantity = Number(product.stock_quantity || 0);
   const reservedQuantity = Number(product.reserved_quantity || 0);

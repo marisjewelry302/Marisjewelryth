@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { SESSION_COOKIE_NAME, verifyAdminSession } from "../../../lib/admin-auth";
-import { createAdminProduct, readAdminCatalogueProducts, updateAdminProduct } from "../../../lib/maris-database";
+import { createAdminProduct, deleteAdminProduct, readAdminCatalogueProducts, updateAdminProduct } from "../../../lib/maris-database";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -86,5 +86,24 @@ export async function PATCH(request) {
     return json({ product }, 200);
   } catch (error) {
     return json({ error: error instanceof Error ? error.message : "Product could not be updated." }, 500);
+  }
+}
+
+export async function DELETE(request) {
+  if (!getSession(request)) {
+    return unauthorized();
+  }
+
+  const productId = request.nextUrl.searchParams.get("id");
+
+  if (!productId) {
+    return json({ error: "Product id is required." }, 400);
+  }
+
+  try {
+    const result = await deleteAdminProduct(productId);
+    return json(result, 200);
+  } catch (error) {
+    return json({ error: error instanceof Error ? error.message : "Product could not be deleted." }, 500);
   }
 }
