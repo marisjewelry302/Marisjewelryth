@@ -416,6 +416,69 @@ export async function readPublicCatalogueProducts({ env = process.env, client, l
   };
 }
 
+export async function readPublicProductBySlug(slugOrSku, { env = process.env, client } = {}) {
+  const config = getSupabaseAdminConfig(env);
+  const normalized = String(slugOrSku || "").trim();
+
+  if (!config.isConfigured || !normalized) {
+    return {
+      source: "supabase",
+      status: "unavailable",
+      product: null
+    };
+  }
+
+  const supabase = client || createSupabaseAdminClient(env);
+  const { data, error } = await supabase
+    .from("products")
+    .select(PUBLIC_CATALOGUE_SELECT)
+    .eq("status", "active")
+    .or(`slug.eq.${normalized},sku.eq.${normalized.toUpperCase()}`)
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message || "Supabase product could not be loaded.");
+  }
+
+  return {
+    source: "supabase",
+    status: data ? "ready" : "not_found",
+    product: data ? normalizePublicProduct(data) : null
+  };
+}
+
+export async function readRelatedPublicProducts(collection, excludeId, { env = process.env, client, limit = 4 } = {}) {
+  const config = getSupabaseAdminConfig(env);
+
+  if (!config.isConfigured) {
+    return { source: "supabase", status: "unavailable", products: [] };
+  }
+
+  const supabase = client || createSupabaseAdminClient(env);
+  let query = supabase
+    .from("products")
+    .select(PUBLIC_CATALOGUE_SELECT)
+    .eq("status", "active")
+    .limit(limit + 1);
+
+  if (collection) {
+    query = query.eq("collection", collection);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    throw new Error(error.message || "Supabase related products could not be loaded.");
+  }
+
+  const products = (Array.isArray(data) ? data.map(normalizePublicProduct) : [])
+    .filter((item) => item.id !== excludeId)
+    .slice(0, limit);
+
+  return { source: "supabase", status: "ready", products };
+}
+
 const ADMIN_ORDER_SELECT = `
   id,
   order_number,
