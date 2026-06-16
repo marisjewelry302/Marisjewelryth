@@ -1,22 +1,48 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { access, readFile } from "node:fs/promises";
 
-const [appPage, adminPage, homepage] = await Promise.all([
-  readFile("app/page.js", "utf8"),
+async function fileExists(path) {
+  try {
+    await access(path);
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
+const [hasAppPage, hasAppRoute, adminPage, homepage] = await Promise.all([
+  fileExists("app/page.js"),
+  fileExists("app/route.js"),
   readFile("assets/js/admin-page.js", "utf8"),
   readFile("assets/js/homepage.js", "utf8")
 ]);
+const appRoute = hasAppRoute ? await readFile("app/route.js", "utf8") : "";
+
+assert.equal(hasAppPage, false, "app/page.js must not redirect / to /index.html");
+assert.equal(hasAppRoute, true, "app/route.js must serve / without changing the browser URL");
+
+assert.doesNotMatch(
+  appRoute,
+  /redirect\(["']\/index\.html["']\)/,
+  "app/route.js must keep the browser URL at / instead of redirecting to /index.html"
+);
 
 assert.match(
-  appPage,
-  /redirect\(["']\/index\.html["']\)/,
-  "app/page.js must keep / as a redirect to the synced static /index.html"
+  appRoute,
+  /readFile\(path\.join\(process\.cwd\(\), ["']index\.html["']\), ["']utf8["']\)/,
+  "app/route.js must serve the root static index.html file"
+);
+
+assert.match(
+  appRoute,
+  /Content-Type["']:\s*["']text\/html; charset=utf-8["']/,
+  "app/route.js must return index.html as text/html"
 );
 
 assert.doesNotMatch(
-  appPage,
+  appRoute,
   /readPublicCatalogueProducts|HeroSlider|CategoryHoverCard/,
-  "app/page.js should not render the React storefront while static-first routing is active"
+  "app/route.js should not render the React storefront while static-first routing is active"
 );
 
 const previewLinkMatches = adminPage.match(/\/pages\/product\.html\?collection=\$\{encodeURIComponent\(/g) || [];
