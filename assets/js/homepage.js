@@ -153,10 +153,10 @@
     atelierProducts.innerHTML = visibleProducts.map((product, index) => {
       const title = formatProductTitle(product);
       const collection = formatCollection(product);
-      const image = product.image || product.hover || "";
-      const productSlug = product.slug || product.code || title;
-      const collectionKey = product.collectionKey || "";
-      const href = `pages/product.html?product=${encodeURIComponent(productSlug)}&collection=${encodeURIComponent(collectionKey)}`;
+      const image = product.image || product.primaryImageUrl || product.hover || "";
+      const productCode = product.code || product.productCode || product.sku || product.slug || title;
+      const collectionKey = product.collectionKey || product.collection || "";
+      const href = `pages/product.html?collection=${encodeURIComponent(collectionKey)}&id=${encodeURIComponent(productCode)}`;
 
       return `
         <a class="atelier-product${image ? "" : " atelier-product--fallback"}" href="${href}" style="--atelier-delay: ${index * 90}ms">

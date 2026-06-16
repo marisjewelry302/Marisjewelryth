@@ -460,7 +460,7 @@
 
     const rows = catalogueDrafts
       .map((product) => {
-        const href = `product.html?collection=${encodeURIComponent(product.collectionKey || "engagement-ring")}&id=${encodeURIComponent(product.code)}`;
+        const href = `/pages/product.html?collection=${encodeURIComponent(product.collectionKey || "engagement-ring")}&id=${encodeURIComponent(product.code)}`;
 
         return `
           <tr>
@@ -562,7 +562,7 @@
       .map((product) => {
         const code = getProductSku(product);
         const collectionKey = product.collection || "";
-        const href = `product.html?collection=${encodeURIComponent(collectionKey || "engagement-ring")}&id=${encodeURIComponent(code)}`;
+        const href = `/pages/product.html?collection=${encodeURIComponent(collectionKey || "engagement-ring")}&id=${encodeURIComponent(code)}`;
         const galleryCount = Array.isArray(product.images) ? product.images.length : (Number(product.imageCount) || 0);
         const imageLabel = product.primaryImageUrl
           ? `<a class="admin-link-inline" href="${escapeHtml(product.primaryImageUrl)}" target="_blank" rel="noopener noreferrer">Open image</a>`

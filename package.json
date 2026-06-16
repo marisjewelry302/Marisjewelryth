@@ -10,6 +10,7 @@
   "scripts": {
     "sync:legacy": "node scripts/sync-legacy-public.mjs",
     "check:sheet-images": "node scripts/check-sheet-images.mjs",
+    "test:static-routing": "node scripts/test-static-routing-contract.mjs",
     "test:admin-auth": "node scripts/test-admin-auth.mjs",
     "test:admin-database-auth": "node scripts/test-admin-database-auth.mjs",
     "test:admin-clarity": "node scripts/test-admin-clarity.mjs",
