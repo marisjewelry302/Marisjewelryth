@@ -543,12 +543,16 @@
       return;
     }
 
-    const sheetProducts = Array.isArray(window.MARIS_PRODUCTS) ? window.MARIS_PRODUCTS : [];
-    const sheetStatus = window.MARIS_SHEET_STATUS || {};
+    if (adminCache.isLoading) {
+      elements.sheetCatalogueTable.innerHTML = `<tr><td colspan="6">Loading Supabase products...</td></tr>`;
+      return;
+    }
 
-    if (!sheetProducts.length) {
-      const emptyMessage = sheetStatus.status === "error"
-        ? "Supabase catalogue is unavailable right now. No public catalogue products can be loaded."
+    const sheetProducts = getCachedProducts();
+
+    if (!adminCache.isReady || !sheetProducts.length) {
+      const emptyMessage = !adminCache.isReady
+        ? (adminCache.error || "Supabase catalogue is unavailable right now. No catalogue products can be loaded.")
         : "No Supabase catalogue products are available yet.";
       elements.sheetCatalogueTable.innerHTML = `<tr><td colspan="6">${escapeHtml(emptyMessage)}</td></tr>`;
       return;
@@ -556,26 +560,28 @@
 
     const rows = sheetProducts
       .map((product) => {
-        const href = `product.html?collection=${encodeURIComponent(product.collectionKey || "engagement-ring")}&id=${encodeURIComponent(product.code)}`;
-        const galleryCount = Array.isArray(product.gallery) ? product.gallery.length : 0;
-        const imageLabel = product.image
-          ? `<a class="admin-link-inline" href="${escapeHtml(product.image)}" target="_blank" rel="noopener noreferrer">Open image</a>`
+        const code = getProductSku(product);
+        const collectionKey = product.collection || "";
+        const href = `product.html?collection=${encodeURIComponent(collectionKey || "engagement-ring")}&id=${encodeURIComponent(code)}`;
+        const galleryCount = Array.isArray(product.images) ? product.images.length : (Number(product.imageCount) || 0);
+        const imageLabel = product.primaryImageUrl
+          ? `<a class="admin-link-inline" href="${escapeHtml(product.primaryImageUrl)}" target="_blank" rel="noopener noreferrer">Open image</a>`
           : "-";
 
         return `
           <tr>
-            <td><strong>${escapeHtml(product.code)}</strong></td>
-            <td>${escapeHtml(getCollectionLabel(product.collectionKey))}</td>
+            <td><strong>${escapeHtml(code)}</strong></td>
+            <td>${escapeHtml(getCollectionLabel(collectionKey))}</td>
             <td>
-              <strong>${escapeHtml(product.name || product.title || product.code)}</strong>
-              <div>${escapeHtml(product.price || "Price on request")}</div>
+              <strong>${escapeHtml(getProductName(product))}</strong>
+              <div>${escapeHtml(getProductPrice(product))}</div>
             </td>
             <td>${imageLabel}</td>
             <td>${galleryCount}</td>
             <td>
               <div class="admin-row-actions">
-                <button type="button" data-catalogue-edit="${escapeHtml(product.code)}" data-product-id="${escapeHtml(product.id || "")}">Edit</button>
-                <button type="button" data-catalogue-delete="${escapeHtml(product.code)}" data-product-id="${escapeHtml(product.id || "")}">Delete</button>
+                <button type="button" data-catalogue-edit="${escapeHtml(code)}" data-product-id="${escapeHtml(product.id || "")}">Edit</button>
+                <button type="button" data-catalogue-delete="${escapeHtml(code)}" data-product-id="${escapeHtml(product.id || "")}">Delete</button>
                 <a class="admin-secondary" href="${href}" target="_blank" rel="noopener noreferrer">Preview</a>
               </div>
             </td>
@@ -592,9 +598,8 @@
     const deleteBtn = event.target.closest("[data-catalogue-delete]");
 
     if (editBtn) {
-      const code = editBtn.dataset.catalogueEdit;
       const productId = editBtn.dataset.productId;
-      const product = (window.MARIS_PRODUCTS || []).find((p) => p.code === code);
+      const product = getCachedProducts().find((p) => p.id === productId);
       if (product) {
         prefillCatalogueForm(product, productId);
         document.querySelector("[data-catalogue-form]")?.scrollIntoView({ behavior: "smooth" });
@@ -625,17 +630,18 @@
       if (el) el.value = value || "";
     };
 
-    setValue("code", product.code);
-    setValue("collectionKey", product.collectionKey || "engagement-ring");
-    setValue("title", product.title || product.name);
+    const code = getProductSku(product);
+
+    setValue("code", code);
+    setValue("collectionKey", product.collection || "engagement-ring");
+    setValue("title", product.name);
     setValue("name", product.name);
-    setValue("description", product.description);
-    setValue("price", product.price === "Price on request" ? "" : product.price);
-    setValue("metal", Array.isArray(product.filterValues) ? product.filterValues[0] : "");
+    setValue("description", "");
+    setValue("price", product.basePrice === null || product.basePrice === undefined ? "" : String(product.basePrice));
 
     // Mark form as edit mode
     form.dataset.editProductId = productId;
-    form.dataset.editProductCode = product.code;
+    form.dataset.editProductCode = code;
 
     const saveBtn = form.querySelector("[data-catalogue-save]") || form.querySelector("button[type=submit]");
     if (saveBtn) saveBtn.textContent = "Update in Supabase";

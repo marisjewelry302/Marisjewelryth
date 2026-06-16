@@ -1123,6 +1123,7 @@ const marisBaseCollectionProducts = {};
       : (product.price || "Price on request");
 
     return normalizeProductRecord({
+      id: product.id,
       code: product.sku || product.code,
       title: product.name || product.sku || product.code,
       name: product.name || product.title || product.sku || product.code,

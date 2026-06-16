@@ -1,7 +1,7 @@
 Promise.resolve(window.MARIS_DATA_READY)
   .catch(() => null)
   .then(() => {
-  const products = window.MARIS_PRODUCTS || [];
+  const products = adminCache.products || [];
   const collectionProducts = window.MARIS_COLLECTION_PRODUCTS || {};
   const grid = document.querySelector("[data-category-products]");
   const sortBy = document.querySelector("#sort-by");
