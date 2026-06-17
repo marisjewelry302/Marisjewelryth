@@ -587,9 +587,9 @@ html[lang="th"] .atelier-reveal__copy h2 {
 .hero-content h1 {
   max-width: 560px;
   font-family: var(--maris-font-display);
-  font-size: clamp(52px, 5.5vw, 86px);
+  font-size: clamp(46px, 4.6vw, 72px);
   font-weight: 400;
-  line-height: 0.93;
+  line-height: 0.98;
   letter-spacing: 0;
   text-wrap: balance;
   text-shadow: 0 18px 34px rgba(0, 0, 0, 0.2);
@@ -1012,24 +1012,24 @@ html[lang="th"] .hero-tagline {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 46px;
-  padding: 0 20px;
-  border: 1px solid rgba(0, 73, 58, 0.24);
-  border-radius: 999px;
+  min-height: 48px;
+  padding: 0 24px;
+  border: 1px solid rgba(0, 73, 58, 0.32);
+  border-radius: 0;
   color: var(--maris-teal);
   font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.14em;
   text-decoration: none;
   text-transform: uppercase;
-  transition: background 0.22s ease, color 0.22s ease, transform 0.22s ease;
+  transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
 }
 
 .atelier-reveal__actions a:hover,
 .atelier-reveal__actions a:focus-visible {
   background: var(--maris-teal);
   color: var(--maris-white);
-  transform: translateY(-2px);
+  border-color: var(--maris-teal);
 }
 
 /* SHOP BY CATEGORY */
@@ -1197,8 +1197,8 @@ html[lang="th"] .hero-tagline {
 
 .category-card:hover,
 .category-card:focus-visible {
-  transform: translateY(-6px);
-  box-shadow: 0 26px 52px rgba(16, 41, 35, 0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 14px 28px rgba(16, 41, 35, 0.12);
   border-color: rgba(185, 147, 58, 0.28);
 }
 
@@ -1218,7 +1218,7 @@ html[lang="th"] .hero-tagline {
 
 .category-card:hover img,
 .category-card:focus-visible img {
-  transform: scale(1.06);
+  transform: scale(1.025);
 }
 
 .category-card:hover::after,
@@ -1386,9 +1386,14 @@ html[lang="th"] .hero-tagline {
 
 .value-card i {
   grid-row: span 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
   color: var(--maris-gold);
-  font-size: 20px;
-  line-height: 1.1;
+  font-size: 16px;
+  line-height: 1;
   transition: color 0.24s ease, transform 0.24s ease;
 }
 
@@ -1402,7 +1407,7 @@ html[lang="th"] .hero-tagline {
 }
 
 .value-card p {
-  max-width: 280px;
+  max-width: none;
   color: rgba(255, 250, 246, 0.68);
   font-size: 13.5px;
   line-height: 1.68;
@@ -1411,7 +1416,7 @@ html[lang="th"] .hero-tagline {
 .value-card:hover i,
 .value-card:focus-within i {
   color: var(--maris-blush);
-  transform: translateY(-2px) rotate(-6deg);
+  transform: translateY(-1px);
 }
 
 @keyframes maris-rise {
@@ -1736,6 +1741,7 @@ html[lang="th"] .hero-tagline {
     width: 100%;
     justify-content: center;
     min-height: 44px;
+    border-radius: 0;
     padding-inline: 12px;
     font-size: 8.8px;
     letter-spacing: 0.06em;
