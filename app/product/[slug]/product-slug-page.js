@@ -4,6 +4,7 @@ import ProductGallery from "./ProductGallery";
 import AddToBagButton from "./AddToBagButton";
 
 export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 const COLLECTION_LABELS = {
   "engagement-ring": "Engagement Rings",
@@ -81,7 +82,7 @@ export default async function ProductPage({ params }) {
             <AddToBagButton product={product} collectionLabel={collectionLabel} />
             <a
               className="product-action is-primary"
-              href={`/pages/request-quote.html?collection=${encodeURIComponent(product.collection)}&id=${encodeURIComponent(product.sku)}`}
+              href={`/request-quote?collection=${encodeURIComponent(product.collection)}&id=${encodeURIComponent(product.sku)}`}
             >
               Confirm Availability
             </a>

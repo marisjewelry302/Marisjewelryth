@@ -229,7 +229,12 @@
   }
 
   function getCollectionHref(collectionKey) {
-    return collectionMeta[collectionKey]?.href || "engagement-ring.html";
+    return collectionMeta[collectionKey]?.href || "/category/engagement-ring";
+  }
+
+  function getProductPreviewHref(code) {
+    const productCode = String(code || "").trim();
+    return productCode ? `/product/${encodeURIComponent(productCode)}` : "/category/engagement-ring";
   }
 
   function splitTextareaLines(value) {
@@ -460,7 +465,7 @@
 
     const rows = catalogueDrafts
       .map((product) => {
-        const href = `/pages/product.html?collection=${encodeURIComponent(product.collectionKey || "engagement-ring")}&id=${encodeURIComponent(product.code)}`;
+        const href = getProductPreviewHref(product.code);
 
         return `
           <tr>
@@ -562,7 +567,7 @@
       .map((product) => {
         const code = getProductSku(product);
         const collectionKey = product.collection || "";
-        const href = `/pages/product.html?collection=${encodeURIComponent(collectionKey || "engagement-ring")}&id=${encodeURIComponent(code)}`;
+        const href = getProductPreviewHref(code);
         const galleryCount = Array.isArray(product.images) ? product.images.length : (Number(product.imageCount) || 0);
         const imageLabel = product.primaryImageUrl
           ? `<a class="admin-link-inline" href="${escapeHtml(product.primaryImageUrl)}" target="_blank" rel="noopener noreferrer">Open image</a>`
