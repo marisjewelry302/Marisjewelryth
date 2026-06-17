@@ -202,7 +202,7 @@ export default async function HomePage() {
           <p className="section-kicker">Why Maris</p>
           <h2 id="value-heading">Quiet support from first idea to final piece.</h2>
           <p>
-            The process is designed for thoughtful choices, clear options, and jewelry that stays wearable after the moment passes.
+            Guided choices, clear options, and fine jewelry made to stay wearable beyond the moment.
           </p>
         </div>
 
@@ -210,22 +210,22 @@ export default async function HomePage() {
           <article className="value-card">
             <span aria-hidden="true">01</span>
             <h3>Custom-ready</h3>
-            <p>Adjust proportions, references, metal tone, and details around the final mood you want.</p>
+            <p>Adjust proportion, metal tone, and details to fit the mood you want.</p>
           </article>
           <article className="value-card">
             <span aria-hidden="true">02</span>
-            <h3>Fine material guidance</h3>
-            <p>Compare stone and metal choices with a clear view of price, presence, and wearability.</p>
+            <h3>Material guidance</h3>
+            <p>Compare stones and metals by presence, price, and daily wearability.</p>
           </article>
           <article className="value-card">
             <span aria-hidden="true">03</span>
-            <h3>Personal availability checks</h3>
-            <p>Confirm current stock, sizing, and next steps with the atelier before final order details.</p>
+            <h3>Availability checks</h3>
+            <p>Confirm stock, sizing, and timing with the atelier before ordering.</p>
           </article>
           <article className="value-card">
             <span aria-hidden="true">04</span>
             <h3>Partner support</h3>
-            <p>OEM, wholesale, and selective retail conversations can begin from the same catalogue foundation.</p>
+            <p>Begin OEM, wholesale, or retail conversations from one clear catalogue base.</p>
           </article>
         </div>
       </section>
