@@ -9,14 +9,20 @@ const googleSheetGuide = await readFile(new URL("../docs/google-sheet-catalogue.
 
 assert.equal(
   packageJson.scripts.prebuild,
-  "node scripts/sync-legacy-public.mjs",
-  "Vercel prebuild must only sync legacy public assets; sheet image validation is a manual diagnostic"
+  undefined,
+  "Vercel build must not run the retired legacy public sync"
 );
 
 assert.doesNotMatch(
-  packageJson.scripts.prebuild,
-  /check:sheet-images|check-sheet-images/,
+  JSON.stringify(packageJson.scripts),
+  /prebuild.*check:sheet-images|prebuild.*check-sheet-images/,
   "Vercel build must not be blocked by the manual Google Sheet image checker"
+);
+
+assert.doesNotMatch(
+  JSON.stringify(packageJson.scripts),
+  /sync-legacy-public|sync:legacy|predev/,
+  "Development and build scripts must not recreate legacy static public files"
 );
 
 assert.match(
@@ -27,8 +33,8 @@ assert.match(
 
 assert.doesNotMatch(
   deployGuide,
-  /build`?\s+which calls it automatically|build.*runs.*check:sheet-images.*automatically/is,
-  "Deploy guide must not say npm run build automatically runs the sheet image checker"
+  /scripts\/sync-legacy-public|root `index\.html`, `pages\/`, and `assets\/` folders|build`?\s+which calls it automatically|build.*runs.*check:sheet-images.*automatically/is,
+  "Deploy guide must not describe the retired legacy public sync or automatic sheet checker"
 );
 
 assert.doesNotMatch(

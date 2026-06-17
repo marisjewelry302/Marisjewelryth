@@ -55,7 +55,13 @@ export default function HeroSlider({ slides }) {
           <div
             key={slide.id || index}
             className={`hero-slide ${stateClass}`}
-            style={{ backgroundImage: slide.image ? `url(${slide.image})` : undefined }}
+            style={{
+              backgroundImage: slide.image ? `url(${slide.image})` : undefined,
+              "--hero-position-start": slide.positionStart,
+              "--hero-position-end": slide.positionEnd,
+              "--hero-size-start": slide.sizeStart,
+              "--hero-size-end": slide.sizeEnd
+            }}
           />
         );
       })}

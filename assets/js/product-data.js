@@ -4,42 +4,42 @@ const marisBaseCollectionMeta = {
   "wedding-set": {
     title: "Wedding set",
     titleTh: "แหวนแต่งงาน",
-    href: "wedding-set.html"
+    href: "/category/wedding-set"
   },
   "engagement-ring": {
     title: "Engagement Rings",
     titleTh: "แหวนหมั้น",
-    href: "engagement-ring.html"
+    href: "/category/engagement-ring"
   },
   "wedding-bands": {
     title: "Wedding Bands",
     titleTh: "แหวนแถว",
-    href: "wedding-bands.html"
+    href: "/category/wedding-bands"
   },
   "mens-wedding-bands": {
     title: "Men's Wedding Bands",
     titleTh: "แหวนแต่งงานผู้ชาย",
-    href: "mens-wedding-bands.html"
+    href: "/category/mens-wedding-bands"
   },
   "necklaces-pendants": {
     title: "Necklaces & Pendants",
     titleTh: "สร้อยคอและจี้",
-    href: "necklaces-pendants.html"
+    href: "/category/necklaces-pendants"
   },
   bracelets: {
     title: "Bracelets",
     titleTh: "สร้อยข้อมือ",
-    href: "bracelets.html"
+    href: "/category/bracelets"
   },
   earrings: {
     title: "Earrings",
     titleTh: "ต่างหู",
-    href: "earrings.html"
+    href: "/category/earrings"
   },
   rings: {
     title: "Rings",
     titleTh: "แหวน",
-    href: "rings.html"
+    href: "/category/rings"
   }
 };
 

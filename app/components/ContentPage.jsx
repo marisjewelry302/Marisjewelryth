@@ -1,0 +1,92 @@
+export default function ContentPage({ page }) {
+  return (
+    <main className="placeholder-main content-page site-main">
+      <section className="placeholder-card placeholder-card--editorial">
+        <div className="subpage-intro">
+          <p className="eyebrow">{page.eyebrow}</p>
+          <h1>{page.title}</h1>
+          <p className="lead">{page.lead}</p>
+        </div>
+
+        {page.features && (
+          <div className="subpage-feature-grid">
+            {page.features.map((feature) => (
+              <article className="subpage-feature-card" key={feature.title}>
+                <h2>{feature.title}</h2>
+                <p>{feature.text}</p>
+              </article>
+            ))}
+          </div>
+        )}
+
+        {page.detail && (
+          <div className="subpage-detail-grid">
+            <section className="subpage-panel">
+              <h2>{page.detail.title}</h2>
+              <div className="subpage-stack">
+                {page.detail.items.map((item) => (
+                  <article key={item.title}>
+                    <h3>{item.title}</h3>
+                    <p>{item.text}</p>
+                  </article>
+                ))}
+              </div>
+            </section>
+
+            {page.aside && (
+              <aside className="subpage-panel subpage-panel--accent">
+                <h2>{page.aside.title}</h2>
+                <dl className="subpage-info-list">
+                  {page.aside.items.map((item) => (
+                    <div key={item.label}>
+                      <dt>{item.label}</dt>
+                      <dd>{item.value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </aside>
+            )}
+          </div>
+        )}
+
+        {page.steps && (
+          <section className="subpage-panel">
+            <h2>{page.stepsTitle}</h2>
+            <div className="subpage-step-grid">
+              {page.steps.map((step, index) => (
+                <article className="subpage-step-card" key={step.title}>
+                  <p className="subpage-step-index">{String(index + 1).padStart(2, "0")}</p>
+                  <h3>{step.title}</h3>
+                  <p>{step.text}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {page.policySections && (
+          <div className="policy-content">
+            {page.policySections.map((section) => (
+              <section className="policy-section" key={section.title}>
+                <h2>{section.title}</h2>
+                <p>{section.text}</p>
+              </section>
+            ))}
+          </div>
+        )}
+
+        {page.note && <p className="subpage-note">{page.note}</p>}
+
+        {page.actions && (
+          <div className="page-actions">
+            {page.actions.map((action, index) => (
+              <a key={action.href} className={index === 0 ? "primary-link" : undefined} href={action.href}>
+                {action.label}
+              </a>
+            ))}
+          </div>
+        )}
+      </section>
+    </main>
+  );
+}

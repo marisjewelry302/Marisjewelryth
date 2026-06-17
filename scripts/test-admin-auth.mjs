@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
-import { spawnSync } from "node:child_process";
+import { readFile } from "node:fs/promises";
 
 process.env.MARIS_ADMIN_SESSION_SECRET = "test-session-secret";
 
@@ -31,12 +31,12 @@ assert.equal(verifiedSession.role, "owner");
 assert.equal(verifyAdminSession(`${session}.tampered`, now).isValid, false);
 assert.equal(verifyAdminSession(session, new Date("2026-05-24T09:01:00.000Z")).isValid, false);
 
-const sync = spawnSync(process.execPath, ["scripts/sync-legacy-public.mjs"], {
-  cwd: new URL("..", import.meta.url),
-  encoding: "utf8"
-});
-
-assert.equal(sync.status, 0, sync.stderr || sync.stdout);
+const packageJson = await readFile(new URL("../package.json", import.meta.url), "utf8");
+assert.doesNotMatch(
+  packageJson,
+  /sync-legacy-public|predev|prebuild|sync:legacy/,
+  "Legacy public sync must not run during dev/build after the React migration"
+);
 assert.equal(existsSync(new URL("../public/pages/admin.html", import.meta.url)), false);
 
 const redirects = await nextConfig.redirects();

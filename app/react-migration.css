@@ -1,0 +1,129 @@
+.site-main {
+  min-height: 60vh;
+}
+
+.home-main {
+  background: var(--maris-paper);
+}
+
+.home-main .hero {
+  margin-top: 0;
+}
+
+.home-main .hero-content {
+  margin-top: clamp(92px, 14vh, 150px);
+}
+
+.home-main .hero .hero-eyebrow {
+  position: static;
+  margin-bottom: 14px;
+}
+
+.atelier-reveal__actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.atelier-reveal__actions a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid var(--maris-teal);
+  color: var(--maris-ink);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.atelier-reveal__actions a:first-child {
+  background: var(--maris-teal);
+  color: var(--maris-white);
+}
+
+.atelier-product {
+  opacity: 1;
+  transform: none;
+}
+
+.atelier-product__image-fallback {
+  position: absolute;
+  inset: 18px 18px auto auto;
+  z-index: 2;
+  max-width: calc(100% - 36px);
+  padding: 8px 10px;
+  background: rgba(255, 250, 246, 0.86);
+  color: var(--maris-teal);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.category-page {
+  min-height: 70vh;
+  background:
+    radial-gradient(circle at top right, rgba(249, 207, 209, 0.24), transparent 32%),
+    linear-gradient(180deg, var(--maris-paper) 0%, var(--maris-white) 48%, var(--maris-silver) 100%);
+}
+
+.catalogue-empty {
+  grid-column: 1 / -1;
+  padding: 48px 28px;
+  border: 1px dashed rgba(0, 73, 58, 0.24);
+  background: rgba(255, 255, 255, 0.74);
+  color: var(--maris-muted);
+  text-align: center;
+}
+
+.product-card-link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+.product-info {
+  padding: 16px 0 0;
+}
+
+.product-info h3 {
+  color: var(--maris-ink);
+  font-size: 15px;
+  letter-spacing: 0.08em;
+}
+
+.product-info p {
+  margin-top: 6px;
+  color: var(--maris-muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.wishlist-toggle {
+  font-family: inherit;
+}
+
+.content-page {
+  padding-top: 46px;
+}
+
+.request-quote-hidden {
+  display: none;
+}
+
+.not-found-shell {
+  display: grid;
+  place-items: center;
+  min-height: 62vh;
+  padding: 48px 20px;
+}
+
+@media (max-width: 768px) {
+  .home-main .hero-content {
+    margin-top: clamp(48px, 10vh, 92px);
+  }
+}

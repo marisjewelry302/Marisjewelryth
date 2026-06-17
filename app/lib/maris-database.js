@@ -17,6 +17,7 @@ export const MARIS_DATABASE_TABLES = Object.freeze([
 const SUPABASE_URL_ENV = "SUPABASE_URL";
 const NEXT_PUBLIC_SUPABASE_URL_ENV = "NEXT_PUBLIC_SUPABASE_URL";
 const SUPABASE_SERVICE_ROLE_KEY_ENV = "SUPABASE_SERVICE_ROLE_KEY";
+const MAX_PRODUCT_IMAGE_BYTES = 5 * 1024 * 1024;
 const ADMIN_CATALOGUE_SELECT = `
   id,
   sku,
@@ -1259,6 +1260,14 @@ export async function uploadAdminProductImage(
 
   if (!buffer || !fileName) {
     throw new AdminProductImageUploadError("File is required.", 400);
+  }
+
+  if (buffer.length > MAX_PRODUCT_IMAGE_BYTES) {
+    throw new AdminProductImageUploadError("Product image must be 5 MB or smaller.", 413);
+  }
+
+  if (contentType && !String(contentType).toLowerCase().startsWith("image/")) {
+    throw new AdminProductImageUploadError("Product image upload must be an image file.", 400);
   }
 
   const ext = fileName.split(".").pop()?.toLowerCase() || "jpg";

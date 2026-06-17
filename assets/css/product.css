@@ -347,13 +347,20 @@
 }
 
 .product-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-height: 42px;
+  padding: 0 16px;
   border: 1px solid var(--maris-teal);
   background: transparent;
   color: var(--maris-ink);
   font: inherit;
   font-size: 11px;
+  line-height: 1.2;
   letter-spacing: 0.1em;
+  text-align: center;
+  text-decoration: none;
   text-transform: uppercase;
   cursor: pointer;
   transition: background 0.25s ease, color 0.25s ease, transform 0.25s ease;
@@ -539,4 +546,3 @@
     right: 14px;
   }
 }
-
