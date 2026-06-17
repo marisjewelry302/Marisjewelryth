@@ -9,7 +9,7 @@ The repository root is the only deployable Next.js app. Do not point Vercel at a
 1. Confirm `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and `MARIS_ADMIN_SESSION_SECRET` are set in Vercel.
 2. Confirm `npm run test:database` and `npm run test:admin-database-auth` pass locally.
 3. Confirm `npm run build` passes locally.
-4. Replace `https://www.your-domain.com` in [sitemap.xml](./sitemap.xml) with the production domain.
+4. Confirm [app/sitemap.js](./app/sitemap.js) uses the intended production domain.
 5. Open the homepage, category pages, product page, `/admin`, and 404 page on desktop and mobile before promoting production.
 6. Confirm contact details, social links, quote request summary flow, wishlist, and shopping bag behavior.
 
@@ -27,13 +27,13 @@ The repository root is the only deployable Next.js app. Do not point Vercel at a
 6. Every branch or pull request gets a Preview Deployment.
 7. Merging to `main` creates the Production Deployment.
 
-## How The Legacy Site Builds
+## How The React Site Builds
 
-The HTML/CSS/JS site is still stored in the root `index.html`, `pages/`, and `assets/` folders. Before `next dev` and `next build`, `scripts/sync-legacy-public.mjs` copies the public site surface into `public/`.
+The public storefront now renders through Next.js App Router routes in `app/`. Legacy public `.html` pages are no longer copied into `public/` before development or build.
 
-The generated `public/` folder is ignored by git. Vercel regenerates it during `npm run build`.
+The generated `public/` folder is ignored by git and is not required for the migrated storefront. Storefront assets are served from the tracked `assets/` folder through the `/assets/*` App Router handler.
 
-`next.config.mjs` also sets production cache headers for legacy image, CSS, and JS assets. The cache values stay conservative because these files are not fingerprinted yet.
+`next.config.mjs` sets compatibility redirects for old `.html` URLs and production cache headers for image, CSS, and JS assets. The cache values stay conservative because these files are not fingerprinted yet.
 
 ## Local Commands
 
@@ -45,7 +45,7 @@ npm run test:admin-database-auth
 npm run build
 ```
 
-`npm run check:sheet-images` remains available only for historical Google Sheet diagnostics or one-off legacy imports. It is no longer called by `npm run build`.
+`npm run check:sheet-images` remains available only as a manual diagnostic for historical Google Sheet audits or one-off legacy imports. It is no longer called by `npm run build`.
 
 If this Windows machine cannot find `npm` or `node`, use:
 

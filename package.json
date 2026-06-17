@@ -8,7 +8,6 @@
     "node": ">=20.9.0"
   },
   "scripts": {
-    "sync:legacy": "node scripts/sync-legacy-public.mjs",
     "check:sheet-images": "node scripts/check-sheet-images.mjs",
     "test:static-routing": "node scripts/test-static-routing-contract.mjs",
     "test:admin-auth": "node scripts/test-admin-auth.mjs",
@@ -17,9 +16,7 @@
     "test:database": "node scripts/test-supabase-admin-database.mjs",
     "test:database:live": "node scripts/test-supabase-admin-database-live.mjs",
     "test:sheet-images": "node scripts/test-sheet-image-checker.mjs",
-    "predev": "node scripts/sync-legacy-public.mjs",
     "dev": "next dev",
-    "prebuild": "node scripts/sync-legacy-public.mjs",
     "build": "next build",
     "start": "next start"
   },

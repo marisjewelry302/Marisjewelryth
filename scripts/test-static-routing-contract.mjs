@@ -10,58 +10,35 @@ async function fileExists(path) {
   }
 }
 
-const [hasAppPage, hasAppRoute, adminPage, homepage] = await Promise.all([
+const [hasAppPage, hasAppRoute, adminPage, homepage, productPage, packageJson] = await Promise.all([
   fileExists("app/page.js"),
   fileExists("app/route.js"),
   readFile("assets/js/admin-page.js", "utf8"),
-  readFile("assets/js/homepage.js", "utf8")
+  readFile("app/page.js", "utf8"),
+  readFile("app/product/[slug]/product-slug-page.js", "utf8"),
+  readFile("package.json", "utf8")
 ]);
-const appRoute = hasAppRoute ? await readFile("app/route.js", "utf8") : "";
 
-assert.equal(hasAppPage, false, "app/page.js must not redirect / to /index.html");
-assert.equal(hasAppRoute, true, "app/route.js must serve / without changing the browser URL");
-
-assert.doesNotMatch(
-  appRoute,
-  /redirect\(["']\/index\.html["']\)/,
-  "app/route.js must keep the browser URL at / instead of redirecting to /index.html"
-);
-
-assert.match(
-  appRoute,
-  /readFile\(path\.join\(process\.cwd\(\), ["']index\.html["']\), ["']utf8["']\)/,
-  "app/route.js must serve the root static index.html file"
-);
-
-assert.match(
-  appRoute,
-  /Content-Type["']:\s*["']text\/html; charset=utf-8["']/,
-  "app/route.js must return index.html as text/html"
-);
+assert.equal(hasAppPage, true, "app/page.js must render the React storefront at /");
+assert.equal(hasAppRoute, false, "app/route.js must be removed after the React storefront migration");
 
 assert.doesNotMatch(
-  appRoute,
-  /readPublicCatalogueProducts|HeroSlider|CategoryHoverCard/,
-  "app/route.js should not render the React storefront while static-first routing is active"
+  packageJson,
+  /sync-legacy-public|predev|prebuild|sync:legacy/,
+  "package scripts must not sync the legacy static site during dev/build"
 );
 
-const previewLinkMatches = adminPage.match(/\/pages\/product\.html\?collection=\$\{encodeURIComponent\(/g) || [];
-assert.equal(
-  previewLinkMatches.length,
-  2,
-  "admin Preview links must point to /pages/product.html from the /admin route"
-);
+assert.match(homepage, /readPublicCatalogueProducts/, "homepage must use the React/Supabase catalogue path");
+assert.match(homepage, /<HeroSlider slides=\{heroSlides\}/, "homepage must render the React hero slider");
+assert.doesNotMatch(homepage, /\/index\.html|pages\/.*\.html/, "homepage must not link to legacy .html pages");
 
-assert.match(
-  homepage,
-  /const productCode = product\.code \|\| product\.productCode \|\| product\.sku \|\| product\.slug \|\| title;/,
-  "homepage atelier cards must prefer product code fields before slugs"
-);
+assert.doesNotMatch(adminPage, /\/pages\/product\.html/, "admin Preview links must not point to legacy product.html");
+assert.match(adminPage, /function getProductPreviewHref\(code\)/, "admin Preview links must use the React product preview helper");
 
 assert.match(
-  homepage,
-  /`pages\/product\.html\?collection=\$\{encodeURIComponent\(collectionKey\)\}&id=\$\{encodeURIComponent\(productCode\)\}`/,
-  "homepage atelier cards must link to legacy product.html with collection and id"
+  productPage,
+  /href=\{`\/request-quote\?collection=/,
+  "product page quote links must point to /request-quote"
 );
 
-console.log("Static routing contract is valid.");
+console.log("React routing contract is valid.");

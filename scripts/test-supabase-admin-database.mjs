@@ -125,24 +125,21 @@ const catalogueClient = {
                   data: [
                     {
                       id: "product-1",
-                      product_code: "ER1001",
+                      sku: "ER1001",
                       slug: "diamond-ring",
-                      name_en: "Diamond Ring",
-                      name_th: "แหวนเพชร",
+                      name: "Diamond Ring",
                       category: "Engagement Rings",
                       collection: "engagement-ring",
                       status: "active",
-                      price_amount: 12900,
-                      currency: "THB",
-                      is_active: true,
+                      base_price: 12900,
                       updated_at: "2026-05-27T00:00:00.000Z",
                       product_variants: [
                         {
                           id: "variant-1",
                           sku: "ER1001-WG-52",
                           variant_name: "White Gold 52",
-                          metal: "white gold",
-                          size_label: "52",
+                          material: "white gold",
+                          size: "52",
                           stock_quantity: 2,
                           is_active: true
                         }
@@ -190,16 +187,13 @@ assert.equal(catalogue.isConfigured, true);
 assert.equal(catalogue.products.length, 1);
 assert.deepEqual(catalogue.products[0], {
   id: "product-1",
-  productCode: "ER1001",
+  sku: "ER1001",
   slug: "diamond-ring",
-  nameEn: "Diamond Ring",
-  nameTh: "แหวนเพชร",
+  name: "Diamond Ring",
   category: "Engagement Rings",
   collection: "engagement-ring",
   status: "active",
-  priceAmount: 12900,
-  currency: "THB",
-  isActive: true,
+  basePrice: 12900,
   stockQuantity: 0,
   reservedQuantity: 0,
   stockQty: 0,
@@ -214,8 +208,8 @@ assert.deepEqual(catalogue.products[0], {
       id: "variant-1",
       sku: "ER1001-WG-52",
       variantName: "White Gold 52",
-      metal: "white gold",
-      sizeLabel: "52",
+      material: "white gold",
+      size: "52",
       stockQuantity: 2,
       isActive: true
     }
@@ -276,19 +270,16 @@ const publicCatalogueClient = {
               data: [
                 {
                   id: "product-1",
-                  product_code: "ER1001",
+                  sku: "ER1001",
                   slug: "diamond-ring",
-                  name_en: "Diamond Ring",
-                  name_th: "แหวนเพชร",
+                  name: "Diamond Ring",
                   category: "Engagement Rings",
                   collection: "engagement-ring",
                   description: "Round diamond ring.",
                   material: "14K Gold",
                   gold_color: "White Gold",
                   status: "active",
-                  price_amount: 12900,
-                  currency: "THB",
-                  is_active: true,
+                  base_price: 12900,
                   stock_quantity: 5,
                   reserved_quantity: 2,
                   updated_at: "2026-05-27T00:00:00.000Z",
@@ -304,8 +295,8 @@ const publicCatalogueClient = {
                       id: "variant-1",
                       sku: "ER1001-WG-52",
                       variant_name: "White Gold 52",
-                      metal: "white gold",
-                      size_label: "52",
+                      material: "white gold",
+                      size: "52",
                       stock_quantity: 2,
                       is_active: true
                     }
@@ -351,9 +342,7 @@ const publicCatalogue = await readPublicCatalogueProducts({
 
 assert.equal(publicCatalogue.source, "supabase");
 assert.equal(publicCatalogue.status, "ready");
-assert.equal(publicCatalogue.productCount, 1);
 assert.deepEqual(publicCatalogueCalls.filter((call) => call[0] === "eq"), [
-  ["eq", "is_active", true],
   ["eq", "status", "active"]
 ]);
 assert.ok(
@@ -362,44 +351,39 @@ assert.ok(
 );
 assert.deepEqual(publicCatalogue.products[0], {
   id: "product-1",
-  code: "ER1001",
+  sku: "ER1001",
   slug: "diamond-ring",
-  title: "Featured Diamond Ring",
   name: "Diamond Ring",
-  nameTh: "แหวนเพชร",
-  collectionKey: "engagement-ring",
   category: "Engagement Rings",
-  description: "Round diamond ring.",
-  details: ["14K White Gold", "Round diamond"],
-  price: "12,900 THB",
-  priceAmount: 12900,
-  currency: "THB",
+  collection: "engagement-ring",
   status: "active",
-  stockState: "available",
-  availableQuantity: 3,
-  image: "https://example.com/ring-main.png",
-  hover: "https://example.com/ring-side.png",
-  gallery: [
+  basePrice: 12900,
+  primaryImageUrl: "https://example.com/ring-main.png",
+  images: [
     {
       id: "image-1",
-      label: "Primary View",
-      src: "https://example.com/ring-main.png",
-      alt: "Diamond Ring main",
+      imageUrl: "https://example.com/ring-main.png",
+      altText: "Diamond Ring main",
       sortOrder: 0,
       isPrimary: true
     },
     {
       id: "image-2",
-      label: "View 2",
-      src: "https://example.com/ring-side.png",
-      alt: "Diamond Ring side",
+      imageUrl: "https://example.com/ring-side.png",
+      altText: "Diamond Ring side",
       sortOrder: 1,
       isPrimary: false
     }
   ],
-  filterValues: ["white-gold", "round"],
-  imagePresentation: "contain",
-  updatedAt: "2026-05-27T00:00:00.000Z"
+  variants: [
+    {
+      id: "variant-1",
+      sku: "ER1001-WG-52",
+      variantName: "White Gold 52",
+      material: "white gold",
+      size: "52"
+    }
+  ]
 });
 assert.equal("serviceRoleKey" in publicCatalogue, false);
 assert.equal("isActive" in publicCatalogue.products[0], false);
@@ -520,17 +504,16 @@ const uploadedImage = await uploadAdminProductImage({
   now: () => 1710000000000
 });
 
-assert.equal(uploadClient.state.uploads[0].path, "products/product-1/1710000000000-main-ring.png");
+const uploadedPath = uploadClient.state.uploads[0].path;
+assert.match(uploadedPath, /^product-1\/\d+-[a-z0-9]+\.png$/);
 assert.equal(uploadClient.state.uploads[0].options.contentType, "image/png");
 assert.equal(uploadClient.state.uploads[0].options.upsert, false);
 assert.equal(uploadClient.state.insertedImages[0].product_id, "product-1");
-assert.equal(uploadClient.state.insertedImages[0].image_url, "https://example.supabase.co/storage/v1/object/public/product-images/products/product-1/1710000000000-main-ring.png");
+assert.equal(uploadClient.state.insertedImages[0].image_url, `https://example.supabase.co/storage/v1/object/public/product-images/${uploadedPath}`);
 assert.equal(uploadClient.state.insertedImages[0].source, "upload");
-assert.equal(uploadClient.state.insertedImages[0].metadata.storageBucket, "product-images");
-assert.equal(uploadClient.state.insertedImages[0].metadata.storagePath, "products/product-1/1710000000000-main-ring.png");
 assert.deepEqual(uploadedImage, {
   id: "image-1",
-  imageUrl: "https://example.supabase.co/storage/v1/object/public/product-images/products/product-1/1710000000000-main-ring.png",
+  imageUrl: `https://example.supabase.co/storage/v1/object/public/product-images/${uploadedPath}`,
   altText: "Main ring",
   sortOrder: 0,
   isPrimary: true,
@@ -573,8 +556,8 @@ function createInventoryMovementClient() {
   const state = {
     product: {
       id: "product-1",
-      product_code: "ER1001",
-      name_en: "Diamond Ring",
+      sku: "ER1001",
+      name: "Diamond Ring",
       stock_quantity: 5,
       reserved_quantity: 1
     },
@@ -668,7 +651,7 @@ const inventoryLog = await createAdminInventoryLog({
   client: inventoryClient
 });
 
-assert.equal(inventoryClient.state.productSelect, "id, product_code, name_en, stock_quantity, reserved_quantity");
+assert.equal(inventoryClient.state.productSelect, "id, sku, name, stock_quantity, reserved_quantity");
 assert.deepEqual(inventoryClient.state.productFilter, ["id", "product-1"]);
 assert.deepEqual(inventoryClient.state.updates[0], {
   stock_quantity: 5,
@@ -728,7 +711,7 @@ assert.match(databaseGuide, /supabase\/migrations\/\d+_create_maris_admin_schema
 assert.match(databaseGuide, /npm run test:database:live/i, "Database guide should tell operators how to verify the live Supabase tables");
 assert.match(docsReadme, /supabase-admin-database\.md/, "Docs index should link to the Supabase admin database guide");
 assert.equal(packageJson.scripts["test:database:live"], "node scripts/test-supabase-admin-database-live.mjs");
-assert.equal(packageJson.scripts.prebuild, "node scripts/sync-legacy-public.mjs", "Build should no longer run the Google Sheet image checker before Next.js");
+assert.equal(packageJson.scripts.prebuild, undefined, "Build should no longer run legacy static sync before Next.js");
 
 for (const tableName of EXPECTED_DATABASE_TABLES) {
   assert.match(

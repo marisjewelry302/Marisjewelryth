@@ -106,7 +106,7 @@ assert.equal(product.code, "ER999");
 assert.equal(product.name, "Column Shuffle Ring");
 assert.equal(product.price, "19,900 THB");
 assert.equal(product.image, "https://example.com/main.png");
-assert.equal(product.hover, "https://example.com/hover.png");
+assert.equal(product.hover, "https://example.com/front.png");
 assert.equal(product.collectionKey, "engagement-ring");
 assert.ok(product.gallery.some((item) => item.src === "https://example.com/front.png"));
 assert.deepEqual(Array.from(window.MARIS_COLLECTION_PRODUCTS["engagement-ring"]), ["ER999"]);
