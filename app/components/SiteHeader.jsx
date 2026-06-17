@@ -105,6 +105,7 @@ export default function SiteHeader() {
   const [bagCount, setBagCount] = useState(0);
 
   const normalizedPathname = useMemo(() => pathname.replace(/\/$/, "") || "/", [pathname]);
+  const isHome = normalizedPathname === "/";
 
   useEffect(() => {
     const initialLanguage = getInitialLanguage().toLowerCase().startsWith("th") ? "th" : "en";
@@ -140,6 +141,14 @@ export default function SiteHeader() {
   }, [isOpen]);
 
   useEffect(() => {
+    document.body.classList.toggle("is-home-page", isHome);
+
+    return () => {
+      document.body.classList.remove("is-home-page");
+    };
+  }, [isHome]);
+
+  useEffect(() => {
     setIsOpen(false);
   }, [pathname]);
 
@@ -155,7 +164,7 @@ export default function SiteHeader() {
   }
 
   return (
-    <header>
+    <header className={`site-header${isHome ? " site-header--home" : ""}`}>
       <div className="top-bar">
         <div className="top-left">
           <a href="mailto:marisjewelryth@gmail.com">marisjewelryth@gmail.com</a>

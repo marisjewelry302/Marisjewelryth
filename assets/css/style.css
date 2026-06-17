@@ -2730,3 +2730,93 @@ html[lang="th"] .hero-tagline {
     font-size: clamp(22px, 7vw, 30px);
   }
 }
+
+/* Homepage header-in-hero layout */
+body:has(.site-header--home) .home-main .hero,
+.is-home-page .home-main .hero {
+  min-height: clamp(680px, 96svh, 880px);
+  min-height: clamp(680px, 96dvh, 880px);
+  padding-top: clamp(182px, 16.5vw, 248px);
+}
+
+body:has(.site-header--home) .hero-content,
+.is-home-page .hero-content {
+  margin-top: clamp(8px, 2.5vh, 36px);
+}
+
+body:has(.site-header--home) .hero-utility-bar,
+.is-home-page .hero-utility-bar {
+  position: absolute;
+  top: clamp(230px, 27vh, 330px);
+  right: clamp(30px, 5.4vw, 82px);
+  z-index: 4;
+  display: grid;
+  justify-items: end;
+  gap: 8px;
+  width: auto;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  color: rgba(255, 250, 246, 0.78);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  line-height: 1.25;
+  text-align: right;
+  text-shadow: 0 10px 28px rgba(0, 34, 28, 0.42);
+}
+
+body:has(.site-header--home) .hero-utility-bar__divider,
+.is-home-page .hero-utility-bar__divider {
+  width: 44px;
+  height: 1px;
+  border: 0;
+  background: linear-gradient(90deg, transparent, rgba(185, 147, 58, 0.9));
+  transform: none;
+}
+
+@media (max-width: 920px) {
+  body:has(.site-header--home) .home-main .hero,
+  .is-home-page .home-main .hero {
+    min-height: min(92svh, 690px);
+    min-height: min(92dvh, 690px);
+    padding-top: clamp(126px, 34vw, 162px);
+  }
+
+  body:has(.site-header--home) .hero-utility-bar,
+  .is-home-page .hero-utility-bar {
+    top: clamp(142px, 37vw, 178px);
+    left: 14px;
+    right: 14px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    font-size: 7.5px;
+    letter-spacing: 0.11em;
+    text-align: center;
+  }
+
+  body:has(.site-header--home) .hero-utility-bar__divider,
+  .is-home-page .hero-utility-bar__divider {
+    width: 5px;
+    height: 5px;
+    border: 1px solid rgba(185, 147, 58, 0.75);
+    background: transparent;
+    transform: rotate(45deg);
+  }
+
+  body:has(.site-header--home) .hero-content,
+  .is-home-page .hero-content {
+    margin-top: clamp(18px, 6vh, 46px);
+  }
+}
+
+@media (max-width: 360px) {
+  body:has(.site-header--home) .hero-utility-bar,
+  .is-home-page .hero-utility-bar {
+    gap: 5px;
+    font-size: 6.4px;
+    letter-spacing: 0.055em;
+  }
+}
