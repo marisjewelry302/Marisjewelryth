@@ -271,10 +271,10 @@ body.is-page-scrolled .icons i {
 /* HEADER */
 .page-header {
   display: grid;
-  gap: 18px;
+  gap: 14px;
   width: min(calc(100% - 40px), 920px);
   margin: 0 auto;
-  padding: 40px 20px 24px;
+  padding: 46px 20px 26px;
 }
 
 .page-header h1 {
@@ -294,14 +294,15 @@ body.is-page-scrolled .icons i {
   grid-template-columns: minmax(220px, 1fr) auto minmax(220px, 1fr);
   align-items: end;
   gap: 16px;
-  width: min(calc(100% - 40px), 1200px);
+  width: min(calc(100% - 88px), 1200px);
   margin: 0 auto;
-  padding: 0 20px 8px;
+  padding: 0 0 8px;
 }
 
 .toolbar-group {
   display: grid;
   gap: 8px;
+  justify-items: start;
 }
 
 .toolbar-group label {
@@ -330,6 +331,7 @@ body.is-page-scrolled .icons i {
 
 .catalogue-select {
   min-width: 220px;
+  width: 220px;
   padding: 8px 12px;
   border: 1px solid rgba(0,0,0,0.12);
   border-radius: 0;

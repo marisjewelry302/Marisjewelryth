@@ -211,12 +211,12 @@ html[lang="th"] .atelier-reveal__copy h2 {
 @keyframes hero-drift {
   from {
     background-position: var(--hero-position-start, center);
-    background-size: 114% auto;
+    background-size: var(--hero-size-start, 114% auto);
   }
 
   to {
     background-position: var(--hero-position-end, center);
-    background-size: 108% auto;
+    background-size: var(--hero-size-end, 108% auto);
   }
 }
 

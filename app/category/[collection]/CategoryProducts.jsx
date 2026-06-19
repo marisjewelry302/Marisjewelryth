@@ -67,7 +67,7 @@ export default function CategoryProducts({ products, collectionTitle }) {
   return (
     <>
       <section className="catalogue-toolbar" aria-label="Catalogue controls">
-        <div>
+        <div className="toolbar-group">
           <label htmlFor="sort-by">Sort by</label>
           <select id="sort-by" className="catalogue-select" value={sortBy} onChange={(event) => setSortBy(event.target.value)}>
             <option value="featured">Featured</option>
@@ -79,7 +79,7 @@ export default function CategoryProducts({ products, collectionTitle }) {
 
         <p className="catalogue-count">{visibleProducts.length} pieces</p>
 
-        <div>
+        <div className="toolbar-group toolbar-group-right">
           <label htmlFor="filter-by">Filter</label>
           <select id="filter-by" className="catalogue-select" value={filterBy} onChange={(event) => setFilterBy(event.target.value)}>
             <option value="all">All Pieces</option>

@@ -4,15 +4,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
-const LANGUAGE_KEY = "marisLanguage";
-const LEGACY_LANGUAGE_KEY = "marisHomeLanguage";
 const BAG_KEY = "marisShoppingBag";
 
 const primaryNav = [
-  { href: "/category/wedding-set", label: "Wedding set" },
   { href: "/category/engagement-ring", label: "Engagement rings" },
   { href: "/category/wedding-bands", label: "Wedding bands" },
-  { href: "/category/mens-wedding-bands", label: "Men's Rings" }
+  { href: "/category/mens-wedding-bands", label: "Men's Wedding Bands" }
 ];
 
 const dropdownNav = [
@@ -87,30 +84,72 @@ function Icon({ name }) {
   );
 }
 
-function getInitialLanguage() {
-  if (typeof window === "undefined") {
-    return "en";
+function SearchIcon() {
+  return (
+    <svg aria-hidden="true" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" viewBox="0 0 24 24">
+      <circle cx="11" cy="11" r="7" />
+      <path d="m16.5 16.5 4 4" />
+    </svg>
+  );
+}
+
+function SocialIcon({ name }) {
+  const commonProps = {
+    "aria-hidden": "true",
+    fill: "currentColor",
+    viewBox: "0 0 24 24"
+  };
+
+  if (name === "instagram") {
+    return (
+      <svg {...commonProps}>
+        <rect x="4" y="4" width="16" height="16" rx="4" fill="none" stroke="currentColor" strokeWidth="2" />
+        <circle cx="12" cy="12" r="3.2" fill="none" stroke="currentColor" strokeWidth="2" />
+        <circle cx="16.7" cy="7.3" r="1.2" />
+      </svg>
+    );
   }
 
-  return window.localStorage.getItem(LANGUAGE_KEY)
-    || window.localStorage.getItem(LEGACY_LANGUAGE_KEY)
-    || document.documentElement.lang
-    || "en";
+  if (name === "facebook") {
+    return (
+      <svg {...commonProps}>
+        <path d="M13.8 21v-8h2.7l.5-3h-3.2V8.1c0-.9.4-1.5 1.7-1.5H17V3.9c-.8-.1-1.7-.2-2.5-.2-2.6 0-4.4 1.6-4.4 4.5V10H7.2v3h2.9v8h3.7Z" />
+      </svg>
+    );
+  }
+
+  if (name === "youtube") {
+    return (
+      <svg {...commonProps}>
+        <rect x="3" y="6.5" width="18" height="11" rx="3" />
+        <path d="m10.3 9.5 5 2.5-5 2.5v-5Z" fill="white" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg {...commonProps}>
+      <path d="M12.1 3.2c-4.1 0-6.3 2.7-6.3 5.6 0 1.7.8 3 2.1 3.5.2.1.4 0 .5-.3l.2-.9c.1-.3.1-.4-.1-.7-.5-.6-.8-1.3-.8-2.2 0-2.4 1.8-4.5 4.6-4.5 2.5 0 3.9 1.5 3.9 3.6 0 2.7-1.2 5-3 5-1 0-1.8-.8-1.5-1.9.3-1.2.9-2.4.9-3.3 0-.8-.4-1.4-1.2-1.4-1 0-1.8 1-1.8 2.4 0 .9.3 1.5.3 1.5l-1.2 5.1c-.4 1.5-.1 3.4 0 3.6 0 .1.2.2.3.1.1-.1 1.7-2.1 2.2-3.9.2-.5.8-3 .8-3 .4.8 1.4 1.4 2.5 1.4 3.3 0 5.5-3 5.5-7 0-3-2.6-5.9-6.6-5.9Z" />
+    </svg>
+  );
 }
 
 export default function SiteHeader() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
-  const [language, setLanguage] = useState("en");
   const [bagCount, setBagCount] = useState(0);
 
   const normalizedPathname = useMemo(() => pathname.replace(/\/$/, "") || "/", [pathname]);
   const isHome = normalizedPathname === "/";
 
   useEffect(() => {
-    const initialLanguage = getInitialLanguage().toLowerCase().startsWith("th") ? "th" : "en";
-    setLanguage(initialLanguage);
-    document.documentElement.lang = initialLanguage;
+    document.documentElement.lang = "en";
+    try {
+      window.localStorage.removeItem("marisLanguage");
+      window.localStorage.removeItem("marisHomeLanguage");
+    } catch (error) {
+      // Storage can be unavailable in stricter browser modes.
+    }
 
     function updateScrollClass() {
       document.body.classList.toggle("is-page-scrolled", window.scrollY > 12);
@@ -152,13 +191,6 @@ export default function SiteHeader() {
     setIsOpen(false);
   }, [pathname]);
 
-  function switchLanguage(nextLanguage) {
-    setLanguage(nextLanguage);
-    document.documentElement.lang = nextLanguage;
-    window.localStorage.setItem(LANGUAGE_KEY, nextLanguage);
-    window.localStorage.setItem(LEGACY_LANGUAGE_KEY, nextLanguage);
-  }
-
   function isCurrent(href) {
     return normalizedPathname === href || normalizedPathname.startsWith(`${href}/`);
   }
@@ -166,30 +198,16 @@ export default function SiteHeader() {
   return (
     <header className={`site-header${isHome ? " site-header--home" : ""}`}>
       <div className="top-bar">
-        <div className="top-left">
-          <a href="mailto:marisjewelryth@gmail.com">marisjewelryth@gmail.com</a>
-          <span className="top-note">Fine jewelry studio in Bangkok</span>
-        </div>
-        <div className="top-right">
-          <div className="language-switch" aria-label="Language switcher">
-            <button
-              type="button"
-              className={language === "en" ? "is-active" : ""}
-              aria-pressed={language === "en"}
-              onClick={() => switchLanguage("en")}
-            >
-              EN
-            </button>
-            <span aria-hidden="true">/</span>
-            <button
-              type="button"
-              className={language === "th" ? "is-active" : ""}
-              aria-pressed={language === "th"}
-              onClick={() => switchLanguage("th")}
-            >
-              TH
-            </button>
-          </div>
+        <p className="top-announcement">
+          Private consultation for confirmed Maris pieces.
+          {" "}
+          <Link href="/contact-us">Contact Maris</Link>
+        </p>
+        <div className="top-socials" aria-hidden="true">
+          <span><SocialIcon name="instagram" /></span>
+          <span><SocialIcon name="facebook" /></span>
+          <span><SocialIcon name="youtube" /></span>
+          <span><SocialIcon name="pinterest" /></span>
         </div>
       </div>
 
@@ -211,6 +229,10 @@ export default function SiteHeader() {
             <img src="/assets/images/logo.png" alt="Maris Jewelry Logo" />
           </Link>
         </div>
+
+        <Link className="nav-search" href="/category/engagement-ring" aria-label="Browse jewelry">
+          <SearchIcon />
+        </Link>
 
         <nav className="nav" aria-label="Primary navigation">
           {primaryNav.map((item) => (

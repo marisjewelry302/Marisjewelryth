@@ -34,8 +34,7 @@ const categoryCards = [
     href: "/category/necklaces-pendants",
     className: "category-card category-card--necklaces",
     imageSrc: "/assets/images/home/optimized/category-focus-necklaces-landscape-v1.jpg",
-    imageAlt: "Necklaces and pendants",
-    order: "01",
+    imageAlt: "Necklaces and pendants", 
     title: "Necklaces & Pendants",
     ctaLabel: "View"
   },
@@ -44,7 +43,6 @@ const categoryCards = [
     className: "category-card category-card--rings",
     imageSrc: "/assets/images/home/optimized/category-focus-rings-landscape-v1.jpg",
     imageAlt: "Rings",
-    order: "02",
     title: "Rings",
     ctaLabel: "View"
   },
@@ -53,7 +51,6 @@ const categoryCards = [
     className: "category-card category-card--earrings",
     imageSrc: "/assets/images/home/optimized/category-focus-earrings-landscape-v1.jpg",
     imageAlt: "Earrings",
-    order: "03",
     title: "Earrings",
     ctaLabel: "View"
   },
@@ -62,7 +59,6 @@ const categoryCards = [
     className: "category-card category-card--bracelets",
     imageSrc: "/assets/images/home/optimized/category-focus-bracelets-landscape-v1.jpg",
     imageAlt: "Bracelets",
-    order: "04",
     title: "Bracelets",
     ctaLabel: "View"
   }
@@ -97,11 +93,11 @@ export default async function HomePage() {
           <p className="hero-eyebrow">Fine Jewelry • Bangkok</p>
           <h1>Crafted for the moments that become forever.</h1>
           <p className="hero-tagline">
-            Quiet diamond jewelry for proposals, vows, and moments that stay.
+            Quietly elegant diamond jewelry for proposals, vows, and the intimate milestones held closest to the heart.
           </p>
           <div className="hero-actions">
-            <a className="hero-primary" href="/category/engagement-ring">Find Your Ring</a>
-            <a className="hero-secondary" href="/about-us">About Maris</a>
+            <a className="hero-primary" href="/category/engagement-ring">Find Your Engagement Ring</a>
+            <a className="hero-secondary" href="/about-us">Discover Maris</a>
           </div>
         </div>
       </section>
@@ -163,8 +159,7 @@ export default async function HomePage() {
                   style={{ "--atelier-delay": `${index * 90}ms` }}
                 >
                   <img src={card.imageSrc} alt={card.imageAlt} />
-                  <span className="atelier-product__meta">
-                    <span>{card.order}</span>
+                  <span className="atelier-product__meta">                    <span>{card.order}</span>
                     <strong>{card.title}</strong>
                   </span>
                 </a>

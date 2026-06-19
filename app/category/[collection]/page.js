@@ -46,7 +46,6 @@ export default async function CategoryPage({ params }) {
   return (
     <main className="category-page site-main">
       <section className="page-header">
-        <p className="eyebrow">Maris Catalogue</p>
         <h1>{collection.title}</h1>
         <p className="category-lead">{collection.lead}</p>
       </section>
