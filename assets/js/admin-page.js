@@ -617,7 +617,7 @@
       }
       #maris-edit-modal.is-open { display: flex; align-items: flex-start; justify-content: center; }
       #maris-edit-modal-box {
-        width: min(100%, 640px);
+        width: min(100%, 680px);
         background: #fffaf6;
         border: 1px solid rgba(221,164,165,0.38);
         box-shadow: 0 32px 80px rgba(0,73,58,0.18);
@@ -674,30 +674,24 @@
         border: none;
         border-top: 1px solid rgba(221,164,165,0.34);
       }
-      .modal-image-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 14px;
-        margin-bottom: 20px;
-      }
-      .modal-image-preview {
+      /* ── Main image ── */
+      .modal-main-img-wrap { margin-top: 12px; margin-bottom: 20px; }
+      .modal-main-img-wrap img,
+      .modal-image-placeholder {
         width: 100%;
-        aspect-ratio: 1;
+        max-height: 260px;
         object-fit: contain;
         background: #ececec;
         display: block;
-        margin-bottom: 8px;
+        margin-bottom: 10px;
       }
       .modal-image-placeholder {
-        width: 100%;
-        aspect-ratio: 1;
-        background: #ececec;
         display: flex;
         align-items: center;
         justify-content: center;
         color: #5c6d68;
         font-size: 12px;
-        margin-bottom: 8px;
+        min-height: 120px;
       }
       .modal-file-input {
         width: 100%;
@@ -705,6 +699,75 @@
         font-size: 13px;
         color: #5c6d68;
       }
+      /* ── Gallery grid ── */
+      #modal-gallery-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+        gap: 10px;
+        margin: 12px 0 16px;
+        min-height: 40px;
+      }
+      .modal-gallery-item {
+        position: relative;
+        border: 2px solid transparent;
+        cursor: grab;
+        user-select: none;
+        background: #ececec;
+      }
+      .modal-gallery-item.is-dragging {
+        opacity: 0.45;
+        border-color: #00493a;
+        cursor: grabbing;
+      }
+      .modal-gallery-item.drag-over {
+        border-color: #b9933a;
+      }
+      .modal-gallery-item img {
+        width: 100%;
+        aspect-ratio: 1;
+        object-fit: cover;
+        display: block;
+      }
+      .modal-gallery-item .gallery-badge {
+        position: absolute;
+        top: 4px;
+        left: 4px;
+        background: #b9933a;
+        color: #fff;
+        font-size: 9px;
+        letter-spacing: 0.1em;
+        padding: 2px 5px;
+        text-transform: uppercase;
+      }
+      .modal-gallery-delete {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        width: 22px;
+        height: 22px;
+        background: rgba(217,74,90,0.9);
+        border: none;
+        color: #fff;
+        font-size: 13px;
+        line-height: 1;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .modal-gallery-delete:hover { background: #d94a5a; }
+      .modal-gallery-empty {
+        color: #5c6d68;
+        font-size: 13px;
+        padding: 12px 0;
+      }
+      .modal-gallery-hint {
+        color: #b9933a;
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        margin-bottom: 10px;
+      }
+      /* ── Actions ── */
       .modal-actions {
         display: flex;
         gap: 10px;
@@ -748,7 +811,8 @@
       @keyframes modal-spin { to { transform: rotate(360deg); } }
       @media (max-width: 520px) {
         #maris-edit-modal-box { padding: 24px 18px; }
-        .modal-grid, .modal-image-grid { grid-template-columns: 1fr; }
+        .modal-grid { grid-template-columns: 1fr; }
+        #modal-gallery-grid { grid-template-columns: repeat(3, 1fr); }
       }
     `;
     document.head.appendChild(style);
@@ -818,22 +882,23 @@
         </div>
 
         <hr class="modal-divider">
-        <span class="modal-kicker">Images</span>
-
-        <div class="modal-image-grid" style="margin-top:12px">
-          <div>
-            <div id="modal-main-image-preview" class="modal-image-placeholder">No main image</div>
-            <label class="modal-label" style="margin-top:4px">
-              Replace Main Image
-              <input class="modal-file-input" id="modal-field-main-image" type="file" accept="image/*">
-            </label>
-          </div>
-          <div>
-            <p class="modal-label" style="margin-bottom:8px">Add Gallery Images</p>
-            <input class="modal-file-input" id="modal-field-gallery" type="file" accept="image/*" multiple>
-            <p style="margin-top:8px;color:#5c6d68;font-size:12px" id="modal-gallery-count"></p>
-          </div>
+        <span class="modal-kicker">Main Image</span>
+        <div class="modal-main-img-wrap">
+          <div id="modal-main-image-preview" class="modal-image-placeholder">No main image</div>
+          <label class="modal-label" style="margin-top:4px">
+            Replace Main Image
+            <input class="modal-file-input" id="modal-field-main-image" type="file" accept="image/*">
+          </label>
         </div>
+
+        <hr class="modal-divider">
+        <span class="modal-kicker">Gallery Images</span>
+        <p class="modal-gallery-hint" style="margin-top:6px">ลากเพื่อเรียงลำดับ · กด ✕ เพื่อลบรูป</p>
+        <div id="modal-gallery-grid"></div>
+        <label class="modal-label" style="margin-top:4px">
+          Add More Images
+          <input class="modal-file-input" id="modal-field-gallery" type="file" accept="image/*" multiple>
+        </label>
 
         <div class="modal-actions">
           <button class="admin-primary" id="modal-save-btn" type="button">Save Changes</button>
@@ -844,13 +909,10 @@
     `;
     document.body.appendChild(modal);
 
-    // Close handlers
     document.getElementById("maris-edit-modal-close").addEventListener("click", closeEditModal);
     document.getElementById("maris-edit-modal-cancel").addEventListener("click", closeEditModal);
     modal.addEventListener("click", (e) => { if (e.target === modal) closeEditModal(); });
     document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeEditModal(); });
-
-    // Save handler
     document.getElementById("modal-save-btn").addEventListener("click", saveEditModal);
   }
 
