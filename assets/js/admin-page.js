@@ -598,6 +598,397 @@
     elements.sheetCatalogueTable.innerHTML = rows;
   }
 
+  // ── EDIT MODAL ──────────────────────────────────────────────────────────────
+
+  function buildEditModal() {
+    if (document.getElementById("maris-edit-modal")) return;
+
+    const style = document.createElement("style");
+    style.textContent = `
+      #maris-edit-modal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 100;
+        background: rgba(16, 41, 35, 0.55);
+        backdrop-filter: blur(4px);
+        overflow-y: auto;
+        padding: 40px 16px;
+      }
+      #maris-edit-modal.is-open { display: flex; align-items: flex-start; justify-content: center; }
+      #maris-edit-modal-box {
+        width: min(100%, 640px);
+        background: #fffaf6;
+        border: 1px solid rgba(221,164,165,0.38);
+        box-shadow: 0 32px 80px rgba(0,73,58,0.18);
+        padding: 36px;
+        position: relative;
+      }
+      #maris-edit-modal-box h2 {
+        font-size: 32px;
+        font-weight: 300;
+        color: #00493a;
+        margin-bottom: 24px;
+        line-height: 1;
+      }
+      .modal-kicker {
+        display: block;
+        color: #b9933a;
+        font-size: 11px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+      }
+      .modal-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        margin-bottom: 14px;
+      }
+      .modal-grid.modal-full { grid-template-columns: 1fr; }
+      .modal-label {
+        display: grid;
+        gap: 7px;
+        color: #5c6d68;
+        font-size: 12px;
+        letter-spacing: 0.11em;
+        text-transform: uppercase;
+      }
+      .modal-input, .modal-select {
+        min-height: 44px;
+        border: 1px solid rgba(0,73,58,0.2);
+        background: rgba(255,255,255,0.8);
+        color: #102923;
+        font: inherit;
+        font-size: 14px;
+        padding: 0 12px;
+        width: 100%;
+        outline: none;
+      }
+      .modal-input:focus, .modal-select:focus {
+        border-color: #00493a;
+        box-shadow: 0 0 0 3px rgba(0,73,58,0.1);
+      }
+      .modal-divider {
+        margin: 24px 0 18px;
+        border: none;
+        border-top: 1px solid rgba(221,164,165,0.34);
+      }
+      .modal-image-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        margin-bottom: 20px;
+      }
+      .modal-image-preview {
+        width: 100%;
+        aspect-ratio: 1;
+        object-fit: contain;
+        background: #ececec;
+        display: block;
+        margin-bottom: 8px;
+      }
+      .modal-image-placeholder {
+        width: 100%;
+        aspect-ratio: 1;
+        background: #ececec;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #5c6d68;
+        font-size: 12px;
+        margin-bottom: 8px;
+      }
+      .modal-file-input {
+        width: 100%;
+        font: inherit;
+        font-size: 13px;
+        color: #5c6d68;
+      }
+      .modal-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 28px;
+        flex-wrap: wrap;
+      }
+      .modal-close-btn {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        width: 36px;
+        height: 36px;
+        border: 1px solid rgba(0,73,58,0.18);
+        background: transparent;
+        color: #5c6d68;
+        font-size: 18px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+      }
+      .modal-message {
+        min-height: 20px;
+        margin-top: 14px;
+        font-size: 13px;
+        color: #00493a;
+      }
+      .modal-message.is-error { color: #d94a5a; }
+      .modal-spinner {
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+        border: 2px solid rgba(255,255,255,0.4);
+        border-top-color: #fff;
+        border-radius: 50%;
+        animation: modal-spin 0.7s linear infinite;
+        margin-right: 6px;
+        vertical-align: middle;
+      }
+      @keyframes modal-spin { to { transform: rotate(360deg); } }
+      @media (max-width: 520px) {
+        #maris-edit-modal-box { padding: 24px 18px; }
+        .modal-grid, .modal-image-grid { grid-template-columns: 1fr; }
+      }
+    `;
+    document.head.appendChild(style);
+
+    const modal = document.createElement("div");
+    modal.id = "maris-edit-modal";
+    modal.setAttribute("role", "dialog");
+    modal.setAttribute("aria-modal", "true");
+    modal.setAttribute("aria-labelledby", "maris-edit-modal-title");
+    modal.innerHTML = `
+      <div id="maris-edit-modal-box">
+        <button class="modal-close-btn" id="maris-edit-modal-close" aria-label="Close">&#x2715;</button>
+        <span class="modal-kicker">Editing product</span>
+        <h2 id="maris-edit-modal-title">Edit Product</h2>
+
+        <div class="modal-grid">
+          <label class="modal-label">
+            SKU / Code
+            <input class="modal-input" id="modal-field-sku" type="text" readonly style="opacity:0.55;cursor:not-allowed">
+          </label>
+          <label class="modal-label">
+            Collection
+            <select class="modal-select" id="modal-field-collection">
+              <option value="engagement-ring">Engagement Rings</option>
+              <option value="wedding-band">Wedding Bands</option>
+              <option value="wedding-set">Wedding Set</option>
+              <option value="ring">Rings</option>
+              <option value="earring">Earrings</option>
+              <option value="bracelet">Bracelets</option>
+              <option value="necklace">Necklaces &amp; Pendants</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="modal-grid">
+          <label class="modal-label">
+            Product Name
+            <input class="modal-input" id="modal-field-name" type="text" placeholder="Product name">
+          </label>
+          <label class="modal-label">
+            Price
+            <input class="modal-input" id="modal-field-price" type="text" placeholder="Price on request">
+          </label>
+        </div>
+
+        <div class="modal-grid">
+          <label class="modal-label">
+            Status
+            <select class="modal-select" id="modal-field-status">
+              <option value="Ready">Ready</option>
+              <option value="Sold Out">Sold Out</option>
+              <option value="Preorder">Preorder</option>
+              <option value="Hidden">Hidden</option>
+            </select>
+          </label>
+          <label class="modal-label">
+            Real Stock
+            <input class="modal-input" id="modal-field-stock" type="number" min="0">
+          </label>
+        </div>
+
+        <div class="modal-grid modal-full">
+          <label class="modal-label">
+            Description
+            <input class="modal-input" id="modal-field-description" type="text" placeholder="Short description">
+          </label>
+        </div>
+
+        <hr class="modal-divider">
+        <span class="modal-kicker">Images</span>
+
+        <div class="modal-image-grid" style="margin-top:12px">
+          <div>
+            <div id="modal-main-image-preview" class="modal-image-placeholder">No main image</div>
+            <label class="modal-label" style="margin-top:4px">
+              Replace Main Image
+              <input class="modal-file-input" id="modal-field-main-image" type="file" accept="image/*">
+            </label>
+          </div>
+          <div>
+            <p class="modal-label" style="margin-bottom:8px">Add Gallery Images</p>
+            <input class="modal-file-input" id="modal-field-gallery" type="file" accept="image/*" multiple>
+            <p style="margin-top:8px;color:#5c6d68;font-size:12px" id="modal-gallery-count"></p>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button class="admin-primary" id="modal-save-btn" type="button">Save Changes</button>
+          <button class="admin-secondary" id="maris-edit-modal-cancel" type="button">Cancel</button>
+        </div>
+        <p class="modal-message" id="modal-message"></p>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    // Close handlers
+    document.getElementById("maris-edit-modal-close").addEventListener("click", closeEditModal);
+    document.getElementById("maris-edit-modal-cancel").addEventListener("click", closeEditModal);
+    modal.addEventListener("click", (e) => { if (e.target === modal) closeEditModal(); });
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeEditModal(); });
+
+    // Save handler
+    document.getElementById("modal-save-btn").addEventListener("click", saveEditModal);
+  }
+
+  function openEditModal(product) {
+    buildEditModal();
+
+    const modal = document.getElementById("maris-edit-modal");
+    const title = document.getElementById("maris-edit-modal-title");
+
+    // Store product id on modal
+    modal.dataset.productId = product.id;
+    modal.dataset.productCode = getProductSku(product);
+
+    // Fill fields
+    document.getElementById("modal-field-sku").value = getProductSku(product);
+    document.getElementById("modal-field-collection").value = product.collection || "engagement-ring";
+    document.getElementById("modal-field-name").value = getProductName(product);
+    document.getElementById("modal-field-price").value =
+      product.basePrice != null ? String(product.basePrice) : (product.price || "");
+    document.getElementById("modal-field-status").value = product.status || "Ready";
+    document.getElementById("modal-field-stock").value = String(product.stockQty ?? product.totalStock ?? 0);
+    document.getElementById("modal-field-description").value = product.description || "";
+
+    // Title
+    title.textContent = `Edit — ${getProductSku(product)}`;
+
+    // Main image preview
+    const previewEl = document.getElementById("modal-main-image-preview");
+    if (product.primaryImageUrl) {
+      previewEl.outerHTML = `<img id="modal-main-image-preview" class="modal-image-preview" src="${escapeHtml(product.primaryImageUrl)}" alt="Current main image">`;
+    } else {
+      previewEl.outerHTML = `<div id="modal-main-image-preview" class="modal-image-placeholder">No main image</div>`;
+    }
+
+    // Gallery count
+    const galleryCount = product.imageCount || 0;
+    document.getElementById("modal-gallery-count").textContent =
+      galleryCount ? `${galleryCount} image${galleryCount > 1 ? "s" : ""} in gallery` : "No gallery images yet";
+
+    // Reset file inputs & message
+    document.getElementById("modal-field-main-image").value = "";
+    document.getElementById("modal-field-gallery").value = "";
+    setModalMessage("", false);
+
+    modal.classList.add("is-open");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeEditModal() {
+    const modal = document.getElementById("maris-edit-modal");
+    if (!modal) return;
+    modal.classList.remove("is-open");
+    document.body.style.overflow = "";
+  }
+
+  function setModalMessage(text, isError = false) {
+    const el = document.getElementById("modal-message");
+    if (!el) return;
+    el.textContent = text;
+    el.className = "modal-message" + (isError ? " is-error" : "");
+  }
+
+  async function saveEditModal() {
+    const modal = document.getElementById("maris-edit-modal");
+    const productId = modal?.dataset.productId;
+    if (!productId) return;
+
+    const saveBtn = document.getElementById("modal-save-btn");
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = `<span class="modal-spinner"></span>Saving...`;
+    setModalMessage("", false);
+
+    try {
+      // 1. PATCH text fields
+      const name = document.getElementById("modal-field-name").value.trim();
+      const collection = document.getElementById("modal-field-collection").value;
+      const price = document.getElementById("modal-field-price").value.trim() || "Price on request";
+      const status = document.getElementById("modal-field-status").value;
+      const stockQty = Math.max(0, Number(document.getElementById("modal-field-stock").value) || 0);
+      const description = document.getElementById("modal-field-description").value.trim();
+
+      if (!name) {
+        setModalMessage("Product name is required.", true);
+        return;
+      }
+
+      await fetchAdminApi(`/products?id=${encodeURIComponent(productId)}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          name,
+          collection,
+          category: getCollectionLabel(collection),
+          price,
+          status,
+          stockQty,
+          description
+        })
+      });
+
+      // 2. Upload new main image (if selected)
+      const mainImageFile = document.getElementById("modal-field-main-image").files[0];
+      if (mainImageFile) {
+        await uploadProductImage(productId, mainImageFile, {
+          altText: `${name} primary image`,
+          sortOrder: 0,
+          isPrimary: true
+        });
+      }
+
+      // 3. Upload new gallery images (if selected)
+      const galleryFiles = Array.from(document.getElementById("modal-field-gallery").files);
+      if (galleryFiles.length) {
+        await Promise.all(galleryFiles.map((file, index) =>
+          uploadProductImage(productId, file, {
+            altText: `${name} gallery image ${index + 1}`,
+            sortOrder: index + 1,
+            isPrimary: false
+          })
+        ));
+      }
+
+      setModalMessage("Saved successfully.");
+      await loadAdminBackendData();
+      loadDatabaseCatalogue();
+      renderAll();
+
+      setTimeout(closeEditModal, 800);
+
+    } catch (error) {
+      setModalMessage(error instanceof Error ? error.message : "Could not save changes.", true);
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = "Save Changes";
+    }
+  }
+
+  // ── TABLE ACTIONS ────────────────────────────────────────────────────────────
+
   function handleCatalogueTableActions(event) {
     const editBtn = event.target.closest("[data-catalogue-edit]");
     const deleteBtn = event.target.closest("[data-catalogue-delete]");
@@ -606,8 +997,9 @@
       const productId = editBtn.dataset.productId;
       const product = getCachedProducts().find((p) => p.id === productId);
       if (product) {
-        prefillCatalogueForm(product, productId);
-        document.querySelector("[data-catalogue-form]")?.scrollIntoView({ behavior: "smooth" });
+        openEditModal(product);
+      } else {
+        setMessage("Product data not found. Try refreshing.", true);
       }
       return;
     }
@@ -623,49 +1015,6 @@
         return;
       }
       deleteSupabaseProduct(productId, code);
-    }
-  }
-
-  function prefillCatalogueForm(product, productId) {
-    const form = document.querySelector("[data-catalogue-form]");
-    if (!form) return;
-
-    const setValue = (name, value) => {
-      const el = form.elements.namedItem(name);
-      if (el) el.value = value || "";
-    };
-
-    const code = getProductSku(product);
-
-    setValue("code", code);
-    setValue("collectionKey", product.collection || "engagement-ring");
-    setValue("title", product.name);
-    setValue("name", product.name);
-    setValue("description", "");
-    setValue("price", product.basePrice === null || product.basePrice === undefined ? "" : String(product.basePrice));
-
-    // Mark form as edit mode
-    form.dataset.editProductId = productId;
-    form.dataset.editProductCode = code;
-
-    const saveBtn = form.querySelector("[data-catalogue-save]") || form.querySelector("button[type=submit]");
-    if (saveBtn) saveBtn.textContent = "Update in Supabase";
-
-    const cancelBtn = form.querySelector("[data-catalogue-cancel-edit]");
-    if (!cancelBtn && saveBtn) {
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.textContent = "Cancel Edit";
-      btn.dataset.catalogueCancelEdit = "true";
-      btn.style.marginLeft = "8px";
-      btn.addEventListener("click", () => {
-        delete form.dataset.editProductId;
-        delete form.dataset.editProductCode;
-        form.reset();
-        if (saveBtn) saveBtn.textContent = "Save to Supabase";
-        btn.remove();
-      });
-      saveBtn.after(btn);
     }
   }
 
