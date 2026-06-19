@@ -893,6 +893,7 @@
 
         <hr class="modal-divider">
         <span class="modal-kicker">Gallery Images</span>
+        <p id="modal-gallery-count" class="modal-gallery-count">No gallery images yet</p>
         <p class="modal-gallery-hint" style="margin-top:6px">ลากเพื่อเรียงลำดับ · กด ✕ เพื่อลบรูป</p>
         <div id="modal-gallery-grid"></div>
         <label class="modal-label" style="margin-top:4px">
@@ -949,8 +950,11 @@
 
     // Gallery count
     const galleryCount = product.imageCount || 0;
-    document.getElementById("modal-gallery-count").textContent =
-      galleryCount ? `${galleryCount} image${galleryCount > 1 ? "s" : ""} in gallery` : "No gallery images yet";
+    const galleryCountEl = document.getElementById("modal-gallery-count");
+    if (galleryCountEl) {
+      galleryCountEl.textContent =
+        galleryCount ? `${galleryCount} image${galleryCount > 1 ? "s" : ""} in gallery` : "No gallery images yet";
+    }
 
     // Reset file inputs & message
     document.getElementById("modal-field-main-image").value = "";
