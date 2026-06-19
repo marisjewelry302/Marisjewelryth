@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { SESSION_COOKIE_NAME, verifyAdminSession } from "../../lib/admin-auth";
+import { SESSION_COOKIE_NAME, verifyAdminSession } from "../lib/admin-auth";
 import Script from "next/script";
 import "./admin.css";
 
