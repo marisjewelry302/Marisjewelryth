@@ -48,6 +48,18 @@ assert.match(
 
 assert.doesNotMatch(
   adminHtml,
+  /<body\b/i,
+  "Admin page must not render a nested body inside the root layout body"
+);
+
+assert.match(
+  adminHtml,
+  /<AdminBodyClass\s*\/>/,
+  "Admin page should set its body class through a client helper instead of rendering a body tag"
+);
+
+assert.doesNotMatch(
+  adminHtml,
   /Optional Manual Publish|Publish \/ Update|published catalogue items managed|data-published-catalogue-table|data-published-count|Manual Browser Sandbox|Browser-only sandbox|browser-only tools|Reset Demo Data/i,
   "Admin HTML must not present browser-local catalogue drafts, inventory, or orders as production controls"
 );

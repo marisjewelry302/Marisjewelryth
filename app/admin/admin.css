@@ -21,7 +21,7 @@
   --maris-font-display: var(--maris-font-sans);
 }
 
-body {
+body.admin-page {
   min-height: 100vh;
   font-family: var(--maris-font-sans);
   color: var(--maris-ink);
@@ -31,7 +31,7 @@ body {
     linear-gradient(180deg, var(--maris-paper), var(--maris-white) 46%, var(--maris-silver));
 }
 
-html[lang="th"] body {
+html[lang="th"] body.admin-page {
   font-family: var(--maris-font-thai);
 }
 

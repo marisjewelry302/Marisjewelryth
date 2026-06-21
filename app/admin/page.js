@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { SESSION_COOKIE_NAME, verifyAdminSession } from "../lib/admin-auth";
 import Script from "next/script";
+import AdminBodyClass from "./AdminBodyClass";
 import "./admin.css";
 
 export const dynamic = "force-dynamic";
@@ -16,7 +17,8 @@ export default async function AdminPage() {
 
   return (
     <>
-      <body className="admin-page">
+      <AdminBodyClass />
+      <div className="admin-page-shell">
         <header className="admin-topbar">
           <a className="admin-logo" href="/" aria-label="Go to storefront">
             <img src="/assets/images/logo.png" alt="Maris Jewelry Logo" />
@@ -465,7 +467,7 @@ export default async function AdminPage() {
         </main>
 
         <Script src="/assets/js/admin-page.js" strategy="afterInteractive" />
-      </body>
+      </div>
     </>
   );
 }

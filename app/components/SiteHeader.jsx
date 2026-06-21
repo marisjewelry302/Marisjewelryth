@@ -141,6 +141,7 @@ export default function SiteHeader() {
 
   const normalizedPathname = useMemo(() => pathname.replace(/\/$/, "") || "/", [pathname]);
   const isHome = normalizedPathname === "/";
+  const isAdminRoute = normalizedPathname === "/admin" || normalizedPathname.startsWith("/admin/");
 
   useEffect(() => {
     document.documentElement.lang = "en";
@@ -193,6 +194,10 @@ export default function SiteHeader() {
 
   function isCurrent(href) {
     return normalizedPathname === href || normalizedPathname.startsWith(`${href}/`);
+  }
+
+  if (isAdminRoute) {
+    return null;
   }
 
   return (

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 const footerSections = [
@@ -119,6 +120,13 @@ function NewsletterForm() {
 }
 
 export default function SiteFooter() {
+  const pathname = usePathname();
+  const normalizedPathname = pathname.replace(/\/$/, "") || "/";
+
+  if (normalizedPathname === "/admin" || normalizedPathname.startsWith("/admin/")) {
+    return null;
+  }
+
   return (
     <footer data-maris-footer>
       <div className="maris-footer__inner">
