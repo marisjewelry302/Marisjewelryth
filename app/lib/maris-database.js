@@ -1316,3 +1316,80 @@ export async function uploadAdminProductImage(
     source: data.source
   };
 }
+
+export async function deleteAdminProductImage(
+  { productId, imageId },
+  { env = process.env, client } = {}
+) {
+  const config = getSupabaseAdminConfig(env);
+  if (!config.isConfigured) {
+    throw new Error("Supabase admin database is not configured");
+  }
+
+  if (!productId || !imageId) {
+    throw new AdminProductImageUploadError("Product ID and image ID are required.", 400);
+  }
+
+  const supabase = client || createSupabaseAdminClient(env);
+  const { error } = await supabase
+    .from("product_images")
+    .delete()
+    .eq("id", imageId)
+    .eq("product_id", productId);
+
+  if (error) {
+    throw new AdminProductImageUploadError(error.message || "Product image could not be deleted.", 500);
+  }
+
+  return {
+    id: imageId,
+    productId,
+    deleted: true
+  };
+}
+
+export async function reorderAdminProductImages(
+  { productId, imageIds },
+  { env = process.env, client } = {}
+) {
+  const config = getSupabaseAdminConfig(env);
+  if (!config.isConfigured) {
+    throw new Error("Supabase admin database is not configured");
+  }
+
+  const orderedImageIds = Array.from(new Set(
+    (Array.isArray(imageIds) ? imageIds : [])
+      .map((imageId) => String(imageId || "").trim())
+      .filter(Boolean)
+  ));
+
+  if (!productId || !orderedImageIds.length) {
+    throw new AdminProductImageUploadError("Product ID and ordered image IDs are required.", 400);
+  }
+
+  const supabase = client || createSupabaseAdminClient(env);
+  const results = await Promise.all(orderedImageIds.map((imageId, index) => (
+    supabase
+      .from("product_images")
+      .update({
+        sort_order: index,
+        is_primary: index === 0
+      })
+      .eq("id", imageId)
+      .eq("product_id", productId)
+  )));
+  const failedResult = results.find((result) => result.error);
+
+  if (failedResult) {
+    throw new AdminProductImageUploadError(
+      failedResult.error.message || "Product image order could not be updated.",
+      500
+    );
+  }
+
+  return {
+    productId,
+    imageIds: orderedImageIds,
+    updated: true
+  };
+}

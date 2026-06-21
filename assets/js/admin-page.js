@@ -64,6 +64,7 @@
   }
 
   const ADMIN_API_PREFIX = "/api/admin";
+  const ADMIN_PRODUCT_IMAGES_PATH = "/product-images";
   const adminCache = {
     products: [],
     orders: [],
@@ -72,6 +73,8 @@
     isReady: false,
     error: ""
   };
+  let modalGalleryImages = [];
+  let modalGalleryDragIndex = null;
 
   async function fetchAdminApi(path, options = {}) {
     const url = `${ADMIN_API_PREFIX}${path}`;
@@ -382,6 +385,202 @@
       sortOrder: index + 1,
       isPrimary: false
     })));
+  }
+
+  function getModalProductId() {
+    return document.getElementById("maris-edit-modal")?.dataset.productId || "";
+  }
+
+  function getModalProductImages(product) {
+    const images = Array.isArray(product?.images) ? product.images : [];
+
+    return images
+      .filter((image) => image?.id && image?.imageUrl)
+      .map((image, index) => ({
+        id: String(image.id),
+        imageUrl: image.imageUrl,
+        altText: image.altText || `${getProductName(product)} image ${index + 1}`,
+        sortOrder: Number(image.sortOrder) || index,
+        isPrimary: image.isPrimary === true
+      }))
+      .sort((left, right) => {
+        if (left.isPrimary !== right.isPrimary) {
+          return left.isPrimary ? -1 : 1;
+        }
+
+        return left.sortOrder - right.sortOrder;
+      });
+  }
+
+  function updateModalMainImagePreview(product) {
+    const previewEl = document.getElementById("modal-main-image-preview");
+    if (!previewEl) return;
+
+    const primaryImageUrl = product?.primaryImageUrl || modalGalleryImages[0]?.imageUrl || "";
+    if (primaryImageUrl) {
+      previewEl.outerHTML = `<img id="modal-main-image-preview" class="modal-image-preview" src="${escapeHtml(primaryImageUrl)}" alt="Current main image">`;
+      return;
+    }
+
+    previewEl.outerHTML = `<div id="modal-main-image-preview" class="modal-image-placeholder">No main image</div>`;
+  }
+
+  function updateModalGalleryCount() {
+    const galleryCountEl = document.getElementById("modal-gallery-count");
+    if (!galleryCountEl) return;
+
+    const galleryCount = modalGalleryImages.length;
+    galleryCountEl.textContent =
+      galleryCount ? `${galleryCount} image${galleryCount > 1 ? "s" : ""} in gallery` : "No gallery images yet";
+  }
+
+  function renderModalGalleryImages(images = modalGalleryImages) {
+    const grid = document.getElementById("modal-gallery-grid");
+    if (!grid) return;
+
+    modalGalleryImages = Array.isArray(images) ? images : [];
+    updateModalGalleryCount();
+
+    if (!modalGalleryImages.length) {
+      grid.innerHTML = `<p class="modal-gallery-empty">No existing gallery images to manage.</p>`;
+      return;
+    }
+
+    grid.innerHTML = modalGalleryImages
+      .map((image, index) => `
+        <div class="modal-gallery-item" draggable="true" data-gallery-index="${index}" data-image-id="${escapeHtml(image.id)}">
+          <img src="${escapeHtml(image.imageUrl)}" alt="${escapeHtml(image.altText || `Gallery image ${index + 1}`)}">
+          <span class="gallery-badge">${image.isPrimary ? "Main" : index + 1}</span>
+          <button class="modal-gallery-delete" type="button" data-gallery-delete="${escapeHtml(image.id)}" aria-label="Delete image">&times;</button>
+        </div>
+      `)
+      .join("");
+  }
+
+  function renderModalProductImages(product) {
+    modalGalleryImages = getModalProductImages(product);
+    updateModalMainImagePreview(product);
+    renderModalGalleryImages(modalGalleryImages);
+  }
+
+  async function reloadEditModalProduct(productId) {
+    await loadAdminBackendData();
+    loadDatabaseCatalogue();
+    renderAll();
+
+    const updatedProduct = getCachedProducts().find((product) => product.id === productId);
+    if (updatedProduct) {
+      renderModalProductImages(updatedProduct);
+    }
+  }
+
+  async function deleteModalGalleryImage(imageId) {
+    const productId = getModalProductId();
+    const image = modalGalleryImages.find((item) => item.id === imageId);
+    if (!productId || !imageId) return;
+
+    if (!confirm(`Delete this ${image?.isPrimary ? "main" : "gallery"} image?`)) {
+      return;
+    }
+
+    setModalMessage("Deleting image...", false);
+
+    try {
+      await fetchAdminApi(`${ADMIN_PRODUCT_IMAGES_PATH}?productId=${encodeURIComponent(productId)}&imageId=${encodeURIComponent(imageId)}`, {
+        method: "DELETE"
+      });
+      await reloadEditModalProduct(productId);
+      setModalMessage("Image deleted.");
+    } catch (error) {
+      setModalMessage(error instanceof Error ? error.message : "Could not delete image.", true);
+    }
+  }
+
+  async function reorderModalGalleryImages(fromIndex, toIndex) {
+    const productId = getModalProductId();
+    if (!productId || fromIndex === toIndex) return;
+
+    const nextImages = [...modalGalleryImages];
+    const [movedImage] = nextImages.splice(fromIndex, 1);
+    nextImages.splice(toIndex, 0, movedImage);
+    modalGalleryImages = nextImages.map((image, index) => ({
+      ...image,
+      sortOrder: index,
+      isPrimary: index === 0
+    }));
+    renderModalGalleryImages(modalGalleryImages);
+    updateModalMainImagePreview({ primaryImageUrl: modalGalleryImages[0]?.imageUrl || "" });
+    setModalMessage("Saving image order...", false);
+
+    try {
+      await fetchAdminApi(ADMIN_PRODUCT_IMAGES_PATH, {
+        method: "PATCH",
+        body: JSON.stringify({
+          productId,
+          imageIds: modalGalleryImages.map((image) => image.id)
+        })
+      });
+      await reloadEditModalProduct(productId);
+      setModalMessage("Image order updated.");
+    } catch (error) {
+      await reloadEditModalProduct(productId).catch(() => {});
+      setModalMessage(error instanceof Error ? error.message : "Could not update image order.", true);
+    }
+  }
+
+  function handleModalGalleryClick(event) {
+    const deleteBtn = event.target.closest("[data-gallery-delete]");
+    if (!deleteBtn) return;
+
+    deleteModalGalleryImage(deleteBtn.dataset.galleryDelete);
+  }
+
+  function handleModalGalleryDragStart(event) {
+    const item = event.target.closest(".modal-gallery-item");
+    if (!item) return;
+
+    modalGalleryDragIndex = Number(item.dataset.galleryIndex);
+    item.classList.add("is-dragging");
+    event.dataTransfer?.setData("text/plain", String(modalGalleryDragIndex));
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = "move";
+    }
+  }
+
+  function handleModalGalleryDragOver(event) {
+    const item = event.target.closest(".modal-gallery-item");
+    if (!item || modalGalleryDragIndex === null) return;
+
+    event.preventDefault();
+    item.classList.add("drag-over");
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = "move";
+    }
+  }
+
+  function handleModalGalleryDragLeave(event) {
+    const item = event.target.closest(".modal-gallery-item");
+    item?.classList.remove("drag-over");
+  }
+
+  function handleModalGalleryDrop(event) {
+    const item = event.target.closest(".modal-gallery-item");
+    if (!item || modalGalleryDragIndex === null) return;
+
+    event.preventDefault();
+    document.querySelectorAll(".modal-gallery-item.drag-over").forEach((node) => node.classList.remove("drag-over"));
+    const toIndex = Number(item.dataset.galleryIndex);
+
+    if (Number.isInteger(modalGalleryDragIndex) && Number.isInteger(toIndex)) {
+      reorderModalGalleryImages(modalGalleryDragIndex, toIndex);
+    }
+  }
+
+  function handleModalGalleryDragEnd() {
+    modalGalleryDragIndex = null;
+    document.querySelectorAll(".modal-gallery-item.is-dragging, .modal-gallery-item.drag-over").forEach((node) => {
+      node.classList.remove("is-dragging", "drag-over");
+    });
   }
 
   function renderStats() {
@@ -915,6 +1114,13 @@
     modal.addEventListener("click", (e) => { if (e.target === modal) closeEditModal(); });
     document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeEditModal(); });
     document.getElementById("modal-save-btn").addEventListener("click", saveEditModal);
+    const galleryGrid = document.getElementById("modal-gallery-grid");
+    galleryGrid.addEventListener("click", handleModalGalleryClick);
+    galleryGrid.addEventListener("dragstart", handleModalGalleryDragStart);
+    galleryGrid.addEventListener("dragover", handleModalGalleryDragOver);
+    galleryGrid.addEventListener("dragleave", handleModalGalleryDragLeave);
+    galleryGrid.addEventListener("drop", handleModalGalleryDrop);
+    galleryGrid.addEventListener("dragend", handleModalGalleryDragEnd);
   }
 
   function openEditModal(product) {
@@ -940,21 +1146,7 @@
     // Title
     title.textContent = `Edit — ${getProductSku(product)}`;
 
-    // Main image preview
-    const previewEl = document.getElementById("modal-main-image-preview");
-    if (product.primaryImageUrl) {
-      previewEl.outerHTML = `<img id="modal-main-image-preview" class="modal-image-preview" src="${escapeHtml(product.primaryImageUrl)}" alt="Current main image">`;
-    } else {
-      previewEl.outerHTML = `<div id="modal-main-image-preview" class="modal-image-placeholder">No main image</div>`;
-    }
-
-    // Gallery count
-    const galleryCount = product.imageCount || 0;
-    const galleryCountEl = document.getElementById("modal-gallery-count");
-    if (galleryCountEl) {
-      galleryCountEl.textContent =
-        galleryCount ? `${galleryCount} image${galleryCount > 1 ? "s" : ""} in gallery` : "No gallery images yet";
-    }
+    renderModalProductImages(product);
 
     // Reset file inputs & message
     document.getElementById("modal-field-main-image").value = "";
@@ -1029,10 +1221,11 @@
       // 3. Upload new gallery images (if selected)
       const galleryFiles = Array.from(document.getElementById("modal-field-gallery").files);
       if (galleryFiles.length) {
+        const nextSortOrder = modalGalleryImages.length;
         await Promise.all(galleryFiles.map((file, index) =>
           uploadProductImage(productId, file, {
             altText: `${name} gallery image ${index + 1}`,
-            sortOrder: index + 1,
+            sortOrder: nextSortOrder + index,
             isPrimary: false
           })
         ));

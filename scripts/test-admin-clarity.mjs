@@ -3,7 +3,7 @@ import path from "node:path";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 
-const adminHtml = await readFile(new URL("../pages/admin.html", import.meta.url), "utf8");
+const adminHtml = await readFile(new URL("../app/admin/page.js", import.meta.url), "utf8");
 const adminJs = await readFile(new URL("../assets/js/admin-page.js", import.meta.url), "utf8");
 const productDataJs = await readFile(new URL("../assets/js/product-data.js", import.meta.url), "utf8");
 const contactPage = await readFile(new URL("../app/contact-us/page.js", import.meta.url), "utf8");
@@ -62,6 +62,18 @@ assert.doesNotMatch(
   adminJs,
   /marisAdminProducts|marisInventoryLogs|marisAdminOrders|productsKey|logsKey|ordersKey|applyMovement|backendConnected|Reset Demo Data/i,
   "Admin products, inventory, and orders must not use browser-local storage or demo reset state"
+);
+
+assert.match(
+  adminJs,
+  /function renderModalGalleryImages/,
+  "Edit Product modal should render existing Supabase gallery images, not only the image count"
+);
+
+assert.match(
+  adminJs,
+  /ADMIN_PRODUCT_IMAGES_PATH\s*=\s*"\/product-images"/,
+  "Edit Product modal should call protected image actions for deleting or reordering product images"
 );
 
 assert.doesNotMatch(

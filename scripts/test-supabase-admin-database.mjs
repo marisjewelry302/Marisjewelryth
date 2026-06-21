@@ -4,10 +4,12 @@ import { readdir, readFile } from "node:fs/promises";
 const {
   MARIS_DATABASE_TABLES,
   createAdminInventoryLog,
+  deleteAdminProductImage,
   getSupabaseAdminConfig,
   readAdminCatalogueProducts,
   readAdminDatabaseStatus,
   readPublicCatalogueProducts,
+  reorderAdminProductImages,
   uploadAdminProductImage
 } = await import("../app/lib/maris-database.js");
 
@@ -552,6 +554,100 @@ await assert.rejects(
   (error) => error.statusCode === 413 && /5 MB/i.test(error.message)
 );
 
+function createProductImageActionClient() {
+  const state = {
+    deletes: [],
+    updates: []
+  };
+
+  function makeQuery(action, payload) {
+    const query = {
+      filters: [],
+      eq(column, value) {
+        this.filters.push([column, value]);
+        if (this.filters.length === 2) {
+          if (action === "delete") {
+            state.deletes.push({ filters: [...this.filters] });
+          } else {
+            state.updates.push({ payload, filters: [...this.filters] });
+          }
+
+          return Promise.resolve({ error: null });
+        }
+
+        return this;
+      }
+    };
+
+    return query;
+  }
+
+  return {
+    state,
+    from(tableName) {
+      assert.equal(tableName, "product_images");
+
+      return {
+        delete() {
+          return makeQuery("delete");
+        },
+        update(payload) {
+          return makeQuery("update", payload);
+        }
+      };
+    }
+  };
+}
+
+const imageActionClient = createProductImageActionClient();
+const deletedImage = await deleteAdminProductImage({
+  productId: "product-1",
+  imageId: "image-2"
+}, {
+  env: {
+    SUPABASE_URL: "https://maris-test.supabase.co",
+    SUPABASE_SERVICE_ROLE_KEY: "service-role-secret"
+  },
+  client: imageActionClient
+});
+
+assert.deepEqual(deletedImage, {
+  id: "image-2",
+  productId: "product-1",
+  deleted: true
+});
+assert.deepEqual(imageActionClient.state.deletes[0].filters, [
+  ["id", "image-2"],
+  ["product_id", "product-1"]
+]);
+
+const reorderedImages = await reorderAdminProductImages({
+  productId: "product-1",
+  imageIds: ["image-3", "image-1", "image-2"]
+}, {
+  env: {
+    SUPABASE_URL: "https://maris-test.supabase.co",
+    SUPABASE_SERVICE_ROLE_KEY: "service-role-secret"
+  },
+  client: imageActionClient
+});
+
+assert.deepEqual(reorderedImages, {
+  productId: "product-1",
+  imageIds: ["image-3", "image-1", "image-2"],
+  updated: true
+});
+assert.deepEqual(imageActionClient.state.updates.map((update) => update.payload), [
+  { sort_order: 0, is_primary: true },
+  { sort_order: 1, is_primary: false },
+  { sort_order: 2, is_primary: false }
+]);
+assert.deepEqual(imageActionClient.state.updates.map((update) => update.filters), [
+  [["id", "image-3"], ["product_id", "product-1"]],
+  [["id", "image-1"], ["product_id", "product-1"]],
+  [["id", "image-2"], ["product_id", "product-1"]]
+]);
+
 function createInventoryMovementClient() {
   const state = {
     product: {
@@ -676,7 +772,7 @@ assert.equal(inventoryLog.productCode, "ER1001");
 assert.equal(inventoryLog.stockQuantity, 5);
 assert.equal(inventoryLog.reservedQuantity, 3);
 
-const adminHtml = await readFile(new URL("../pages/admin.html", import.meta.url), "utf8");
+const adminHtml = await readFile(new URL("../app/admin/page.js", import.meta.url), "utf8");
 const adminJs = await readFile(new URL("../assets/js/admin-page.js", import.meta.url), "utf8");
 const envExample = await readFile(new URL("../.env.example", import.meta.url), "utf8");
 const docsReadme = await readFile(new URL("../docs/README.md", import.meta.url), "utf8");
