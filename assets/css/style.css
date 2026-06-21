@@ -1333,14 +1333,14 @@ html[lang="th"] .hero-tagline {
   display: grid;
   grid-template-columns: minmax(260px, 0.78fr) minmax(0, 1.22fr);
   gap: clamp(34px, 4.6vw, 74px);
-  padding: clamp(68px, 6.8vw, 108px) clamp(22px, 6vw, 86px) clamp(78px, 7.4vw, 128px);
+  padding: clamp(54px, 5.2vw, 82px) clamp(22px, 6vw, 86px) clamp(58px, 5.6vw, 90px);
   background:
     radial-gradient(circle at 18% 18%, rgba(255, 250, 246, 0.055), transparent 30%),
     var(--maris-teal);
   color: var(--maris-white);
   border-top: 1px solid rgba(185, 147, 58, 0.22);
   content-visibility: auto;
-  contain-intrinsic-size: 460px;
+  contain-intrinsic-size: 380px;
 }
 
 .value-lead {
@@ -1380,8 +1380,8 @@ html[lang="th"] .hero-tagline {
 .value-card {
   display: grid;
   grid-template-columns: 44px minmax(0, 1fr);
-  gap: 10px 22px;
-  padding: clamp(24px, 2.6vw, 34px) 0;
+  gap: 8px 22px;
+  padding: clamp(18px, 2vw, 26px) 0;
   border-bottom: 1px solid rgba(255, 250, 246, 0.18);
   text-align: left;
 }
@@ -2145,7 +2145,7 @@ html[lang="th"] .hero-tagline {
   .value-strip {
     grid-template-columns: 1fr;
     gap: 24px;
-    padding: 42px 18px 56px;
+    padding: 34px 18px 44px;
   }
 
   .value-lead {
@@ -2169,7 +2169,7 @@ html[lang="th"] .hero-tagline {
   .value-card {
     grid-template-columns: 36px minmax(0, 1fr);
     gap: 8px 16px;
-    padding: 18px 0;
+    padding: 15px 0;
   }
 
   .value-card > span[aria-hidden="true"] {
