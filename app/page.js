@@ -1,4 +1,4 @@
-import CategoryHoverCard from "./CategoryHoverCard";
+import BestSellerSection from "./BestSellerSection";
 import HeroSlider from "./HeroSlider";
 import { readPublicCatalogueProducts } from "./lib/maris-database.js";
 
@@ -29,38 +29,21 @@ const heroSlides = [
   }
 ];
 
-const categoryCards = [
+const atelierFallbackCards = [
   {
-    href: "/category/necklaces-pendants",
-    className: "category-card category-card--necklaces",
-    imageSrc: "/assets/images/home/optimized/category-focus-necklaces-landscape-v1.jpg",
-    imageAlt: "Necklaces and pendants", 
-    title: "Necklaces & Pendants",
-    ctaLabel: "View"
+    href: "/category/engagement-ring",
+    kicker: "Catalogue slot",
+    title: "Engagement selection"
   },
   {
-    href: "/category/rings",
-    className: "category-card category-card--rings",
-    imageSrc: "/assets/images/home/optimized/category-focus-rings-landscape-v1.jpg",
-    imageAlt: "Rings",
-    title: "Rings",
-    ctaLabel: "View"
+    href: "/request-quote",
+    kicker: "Private request",
+    title: "Availability review"
   },
   {
-    href: "/category/earrings",
-    className: "category-card category-card--earrings",
-    imageSrc: "/assets/images/home/optimized/category-focus-earrings-landscape-v1.jpg",
-    imageAlt: "Earrings",
-    title: "Earrings",
-    ctaLabel: "View"
-  },
-  {
-    href: "/category/bracelets",
-    className: "category-card category-card--bracelets",
-    imageSrc: "/assets/images/home/optimized/category-focus-bracelets-landscape-v1.jpg",
-    imageAlt: "Bracelets",
-    title: "Bracelets",
-    ctaLabel: "View"
+    href: "/about-us",
+    kicker: "Maris atelier",
+    title: "Custom conversation"
   }
 ];
 
@@ -151,15 +134,16 @@ export default async function HomePage() {
                 </a>
               ))
             ) : (
-              categoryCards.slice(0, 3).map((card, index) => (
+              atelierFallbackCards.map((card, index) => (
                 <a
                   key={card.href}
-                  className="atelier-product"
+                  className="atelier-product atelier-product--fallback"
                   href={card.href}
                   style={{ "--atelier-delay": `${index * 90}ms` }}
                 >
-                  <img src={card.imageSrc} alt={card.imageAlt} />
-                  <span className="atelier-product__meta">                    <span>{card.order}</span>
+                  <span className="atelier-product__image-fallback">Image coming soon</span>
+                  <span className="atelier-product__meta">
+                    <span>{card.kicker}</span>
                     <strong>{card.title}</strong>
                   </span>
                 </a>
@@ -169,28 +153,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="category-section" aria-labelledby="category-heading">
-        <div className="category-section-head">
-          <div className="category-copy">
-            <p className="section-kicker">Collections</p>
-            <h2 id="category-heading">Fine jewelry by the way it is worn.</h2>
-            <p className="category-intro">
-              Move from everyday gifting to proposal pieces, wedding bands, and private custom conversations.
-            </p>
-          </div>
-          <a className="category-feature-link" href="/category/engagement-ring">
-            <span>Start here</span>
-            <strong>Engagement Rings</strong>
-            <span>Explore</span>
-          </a>
-        </div>
-
-        <div className="category-grid">
-          {categoryCards.map((card) => (
-            <CategoryHoverCard key={card.href} {...card} />
-          ))}
-        </div>
-      </section>
+      <BestSellerSection />
 
       <section className="value-strip" aria-labelledby="value-heading">
         <div className="value-lead">
