@@ -1,5 +1,6 @@
 import BestSellerSection from "./BestSellerSection";
 import HeroSlider from "./HeroSlider";
+import HomeSignupPopup from "./HomeSignupPopup";
 import { readPublicCatalogueProducts } from "./lib/maris-database.js";
 
 export const dynamic = "force-dynamic";
@@ -107,7 +108,7 @@ export default async function HomePage() {
         <div className="atelier-reveal__panel">
           <div className="atelier-reveal__focus">
             <p className="atelier-reveal__status">Available catalogue</p>
-            <h3>{featuredProducts.length ? "Recently added pieces" : "Maris catalogue preview"}</h3>
+            <h3>{featuredProducts.length ? "New arrival" : "Maris catalogue preview"}</h3>
             <p>
               Product availability is confirmed personally by the atelier before order details are finalized.
             </p>
@@ -187,6 +188,8 @@ export default async function HomePage() {
           </article>
         </div>
       </section>
+
+      <HomeSignupPopup />
     </main>
   );
 }

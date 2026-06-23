@@ -29,12 +29,25 @@ export default function AccountClient() {
   const [mode, setMode] = useState("signin");
   const [profile, setProfile] = useState(null);
   const [session, setSession] = useState(null);
+  const [popupEmail, setPopupEmail] = useState("");
+  const [isPopupSource, setIsPopupSource] = useState(false);
   const [message, setMessage] = useState("");
   const [profileMessage, setProfileMessage] = useState("");
 
   useEffect(() => {
     setProfile(readJson(PROFILE_KEY, null));
     setSession(readJson(SESSION_KEY, null));
+
+    const params = new URLSearchParams(window.location.search);
+    const email = normalizeEmail(params.get("email"));
+    const source = params.get("source");
+
+    if (source === "popup" && email) {
+      setPopupEmail(email);
+      setIsPopupSource(true);
+      setMode("create");
+      setMessage("Complete your Maris account to receive your 10% offer.");
+    }
   }, []);
 
   const isSignedIn = Boolean(profile && session && normalizeEmail(profile.email) === normalizeEmail(session.email));
@@ -157,12 +170,18 @@ export default function AccountClient() {
               </form>
             ) : (
               <form className="account-form" onSubmit={handleCreate}>
+                {isPopupSource && (
+                  <div className="account-offer-notice">
+                    <span>Maris member offer</span>
+                    <p>Complete your Maris account to receive your 10% offer.</p>
+                  </div>
+                )}
                 <h2>Create your Maris account</h2>
                 <p className="account-form-note">This creates a local prototype account only. For the real site, this will need secure backend authentication.</p>
                 <label htmlFor="create-name">Full name</label>
                 <input id="create-name" name="name" type="text" autoComplete="name" required />
                 <label htmlFor="create-email">Email</label>
-                <input id="create-email" name="email" type="email" autoComplete="email" required />
+                <input id="create-email" name="email" type="email" autoComplete="email" defaultValue={popupEmail} required />
                 <label htmlFor="create-phone">Phone</label>
                 <input id="create-phone" name="phone" type="tel" autoComplete="tel" />
                 <label htmlFor="create-password">Password</label>
