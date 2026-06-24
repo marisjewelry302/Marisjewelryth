@@ -31,7 +31,7 @@ export default function RootLayout({ children }) {
           rel="stylesheet"
         />
       </head>
-      <body className="has-maris-footer">
+      <body className="has-maris-footer" suppressHydrationWarning>
         <SiteHeader />
         {children}
         <SiteFooter />

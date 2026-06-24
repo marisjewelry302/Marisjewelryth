@@ -2816,9 +2816,11 @@ html[lang="th"] .hero-tagline {
   color: var(--maris-teal);
 }
 
-.home-signup-popup__perks span {
-  font-size: 1.25rem;
-  line-height: 1;
+.home-signup-popup__perks img {
+  justify-self: center;
+  width: 1.395rem;
+  height: 1.395rem;
+  object-fit: contain;
 }
 
 .home-signup-popup__perks strong {
@@ -2886,8 +2888,26 @@ html[lang="th"] .hero-tagline {
   color: var(--maris-teal);
 }
 
+.home-signup-popup__remember {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 0.7rem;
+  color: rgba(16, 41, 35, 0.68);
+  font-size: 0.68rem;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.home-signup-popup__remember input {
+  width: 0.82rem;
+  height: 0.82rem;
+  margin: 0;
+  accent-color: var(--maris-teal);
+}
+
 .home-signup-popup__decline {
-  margin-top: 0.85rem;
+  margin-top: 0.65rem;
   border: 0;
   border-bottom: 1px solid rgba(0, 73, 58, 0.42);
   background: transparent;

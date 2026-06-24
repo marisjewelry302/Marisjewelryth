@@ -4,9 +4,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 const CLOSED_KEY = "marisSignupPopupClosedUntil";
-const SUBMITTED_KEY = "marisSignupPopupSubmittedUntil";
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
-const THIRTY_DAYS_MS = 30 * ONE_DAY_MS;
 const POPUP_DELAY_MS = 3000;
 
 function getStoredUntil(key) {
@@ -20,7 +18,7 @@ function suppressPopup(key, durationMs) {
 
 function shouldSuppressPopup() {
   const now = Date.now();
-  return getStoredUntil(CLOSED_KEY) > now || getStoredUntil(SUBMITTED_KEY) > now;
+  return getStoredUntil(CLOSED_KEY) > now;
 }
 
 function isValidEmail(email) {
@@ -33,6 +31,7 @@ export default function HomeSignupPopup() {
   const dialogRef = useRef(null);
   const [isOpen, setIsOpen] = useState(false);
   const [email, setEmail] = useState("");
+  const [hideToday, setHideToday] = useState(false);
   const [message, setMessage] = useState("");
 
   useEffect(() => {
@@ -67,7 +66,10 @@ export default function HomeSignupPopup() {
   }, [isOpen]);
 
   function closePopup() {
-    suppressPopup(CLOSED_KEY, ONE_DAY_MS);
+    if (hideToday) {
+      suppressPopup(CLOSED_KEY, ONE_DAY_MS);
+    }
+
     setIsOpen(false);
   }
 
@@ -80,7 +82,10 @@ export default function HomeSignupPopup() {
       return;
     }
 
-    suppressPopup(SUBMITTED_KEY, THIRTY_DAYS_MS);
+    if (hideToday) {
+      suppressPopup(CLOSED_KEY, ONE_DAY_MS);
+    }
+
     router.push(`/account?email=${encodeURIComponent(normalizedEmail)}&source=popup`);
   }
 
@@ -120,17 +125,17 @@ export default function HomeSignupPopup() {
 
           <div className="home-signup-popup__perks" aria-label="Member benefits">
             <div>
-              <span aria-hidden="true">◇</span>
+              <img src="/assets/images/home/popup/popup-icon-tag.png" alt="" aria-hidden="true" />
               <strong>10% OFF</strong>
               <small>your first confirmed order</small>
             </div>
             <div>
-              <span aria-hidden="true">✦</span>
+              <img src="/assets/images/home/popup/popup-icon-clock-v2.png" alt="" aria-hidden="true" />
               <strong>Early access</strong>
               <small>to new Maris pieces</small>
             </div>
             <div>
-              <span aria-hidden="true">□</span>
+              <img src="/assets/images/home/popup/popup-icon-gift.png" alt="" aria-hidden="true" />
               <strong>Private offers</strong>
               <small>for Maris members</small>
             </div>
@@ -159,6 +164,15 @@ export default function HomeSignupPopup() {
           <p className="home-signup-popup__privacy">
             By continuing, you agree to receive Maris Jewelry updates and accept our <a href="/privacy-policy">Privacy Policy</a>.
           </p>
+
+          <label className="home-signup-popup__remember">
+            <input
+              type="checkbox"
+              checked={hideToday}
+              onChange={(event) => setHideToday(event.target.checked)}
+            />
+            <span>Don't show again today</span>
+          </label>
 
           <button className="home-signup-popup__decline" type="button" onClick={closePopup}>No, thank you</button>
         </div>

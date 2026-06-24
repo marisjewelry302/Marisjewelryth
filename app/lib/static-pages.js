@@ -1,28 +1,28 @@
 export const staticPages = {
   "about-us": {
     title: "About Us",
-    eyebrow: "Maris Jewelry",
-    lead: "Maris Jewelry brings together elegant design, custom development, and dependable production support for clients looking for meaningful fine jewelry.",
-    description: "Learn more about Maris Jewelry, our brand direction, and the catalogue experience we are preparing to launch.",
+    eyebrow: "Family Craft, Modern Spirit",
+    lead: "Maris Jewelry was born from a family rooted in jewelry craftsmanship, where knowledge, technique, and a love for fine detail have been passed down through generations.",
+    description: "Learn about Maris Jewelry, a family-rooted fine jewelry brand shaped by more than 40 years of craftsmanship and a modern new-generation point of view.",
     features: [
-      { title: "Quiet elegance", text: "The visual direction stays refined, wearable, and balanced so each piece feels personal rather than overdesigned." },
-      { title: "Custom-ready", text: "We can build from reference images, adapt proportions, and refine details around the final mood you want to achieve." },
-      { title: "Partner-minded", text: "The brand structure is also prepared to support OEM, wholesale, and selective retail conversations as the project grows." }
+      { title: "Family heritage", text: "Our story begins with a family background in jewelry, carrying forward skill, standards, and an eye for detail from one generation to the next." },
+      { title: "40+ years of craftsmanship", text: "Behind Maris is hands-on experience from skilled artisans who understand proportion, finishing, setting, and the quiet discipline behind fine jewelry." },
+      { title: "Modern young generation", text: "Maris brings that foundation into a fresh lifestyle direction: refined, current, wearable, and thoughtfully in tune with today's style." }
     ],
     detail: {
-      title: "What defines Maris",
+      title: "What Maris stands for",
       items: [
-        { title: "Design with clarity", text: "We focus on clean silhouettes, thoughtful proportions, and details that still feel beautiful after trends move on." },
-        { title: "Flexible collaboration", text: "From one personal custom piece to a structured partner brief, the process can scale according to the type of project." },
-        { title: "Built to expand", text: "This website is a foundation ready to grow into a fuller catalogue, inquiry system, and service presentation." }
+        { title: "Rooted in real craft", text: "Every piece starts from respect for the makers, the materials, and the small decisions that make jewelry feel beautifully finished." },
+        { title: "Designed for modern life", text: "The Maris style is elegant without feeling distant, made for people who want fine jewelry that feels personal, current, and easy to wear." },
+        { title: "Built with care", text: "From a personal custom piece to a partner brief, we keep the process thoughtful, detail-focused, and guided by practical production knowledge." }
       ]
     },
     aside: {
       title: "At a glance",
       items: [
-        { label: "Focus", value: "Engagement rings, wedding bands, gifts, and custom fine jewelry" },
-        { label: "Best for", value: "Personal clients, private labels, and selective retail partners" },
-        { label: "Based in", value: "Bangkok, Thailand" }
+        { label: "Heritage", value: "Family jewelry knowledge passed through generations" },
+        { label: "Craft", value: "More than 40 years of hands-on artisan experience" },
+        { label: "Direction", value: "Modern fine jewelry for personal clients, custom projects, and partner conversations" }
       ]
     },
     actions: [
