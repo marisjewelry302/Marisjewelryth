@@ -1642,12 +1642,13 @@
 
   elements.productForm?.addEventListener("submit", async (event) => {
     event.preventDefault();
+    const form = event.currentTarget;
 
     if (!ensureAdminDataReady()) {
       return;
     }
 
-    const formData = new FormData(event.currentTarget);
+    const formData = new FormData(form);
     const sku = String(formData.get("sku")).trim().toUpperCase();
     const name = String(formData.get("name")).trim();
     const stockQty = Math.max(0, Number(formData.get("stockQty")) || 0);
@@ -1686,7 +1687,7 @@
         body: JSON.stringify(product)
       });
       await loadAdminBackendData();
-      event.currentTarget.reset();
+      form.reset();
       renderAll();
       setMessage("Product saved in Supabase.");
     } catch (error) {
@@ -1696,12 +1697,13 @@
 
   elements.catalogueForm?.addEventListener("submit", async (event) => {
     event.preventDefault();
+    const form = event.currentTarget;
 
     if (!ensureAdminDataReady()) {
       return;
     }
 
-    const result = buildCatalogueDraft(new FormData(event.currentTarget));
+    const result = buildCatalogueDraft(new FormData(form));
 
     if (!result.ok) {
       setMessage(result.message, true);
@@ -1733,7 +1735,7 @@
       await uploadCatalogueImages(payload.product, result);
       await loadAdminBackendData();
       loadDatabaseCatalogue();
-      event.currentTarget.reset();
+      form.reset();
       renderAll();
       setMessage("Catalogue product and images saved in Supabase.");
     } catch (error) {
@@ -1780,12 +1782,13 @@
 
   elements.orderForm?.addEventListener("submit", async (event) => {
     event.preventDefault();
+    const form = event.currentTarget;
 
     if (!ensureAdminDataReady()) {
       return;
     }
 
-    const formData = new FormData(event.currentTarget);
+    const formData = new FormData(form);
     const productId = String(formData.get("productId"));
     const qty = Math.max(1, Number(formData.get("qty")) || 1);
 
@@ -1809,7 +1812,7 @@
         body: JSON.stringify(newOrder)
       });
       await loadAdminBackendData();
-      event.currentTarget.reset();
+      form.reset();
       renderAll();
       setMessage("Reserved order created in Supabase.");
     } catch (error) {

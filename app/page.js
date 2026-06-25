@@ -24,9 +24,9 @@ const heroSlides = [
   {
     id: "hero-3",
     label: "03",
-    image: "/assets/images/home/optimized/home-hero-optimized.jpg",
-    positionStart: "34% 52%",
-    positionEnd: "40% 50%"
+    image: "/assets/images/home/optimized/home-hero-pendant-earrings.png",
+    positionStart: "50% 50%",
+    positionEnd: "46% 52%"
   }
 ];
 
