@@ -140,6 +140,7 @@ export default function BestSellerSection() {
                     width="814"
                     height="814"
                     loading="lazy"
+                    
                   />
                 ) : (
                   <span className="best-seller-empty-label">{item.label}</span>
