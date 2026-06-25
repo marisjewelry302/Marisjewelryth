@@ -17,9 +17,9 @@ const heroSlides = [
   {
     id: "hero-2",
     label: "02",
-    image: "/assets/images/home/optimized/home-hero-optimized.jpg",
-    positionStart: "68% 48%",
-    positionEnd: "62% 52%"
+    image: "/assets/images/service/custom-jewelry-service-hero-02-seamless.png",
+    positionStart: "50% 50%",
+    positionEnd: "50% 50%"
   },
   {
     id: "hero-3",

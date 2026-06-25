@@ -1,6 +1,5 @@
 const serviceProcessImage = "/assets/images/service/custom-jewelry-process-storyboard.png";
 const serviceHeroImage = "/assets/images/service/custom-jewelry-service-hero.png";
-const serviceHeroImageTwo = "/assets/images/service/custom-jewelry-service-hero-02-seamless.png";
 
 export const staticPages = {
   "about-us": {
@@ -44,10 +43,6 @@ export const staticPages = {
       {
         src: serviceHeroImage,
         alt: "Finished custom diamond ring displayed with a plain green ring box, sketch paper, tools, and a soft CAD design screen"
-      },
-      {
-        src: serviceHeroImageTwo,
-        alt: "Rose gold diamond pendant and ring arranged on seamless blush satin fabric"
       }
     ],
     features: [

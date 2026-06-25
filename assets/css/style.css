@@ -19,7 +19,7 @@
   --maris-shadow: rgba(0, 73, 58, 0.14);
   --maris-font-sans: "Urbanist", "Anuphan", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --maris-font-thai: "Anuphan", "Urbanist", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --maris-font-display: var(--maris-font-sans);
+  --maris-font-display: "Urbanist", "Anuphan", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --home-tone-light: oklch(94.5% 0.024 75);
   --home-tone-depth: rgba(0, 73, 58, 0.78);
   --home-tone-accent: rgba(221, 164, 165, 0.72);
