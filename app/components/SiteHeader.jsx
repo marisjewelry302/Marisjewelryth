@@ -40,6 +40,12 @@ const dropdownNav = [
   }
 ];
 
+const socialNav = [
+  { href: "https://www.facebook.com/share/1JH2idcjPM/", label: "Facebook", icon: "facebook" },
+  { href: "https://www.instagram.com/maris_jewelry_th?igsh=MXNoeHpxN2VkaTU0NA==", label: "Instagram", icon: "instagram" },
+  { href: "https://pin.it/5pKmV7MKf", label: "Pinterest", icon: "pinterest" }
+];
+
 function readJsonArray(key) {
   try {
     const value = JSON.parse(window.localStorage.getItem(key));
@@ -209,11 +215,18 @@ export default function SiteHeader() {
           {" "}
           <Link href="/contact-us">Contact Maris</Link>
         </p>
-        <div className="top-socials" aria-hidden="true">
-          <span><SocialIcon name="instagram" /></span>
-          <span><SocialIcon name="facebook" /></span>
-          <span><SocialIcon name="youtube" /></span>
-          <span><SocialIcon name="pinterest" /></span>
+        <div className="top-socials" aria-label="Social media links">
+          {socialNav.map((item) => (
+            item.href ? (
+              <a key={item.label} href={item.href} aria-label={item.label} target="_blank" rel="noopener noreferrer">
+                <SocialIcon name={item.icon} />
+              </a>
+            ) : (
+              <span key={item.label} className="top-socials__placeholder" role="img" aria-label={`${item.label} link coming soon`} title={`${item.label} link coming soon`}>
+                <SocialIcon name={item.icon} />
+              </span>
+            )
+          ))}
         </div>
       </div>
 

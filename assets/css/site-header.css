@@ -1483,3 +1483,98 @@ body.is-page-scrolled .site-header:not(.site-header--home) .icons svg {
     transform: translateY(-3px);
   }
 }
+
+/* Unified top bar */
+.site-header .top-bar,
+.site-header--home .top-bar,
+.site-header:not(.site-header--home) .top-bar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(10px, 2vw, 24px);
+  min-height: 34px;
+  padding: 6px clamp(16px, 4vw, 48px);
+  background:
+    linear-gradient(90deg, oklch(27% 0.065 170) 0%, oklch(31% 0.07 170) 58%, oklch(23% 0.045 170) 100%);
+  border-bottom: 1px solid rgba(255, 250, 246, 0.12);
+  color: rgba(255, 250, 246, 0.94);
+}
+
+.site-header .top-announcement {
+  grid-column: 2;
+  justify-self: center;
+  color: inherit;
+}
+
+.site-header .top-announcement a {
+  color: inherit;
+}
+
+.site-header .top-socials {
+  grid-column: 3;
+  justify-self: end;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: clamp(12px, 1.4vw, 20px);
+}
+
+.site-header .top-socials a,
+.site-header .top-socials span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  color: rgba(255, 250, 246, 0.9);
+  text-decoration: none;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.site-header .top-socials a:hover,
+.site-header .top-socials a:focus-visible {
+  color: var(--maris-gold);
+  transform: translateY(-1px);
+}
+
+.site-header .top-socials svg {
+  width: 100%;
+  height: 100%;
+}
+
+.site-header .top-socials__placeholder {
+  opacity: 0.72;
+}
+
+@media (max-width: 767px) {
+  .site-header .top-bar,
+  .site-header--home .top-bar,
+  .site-header:not(.site-header--home) .top-bar {
+    grid-template-columns: minmax(0, 1fr) auto;
+    min-height: 32px;
+    padding: 6px 12px;
+  }
+
+  .site-header .top-announcement {
+    grid-column: 1;
+    justify-self: start;
+    text-align: left;
+  }
+
+  .site-header .top-socials {
+    grid-column: 2;
+    gap: 10px;
+  }
+
+  .site-header .top-socials a,
+  .site-header .top-socials span {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+@media (max-width: 420px) {
+  .site-header .top-announcement {
+    max-width: 58vw;
+  }
+}
