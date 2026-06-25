@@ -1,12 +1,30 @@
 export default function ContentPage({ page }) {
+  const hasStepImages = page.steps?.some((step) => step.image);
+  const heroImages = page.heroImages ?? (page.heroImage ? [page.heroImage] : []);
+  const cardClassName = [
+    "placeholder-card",
+    "placeholder-card--editorial",
+    page.layout === "wide" ? "placeholder-card--wide" : null
+  ].filter(Boolean).join(" ");
+
   return (
     <main className="placeholder-main content-page site-main">
-      <section className="placeholder-card placeholder-card--editorial">
+      <section className={cardClassName}>
         <div className="subpage-intro">
           <p className="eyebrow">{page.eyebrow}</p>
           <h1>{page.title}</h1>
           <p className="lead">{page.lead}</p>
         </div>
+
+        {heroImages.length > 0 && (
+          <div className="subpage-hero-gallery">
+            {heroImages.map((image) => (
+              <figure className="subpage-hero-image" key={image.src}>
+                <img src={image.src} alt={image.alt} />
+              </figure>
+            ))}
+          </div>
+        )}
 
         {page.features && (
           <div className="subpage-feature-grid">
@@ -52,9 +70,20 @@ export default function ContentPage({ page }) {
         {page.steps && (
           <section className="subpage-panel">
             <h2>{page.stepsTitle}</h2>
-            <div className="subpage-step-grid">
+            <div className={`subpage-step-grid${hasStepImages ? " subpage-step-grid--visual" : ""}`}>
               {page.steps.map((step, index) => (
-                <article className="subpage-step-card" key={step.title}>
+                <article className={`subpage-step-card${step.image ? " subpage-step-card--visual" : ""}`} key={step.title}>
+                  {step.image && (
+                    <div
+                      aria-label={step.image.alt}
+                      className="subpage-step-image"
+                      role="img"
+                      style={{
+                        backgroundImage: `url(${step.image.src})`,
+                        backgroundPosition: step.image.position
+                      }}
+                    />
+                  )}
                   <p className="subpage-step-index">{String(index + 1).padStart(2, "0")}</p>
                   <h3>{step.title}</h3>
                   <p>{step.text}</p>

@@ -25,6 +25,7 @@ const dropdownNav = [
   {
     label: "Our Expertise",
     items: [
+      { href: "/our-service", label: "Our Service" },
       { href: "/oem-jewelry", label: "OEM Jewelry Service" },
       { href: "/wholesale-retail", label: "Wholesale & Retail" }
     ]

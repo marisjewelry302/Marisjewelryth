@@ -10,13 +10,32 @@ async function fileExists(path) {
   }
 }
 
-const [hasAppPage, hasAppRoute, adminPage, homepage, productPage, packageJson] = await Promise.all([
+const [
+  hasAppPage,
+  hasAppRoute,
+  hasOurServicePage,
+  adminPage,
+  homepage,
+  productPage,
+  packageJson,
+  staticPages,
+  siteHeader,
+  sitemap,
+  nextConfig,
+  siteCss
+] = await Promise.all([
   fileExists("app/page.js"),
   fileExists("app/route.js"),
+  fileExists("app/our-service/page.js"),
   readFile("assets/js/admin-page.js", "utf8"),
   readFile("app/page.js", "utf8"),
   readFile("app/product/[slug]/product-slug-page.js", "utf8"),
-  readFile("package.json", "utf8")
+  readFile("package.json", "utf8"),
+  readFile("app/lib/static-pages.js", "utf8"),
+  readFile("app/components/SiteHeader.jsx", "utf8"),
+  readFile("app/sitemap.js", "utf8"),
+  readFile("next.config.mjs", "utf8"),
+  readFile("assets/css/style.css", "utf8")
 ]);
 
 assert.equal(hasAppPage, true, "app/page.js must render the React storefront at /");
@@ -40,5 +59,22 @@ assert.match(
   /href=\{`\/request-quote\?collection=/,
   "product page quote links must point to /request-quote"
 );
+
+assert.equal(hasOurServicePage, true, "our-service page route must exist");
+assert.match(staticPages, /"our-service":/, "our-service content must be defined in static pages");
+assert.match(staticPages, /custom-jewelry-process-storyboard\.png/, "our-service must use the process storyboard image");
+assert.match(staticPages, /custom-jewelry-service-hero\.png/, "our-service hero must use a dedicated image that is not the step storyboard");
+assert.match(staticPages, /custom-jewelry-service-hero-02-seamless\.png/, "our-service hero gallery must include the seamless satin jewelry hero image");
+assert.match(staticPages, /heroImages:\s*\[/, "our-service must support multiple hero images");
+assert.match(siteHeader, /href: "\/our-service", label: "Our Service"/, "Our Expertise nav must link to Our Service");
+assert.match(
+  await readFile("app/components/ContentPage.jsx", "utf8"),
+  /page\.heroImages\s*\?\?\s*\(\s*page\.heroImage\s*\?\s*\[page\.heroImage\]\s*:\s*\[\]\s*\)/,
+  "content page must render either a hero gallery or the legacy single hero image"
+);
+assert.match(sitemap, /"our-service"/, "sitemap must include our-service");
+assert.match(nextConfig, /\["our-service", "\/our-service"\]/, "legacy pages redirect map must include our-service");
+assert.match(siteCss, /\.home-signup-popup__dialog\s*\{[\s\S]*overflow-x:\s*hidden;[\s\S]*overflow-y:\s*auto;/, "signup popup dialog must allow vertical scrolling instead of clipping bottom controls");
+assert.match(siteCss, /\.home-signup-popup__content\s*\{[\s\S]*justify-content:\s*flex-start;/, "signup popup content must start at the top so bottom controls stay inside the dialog");
 
 console.log("React routing contract is valid.");

@@ -1,3 +1,7 @@
+const serviceProcessImage = "/assets/images/service/custom-jewelry-process-storyboard.png";
+const serviceHeroImage = "/assets/images/service/custom-jewelry-service-hero.png";
+const serviceHeroImageTwo = "/assets/images/service/custom-jewelry-service-hero-02-seamless.png";
+
 export const staticPages = {
   "about-us": {
     title: "About Us",
@@ -27,7 +31,93 @@ export const staticPages = {
     },
     actions: [
       { href: "/contact-us", label: "Contact Us" },
-      { href: "/oem-jewelry", label: "View Our Expertise" }
+      { href: "/our-service", label: "View Our Service" }
+    ]
+  },
+  "our-service": {
+    title: "Our Service",
+    eyebrow: "Our Expertise",
+    layout: "wide",
+    lead: "A guided custom jewelry process, from first sketch to CAD approval, casting, setting, finishing, and careful handover.",
+    description: "Explore the Maris Jewelry custom service workflow, from pencil sketch and MatrixGold CAD design to casting, finishing, diamond setting, and final packaging.",
+    heroImages: [
+      {
+        src: serviceHeroImage,
+        alt: "Finished custom diamond ring displayed with a plain green ring box, sketch paper, tools, and a soft CAD design screen"
+      },
+      {
+        src: serviceHeroImageTwo,
+        alt: "Rose gold diamond pendant and ring arranged on seamless blush satin fabric"
+      }
+    ],
+    features: [
+      { title: "Design with a clear brief", text: "We begin with references, proportion, lifestyle, metal direction, stone ideas, and budget range so the design has a practical foundation." },
+      { title: "Technical development", text: "Sketches and 3D CAD support the conversation before production, helping clients review scale, structure, and setting direction with confidence." },
+      { title: "Atelier coordination", text: "After approval, each stage is coordinated through casting, bench work, stone selection, setting, finishing, quality review, and delivery preparation." }
+    ],
+    detail: {
+      title: "What we confirm before production",
+      items: [
+        { title: "Design scope", text: "Stone shape, metal tone, ring size, profile, setting style, and any personal details are aligned before the final approval stage." },
+        { title: "Material direction", text: "We review diamond or gemstone direction, metal preference, finishing, and practical wear considerations before moving into production." },
+        { title: "Timeline and handover", text: "Preparation time depends on design complexity, stone sourcing, casting, setting, and final inspection. We confirm the expected schedule directly." }
+      ]
+    },
+    aside: {
+      title: "Best for",
+      items: [
+        { label: "Custom pieces", value: "Engagement rings, wedding bands, anniversary pieces, and meaningful one-of-one jewelry" },
+        { label: "Design support", value: "Clients who want visual approval before production begins" },
+        { label: "Production style", value: "Sketch, CAD, casting, finishing, stone setting, packaging, and coordinated delivery" }
+      ]
+    },
+    stepsTitle: "How your piece is made",
+    steps: [
+      {
+        title: "Brief & pencil sketch",
+        text: "We translate your reference, story, stone direction, and preferred proportion into an initial pencil sketch and design direction.",
+        image: { src: serviceProcessImage, alt: "Pencil sketch of a custom ring design", position: "0% 0%" }
+      },
+      {
+        title: "3D CAD in MatrixGold",
+        text: "The approved direction is developed into a technical 3D CAD model with attention to scale, structure, stone placement, and production feasibility.",
+        image: { src: serviceProcessImage, alt: "3D CAD jewelry design on a workstation", position: "33.333% 0%" }
+      },
+      {
+        title: "Client approval",
+        text: "We share the design view for review, refine details if needed, and move forward only after the final direction is confirmed.",
+        image: { src: serviceProcessImage, alt: "Client reviewing a jewelry design presentation", position: "66.666% 0%" }
+      },
+      {
+        title: "Casting preparation",
+        text: "Once approved, the piece moves into casting preparation so the design can become a precious metal form ready for bench work.",
+        image: { src: serviceProcessImage, alt: "Jewelry casting preparation with wax forms", position: "100% 0%" }
+      },
+      {
+        title: "Bench finishing",
+        text: "The cast piece is cleaned, shaped, refined, and polished by hand so the surface, symmetry, and comfort feel properly resolved.",
+        image: { src: serviceProcessImage, alt: "Artisan finishing a cast ring at the bench", position: "0% 100%" }
+      },
+      {
+        title: "Diamond selection",
+        text: "Diamonds or gemstones are selected and checked for size, match, brightness, and suitability for the setting plan.",
+        image: { src: serviceProcessImage, alt: "Diamonds selected with tweezers and a loupe", position: "33.333% 100%" }
+      },
+      {
+        title: "Stone setting",
+        text: "Stones are set with careful pressure and alignment, then reviewed for security, balance, and the final face-up look.",
+        image: { src: serviceProcessImage, alt: "Diamond being set into a ring under magnification", position: "66.666% 100%" }
+      },
+      {
+        title: "Packaging & handover",
+        text: "The finished piece is inspected, cleaned, packed with care, and prepared for handover or delivery to the client.",
+        image: { src: serviceProcessImage, alt: "Finished ring presented in premium packaging", position: "100% 100%" }
+      }
+    ],
+    note: "Custom orders are confirmed directly before production. Final timing, material details, stone availability, and quotation depend on the approved brief.",
+    actions: [
+      { href: "/contact-us?service=Custom%20Jewelry%20Service", label: "Start a custom inquiry" },
+      { href: "/oem-jewelry", label: "View OEM service" }
     ]
   },
   "oem-jewelry": {
@@ -50,7 +140,7 @@ export const staticPages = {
     note: "OEM details on the website are still draft-level and can be adjusted once your final service model, MOQ, and lead times are confirmed.",
     actions: [
       { href: "/contact-us?service=OEM%20Jewelry%20Service", label: "Contact for OEM" },
-      { href: "/wholesale-retail", label: "Wholesale & Retail" }
+      { href: "/our-service", label: "View custom process" }
     ]
   },
   "wholesale-retail": {
@@ -81,7 +171,7 @@ export const staticPages = {
     },
     actions: [
       { href: "/contact-us?service=Wholesale%20%26%20Retail", label: "Start a partner inquiry" },
-      { href: "/oem-jewelry", label: "View OEM service" }
+      { href: "/our-service", label: "View custom process" }
     ]
   },
   shipping: {

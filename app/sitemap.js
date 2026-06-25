@@ -12,6 +12,7 @@ export default function sitemap() {
     "terms-of-service",
     "returns",
     "shipping",
+    "our-service",
     "oem-jewelry",
     "wholesale-retail",
     "newsletter",

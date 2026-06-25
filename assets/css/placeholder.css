@@ -237,10 +237,35 @@ a {
   gap: 30px;
 }
 
+.placeholder-card--wide {
+  width: min(1120px, 100%);
+}
+
 .subpage-intro {
   display: grid;
   gap: 14px;
   max-width: 760px;
+}
+
+.subpage-hero-gallery {
+  display: grid;
+  gap: 18px;
+}
+
+.subpage-hero-image {
+  overflow: hidden;
+  margin: 0;
+  border: 1px solid rgba(221, 164, 165, 0.34);
+  background: rgba(255, 250, 246, 0.7);
+  box-shadow: 0 18px 48px rgba(0, 73, 58, 0.1);
+}
+
+.subpage-hero-image img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 2.35 / 1;
+  object-fit: cover;
+  object-position: center 70%;
 }
 
 .subpage-feature-grid,
@@ -346,6 +371,24 @@ a {
   display: grid;
   align-content: start;
   gap: 10px;
+}
+
+.subpage-step-grid--visual {
+  gap: 18px;
+}
+
+.subpage-step-card--visual {
+  padding: 14px 14px 22px;
+}
+
+.subpage-step-image {
+  aspect-ratio: 4 / 3;
+  width: 100%;
+  margin-bottom: 4px;
+  border: 1px solid rgba(16, 41, 35, 0.08);
+  background-color: rgba(255, 250, 246, 0.82);
+  background-repeat: no-repeat;
+  background-size: 400% 200%;
 }
 
 .subpage-step-index,
