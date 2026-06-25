@@ -1138,6 +1138,15 @@ body.is-page-scrolled .site-header--home .navbar .nav .nav-dropdown-trigger {
   text-shadow: 0 8px 24px rgba(0, 34, 28, 0.28);
 }
 
+.site-header--home .navbar .nav .nav-dropdown a,
+body.is-page-scrolled .site-header--home .navbar .nav .nav-dropdown a {
+  color: var(--maris-ink);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-shadow: none;
+}
+
 body:has(.site-header--home) .home-main .hero,
 .is-home-page .home-main .hero {
   min-height: 100svh;
