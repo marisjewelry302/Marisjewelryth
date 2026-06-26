@@ -1,10 +1,16 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { createCustomerSession, SESSION_COOKIE_NAME, SESSION_MAX_AGE_SECONDS } from "@/app/lib/customer-auth";
+import { createCustomerSession, getCustomerAuthConfig, SESSION_COOKIE_NAME, SESSION_MAX_AGE_SECONDS } from "@/app/lib/customer-auth";
 import { createCustomer } from "@/app/lib/customer-users";
 
 export async function POST(request) {
   try {
+    const authConfig = getCustomerAuthConfig();
+
+    if (!authConfig.isConfigured) {
+      return NextResponse.json({ error: "Service unavailable." }, { status: 503 });
+    }
+
     const body = await request.json();
     const { fullName, email, phone, password } = body;
 

@@ -12,6 +12,7 @@
     "test:static-routing": "node scripts/test-static-routing-contract.mjs",
     "test:admin-auth": "node scripts/test-admin-auth.mjs",
     "test:admin-database-auth": "node scripts/test-admin-database-auth.mjs",
+    "test:customer-auth-routes": "node scripts/test-customer-auth-routes.mjs",
     "test:customer-collections": "node scripts/test-customer-collections.mjs",
     "test:customer-welcome-email": "node scripts/test-customer-welcome-email.mjs",
     "test:admin-clarity": "node scripts/test-admin-clarity.mjs",
