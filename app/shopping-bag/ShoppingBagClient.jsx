@@ -1,42 +1,180 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCustomerSession } from "../hooks/useCustomerSession";
 
 const BAG_KEY = "marisShoppingBag";
+const BAG_API = "/api/account/bag";
+
+function getItemId(item) {
+  return String(item?.id || item?.productId || item?.href || item?.title || item?.sku || "").trim();
+}
+
+function clampQuantity(value) {
+  const quantity = Math.round(Number(value) || 1);
+  return Math.max(1, Math.min(9, quantity));
+}
+
+function normalizeBag(items) {
+  if (!Array.isArray(items)) {
+    return [];
+  }
+
+  const seen = new Set();
+  const normalized = [];
+
+  for (const item of items) {
+    if (!item || typeof item !== "object" || Array.isArray(item)) {
+      continue;
+    }
+
+    const id = getItemId(item);
+
+    if (!id || seen.has(id)) {
+      continue;
+    }
+
+    seen.add(id);
+    normalized.push({ ...item, id, quantity: clampQuantity(item.quantity) });
+  }
+
+  return normalized;
+}
+
+function mergeBagItems(localItems, remoteItems) {
+  const merged = new Map();
+
+  for (const item of normalizeBag(remoteItems)) {
+    merged.set(item.id, item);
+  }
+
+  for (const item of normalizeBag(localItems)) {
+    merged.set(item.id, item);
+  }
+
+  return [...merged.values()];
+}
 
 function readBag() {
   try {
     const value = JSON.parse(window.localStorage.getItem(BAG_KEY));
-    return Array.isArray(value) ? value : [];
+    return normalizeBag(value);
   } catch (error) {
     return [];
   }
 }
 
 function writeBag(items) {
-  window.localStorage.setItem(BAG_KEY, JSON.stringify(items));
-  window.dispatchEvent(new CustomEvent("maris:bagchange"));
+  try {
+    window.localStorage.setItem(BAG_KEY, JSON.stringify(items));
+    window.dispatchEvent(new CustomEvent("maris:bagchange"));
+  } catch (error) {
+    // Keep the page usable if browser storage is unavailable.
+  }
+}
+
+async function saveBag(items) {
+  const response = await fetch(BAG_API, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    credentials: "same-origin",
+    body: JSON.stringify({ items })
+  });
+
+  if (response.status === 401) {
+    return null;
+  }
+
+  if (!response.ok) {
+    throw new Error("Shopping bag could not be synced.");
+  }
+
+  return response.json();
 }
 
 export default function ShoppingBagClient() {
+  const { isLoggedIn, isLoading: sessionLoading } = useCustomerSession();
   const [items, setItems] = useState([]);
+  const didSyncRef = useRef(false);
 
   useEffect(() => {
     setItems(readBag());
   }, []);
+
+  useEffect(() => {
+    if (sessionLoading) {
+      return undefined;
+    }
+
+    if (!isLoggedIn) {
+      didSyncRef.current = false;
+      return undefined;
+    }
+
+    if (didSyncRef.current) {
+      return undefined;
+    }
+
+    didSyncRef.current = true;
+    let isCancelled = false;
+
+    async function syncBag() {
+      try {
+        const localItems = readBag();
+        const response = await fetch(BAG_API, {
+          cache: "no-store",
+          credentials: "same-origin"
+        });
+
+        if (response.status === 401) {
+          return;
+        }
+
+        if (!response.ok) {
+          throw new Error("Shopping bag could not be loaded.");
+        }
+
+        const payload = await response.json();
+        const mergedItems = mergeBagItems(localItems, payload?.items || []);
+
+        if (isCancelled) {
+          return;
+        }
+
+        setItems(mergedItems);
+        writeBag(mergedItems);
+        await saveBag(mergedItems);
+      } catch (error) {
+        if (!isCancelled) {
+          didSyncRef.current = false;
+        }
+      }
+    }
+
+    syncBag();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [isLoggedIn, sessionLoading]);
 
   const totalQuantity = useMemo(
     () => items.reduce((total, item) => total + (Number(item.quantity) || 1), 0),
     [items]
   );
 
-  function updateItems(nextItems) {
-    setItems(nextItems);
-    writeBag(nextItems);
-  }
+  const updateItems = useCallback((nextItems) => {
+    const normalizedItems = normalizeBag(nextItems);
+    setItems(normalizedItems);
+    writeBag(normalizedItems);
+
+    if (isLoggedIn) {
+      saveBag(normalizedItems).catch(() => {});
+    }
+  }, [isLoggedIn]);
 
   function updateQuantity(itemId, quantity) {
-    const nextQuantity = Math.max(1, Math.min(9, Number(quantity) || 1));
+    const nextQuantity = clampQuantity(quantity);
     updateItems(items.map((item) => (
       item.id === itemId ? { ...item, quantity: nextQuantity, updatedAt: new Date().toISOString() } : item
     )));

@@ -14,6 +14,11 @@
   margin-top: clamp(92px, 14vh, 150px);
 }
 
+body:has(.site-header--home) .home-main .hero-content,
+.is-home-page .home-main .hero-content {
+  margin-top: clamp(8px, 2.5vh, 36px);
+}
+
 .home-main .hero .hero-eyebrow {
   position: static;
   margin-bottom: 14px;
@@ -125,5 +130,10 @@
 @media (max-width: 768px) {
   .home-main .hero-content {
     margin-top: clamp(48px, 10vh, 92px);
+  }
+
+  body:has(.site-header--home) .home-main .hero-content,
+  .is-home-page .home-main .hero-content {
+    margin-top: clamp(18px, 6vh, 46px);
   }
 }

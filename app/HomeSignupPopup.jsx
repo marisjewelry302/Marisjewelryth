@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 const CLOSED_KEY = "marisSignupPopupClosedUntil";
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+const THIRTY_DAYS_MS = 30 * ONE_DAY_MS;
 const POPUP_DELAY_MS = 3000;
 
 function getStoredUntil(key) {
@@ -82,11 +83,9 @@ export default function HomeSignupPopup() {
       return;
     }
 
-    if (hideToday) {
-      suppressPopup(CLOSED_KEY, ONE_DAY_MS);
-    }
+    suppressPopup(CLOSED_KEY, hideToday ? ONE_DAY_MS : THIRTY_DAYS_MS);
 
-    router.push(`/account?email=${encodeURIComponent(normalizedEmail)}&source=popup`);
+    router.push(`/account?mode=signup&email=${encodeURIComponent(normalizedEmail)}`);
   }
 
   if (!isOpen) return null;
@@ -156,7 +155,7 @@ export default function HomeSignupPopup() {
               }}
               required
             />
-            <button type="submit">GET 10% OFF</button>
+            <button type="submit">Get 10% Off</button>
           </form>
 
           {message && <p className="home-signup-popup__message" role="alert">{message}</p>}

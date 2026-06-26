@@ -1,34 +1,167 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useCustomerSession } from "../hooks/useCustomerSession";
 
 const WISHLIST_KEY = "marisWishlist";
+const WISHLIST_API = "/api/account/wishlist";
+
+function getItemId(item) {
+  return String(item?.id || item?.productId || item?.href || item?.title || item?.sku || "").trim();
+}
+
+function normalizeWishlist(items) {
+  if (!Array.isArray(items)) {
+    return [];
+  }
+
+  const seen = new Set();
+  const normalized = [];
+
+  for (const item of items) {
+    if (!item || typeof item !== "object" || Array.isArray(item)) {
+      continue;
+    }
+
+    const id = getItemId(item);
+
+    if (!id || seen.has(id)) {
+      continue;
+    }
+
+    seen.add(id);
+    normalized.push({ ...item, id });
+  }
+
+  return normalized;
+}
+
+function mergeWishlistItems(localItems, remoteItems) {
+  const merged = new Map();
+
+  for (const item of normalizeWishlist(remoteItems)) {
+    merged.set(item.id, item);
+  }
+
+  for (const item of normalizeWishlist(localItems)) {
+    merged.set(item.id, item);
+  }
+
+  return [...merged.values()];
+}
 
 function readWishlist() {
   try {
     const value = JSON.parse(window.localStorage.getItem(WISHLIST_KEY));
-    return Array.isArray(value) ? value : [];
+    return normalizeWishlist(value);
   } catch (error) {
     return [];
   }
 }
 
 function writeWishlist(items) {
-  window.localStorage.setItem(WISHLIST_KEY, JSON.stringify(items));
-  window.dispatchEvent(new CustomEvent("maris:wishlistchange"));
+  try {
+    window.localStorage.setItem(WISHLIST_KEY, JSON.stringify(items));
+    window.dispatchEvent(new CustomEvent("maris:wishlistchange"));
+  } catch (error) {
+    // Keep the page usable if browser storage is unavailable.
+  }
+}
+
+async function saveWishlist(items) {
+  const response = await fetch(WISHLIST_API, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    credentials: "same-origin",
+    body: JSON.stringify({ items })
+  });
+
+  if (response.status === 401) {
+    return null;
+  }
+
+  if (!response.ok) {
+    throw new Error("Wishlist could not be synced.");
+  }
+
+  return response.json();
 }
 
 export default function WishlistClient() {
+  const { isLoggedIn, isLoading: sessionLoading } = useCustomerSession();
   const [items, setItems] = useState([]);
+  const didSyncRef = useRef(false);
 
   useEffect(() => {
     setItems(readWishlist());
   }, []);
 
-  function updateItems(nextItems) {
-    setItems(nextItems);
-    writeWishlist(nextItems);
-  }
+  useEffect(() => {
+    if (sessionLoading) {
+      return undefined;
+    }
+
+    if (!isLoggedIn) {
+      didSyncRef.current = false;
+      return undefined;
+    }
+
+    if (didSyncRef.current) {
+      return undefined;
+    }
+
+    didSyncRef.current = true;
+    let isCancelled = false;
+
+    async function syncWishlist() {
+      try {
+        const localItems = readWishlist();
+        const response = await fetch(WISHLIST_API, {
+          cache: "no-store",
+          credentials: "same-origin"
+        });
+
+        if (response.status === 401) {
+          return;
+        }
+
+        if (!response.ok) {
+          throw new Error("Wishlist could not be loaded.");
+        }
+
+        const payload = await response.json();
+        const mergedItems = mergeWishlistItems(localItems, payload?.items || []);
+
+        if (isCancelled) {
+          return;
+        }
+
+        setItems(mergedItems);
+        writeWishlist(mergedItems);
+        await saveWishlist(mergedItems);
+      } catch (error) {
+        if (!isCancelled) {
+          didSyncRef.current = false;
+        }
+      }
+    }
+
+    syncWishlist();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [isLoggedIn, sessionLoading]);
+
+  const updateItems = useCallback((nextItems) => {
+    const normalizedItems = normalizeWishlist(nextItems);
+    setItems(normalizedItems);
+    writeWishlist(normalizedItems);
+
+    if (isLoggedIn) {
+      saveWishlist(normalizedItems).catch(() => {});
+    }
+  }, [isLoggedIn]);
 
   return (
     <main className="wishlist-main site-main">

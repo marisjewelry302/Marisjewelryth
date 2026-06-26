@@ -12,6 +12,8 @@
     "test:static-routing": "node scripts/test-static-routing-contract.mjs",
     "test:admin-auth": "node scripts/test-admin-auth.mjs",
     "test:admin-database-auth": "node scripts/test-admin-database-auth.mjs",
+    "test:customer-collections": "node scripts/test-customer-collections.mjs",
+    "test:customer-welcome-email": "node scripts/test-customer-welcome-email.mjs",
     "test:admin-clarity": "node scripts/test-admin-clarity.mjs",
     "test:database": "node scripts/test-supabase-admin-database.mjs",
     "test:database:live": "node scripts/test-supabase-admin-database-live.mjs",
