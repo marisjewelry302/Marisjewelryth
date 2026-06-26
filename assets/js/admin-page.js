@@ -632,6 +632,9 @@
       .map((product) => {
         const available = getAvailable(product);
         const stockClass = available <= settings.lowStockThreshold ? "stock-low" : "stock-ok";
+        const isActive = product.status === "active";
+        const toggleLabel = isActive ? "Set Draft" : "Set Active";
+        const statusClass = isActive ? "status-active" : "status-draft";
 
         return `
           <tr>
@@ -642,7 +645,12 @@
             <td>${product.stockQty}</td>
             <td>${product.reservedQty}</td>
             <td class="${stockClass}">${available}</td>
-            <td>${escapeHtml(product.status)}</td>
+            <td>
+              <span class="${statusClass}">${escapeHtml(product.status)}</span>
+              <button class="admin-status-toggle" type="button"
+                data-toggle-status="${escapeHtml(product.id || "")}"
+                data-current-status="${escapeHtml(product.status)}">${toggleLabel}</button>
+            </td>
           </tr>
         `;
       })
@@ -771,6 +779,9 @@
         const imageLabel = product.primaryImageUrl
           ? `<a class="admin-link-inline" href="${escapeHtml(product.primaryImageUrl)}" target="_blank" rel="noopener noreferrer">Open image</a>`
           : "-";
+        const isActive = product.status === "active";
+        const toggleLabel = isActive ? "Set Draft" : "Set Active";
+        const statusClass = isActive ? "status-active" : "status-draft";
 
         return `
           <tr>
@@ -784,6 +795,10 @@
             <td>${galleryCount}</td>
             <td>
               <div class="admin-row-actions">
+                <span class="${statusClass}">${escapeHtml(product.status)}</span>
+                <button class="admin-status-toggle" type="button"
+                  data-toggle-status="${escapeHtml(product.id || "")}"
+                  data-current-status="${escapeHtml(product.status)}">${toggleLabel}</button>
                 <button type="button" data-catalogue-edit="${escapeHtml(code)}" data-product-id="${escapeHtml(product.id || "")}">Edit</button>
                 <button type="button" data-catalogue-delete="${escapeHtml(code)}" data-product-id="${escapeHtml(product.id || "")}">Delete</button>
                 <a class="admin-secondary" href="${href}" target="_blank" rel="noopener noreferrer">Preview</a>
@@ -1865,6 +1880,31 @@
     await loadAdminBackendData();
     renderAll();
     setMessage(adminCache.isReady ? "Supabase admin data refreshed." : (adminCache.error || "Supabase admin data could not be refreshed."), !adminCache.isReady);
+  });
+
+  async function handleToggleStatus(productId, currentStatus) {
+    if (!productId) return;
+    const nextStatus = currentStatus === "active" ? "draft" : "active";
+    setMessage("Updating status...");
+    try {
+      await fetchAdminApi(`/products?id=${encodeURIComponent(productId)}`, {
+        method: "PATCH",
+        body: JSON.stringify({ status: nextStatus })
+      });
+      await loadAdminBackendData();
+      renderAll();
+      setMessage(`Product set to ${nextStatus}.`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not update status.", true);
+    }
+  }
+
+  document.addEventListener("click", async (event) => {
+    const btn = event.target.closest("[data-toggle-status]");
+    if (!btn) return;
+    const productId = btn.dataset.toggleStatus;
+    const currentStatus = btn.dataset.currentStatus;
+    await handleToggleStatus(productId, currentStatus);
   });
 
   if (elements.sheetCatalogueTable) {
