@@ -10,7 +10,7 @@ const {
 } = await import("../app/lib/custom-order-requests.js");
 
 const validPayload = {
-  product_code: " SR000 ",
+  product_code: " sr000 ",
   full_name: " Ada Client ",
   company_name: " Ada Studio ",
   email: " ADA@Example.COM ",
@@ -132,6 +132,10 @@ function createCustomerLinkingClient({ emailMatch = null, phoneMatch = null } = 
   };
 }
 
+function hasFieldError(result, field) {
+  return result.errors.some((error) => error.field === field && error.message);
+}
+
 const normalized = normalizeCustomOrderPayload(validPayload);
 assert.deepEqual(normalized, {
   productCode: "SR000",
@@ -167,15 +171,26 @@ assert.equal(
   fingerprint,
   "Request fingerprint should ignore company name"
 );
+assert.equal(
+  buildRequestFingerprint({ ...normalized, fullName: "Different Client" }),
+  fingerprint,
+  "Request fingerprint should ignore full name"
+);
 
 for (const contact_number of ["()", "+", "---", "12345"]) {
   const result = validateCustomOrderPayload({ ...validPayload, contact_number });
   assert.equal(result.isValid, false, `${contact_number} should be invalid`);
-  assert.ok(result.errors.some((error) => /contact/i.test(error)), `${contact_number} should return a contact error`);
+  assert.ok(hasFieldError(result, "contact_number"), `${contact_number} should return a contact number error`);
 }
 
-assert.equal(validateCustomOrderPayload({ ...validPayload, email: "bad" }).isValid, false);
-assert.equal(validateCustomOrderPayload({ ...validPayload, product_code: " " }).isValid, false);
+const invalidEmailResult = validateCustomOrderPayload({ ...validPayload, email: "bad" });
+assert.equal(invalidEmailResult.isValid, false);
+assert.ok(hasFieldError(invalidEmailResult, "email"));
+
+const missingProductCodeResult = validateCustomOrderPayload({ ...validPayload, product_code: " " });
+assert.equal(missingProductCodeResult.isValid, false);
+assert.ok(hasFieldError(missingProductCodeResult, "product_code"));
+
 assert.equal(
   validateCustomOrderPayload({
     ...validPayload,
@@ -184,25 +199,22 @@ assert.equal(
   null,
   "Platinum should clear gold purity"
 );
-assert.equal(
-  validateCustomOrderPayload({
-    ...validPayload,
-    custom_options: { ...validPayload.custom_options, ring_size: 7.25 }
-  }).isValid,
-  false,
-  "Quarter-step ring size should be invalid"
-);
-assert.equal(
-  validateCustomOrderPayload({
-    ...validPayload,
-    custom_options: {
-      ...validPayload.custom_options,
-      choose_stone: { ...validPayload.custom_options.choose_stone, carat: 9 }
-    }
-  }).isValid,
-  false,
-  "Oversized stone carat should be invalid"
-);
+const invalidRingSizeResult = validateCustomOrderPayload({
+  ...validPayload,
+  custom_options: { ...validPayload.custom_options, ring_size: 7.25 }
+});
+assert.equal(invalidRingSizeResult.isValid, false, "Quarter-step ring size should be invalid");
+assert.ok(hasFieldError(invalidRingSizeResult, "ring_size"));
+
+const invalidStoneCaratResult = validateCustomOrderPayload({
+  ...validPayload,
+  custom_options: {
+    ...validPayload.custom_options,
+    choose_stone: { ...validPayload.custom_options.choose_stone, carat: 9 }
+  }
+});
+assert.equal(invalidStoneCaratResult.isValid, false, "Oversized stone carat should be invalid");
+assert.ok(hasFieldError(invalidStoneCaratResult, "stone_carat"));
 
 const existingCustomer = {
   id: "customer-1",

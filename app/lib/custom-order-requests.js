@@ -38,6 +38,10 @@ function cleanText(value) {
   return text || "";
 }
 
+function cleanProductCode(value) {
+  return cleanText(value).toUpperCase();
+}
+
 function cleanOptionalText(value) {
   const text = cleanText(value);
   return text || null;
@@ -106,7 +110,7 @@ export function normalizeCustomOrderPayload(payload = {}) {
   const contactNumber = cleanText(payload.contact_number);
 
   return {
-    productCode: cleanText(payload.product_code),
+    productCode: cleanProductCode(payload.product_code),
     fullName: cleanText(payload.full_name),
     companyName: cleanText(payload.company_name),
     email: normalizeMarketingEmail(payload.email),
@@ -127,60 +131,63 @@ export function normalizeCustomOrderPayload(payload = {}) {
 export function validateCustomOrderPayload(payload = {}) {
   const normalized = normalizeCustomOrderPayload(payload);
   const errors = [];
+  const addError = (field, message) => {
+    errors.push({ field, message });
+  };
 
   if (!normalized.productCode) {
-    errors.push("Product code is required.");
+    addError("product_code", "Product code is required.");
   }
 
   if (!normalized.fullName) {
-    errors.push("Full name is required.");
+    addError("full_name", "Full name is required.");
   }
 
   if (!normalized.email) {
-    errors.push("A valid email is required.");
+    addError("email", "A valid email is required.");
   }
 
   if (!normalized.contactNumber) {
-    errors.push("Contact number is required.");
+    addError("contact_number", "Contact number is required.");
   } else if (!/^[\d\s+()-]+$/.test(normalized.contactNumber)) {
-    errors.push("Contact number contains unsupported characters.");
+    addError("contact_number", "Contact number contains unsupported characters.");
   } else if (normalized.phoneDigits.length < 9 || normalized.phoneDigits.length > 15) {
-    errors.push("Contact number must contain 9 to 15 digits.");
+    addError("contact_number", "Contact number must contain 9 to 15 digits.");
   }
 
   if (normalized.metal && !METALS.has(normalized.metal)) {
-    errors.push("Metal is not supported.");
+    addError("metal", "Metal is not supported.");
   }
 
   if (normalized.metalPurity && !METAL_PURITIES.has(normalized.metalPurity)) {
-    errors.push("Metal purity is not supported.");
+    addError("metal_purity", "Metal purity is not supported.");
   }
 
   if (
     normalized.ringSize !== null
     && (normalized.ringSize < 5 || normalized.ringSize > 16 || !isHalfStep(normalized.ringSize))
   ) {
-    errors.push("Ring size must be from 5 to 16 in half-size steps.");
+    addError("ring_size", "Ring size must be from 5 to 16 in half-size steps.");
   }
 
   if (normalized.stoneCarat !== null && (normalized.stoneCarat < 0.2 || normalized.stoneCarat > 5)) {
-    errors.push("Stone carat must be from 0.2 to 5.");
+    addError("stone_carat", "Stone carat must be from 0.2 to 5.");
   }
 
   if (normalized.stoneColor && !STONE_COLORS.has(normalized.stoneColor)) {
-    errors.push("Stone color is not supported.");
+    addError("stone_color", "Stone color is not supported.");
   }
 
   if (normalized.stoneClarity && !STONE_CLARITIES.has(normalized.stoneClarity)) {
-    errors.push("Stone clarity is not supported.");
+    addError("stone_clarity", "Stone clarity is not supported.");
   }
 
   if (normalized.stoneCut && !STONE_CUTS.has(normalized.stoneCut)) {
-    errors.push("Stone cut is not supported.");
+    addError("stone_cut", "Stone cut is not supported.");
   }
 
   if (normalized.origin && !ORIGINS.has(normalized.origin)) {
-    errors.push("Origin is not supported.");
+    addError("origin", "Origin is not supported.");
   }
 
   return {
@@ -211,7 +218,6 @@ export function buildCustomOrderSummary(order) {
 export function buildRequestFingerprint(order) {
   const fingerprintPayload = {
     productCode: order.productCode,
-    fullName: order.fullName,
     email: order.email,
     contactNumber: order.contactNumber,
     metal: order.metal,
