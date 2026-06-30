@@ -56,8 +56,23 @@ assert.match(adminPage, /function getProductPreviewHref\(code\)/, "admin Preview
 
 assert.match(
   productPage,
-  /href=\{`\/request-quote\?collection=/,
-  "product page quote links must point to /request-quote"
+  /href=\{`\/contact-order\/\$\{encodeURIComponent\(product\.sku\)\}`\}/,
+  "product page custom order links must point to /contact-order/{sku}"
+);
+assert.match(
+  productPage,
+  /ติดต่อสั่งสินค้า/,
+  "product page custom order CTA must use the Thai contact order copy"
+);
+assert.doesNotMatch(
+  productPage,
+  /\/request-quote\?collection=/,
+  "product page custom order CTA must not use the old request-quote route"
+);
+assert.doesNotMatch(
+  productPage,
+  /Confirm Availability/,
+  "product page custom order CTA must not use the old availability copy"
 );
 
 assert.equal(hasOurServicePage, true, "our-service page route must exist");
