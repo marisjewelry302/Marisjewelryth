@@ -229,7 +229,7 @@ function createCustomOrderClient({
           },
           then(resolve, reject) {
             const emailFilter = selectCall.filters.find(([column]) => column === "email");
-            const phoneFilter = selectCall.filters.find(([column]) => column === "contact_number");
+            const phoneFilter = selectCall.filters.find(([column]) => column === "metadata->>phoneDigits");
             const count = emailFilter ? hourlyEmailCount : phoneFilter ? hourlyPhoneCount : 0;
 
             return Promise.resolve({ data: [], count, error: null }).then(resolve, reject);
@@ -512,6 +512,7 @@ assert.equal(requestInsert.payload.customer_id, "customer-linked");
 assert.equal(requestInsert.payload.status, "pending");
 assert.equal(requestInsert.payload.metadata.unsafe, undefined);
 assert.match(requestInsert.payload.metadata.requestFingerprint, /^[a-f0-9]{64}$/);
+assert.equal(requestInsert.payload.metadata.phoneDigits, "66812345678");
 assert.equal(requestInsert.payload.metadata.optionSummary, "Platinum · Size 7 · Lab-grown · 0.8 ct D VVS1 Excellent");
 assert.equal(requestInsert.payload.metal, "PN");
 assert.equal(requestInsert.payload.metal_purity, null);
@@ -573,6 +574,24 @@ assert.deepEqual(await createCustomOrderRequest(validPayload, {
 assert.equal(throttledClient.state.inserts.length, 0);
 assert.equal(throttleEmailCalled, false);
 
+const formattedPhoneThrottleClient = createCustomOrderClient({ hourlyPhoneCount: 5 });
+assert.deepEqual(await createCustomOrderRequest({
+  ...validPayload,
+  contact_number: "+66 81 234 5678"
+}, {
+  env: validEnv,
+  client: formattedPhoneThrottleClient,
+  sendEmails: async () => ({ status: "sent" })
+}), { status: "rate_limited" });
+assert.ok(
+  formattedPhoneThrottleClient.state.selects.some((entry) => (
+    entry.tableName === "custom_order_requests"
+    && entry.filters.some(([column, value]) => column === "metadata->>phoneDigits" && value === "66812345678")
+  )),
+  "Phone throttle should query normalized metadata phone digits"
+);
+assert.equal(formattedPhoneThrottleClient.state.inserts.length, 0);
+
 const failedEmailClient = createCustomOrderClient({ requestId: "request-email-failed" });
 assert.deepEqual(await createCustomOrderRequest(validPayload, {
   env: validEnv,
@@ -626,6 +645,15 @@ assert.deepEqual(getCustomOrderEmailConfig(validEmailEnv), {
   missingEnv: [],
   from: "Maris <orders@example.com>",
   orderEmailTo: "studio@example.com"
+});
+assert.deepEqual(getCustomOrderEmailConfig({
+  ...validEmailEnv,
+  MARIS_ORDER_EMAIL_TO: "not-an-email"
+}), {
+  isConfigured: false,
+  missingEnv: ["MARIS_ORDER_EMAIL_TO"],
+  from: "Maris <orders@example.com>",
+  orderEmailTo: ""
 });
 const emailOrder = normalizeCustomOrderPayload(validPayload);
 const emailSummary = buildCustomOrderSummary(emailOrder);
@@ -691,14 +719,40 @@ assert.deepEqual(await sendCustomOrderEmails({
 });
 assert.equal(missingEmailFetchCalls.length, 0);
 
+const invalidAdminEmailFetchCalls = [];
+assert.deepEqual(await sendCustomOrderEmails({
+  order: emailOrder,
+  request: { id: "request-email", status: "pending", created_at: "2026-06-30T12:00:00.000Z" },
+  customer: { id: "customer-email" },
+  optionSummary: emailSummary
+}, {
+  env: { ...validEmailEnv, MARIS_ORDER_EMAIL_TO: "bad-address" },
+  fetchImpl: async () => {
+    invalidAdminEmailFetchCalls.push("called");
+  }
+}), {
+  status: "not_configured",
+  missingEnv: ["MARIS_ORDER_EMAIL_TO"]
+});
+assert.equal(invalidAdminEmailFetchCalls.length, 0);
+
 const routeSource = await readFile(new URL("../app/api/custom-order-requests/route.js", import.meta.url), "utf8");
 assert.match(routeSource, /createCustomOrderRequest/);
 assert.match(routeSource, /sendCustomOrderEmails/);
+assert.match(routeSource, /from "next\/server"/);
 assert.doesNotMatch(routeSource, /\.\.\.(?:result|data|row)\b/);
 assert.match(routeSource, /email_not_configured/);
 assert.match(routeSource, /email_failed/);
 
-const { POST } = await import("../app/api/custom-order-requests/route.js");
+const nextServerUrl = new URL("../node_modules/next/server.js", import.meta.url).href;
+const routeEmailUrl = new URL("../app/lib/custom-order-email.js", import.meta.url).href;
+const routeRequestsUrl = new URL("../app/lib/custom-order-requests.js", import.meta.url).href;
+const routeForDirectImport = routeSource
+  .replace('from "next/server"', `from "${nextServerUrl}"`)
+  .replace('from "../../lib/custom-order-email.js"', `from "${routeEmailUrl}"`)
+  .replace('from "../../lib/custom-order-requests.js"', `from "${routeRequestsUrl}"`);
+const routeModuleUrl = `data:text/javascript;base64,${Buffer.from(routeForDirectImport).toString("base64")}`;
+const { POST } = await import(routeModuleUrl);
 const missingSupabaseResponse = await POST({
   async json() {
     return validPayload;
@@ -756,11 +810,17 @@ assert.match(migration, /information_schema\.columns/i, "Migration should guard 
 for (const indexName of [
   "idx_custom_order_requests_customer_id",
   "idx_custom_order_requests_email",
+  "idx_custom_order_requests_phone_digits",
   "idx_custom_order_requests_product_code",
   "idx_custom_order_requests_status_created_at"
 ]) {
   assert.match(migration, new RegExp(`create index if not exists ${indexName}\\b`, "i"), `Migration should include ${indexName}`);
 }
+assert.match(
+  migration,
+  /idx_custom_order_requests_phone_digits[\s\S]*?\(\(metadata->>'phoneDigits'\)\)/i,
+  "Migration should index normalized phone digits in custom order metadata"
+);
 
 const envExample = await readFile(new URL("../.env.example", import.meta.url), "utf8");
 assert.match(envExample, /^MARIS_ORDER_EMAIL_TO=/m, ".env.example should document MARIS_ORDER_EMAIL_TO");

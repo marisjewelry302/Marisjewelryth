@@ -23,7 +23,7 @@ function readCustomOrderEmailEnv(env = process.env) {
   return {
     apiKey: cleanEnvValue(env[RESEND_API_KEY_ENV]),
     from: cleanEnvValue(env[MARIS_EMAIL_FROM_ENV]),
-    orderEmailTo: cleanEnvValue(env[MARIS_ORDER_EMAIL_TO_ENV])
+    orderEmailTo: normalizeMarketingEmail(cleanEnvValue(env[MARIS_ORDER_EMAIL_TO_ENV]))
   };
 }
 

@@ -75,6 +75,7 @@ comment on column public.custom_order_requests.ring_size is
 
 create index if not exists idx_custom_order_requests_customer_id on public.custom_order_requests(customer_id);
 create index if not exists idx_custom_order_requests_email on public.custom_order_requests(lower(email));
+create index if not exists idx_custom_order_requests_phone_digits on public.custom_order_requests((metadata->>'phoneDigits'));
 create index if not exists idx_custom_order_requests_product_code on public.custom_order_requests(product_code);
 create index if not exists idx_custom_order_requests_status_created_at on public.custom_order_requests(status, created_at desc);
 

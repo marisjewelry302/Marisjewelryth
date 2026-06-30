@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server.js";
+import { NextResponse } from "next/server";
 
 import { sendCustomOrderEmails } from "../../lib/custom-order-email.js";
 import { createCustomOrderRequest } from "../../lib/custom-order-requests.js";

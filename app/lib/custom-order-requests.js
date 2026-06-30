@@ -268,6 +268,7 @@ export function buildCustomOrderInsertPayload(order, { customerId = null, finger
     status: "pending",
     metadata: {
       requestFingerprint: fingerprint,
+      phoneDigits: order.phoneDigits,
       optionSummary
     },
     created_at: createdAt
@@ -464,7 +465,7 @@ export async function createCustomOrderRequest(payload, {
 
   const [emailCount, phoneCount] = await Promise.all([
     countRecentCustomOrderRequests(supabase, "email", order.email, now),
-    countRecentCustomOrderRequests(supabase, "contact_number", order.contactNumber, now)
+    countRecentCustomOrderRequests(supabase, "metadata->>phoneDigits", order.phoneDigits, now)
   ]);
 
   if (emailCount >= THROTTLE_LIMIT || phoneCount >= THROTTLE_LIMIT) {
