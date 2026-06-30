@@ -1,6 +1,290 @@
 import assert from "node:assert/strict";
 import { readdir, readFile } from "node:fs/promises";
 
+const {
+  buildCustomOrderSummary,
+  buildRequestFingerprint,
+  findOrCreateCustomOrderCustomer,
+  normalizeCustomOrderPayload,
+  validateCustomOrderPayload
+} = await import("../app/lib/custom-order-requests.js");
+
+const validPayload = {
+  product_code: " SR000 ",
+  full_name: " Ada Client ",
+  company_name: " Ada Studio ",
+  email: " ADA@Example.COM ",
+  contact_number: "(+66) 812345678",
+  custom_options: {
+    metal: "YG",
+    metal_purity: "18K",
+    ring_size: 7,
+    choose_stone: {
+      carat: 0.8,
+      color: "D",
+      clarity: "VVS1",
+      cut: "Excellent"
+    },
+    origin: "Lab-grown"
+  }
+};
+
+const validEnv = {
+  SUPABASE_URL: "https://maris-test.supabase.co",
+  SUPABASE_SERVICE_ROLE_KEY: "service-role-secret"
+};
+
+function createCustomerLinkingClient({ emailMatch = null, phoneMatch = null } = {}) {
+  const state = {
+    selects: [],
+    updates: [],
+    inserts: []
+  };
+
+  return {
+    state,
+    from(tableName) {
+      assert.equal(tableName, "customers");
+
+      return {
+        select(columns) {
+          const selectCall = { tableName, columns, filters: [] };
+          state.selects.push(selectCall);
+
+          const query = {
+            eq(column, value) {
+              selectCall.filters.push([column, value]);
+              return query;
+            },
+            limit(value) {
+              selectCall.limit = value;
+              return query;
+            },
+            async maybeSingle() {
+              const emailFilter = selectCall.filters.find(([column]) => column === "email");
+              const phoneFilter = selectCall.filters.find(([column]) => column === "phone");
+
+              return {
+                data: emailFilter ? emailMatch : phoneFilter ? phoneMatch : null,
+                error: null
+              };
+            }
+          };
+
+          return query;
+        },
+        update(payload) {
+          const updateCall = { tableName, payload, filters: [] };
+          state.updates.push(updateCall);
+
+          const query = {
+            eq(column, value) {
+              updateCall.filters.push([column, value]);
+              return query;
+            },
+            select(columns) {
+              updateCall.columns = columns;
+              return {
+                async single() {
+                  const existing = emailMatch || phoneMatch || {};
+
+                  return {
+                    data: {
+                      ...existing,
+                      ...payload,
+                      id: existing.id || "customer-updated",
+                      email: existing.email || "ada@example.com",
+                      created_at: existing.created_at || "2026-06-20T00:00:00.000Z"
+                    },
+                    error: null
+                  };
+                }
+              };
+            }
+          };
+
+          return query;
+        },
+        insert(payload) {
+          state.inserts.push({ tableName, payload });
+
+          return {
+            select(columns) {
+              state.inserts[state.inserts.length - 1].columns = columns;
+              return {
+                async single() {
+                  return {
+                    data: {
+                      id: "customer-created",
+                      created_at: "2026-06-30T00:00:00.000Z",
+                      updated_at: "2026-06-30T00:00:00.000Z",
+                      ...payload
+                    },
+                    error: null
+                  };
+                }
+              };
+            }
+          };
+        }
+      };
+    }
+  };
+}
+
+const normalized = normalizeCustomOrderPayload(validPayload);
+assert.deepEqual(normalized, {
+  productCode: "SR000",
+  fullName: "Ada Client",
+  companyName: "Ada Studio",
+  email: "ada@example.com",
+  contactNumber: "(+66) 812345678",
+  phoneDigits: "66812345678",
+  metal: "YG",
+  metalPurity: "18K",
+  ringSize: 7,
+  stoneCarat: 0.8,
+  stoneColor: "D",
+  stoneClarity: "VVS1",
+  stoneCut: "Excellent",
+  origin: "Lab-grown",
+  honeypot: ""
+});
+
+const validResult = validateCustomOrderPayload(validPayload);
+assert.equal(validResult.isValid, true);
+assert.deepEqual(validResult.errors, []);
+assert.deepEqual(validResult.normalized, normalized);
+assert.equal(
+  buildCustomOrderSummary(normalized),
+  "18K Yellow Gold · Size 7 · Lab-grown · 0.8 ct D VVS1 Excellent"
+);
+
+const fingerprint = buildRequestFingerprint(normalized);
+assert.match(fingerprint, /^[a-f0-9]{64}$/);
+assert.equal(
+  buildRequestFingerprint({ ...normalized, companyName: "Different Studio" }),
+  fingerprint,
+  "Request fingerprint should ignore company name"
+);
+
+for (const contact_number of ["()", "+", "---", "12345"]) {
+  const result = validateCustomOrderPayload({ ...validPayload, contact_number });
+  assert.equal(result.isValid, false, `${contact_number} should be invalid`);
+  assert.ok(result.errors.some((error) => /contact/i.test(error)), `${contact_number} should return a contact error`);
+}
+
+assert.equal(validateCustomOrderPayload({ ...validPayload, email: "bad" }).isValid, false);
+assert.equal(validateCustomOrderPayload({ ...validPayload, product_code: " " }).isValid, false);
+assert.equal(
+  validateCustomOrderPayload({
+    ...validPayload,
+    custom_options: { ...validPayload.custom_options, metal: "PN", metal_purity: "18K" }
+  }).normalized.metalPurity,
+  null,
+  "Platinum should clear gold purity"
+);
+assert.equal(
+  validateCustomOrderPayload({
+    ...validPayload,
+    custom_options: { ...validPayload.custom_options, ring_size: 7.25 }
+  }).isValid,
+  false,
+  "Quarter-step ring size should be invalid"
+);
+assert.equal(
+  validateCustomOrderPayload({
+    ...validPayload,
+    custom_options: {
+      ...validPayload.custom_options,
+      choose_stone: { ...validPayload.custom_options.choose_stone, carat: 9 }
+    }
+  }).isValid,
+  false,
+  "Oversized stone carat should be invalid"
+);
+
+const existingCustomer = {
+  id: "customer-1",
+  full_name: "Ada Existing",
+  email: "ada@example.com",
+  phone: "(+66) 800000000",
+  metadata: {
+    password_hash: "hashed-password",
+    tier: "member"
+  },
+  created_at: "2026-06-01T00:00:00.000Z",
+  updated_at: "2026-06-01T00:00:00.000Z"
+};
+const emailClient = createCustomerLinkingClient({ emailMatch: existingCustomer });
+const updatedByEmail = await findOrCreateCustomOrderCustomer(normalized, {
+  env: validEnv,
+  client: emailClient,
+  now: () => new Date("2026-06-30T12:00:00.000Z")
+});
+assert.equal(updatedByEmail.status, "updated");
+assert.equal(updatedByEmail.customer.id, "customer-1");
+assert.equal(updatedByEmail.customer.phone, "(+66) 812345678");
+assert.equal(updatedByEmail.customer.metadata.password_hash, "hashed-password");
+assert.deepEqual(
+  emailClient.state.selects.map((entry) => entry.filters),
+  [[["email", "ada@example.com"]]],
+  "Email match should stop before phone lookup"
+);
+assert.deepEqual(Object.keys(emailClient.state.updates[0].payload).sort(), [
+  "full_name",
+  "metadata",
+  "phone",
+  "updated_at"
+]);
+assert.equal(emailClient.state.updates[0].payload.email, undefined);
+assert.equal(emailClient.state.updates[0].payload.password, undefined);
+assert.equal(emailClient.state.updates[0].payload.password_hash, undefined);
+assert.equal(emailClient.state.updates[0].payload.metadata.password_hash, "hashed-password");
+assert.equal(emailClient.state.updates[0].payload.metadata.lead_source, "custom_order_request");
+assert.equal(emailClient.state.updates[0].payload.metadata.last_custom_order_product_code, "SR000");
+assert.equal(emailClient.state.updates[0].payload.metadata.last_custom_order_at, "2026-06-30T12:00:00.000Z");
+
+const phoneCustomer = {
+  id: "customer-phone",
+  full_name: "Phone Client",
+  email: "phone@example.com",
+  phone: "(+66) 812345678",
+  metadata: {},
+  created_at: "2026-06-01T00:00:00.000Z",
+  updated_at: "2026-06-01T00:00:00.000Z"
+};
+const phoneClient = createCustomerLinkingClient({ phoneMatch: phoneCustomer });
+const updatedByPhone = await findOrCreateCustomOrderCustomer(normalized, {
+  env: validEnv,
+  client: phoneClient,
+  now: () => new Date("2026-06-30T12:00:00.000Z")
+});
+assert.equal(updatedByPhone.status, "updated");
+assert.equal(updatedByPhone.customer.id, "customer-phone");
+assert.deepEqual(phoneClient.state.selects.map((entry) => entry.filters), [
+  [["email", "ada@example.com"]],
+  [["phone", "(+66) 812345678"]]
+]);
+
+const insertClient = createCustomerLinkingClient();
+const createdCustomer = await findOrCreateCustomOrderCustomer(normalized, {
+  env: validEnv,
+  client: insertClient,
+  now: () => new Date("2026-06-30T12:00:00.000Z")
+});
+assert.equal(createdCustomer.status, "created");
+assert.equal(insertClient.state.inserts[0].payload.email, "ada@example.com");
+assert.equal(insertClient.state.inserts[0].payload.password, undefined);
+assert.equal(insertClient.state.inserts[0].payload.password_hash, undefined);
+assert.equal(insertClient.state.inserts[0].payload.metadata.password_hash, undefined);
+
+assert.deepEqual(await findOrCreateCustomOrderCustomer(normalized, { env: {} }), {
+  status: "not_configured",
+  missingEnv: ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"],
+  customer: null
+});
+
 const migrationFiles = await readdir(new URL("../supabase/migrations/", import.meta.url));
 const customOrderMigrationFile = migrationFiles.find((fileName) => fileName.endsWith("_create_custom_order_requests.sql"));
 assert.ok(customOrderMigrationFile, "A Supabase migration should create custom_order_requests");
