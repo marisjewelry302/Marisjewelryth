@@ -15,6 +15,7 @@
     "test:customer-auth-routes": "node scripts/test-customer-auth-routes.mjs",
     "test:customer-collections": "node scripts/test-customer-collections.mjs",
     "test:customer-welcome-email": "node scripts/test-customer-welcome-email.mjs",
+    "test:custom-order": "node scripts/test-custom-order.mjs",
     "test:admin-clarity": "node scripts/test-admin-clarity.mjs",
     "test:database": "node scripts/test-supabase-admin-database.mjs",
     "test:database:live": "node scripts/test-supabase-admin-database-live.mjs",
