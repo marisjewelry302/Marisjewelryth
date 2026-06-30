@@ -14,6 +14,21 @@ assert.match(migration, /exact numeric/i, "Migration should document why ring_si
 assert.match(migration, /status text not null default 'pending'/i);
 assert.match(migration, /status in \('pending', 'contacted', 'completed', 'cancelled'\)/i);
 assert.match(migration, /alter table public\.custom_order_requests\s+enable row level security/i);
+
+const customOrderPolicyBlocks = migration
+  .match(/create\s+policy[\s\S]*?;/gi)
+  ?.filter((policy) => /on\s+public\.custom_order_requests\b/i.test(policy)) || [];
+assert.deepEqual(
+  customOrderPolicyBlocks,
+  [],
+  "Custom order requests should stay server-only and should not add browser RLS policies"
+);
+assert.doesNotMatch(
+  migration,
+  /grant\s+insert\s+on\s+(?:table\s+)?public\.custom_order_requests\s+to\s+(?:anon|public)\b/i,
+  "Custom order requests should not grant anon/public insert access"
+);
+
 assert.match(migration, /add column if not exists full_name text/i, "Migration should make customers.full_name explicit for lead linking");
 assert.match(migration, /information_schema\.columns/i, "Migration should guard legacy customers.name compatibility checks");
 
