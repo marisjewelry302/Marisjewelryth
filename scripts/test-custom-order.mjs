@@ -287,6 +287,18 @@ function hasFieldError(result, field) {
   return result.errors.some((error) => error.field === field && error.message);
 }
 
+async function readRequiredSource(relativePath) {
+  try {
+    return await readFile(new URL(relativePath, import.meta.url), "utf8");
+  } catch (error) {
+    if (error?.code === "ENOENT") {
+      assert.fail(`Expected source file to exist: ${relativePath}`);
+    }
+
+    throw error;
+  }
+}
+
 const normalized = normalizeCustomOrderPayload(validPayload);
 assert.deepEqual(normalized, {
   productCode: "SR000",
@@ -827,6 +839,74 @@ assert.match(envExample, /^MARIS_ORDER_EMAIL_TO=/m, ".env.example should documen
 
 const packageJson = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
 assert.equal(packageJson.scripts["test:custom-order"], "node scripts/test-custom-order.mjs");
+
+const contactOrderPageSource = await readRequiredSource("../app/contact-order/[productCode]/page.js");
+assert.match(contactOrderPageSource, /dynamic\s*=\s*["']force-dynamic["']/);
+assert.match(contactOrderPageSource, /decodeURIComponent/);
+assert.match(contactOrderPageSource, /\.toUpperCase\(\)/);
+assert.match(contactOrderPageSource, /generateMetadata/);
+assert.match(contactOrderPageSource, /CustomOrderForm/);
+assert.match(contactOrderPageSource, /productCode=\{decodedProductCode\}/);
+
+const customOrderFormSource = await readRequiredSource("../app/contact-order/[productCode]/CustomOrderForm.jsx");
+assert.match(customOrderFormSource, /^"use client";/);
+for (const fieldName of ["product_code", "full_name", "company_name", "email", "contact_number", "website_url"]) {
+  assert.match(customOrderFormSource, new RegExp(`name=["']${fieldName}["']`), `Custom order form should include ${fieldName}`);
+}
+assert.match(customOrderFormSource, /readOnly/);
+assert.match(customOrderFormSource, /ตัวเลือกเพิ่มเติม/);
+assert.match(customOrderFormSource, /\/api\/custom-order-requests/);
+assert.match(customOrderFormSource, /custom_options/);
+assert.match(customOrderFormSource, /product_code:\s*productCode/);
+assert.match(customOrderFormSource, /pending/);
+assert.match(customOrderFormSource, /disabled=\{pending\}/);
+assert.match(customOrderFormSource, /created/);
+assert.match(customOrderFormSource, /duplicate/);
+assert.match(customOrderFormSource, /ติดต่อกลับสำเร็จ/);
+assert.match(customOrderFormSource, /aria-live=["']polite["']/);
+assert.match(customOrderFormSource, /role=["']dialog["']/);
+assert.match(customOrderFormSource, /aria-modal=["']true["']/);
+assert.match(customOrderFormSource, /Escape/);
+assert.match(customOrderFormSource, /optionTriggerRef\.current\?\.focus\(\)/);
+assert.match(customOrderFormSource, /\["WG",\s*"YG",\s*"RG",\s*"PN",\s*"Pd"\]/);
+assert.match(customOrderFormSource, /\["9K",\s*"14K",\s*"18K"\]/);
+assert.match(customOrderFormSource, /GOLD_METALS\.has/);
+assert.match(customOrderFormSource, /metal_purity:\s*isGoldMetal/);
+assert.match(customOrderFormSource, /min=["']5["']/);
+assert.match(customOrderFormSource, /max=["']16["']/);
+assert.match(customOrderFormSource, /step=["']0\.5["']/);
+for (const stoneField of ["carat", "color", "clarity", "cut"]) {
+  assert.match(customOrderFormSource, new RegExp(`name=["']${stoneField}["']`), `Stone option should include ${stoneField}`);
+}
+assert.match(customOrderFormSource, /Lab-grown/);
+assert.match(customOrderFormSource, /Natural/);
+assert.match(customOrderFormSource, /selectedOptionSummary/);
+assert.doesNotMatch(customOrderFormSource, /\bcheckout\b|\bpayment\b|\bpaid\b/i);
+
+const customOrderCss = await readRequiredSource("../assets/css/custom-order.css");
+assert.match(customOrderCss, /custom-jewelry-service-hero-02-seamless\.png/);
+assert.match(customOrderCss, /var\(--maris-teal\)/);
+assert.match(customOrderCss, /var\(--maris-paper\)/);
+assert.match(customOrderCss, /var\(--maris-gold\)/);
+assert.match(customOrderCss, /@media\s*\(max-width:\s*768px\)/);
+assert.match(customOrderCss, /grid-template-columns:\s*1fr/);
+assert.match(customOrderCss, /\.custom-order-modal/);
+assert.match(customOrderCss, /bottom:\s*0/);
+assert.doesNotMatch(customOrderCss, /letter-spacing:\s*-/);
+assert.doesNotMatch(customOrderCss, /font-size:\s*[^;]*vw/);
+assert.doesNotMatch(customOrderCss, /orb|blob|bokeh/i);
+
+const layoutSource = await readRequiredSource("../app/layout.js");
+const productCssImportIndex = layoutSource.indexOf('import "../assets/css/product.css";');
+const customOrderCssImportIndex = layoutSource.indexOf('import "../assets/css/custom-order.css";');
+assert.ok(productCssImportIndex >= 0, "Root layout should import product CSS");
+assert.ok(customOrderCssImportIndex > productCssImportIndex, "Custom order CSS should load after product CSS");
+
+const productPageSource = await readRequiredSource("../app/product/[slug]/product-slug-page.js");
+assert.match(productPageSource, /href=\{`\/contact-order\/\$\{encodeURIComponent\(product\.sku\)\}`\}/);
+assert.match(productPageSource, /ติดต่อสั่งสินค้า/);
+assert.doesNotMatch(productPageSource, /\/request-quote\?collection=/);
+assert.doesNotMatch(productPageSource, /Confirm Availability/);
 
 const databaseLib = await readFile(new URL("../app/lib/maris-database.js", import.meta.url), "utf8");
 assert.match(databaseLib, /"custom_order_requests"/, "Database table status contract should include custom_order_requests");

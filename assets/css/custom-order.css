@@ -1,0 +1,405 @@
+.custom-order-page {
+  min-height: calc(100svh - 140px);
+  background:
+    linear-gradient(180deg, rgba(248, 243, 231, 0.96), var(--maris-paper)),
+    var(--maris-paper);
+  color: var(--maris-ink);
+  padding: 32px 18px 56px;
+}
+
+.custom-order-shell {
+  width: min(1120px, 100%);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(280px, 0.82fr) minmax(360px, 1fr);
+  gap: 28px;
+  align-items: stretch;
+}
+
+.custom-order-visual {
+  min-height: 620px;
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(16, 41, 35, 0.04), rgba(16, 41, 35, 0.58)),
+    url("/assets/images/service/custom-jewelry-service-hero-02-seamless.png") center / cover;
+  border: 1px solid rgba(185, 147, 58, 0.22);
+  overflow: hidden;
+  position: relative;
+}
+
+.custom-order-visual__caption {
+  position: absolute;
+  left: 22px;
+  right: 22px;
+  bottom: 22px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  color: var(--maris-white);
+  letter-spacing: 0;
+}
+
+.custom-order-visual__caption span {
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.custom-order-visual__caption strong {
+  font-family: var(--maris-font-display);
+  font-size: 1.9rem;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.custom-order-workspace {
+  background: color-mix(in oklch, var(--maris-white) 92%, var(--maris-paper));
+  border: 1px solid rgba(0, 73, 58, 0.12);
+  border-radius: 8px;
+  padding: 34px;
+  box-shadow: 0 22px 60px rgba(0, 73, 58, 0.1);
+}
+
+.custom-order-heading {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.custom-order-heading p,
+.custom-order-modal__header p {
+  margin: 0;
+  color: var(--maris-gold);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.custom-order-heading h1,
+.custom-order-modal__header h2 {
+  margin: 0;
+  color: var(--maris-teal);
+  font-family: var(--maris-font-thai);
+  font-size: 2.35rem;
+  font-weight: 500;
+  line-height: 1.12;
+  letter-spacing: 0;
+}
+
+.custom-order-heading span {
+  color: var(--maris-muted);
+  font-size: 0.98rem;
+  line-height: 1.72;
+  letter-spacing: 0;
+}
+
+.custom-order-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.custom-order-field {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.custom-order-field span,
+.custom-order-option-label {
+  color: var(--maris-teal);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.custom-order-field input,
+.custom-order-field select {
+  width: 100%;
+  min-width: 0;
+  height: 46px;
+  border: 1px solid rgba(0, 73, 58, 0.16);
+  border-radius: 6px;
+  background: var(--maris-white);
+  color: var(--maris-ink);
+  font: inherit;
+  font-size: 0.96rem;
+  letter-spacing: 0;
+  padding: 0 13px;
+}
+
+.custom-order-field input:focus,
+.custom-order-field select:focus,
+.custom-order-options-trigger:focus-visible,
+.custom-order-submit:focus-visible,
+.custom-order-segmented button:focus-visible,
+.custom-order-modal__close:focus-visible,
+.custom-order-modal__apply:focus-visible {
+  outline: 2px solid var(--maris-gold);
+  outline-offset: 3px;
+}
+
+.custom-order-field input[readonly] {
+  background: color-mix(in oklch, var(--maris-paper) 78%, var(--maris-white));
+  color: var(--maris-teal);
+  font-weight: 700;
+}
+
+.custom-order-honeypot {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.custom-order-status,
+.custom-order-submit {
+  grid-column: 1 / -1;
+}
+
+.custom-order-options-row {
+  display: grid;
+  gap: 10px;
+  align-self: end;
+}
+
+.custom-order-options-trigger,
+.custom-order-submit,
+.custom-order-modal__apply {
+  min-height: 46px;
+  border: 1px solid var(--maris-teal);
+  border-radius: 6px;
+  background: var(--maris-teal);
+  color: var(--maris-white);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, opacity 0.2s ease;
+}
+
+.custom-order-options-trigger {
+  width: fit-content;
+  min-width: 190px;
+  background: transparent;
+  color: var(--maris-teal);
+}
+
+.custom-order-options-trigger:hover,
+.custom-order-segmented button:hover {
+  border-color: var(--maris-gold);
+  color: var(--maris-gold);
+}
+
+.custom-order-selected,
+.custom-order-status {
+  margin: 0;
+  min-height: 24px;
+  color: var(--maris-muted);
+  font-size: 0.92rem;
+  line-height: 1.58;
+  letter-spacing: 0;
+}
+
+.custom-order-selected.is-empty {
+  color: rgba(16, 41, 35, 0.54);
+}
+
+.custom-order-status.is-success {
+  color: var(--maris-teal);
+  font-weight: 700;
+}
+
+.custom-order-status.is-error {
+  color: var(--maris-red);
+  font-weight: 700;
+}
+
+.custom-order-submit:disabled {
+  cursor: progress;
+  opacity: 0.62;
+}
+
+.custom-order-modal-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 22px;
+}
+
+.custom-order-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(16, 41, 35, 0.48);
+  cursor: pointer;
+}
+
+.custom-order-modal {
+  position: relative;
+  width: min(680px, 100%);
+  max-height: min(760px, calc(100svh - 44px));
+  overflow: auto;
+  border: 1px solid rgba(185, 147, 58, 0.3);
+  border-radius: 8px;
+  background: var(--maris-paper);
+  box-shadow: 0 30px 90px rgba(0, 73, 58, 0.22);
+  padding: 26px;
+}
+
+.custom-order-modal__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 22px;
+}
+
+.custom-order-modal__close {
+  border: 1px solid rgba(0, 73, 58, 0.18);
+  border-radius: 6px;
+  background: var(--maris-white);
+  color: var(--maris-teal);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  min-height: 38px;
+  padding: 0 12px;
+}
+
+.custom-order-option-group {
+  display: grid;
+  gap: 9px;
+  margin-bottom: 18px;
+}
+
+.custom-order-option-group small {
+  color: var(--maris-muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.custom-order-segmented {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.custom-order-segmented button {
+  min-height: 40px;
+  border: 1px solid rgba(0, 73, 58, 0.18);
+  border-radius: 6px;
+  background: var(--maris-white);
+  color: var(--maris-teal);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  padding: 0 14px;
+}
+
+.custom-order-segmented button.is-selected {
+  background: var(--maris-teal);
+  border-color: var(--maris-teal);
+  color: var(--maris-white);
+}
+
+.custom-order-segmented button:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
+.custom-order-stone-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin: 18px 0;
+}
+
+.custom-order-modal__summary {
+  border-top: 1px solid rgba(0, 73, 58, 0.12);
+  border-bottom: 1px solid rgba(0, 73, 58, 0.12);
+  padding: 14px 0;
+  margin: 18px 0;
+}
+
+.custom-order-modal__summary span {
+  color: var(--maris-gold);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.custom-order-modal__summary p {
+  margin: 6px 0 0;
+  color: var(--maris-ink);
+  font-size: 0.98rem;
+  line-height: 1.58;
+}
+
+.custom-order-modal__apply {
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .custom-order-page {
+    padding: 18px 12px 34px;
+  }
+
+  .custom-order-shell {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .custom-order-visual {
+    min-height: 210px;
+  }
+
+  .custom-order-workspace {
+    padding: 22px 16px;
+  }
+
+  .custom-order-heading h1,
+  .custom-order-modal__header h2 {
+    font-size: 1.85rem;
+  }
+
+  .custom-order-form,
+  .custom-order-stone-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .custom-order-options-trigger {
+    width: 100%;
+  }
+
+  .custom-order-options-row {
+    border-top: 1px solid rgba(0, 73, 58, 0.1);
+    padding-top: 18px;
+  }
+
+  .custom-order-modal-layer {
+    align-items: end;
+    place-items: end stretch;
+    padding: 0;
+  }
+
+  .custom-order-modal {
+    width: 100%;
+    max-height: 86svh;
+    bottom: 0;
+    border-radius: 8px 8px 0 0;
+    padding: 22px 16px 18px;
+  }
+}

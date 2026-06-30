@@ -85,9 +85,9 @@ export default async function ProductPage({ params }) {
             <AddToBagButton product={product} collectionLabel={collectionLabel} />
             <a
               className="product-action is-primary"
-              href={`/request-quote?collection=${encodeURIComponent(product.collection)}&id=${encodeURIComponent(product.sku)}`}
+              href={`/contact-order/${encodeURIComponent(product.sku)}`}
             >
-              Confirm Availability
+              ติดต่อสั่งสินค้า
             </a>
           </div>
 
