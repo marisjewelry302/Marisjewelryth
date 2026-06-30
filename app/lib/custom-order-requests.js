@@ -48,12 +48,13 @@ function cleanOptionalText(value) {
 }
 
 function parseOptionalNumber(value) {
-  if (value === null || value === undefined || value === "") {
+  const text = String(value ?? "").trim();
+
+  if (!text) {
     return null;
   }
 
-  const number = Number(value);
-  return Number.isFinite(number) ? number : null;
+  return Number(text);
 }
 
 function getCustomOptions(payload) {
@@ -149,7 +150,7 @@ export function validateCustomOrderPayload(payload = {}) {
 
   if (!normalized.contactNumber) {
     addError("contact_number", "Contact number is required.");
-  } else if (!/^[\d\s+()-]+$/.test(normalized.contactNumber)) {
+  } else if (!/^[\d +()-]+$/.test(normalized.contactNumber)) {
     addError("contact_number", "Contact number contains unsupported characters.");
   } else if (normalized.phoneDigits.length < 9 || normalized.phoneDigits.length > 15) {
     addError("contact_number", "Contact number must contain 9 to 15 digits.");
@@ -165,12 +166,20 @@ export function validateCustomOrderPayload(payload = {}) {
 
   if (
     normalized.ringSize !== null
-    && (normalized.ringSize < 5 || normalized.ringSize > 16 || !isHalfStep(normalized.ringSize))
+    && (
+      !Number.isFinite(normalized.ringSize)
+      || normalized.ringSize < 5
+      || normalized.ringSize > 16
+      || !isHalfStep(normalized.ringSize)
+    )
   ) {
     addError("ring_size", "Ring size must be from 5 to 16 in half-size steps.");
   }
 
-  if (normalized.stoneCarat !== null && (normalized.stoneCarat < 0.2 || normalized.stoneCarat > 5)) {
+  if (
+    normalized.stoneCarat !== null
+    && (!Number.isFinite(normalized.stoneCarat) || normalized.stoneCarat < 0.2 || normalized.stoneCarat > 5)
+  ) {
     addError("stone_carat", "Stone carat must be from 0.2 to 5.");
   }
 
@@ -219,7 +228,7 @@ export function buildRequestFingerprint(order) {
   const fingerprintPayload = {
     productCode: order.productCode,
     email: order.email,
-    contactNumber: order.contactNumber,
+    phoneDigits: order.phoneDigits,
     metal: order.metal,
     metalPurity: order.metalPurity,
     ringSize: order.ringSize,

@@ -176,8 +176,16 @@ assert.equal(
   fingerprint,
   "Request fingerprint should ignore full name"
 );
+assert.equal(
+  buildRequestFingerprint(normalizeCustomOrderPayload({
+    ...validPayload,
+    contact_number: "+66 81 234 5678"
+  })),
+  fingerprint,
+  "Request fingerprint should use canonical phone digits"
+);
 
-for (const contact_number of ["()", "+", "---", "12345"]) {
+for (const contact_number of ["()", "+", "---", "12345", "081\t2345678", "081\n2345678"]) {
   const result = validateCustomOrderPayload({ ...validPayload, contact_number });
   assert.equal(result.isValid, false, `${contact_number} should be invalid`);
   assert.ok(hasFieldError(result, "contact_number"), `${contact_number} should return a contact number error`);
@@ -206,6 +214,13 @@ const invalidRingSizeResult = validateCustomOrderPayload({
 assert.equal(invalidRingSizeResult.isValid, false, "Quarter-step ring size should be invalid");
 assert.ok(hasFieldError(invalidRingSizeResult, "ring_size"));
 
+const invalidRingSizeTextResult = validateCustomOrderPayload({
+  ...validPayload,
+  custom_options: { ...validPayload.custom_options, ring_size: "abc" }
+});
+assert.equal(invalidRingSizeTextResult.isValid, false, "Non-numeric ring size should be invalid");
+assert.ok(hasFieldError(invalidRingSizeTextResult, "ring_size"));
+
 const invalidStoneCaratResult = validateCustomOrderPayload({
   ...validPayload,
   custom_options: {
@@ -215,6 +230,16 @@ const invalidStoneCaratResult = validateCustomOrderPayload({
 });
 assert.equal(invalidStoneCaratResult.isValid, false, "Oversized stone carat should be invalid");
 assert.ok(hasFieldError(invalidStoneCaratResult, "stone_carat"));
+
+const invalidStoneCaratTextResult = validateCustomOrderPayload({
+  ...validPayload,
+  custom_options: {
+    ...validPayload.custom_options,
+    choose_stone: { ...validPayload.custom_options.choose_stone, carat: "7abc" }
+  }
+});
+assert.equal(invalidStoneCaratTextResult.isValid, false, "Non-numeric stone carat should be invalid");
+assert.ok(hasFieldError(invalidStoneCaratTextResult, "stone_carat"));
 
 const existingCustomer = {
   id: "customer-1",
