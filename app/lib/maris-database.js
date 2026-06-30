@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 export const MARIS_DATABASE_TABLES = Object.freeze([
   "admin_users",
   "customers",
+  "custom_order_requests",
   "inventory_movements",
   "inventory_logs",
   "orders",
