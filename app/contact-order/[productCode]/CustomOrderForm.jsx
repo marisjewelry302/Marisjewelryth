@@ -12,9 +12,13 @@ const METAL_LABELS = {
 };
 const GOLD_METALS = new Set(["WG", "YG", "RG"]);
 const METAL_PURITIES = ["9K", "14K", "18K"];
-const STONE_COLORS = ["", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M"];
-const STONE_CLARITIES = ["", "VVS1", "VVS2", "VS1", "VS2", "SI1", "SI2"];
-const STONE_CUTS = ["", "Excellent", "Very Good", "Good", "Fair"];
+const STONE_COLORS = [
+  "",
+  "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N",
+  "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"
+];
+const STONE_CLARITIES = ["", "VVS1", "VVS2", "VS1", "VS2", "SI1", "SI2", "I1", "I2", "I3"];
+const STONE_CUTS = ["", "Excellent", "Very Good", "Good", "Fair", "Poor"];
 const ORIGINS = ["Lab-grown", "Natural"];
 
 const INITIAL_OPTIONS = Object.freeze({

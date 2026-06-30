@@ -8,6 +8,9 @@ const {
   createCustomOrderRequest,
   findOrCreateCustomOrderCustomer,
   normalizeCustomOrderPayload,
+  STONE_CLARITIES: BACKEND_STONE_CLARITIES,
+  STONE_COLORS: BACKEND_STONE_COLORS,
+  STONE_CUTS: BACKEND_STONE_CUTS,
   validateCustomOrderPayload
 } = await import("../app/lib/custom-order-requests.js");
 
@@ -297,6 +300,15 @@ async function readRequiredSource(relativePath) {
 
     throw error;
   }
+}
+
+function readStringArrayConstant(source, constantName) {
+  const pattern = new RegExp(`const\\s+${constantName}\\s*=\\s*\\[([\\s\\S]*?)\\];`);
+  const match = source.match(pattern);
+
+  assert.ok(match, `Expected ${constantName} array constant to exist`);
+
+  return Array.from(match[1].matchAll(/"([^"]*)"/g), (entry) => entry[1]);
 }
 
 const normalized = normalizeCustomOrderPayload(validPayload);
@@ -850,6 +862,21 @@ assert.match(contactOrderPageSource, /productCode=\{decodedProductCode\}/);
 
 const customOrderFormSource = await readRequiredSource("../app/contact-order/[productCode]/CustomOrderForm.jsx");
 assert.match(customOrderFormSource, /^"use client";/);
+assert.deepEqual(
+  readStringArrayConstant(customOrderFormSource, "STONE_COLORS").filter(Boolean),
+  Array.from(BACKEND_STONE_COLORS),
+  "Custom order UI stone color options should match backend allowed values"
+);
+assert.deepEqual(
+  readStringArrayConstant(customOrderFormSource, "STONE_CLARITIES").filter(Boolean),
+  Array.from(BACKEND_STONE_CLARITIES),
+  "Custom order UI stone clarity options should match backend allowed values"
+);
+assert.deepEqual(
+  readStringArrayConstant(customOrderFormSource, "STONE_CUTS").filter(Boolean),
+  Array.from(BACKEND_STONE_CUTS),
+  "Custom order UI stone cut options should match backend allowed values"
+);
 for (const fieldName of ["product_code", "full_name", "company_name", "email", "contact_number", "website_url"]) {
   assert.match(customOrderFormSource, new RegExp(`name=["']${fieldName}["']`), `Custom order form should include ${fieldName}`);
 }
