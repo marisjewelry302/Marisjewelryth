@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Custom Order Data Flow</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 32px;
+      background: #fffaf6;
+      color: #12382f;
+      font-family: Urbanist, Anuphan, system-ui, sans-serif;
+    }
+    h1 { margin: 0 0 8px; font-size: 28px; font-weight: 400; }
+    p { margin: 0; color: rgba(16, 41, 35, .78); line-height: 1.6; }
+    .review { display: grid; gap: 16px; max-width: 1180px; margin: 0 auto; }
+    .grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+    .schema { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, .8fr); gap: 12px; }
+    .box { min-height: 92px; padding: 14px; border: 1px solid rgba(0, 73, 58, .18); background: rgba(255, 255, 255, .72); }
+    .box.dark { background: #00493a; color: #fffaf6; }
+    .box.dark p { color: rgba(255, 250, 246, .92); }
+    h2 { margin: 0 0 7px; font-size: 19px; font-weight: 400; color: inherit; }
+    .arrow span { display: block; padding-top: 8px; border-top: 1px solid rgba(0, 73, 58, .24); color: #00493a; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; }
+    pre { margin: 0; overflow: auto; padding: 14px; border: 1px dashed rgba(0, 73, 58, .24); background: rgba(0, 73, 58, .06); color: rgba(16, 41, 35, .84); line-height: 1.5; white-space: pre-wrap; }
+    .end { padding: 12px 14px; background: rgba(249, 207, 209, .22); border-left: 3px solid #c49a3c; color: #00493a; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; }
+    @media (max-width: 768px) {
+      .grid,
+      .schema {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="review">
+    <header>
+      <h1>Data/API Design, Complete Review</h1>
+      <p>Dedicated custom order flow: server-only Supabase writes, customer lead linking, two Resend emails, and no fake checkout behavior.</p>
+    </header>
+
+    <section class="grid">
+      <article class="box"><h2>Client</h2><p>/contact-order/SR000 validates form fields and optional custom specs.</p></article>
+      <article class="box"><h2>API</h2><p>POST /api/custom-order-requests revalidates server-side.</p></article>
+      <article class="box"><h2>Customer</h2><p>Find/update/create a guest lead in the existing customers table.</p></article>
+      <article class="box"><h2>Request</h2><p>Insert custom_order_requests with status pending and customer_id link.</p></article>
+    </section>
+
+    <section class="grid arrow">
+      <span>Submit JSON</span>
+      <span>Service role only</span>
+      <span>Lead link</span>
+      <span>Pending request</span>
+    </section>
+
+    <section class="grid">
+      <article class="box dark"><h2>Customer email</h2><p>Confirmation plus selected product/spec summary.</p></article>
+      <article class="box dark"><h2>Admin email</h2><p>Internal notification with all customer and spec details.</p></article>
+      <article class="box"><h2>Success</h2><p>Return request id/status only. No Supabase secrets or internal metadata.</p></article>
+      <article class="box"><h2>Error</h2><p>Keep form data when database or email service is unavailable.</p></article>
+    </section>
+
+    <section class="schema">
+      <article class="box">
+        <h2>custom_order_requests</h2>
+        <p>id, created_at, customer_id, product_code, full_name, company_name, email, contact_number, metal, metal_purity, ring_size, stone_carat, stone_color, stone_clarity, stone_cut, origin, status, metadata.</p>
+      </article>
+      <article class="box">
+        <h2>Guardrails</h2>
+        <p>Reuse Maris CSS tokens, keep teal-card contrast readable, include the mobile breakpoint, and verify customers.full_name versus older customers.name migration shape.</p>
+      </article>
+    </section>
+
+    <pre>@media (max-width: 768px) {
+  .grid,
+  .schema {
+    grid-template-columns: 1fr;
+  }
+}</pre>
+
+    <div class="end">END OF COMPLETE DESIGN</div>
+  </main>
+</body>
+</html>

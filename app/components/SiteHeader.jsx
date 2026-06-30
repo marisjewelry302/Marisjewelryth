@@ -7,14 +7,20 @@ import { useEffect, useMemo, useState } from "react";
 const BAG_KEY = "marisShoppingBag";
 
 const primaryNav = [
-  { href: "/category/engagement-ring", label: "Engagement rings" },
-  { href: "/category/wedding-bands", label: "Wedding bands" },
-  { href: "/category/mens-wedding-bands", label: "Men's Wedding Bands" }
+  { href: "/category/wedding-set", label: "Wedding set" },
+  { href: "/category/engagement-ring", label: "Engagement ring" }
 ];
 
 const dropdownNav = [
   {
-    label: "Gifts",
+    label: "Wedding band",
+    items: [
+      { href: "/category/wedding-bands", label: "Wedding Bands" },
+      { href: "/category/mens-wedding-bands", label: "Men's Wedding Bands" }
+    ]
+  },
+  {
+    label: "Gift",
     items: [
       { href: "/category/necklaces-pendants", label: "Necklaces & Pendants" },
       { href: "/category/bracelets", label: "Bracelets" },

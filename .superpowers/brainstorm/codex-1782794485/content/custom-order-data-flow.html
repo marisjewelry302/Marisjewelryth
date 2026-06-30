@@ -1,0 +1,230 @@
+<style>
+  .flow-canvas {
+    display: grid;
+    gap: 18px;
+    font-family: Urbanist, Anuphan, system-ui, sans-serif;
+    color: #12382f;
+  }
+
+  .flow-row {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+    align-items: stretch;
+  }
+
+  .flow-card {
+    min-height: 138px;
+    padding: 16px;
+    border: 1px solid rgba(0, 73, 58, .18);
+    background: rgba(255, 250, 246, .92);
+    box-shadow: 0 14px 34px rgba(0, 73, 58, .06);
+  }
+
+  .flow-card.is-api {
+    background:
+      radial-gradient(circle at top right, rgba(249, 207, 209, .36), transparent 42%),
+      rgba(255, 255, 255, .9);
+  }
+
+  .flow-card.is-table {
+    border-color: rgba(196, 154, 60, .38);
+    background: rgba(255, 255, 255, .82);
+  }
+
+  .flow-card.is-email {
+    background: rgba(0, 73, 58, .92);
+    color: #fffaf6;
+  }
+
+  .flow-card b {
+    display: block;
+    margin-bottom: 8px;
+    color: #c49a3c;
+    font-size: 10px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+  }
+
+  .flow-card.is-email b {
+    color: rgba(249, 207, 209, .92);
+  }
+
+  .flow-card h3 {
+    margin: 0 0 8px;
+    font-size: 21px;
+    line-height: 1.1;
+    font-weight: 400;
+    color: inherit;
+  }
+
+  .flow-card p,
+  .flow-card li {
+    margin: 0;
+    color: inherit;
+    opacity: .76;
+    font-size: 13px;
+    line-height: 1.58;
+  }
+
+  .flow-card ul {
+    margin: 8px 0 0;
+    padding-left: 18px;
+  }
+
+  .flow-arrow {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    color: #00493a;
+    font-size: 12px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+  }
+
+  .flow-arrow span {
+    display: block;
+    border-top: 1px solid rgba(0, 73, 58, .24);
+    padding-top: 8px;
+  }
+
+  .schema {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, .8fr);
+    gap: 14px;
+  }
+
+  .schema-card {
+    padding: 16px;
+    border: 1px solid rgba(221, 164, 165, .34);
+    background: rgba(255, 255, 255, .78);
+  }
+
+  .schema-card h3 {
+    margin: 0 0 10px;
+    color: #00493a;
+    font-size: 22px;
+    font-weight: 400;
+  }
+
+  .schema-columns {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 14px;
+    font-size: 12px;
+    line-height: 1.55;
+    color: rgba(16, 41, 35, .76);
+  }
+
+  .schema-columns span {
+    border-bottom: 1px solid rgba(221, 164, 165, .22);
+    padding-bottom: 5px;
+  }
+
+  .note {
+    border-left: 3px solid #c49a3c;
+    padding: 12px 14px;
+    background: rgba(249, 207, 209, .2);
+    color: rgba(16, 41, 35, .82);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  @media (max-width: 860px) {
+    .flow-row,
+    .flow-arrow,
+    .schema,
+    .schema-columns {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<h2>Data model and API flow</h2>
+<p class="subtitle">Recommended backend boundary: public form posts to a server-only API, which writes Supabase with the service role key and sends both emails through the existing Resend helper style.</p>
+
+<div class="flow-canvas">
+  <div class="flow-row">
+    <div class="flow-card">
+      <b>Client</b>
+      <h3>/contact-order/SR000</h3>
+      <p>Validates required fields, email format, phone characters, and optional specs before submit.</p>
+    </div>
+    <div class="flow-card is-api">
+      <b>Server API</b>
+      <h3>POST /api/custom-order-requests</h3>
+      <p>Re-validates everything server-side and never accepts customer_id from the browser.</p>
+    </div>
+    <div class="flow-card is-table">
+      <b>Supabase</b>
+      <h3>customers</h3>
+      <p>Find by normalized email, fallback to phone, then create or update a guest/lead customer record.</p>
+    </div>
+    <div class="flow-card is-table">
+      <b>Supabase</b>
+      <h3>custom_order_requests</h3>
+      <p>Stores the request, optional specs, status pending, and nullable customer_id link.</p>
+    </div>
+  </div>
+
+  <div class="flow-arrow">
+    <span>Submit JSON</span>
+    <span>Service role only</span>
+    <span>Lead link</span>
+    <span>Pending request</span>
+  </div>
+
+  <div class="flow-row">
+    <div class="flow-card is-email">
+      <b>Email 1</b>
+      <h3>Customer confirmation</h3>
+      <p>Thanks the customer, repeats product code and selected specs, and says the team will contact back.</p>
+    </div>
+    <div class="flow-card is-email">
+      <b>Email 2</b>
+      <h3>Admin notification</h3>
+      <p>Sends all customer details and specs to the Maris internal order inbox.</p>
+    </div>
+    <div class="flow-card">
+      <b>Response</b>
+      <h3>Success state</h3>
+      <p>Returns request id/status only. No Supabase keys, no internal customer metadata, no order checkout behavior.</p>
+    </div>
+    <div class="flow-card">
+      <b>Failure</b>
+      <h3>Helpful error</h3>
+      <p>If DB or email env is missing, show a submit error and keep the filled form intact.</p>
+    </div>
+  </div>
+
+  <div class="schema">
+    <div class="schema-card">
+      <h3>custom_order_requests</h3>
+      <div class="schema-columns">
+        <span>id uuid primary key</span>
+        <span>created_at timestamptz</span>
+        <span>customer_id uuid nullable</span>
+        <span>product_code text not null</span>
+        <span>full_name text not null</span>
+        <span>company_name text nullable</span>
+        <span>email text not null</span>
+        <span>contact_number text not null</span>
+        <span>metal text nullable</span>
+        <span>metal_purity text nullable</span>
+        <span>ring_size numeric nullable</span>
+        <span>stone_carat numeric nullable</span>
+        <span>stone_color text nullable</span>
+        <span>stone_clarity text nullable</span>
+        <span>stone_cut text nullable</span>
+        <span>origin text nullable</span>
+        <span>status text default pending</span>
+        <span>metadata jsonb default {}</span>
+      </div>
+    </div>
+
+    <div class="schema-card">
+      <h3>Customer link rule</h3>
+      <p class="note">Use the existing `customers` table, but the migration/design will explicitly verify the active customer column shape. The app code currently expects `full_name`, while the oldest base migration shows `name`, so this feature should include compatibility checks instead of assuming silently.</p>
+    </div>
+  </div>
+</div>
