@@ -152,6 +152,8 @@ Recommended checks:
 - `stone_cut is null or stone_cut in ('Excellent', 'Very Good', 'Good', 'Fair', 'Poor')`
 - `origin is null or origin in ('Lab-grown', 'Natural')`
 
+The migration should keep `ring_size` as an exact `numeric(4, 1)` value and include a short SQL comment near the half-step check. The `ring_size * 2 = floor(ring_size * 2)` constraint depends on exact numeric arithmetic; do not change this column to `real` or `double precision`.
+
 Indexes:
 
 - `idx_custom_order_requests_customer_id`
@@ -170,7 +172,7 @@ Linking rule:
 1. Normalize `email` to lowercase.
 2. Search existing customer by email first.
 3. If no email match exists, search by exact phone/contact number when present.
-4. If found, update safe lead details: name, phone, and metadata.
+4. If found, update safe lead details: name, phone, and metadata. If the email already exists but the phone number is new, update the same customer instead of creating a duplicate.
 5. If not found, create a guest/lead customer record without a password.
 6. Store `customer_id` on `custom_order_requests`.
 
@@ -213,6 +215,7 @@ Server validation is authoritative:
 - `product_code`, `full_name`, `email`, and `contact_number` are required.
 - Email must pass the existing email normalization style.
 - Contact number may contain only digits, spaces, `+`, `(`, `)`, and `-`.
+- Contact number must contain 9 to 15 digits after stripping non-digit formatting characters, so values like `()`, `+`, or `---` are rejected.
 - Optional specs must be normalized and checked against allowed values/ranges.
 - If metal is `PN` or `Pd`, clear `metal_purity`.
 - Do not accept `customer_id`, `status`, or internal metadata from the browser.
@@ -227,6 +230,16 @@ Successful response must be a whitelist, not a spread of the database row:
 }
 ```
 
+Duplicate response must also be whitelisted:
+
+```json
+{
+  "status": "duplicate",
+  "requestId": "uuid",
+  "requestStatus": "pending"
+}
+```
+
 Do not return Supabase secrets, customer metadata, raw DB rows, or email provider response bodies.
 
 Error responses:
@@ -236,6 +249,24 @@ Error responses:
 - `500` for unexpected server failures.
 
 If database insert succeeds but email delivery fails, the API should report a failure to the client without deleting the saved request. The saved request can remain pending for follow-up. The final implementation should log enough server-side detail for operators while returning a safe client message.
+
+## Abuse And Duplicate Protection
+
+This is a public form with no login requirement, so the first implementation must include basic anti-spam and duplicate-submit protection.
+
+Client behavior:
+
+- Disable the submit button while a submission is pending.
+- Ignore double-clicks or repeated submit events while the same request is in flight.
+- Include a hidden honeypot input such as `website_url`; real users never fill it.
+
+Server behavior:
+
+- Return a generic `400` invalid-submission response for honeypot submissions before writing Supabase or sending email.
+- Compute a deterministic request fingerprint from normalized `product_code`, normalized email, normalized contact number, and normalized custom options.
+- Store the fingerprint in request metadata.
+- Before inserting, check for an existing request with the same fingerprint created within a short window, for example 10 minutes. If found, return a whitelisted duplicate response with the existing `requestId` and do not send duplicate emails.
+- Apply a basic throttle of no more than 5 accepted submissions per hour for the same normalized email or contact number. If the deployment exposes a reliable client IP/header, an additional per-IP throttle can be added, but raw IP addresses should not be returned to the client or stored unnecessarily.
 
 ## Email Behavior
 
@@ -262,6 +293,7 @@ Admin/team email:
 Idempotency:
 
 - Use a stable idempotency key where possible, for example `custom-order-${requestId}-customer` and `custom-order-${requestId}-admin`.
+- Do not send email again for a duplicate request fingerprint returned by the API duplicate guard.
 
 ## Styling And Accessibility
 
@@ -287,10 +319,15 @@ The test should cover:
 
 - Migration creates `custom_order_requests`, enables RLS, adds indexes, and constrains `status`.
 - Validator accepts valid payloads and rejects invalid required fields, email, phone characters, enum values, and numeric ranges.
+- Validator rejects contact numbers with allowed punctuation but too few digits, such as `()` or `---`.
 - Metal purity is cleared for Platinum/Palladium.
 - Supabase helper builds an insert payload without trusting browser-provided `customer_id`, `status`, or metadata.
 - Customer linking searches by email first and creates/updates a guest lead record.
+- Customer linking updates the existing email-matched customer when the same email is submitted with a new phone number.
 - API response is whitelisted and never spreads raw DB rows.
+- Honeypot submissions do not write Supabase or send email.
+- Duplicate request fingerprints return the existing request id and do not create a second record or send duplicate email.
+- Basic throttling rejects excessive accepted submissions for the same normalized email or contact number.
 - Email templates include the correct summaries and do not imply confirmed ecommerce order status.
 - Missing Supabase or email env returns an honest service-unavailable state.
 - Product page CTA points to `/contact-order/[sku]`.
