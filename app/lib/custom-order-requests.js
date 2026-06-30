@@ -32,6 +32,10 @@ const CUSTOMER_COLUMNS = `
   created_at,
   updated_at
 `;
+const CUSTOM_ORDER_REQUEST_SELECT = "id, status, created_at";
+const DUPLICATE_WINDOW_MINUTES = 10;
+const THROTTLE_WINDOW_MINUTES = 60;
+const THROTTLE_LIMIT = 5;
 
 function cleanText(value) {
   const text = String(value || "").trim();
@@ -242,6 +246,34 @@ export function buildRequestFingerprint(order) {
   return createHash("sha256").update(JSON.stringify(fingerprintPayload)).digest("hex");
 }
 
+export function buildCustomOrderInsertPayload(order, { customerId = null, fingerprint, now } = {}) {
+  const createdAt = typeof now === "function" ? now().toISOString() : new Date().toISOString();
+  const optionSummary = buildCustomOrderSummary(order);
+
+  return {
+    customer_id: customerId || null,
+    product_code: order.productCode,
+    full_name: order.fullName,
+    company_name: order.companyName || null,
+    email: order.email,
+    contact_number: order.contactNumber,
+    metal: order.metal || null,
+    metal_purity: GOLD_METALS.has(order.metal) ? order.metalPurity : null,
+    ring_size: order.ringSize,
+    stone_carat: order.stoneCarat,
+    stone_color: order.stoneColor,
+    stone_clarity: order.stoneClarity,
+    stone_cut: order.stoneCut,
+    origin: order.origin,
+    status: "pending",
+    metadata: {
+      requestFingerprint: fingerprint,
+      optionSummary
+    },
+    created_at: createdAt
+  };
+}
+
 export function getCustomOrderClient({ env = process.env, client } = {}) {
   const config = getSupabaseAdminConfig(env);
 
@@ -354,4 +386,160 @@ export async function findOrCreateCustomOrderCustomer(order, { env = process.env
     status: "created",
     customer: normalizeCustomer(data)
   };
+}
+
+async function findDuplicateCustomOrderRequest(supabase, fingerprint, now) {
+  const cutoff = new Date((typeof now === "function" ? now() : new Date()).getTime() - DUPLICATE_WINDOW_MINUTES * 60 * 1000);
+  const { data, error } = await supabase
+    .from("custom_order_requests")
+    .select("id, status")
+    .eq("metadata->>requestFingerprint", fingerprint)
+    .gte("created_at", cutoff.toISOString())
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message || "Custom order duplicate check failed.");
+  }
+
+  return data || null;
+}
+
+async function countRecentCustomOrderRequests(supabase, column, value, now) {
+  const cutoff = new Date((typeof now === "function" ? now() : new Date()).getTime() - THROTTLE_WINDOW_MINUTES * 60 * 1000);
+  const { count, error } = await supabase
+    .from("custom_order_requests")
+    .select("id", { count: "exact", head: true })
+    .eq(column, value)
+    .gte("created_at", cutoff.toISOString());
+
+  if (error) {
+    throw new Error(error.message || "Custom order throttle check failed.");
+  }
+
+  return typeof count === "number" ? count : 0;
+}
+
+export async function createCustomOrderRequest(payload, {
+  env = process.env,
+  client,
+  sendEmails,
+  now
+} = {}) {
+  const normalized = normalizeCustomOrderPayload(payload);
+
+  if (normalized.honeypot) {
+    return { status: "invalid", errors: [] };
+  }
+
+  const validation = validateCustomOrderPayload(payload);
+
+  if (!validation.isValid) {
+    return {
+      status: "invalid",
+      errors: validation.errors
+    };
+  }
+
+  const order = validation.normalized;
+  const { config, client: supabase } = getCustomOrderClient({ env, client });
+
+  if (!config.isConfigured) {
+    return {
+      status: "not_configured",
+      missingEnv: config.missingEnv
+    };
+  }
+
+  const fingerprint = buildRequestFingerprint(order);
+  const duplicate = await findDuplicateCustomOrderRequest(supabase, fingerprint, now);
+
+  if (duplicate) {
+    return {
+      status: "duplicate",
+      requestId: duplicate.id,
+      requestStatus: duplicate.status
+    };
+  }
+
+  const [emailCount, phoneCount] = await Promise.all([
+    countRecentCustomOrderRequests(supabase, "email", order.email, now),
+    countRecentCustomOrderRequests(supabase, "contact_number", order.contactNumber, now)
+  ]);
+
+  if (emailCount >= THROTTLE_LIMIT || phoneCount >= THROTTLE_LIMIT) {
+    return { status: "rate_limited" };
+  }
+
+  const customerResult = await findOrCreateCustomOrderCustomer(order, { env, client: supabase, now });
+
+  if (customerResult.status === "not_configured") {
+    return {
+      status: "not_configured",
+      missingEnv: customerResult.missingEnv
+    };
+  }
+
+  const insertPayload = buildCustomOrderInsertPayload(order, {
+    customerId: customerResult.customer?.id || null,
+    fingerprint,
+    now
+  });
+  const { data, error } = await supabase
+    .from("custom_order_requests")
+    .insert(insertPayload)
+    .select(CUSTOM_ORDER_REQUEST_SELECT)
+    .single();
+
+  if (error) {
+    throw new Error(error.message || "Custom order request could not be saved.");
+  }
+
+  const request = {
+    id: data.id,
+    status: data.status,
+    created_at: data.created_at
+  };
+  const createdResult = {
+    status: "created",
+    requestId: request.id,
+    requestStatus: request.status
+  };
+
+  if (!sendEmails) {
+    return createdResult;
+  }
+
+  try {
+    const emailResult = await sendEmails({
+      order,
+      request,
+      customer: customerResult.customer,
+      optionSummary: insertPayload.metadata.optionSummary
+    });
+
+    if (emailResult?.status === "sent") {
+      return createdResult;
+    }
+
+    if (emailResult?.status === "not_configured") {
+      return {
+        status: "email_not_configured",
+        requestId: request.id,
+        requestStatus: request.status
+      };
+    }
+
+    return {
+      status: "email_failed",
+      requestId: request.id,
+      requestStatus: request.status
+    };
+  } catch {
+    return {
+      status: "email_failed",
+      requestId: request.id,
+      requestStatus: request.status
+    };
+  }
 }

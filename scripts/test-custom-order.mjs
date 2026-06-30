@@ -2,12 +2,21 @@ import assert from "node:assert/strict";
 import { readdir, readFile } from "node:fs/promises";
 
 const {
+  buildCustomOrderInsertPayload,
   buildCustomOrderSummary,
   buildRequestFingerprint,
+  createCustomOrderRequest,
   findOrCreateCustomOrderCustomer,
   normalizeCustomOrderPayload,
   validateCustomOrderPayload
 } = await import("../app/lib/custom-order-requests.js");
+
+const {
+  buildAdminCustomOrderEmail,
+  buildCustomerCustomOrderEmail,
+  getCustomOrderEmailConfig,
+  sendCustomOrderEmails
+} = await import("../app/lib/custom-order-email.js");
 
 const validPayload = {
   product_code: " sr000 ",
@@ -128,6 +137,148 @@ function createCustomerLinkingClient({ emailMatch = null, phoneMatch = null } = 
           };
         }
       };
+    }
+  };
+}
+
+function createCustomOrderClient({
+  duplicate = null,
+  hourlyEmailCount = 0,
+  hourlyPhoneCount = 0,
+  customerId = "customer-linked",
+  requestId = "request-created"
+} = {}) {
+  const state = {
+    selects: [],
+    updates: [],
+    inserts: [],
+    deletes: []
+  };
+
+  function customerTable(tableName) {
+    return {
+      select(columns) {
+        const selectCall = { tableName, columns, filters: [] };
+        state.selects.push(selectCall);
+
+        const query = {
+          eq(column, value) {
+            selectCall.filters.push([column, value]);
+            return query;
+          },
+          limit(value) {
+            selectCall.limit = value;
+            return query;
+          },
+          async maybeSingle() {
+            return { data: null, error: null };
+          }
+        };
+
+        return query;
+      },
+      insert(payload) {
+        state.inserts.push({ tableName, payload });
+
+        return {
+          select(columns) {
+            state.inserts[state.inserts.length - 1].columns = columns;
+            return {
+              async single() {
+                return {
+                  data: {
+                    id: customerId,
+                    created_at: "2026-06-30T00:00:00.000Z",
+                    updated_at: "2026-06-30T00:00:00.000Z",
+                    ...payload
+                  },
+                  error: null
+                };
+              }
+            };
+          }
+        };
+      },
+      update() {
+        throw new Error("Customer update should not be used in this fake.");
+      }
+    };
+  }
+
+  function customOrderTable(tableName) {
+    return {
+      select(columns, options = {}) {
+        const selectCall = { tableName, columns, options, filters: [] };
+        state.selects.push(selectCall);
+
+        const query = {
+          eq(column, value) {
+            selectCall.filters.push([column, value]);
+            return query;
+          },
+          gte(column, value) {
+            selectCall.filters.push([`${column}>=`, value]);
+            return query;
+          },
+          limit(value) {
+            selectCall.limit = value;
+            return query;
+          },
+          async maybeSingle() {
+            return { data: duplicate, error: null };
+          },
+          then(resolve, reject) {
+            const emailFilter = selectCall.filters.find(([column]) => column === "email");
+            const phoneFilter = selectCall.filters.find(([column]) => column === "contact_number");
+            const count = emailFilter ? hourlyEmailCount : phoneFilter ? hourlyPhoneCount : 0;
+
+            return Promise.resolve({ data: [], count, error: null }).then(resolve, reject);
+          }
+        };
+
+        return query;
+      },
+      insert(payload) {
+        state.inserts.push({ tableName, payload });
+
+        return {
+          select(columns) {
+            state.inserts[state.inserts.length - 1].columns = columns;
+            return {
+              async single() {
+                return {
+                  data: {
+                    id: requestId,
+                    status: payload.status,
+                    created_at: "2026-06-30T12:00:00.000Z"
+                  },
+                  error: null
+                };
+              }
+            };
+          }
+        };
+      },
+      delete() {
+        state.deletes.push({ tableName });
+        return {
+          eq() {
+            return this;
+          }
+        };
+      }
+    };
+  }
+
+  return {
+    state,
+    from(tableName) {
+      if (tableName === "customers") {
+        return customerTable(tableName);
+      }
+
+      assert.equal(tableName, "custom_order_requests");
+      return customOrderTable(tableName);
     }
   };
 }
@@ -321,6 +472,255 @@ assert.deepEqual(await findOrCreateCustomOrderCustomer(normalized, { env: {} }),
   missingEnv: ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"],
   customer: null
 });
+
+const browserInjectedPayload = {
+  ...validPayload,
+  customer_id: "browser-customer",
+  status: "completed",
+  metadata: {
+    requestFingerprint: "browser-fingerprint",
+    unsafe: true
+  },
+  custom_options: {
+    ...validPayload.custom_options,
+    metal: "PN",
+    metal_purity: "18K"
+  }
+};
+const orderClient = createCustomOrderClient();
+let emailContext = null;
+const createdRequest = await createCustomOrderRequest(browserInjectedPayload, {
+  env: validEnv,
+  client: orderClient,
+  now: () => new Date("2026-06-30T12:00:00.000Z"),
+  sendEmails: async (context) => {
+    emailContext = context;
+    return { status: "sent" };
+  }
+});
+assert.deepEqual(createdRequest, {
+  status: "created",
+  requestId: "request-created",
+  requestStatus: "pending"
+});
+assert.equal(emailContext.request.id, "request-created");
+assert.equal(emailContext.customer.id, "customer-linked");
+assert.equal(emailContext.order.metalPurity, null);
+const requestInsert = orderClient.state.inserts.find((entry) => entry.tableName === "custom_order_requests");
+assert.ok(requestInsert, "Custom order request should be inserted");
+assert.equal(requestInsert.payload.customer_id, "customer-linked");
+assert.equal(requestInsert.payload.status, "pending");
+assert.equal(requestInsert.payload.metadata.unsafe, undefined);
+assert.match(requestInsert.payload.metadata.requestFingerprint, /^[a-f0-9]{64}$/);
+assert.equal(requestInsert.payload.metadata.optionSummary, "Platinum · Size 7 · Lab-grown · 0.8 ct D VVS1 Excellent");
+assert.equal(requestInsert.payload.metal, "PN");
+assert.equal(requestInsert.payload.metal_purity, null);
+assert.equal(requestInsert.payload.product_code, "SR000");
+assert.equal(requestInsert.columns.replace(/\s+/g, " ").trim(), "id, status, created_at");
+
+assert.equal(
+  buildCustomOrderInsertPayload(normalizeCustomOrderPayload(browserInjectedPayload), {
+    customerId: "customer-safe",
+    fingerprint: "f".repeat(64),
+    now: () => new Date("2026-06-30T12:00:00.000Z")
+  }).customer_id,
+  "customer-safe"
+);
+
+const honeypotClient = createCustomOrderClient();
+let honeypotEmailCalled = false;
+const honeypotResult = await createCustomOrderRequest({ ...validPayload, website_url: "https://spam.example" }, {
+  env: validEnv,
+  client: honeypotClient,
+  sendEmails: async () => {
+    honeypotEmailCalled = true;
+    return { status: "sent" };
+  }
+});
+assert.deepEqual(honeypotResult, { status: "invalid", errors: [] });
+assert.equal(honeypotClient.state.inserts.length, 0);
+assert.equal(honeypotEmailCalled, false);
+
+const duplicateClient = createCustomOrderClient({
+  duplicate: { id: "request-duplicate", status: "pending" }
+});
+let duplicateEmailCalled = false;
+assert.deepEqual(await createCustomOrderRequest(validPayload, {
+  env: validEnv,
+  client: duplicateClient,
+  sendEmails: async () => {
+    duplicateEmailCalled = true;
+    return { status: "sent" };
+  }
+}), {
+  status: "duplicate",
+  requestId: "request-duplicate",
+  requestStatus: "pending"
+});
+assert.equal(duplicateClient.state.inserts.length, 0);
+assert.equal(duplicateEmailCalled, false);
+
+const throttledClient = createCustomOrderClient({ hourlyEmailCount: 5 });
+let throttleEmailCalled = false;
+assert.deepEqual(await createCustomOrderRequest(validPayload, {
+  env: validEnv,
+  client: throttledClient,
+  sendEmails: async () => {
+    throttleEmailCalled = true;
+    return { status: "sent" };
+  }
+}), { status: "rate_limited" });
+assert.equal(throttledClient.state.inserts.length, 0);
+assert.equal(throttleEmailCalled, false);
+
+const failedEmailClient = createCustomOrderClient({ requestId: "request-email-failed" });
+assert.deepEqual(await createCustomOrderRequest(validPayload, {
+  env: validEnv,
+  client: failedEmailClient,
+  sendEmails: async () => ({ status: "failed" })
+}), {
+  status: "email_failed",
+  requestId: "request-email-failed",
+  requestStatus: "pending"
+});
+assert.ok(failedEmailClient.state.inserts.some((entry) => entry.tableName === "custom_order_requests"));
+assert.equal(failedEmailClient.state.deletes.length, 0);
+
+const thrownEmailClient = createCustomOrderClient({ requestId: "request-email-thrown" });
+assert.deepEqual(await createCustomOrderRequest(validPayload, {
+  env: validEnv,
+  client: thrownEmailClient,
+  sendEmails: async () => {
+    throw new Error("provider down");
+  }
+}), {
+  status: "email_failed",
+  requestId: "request-email-thrown",
+  requestStatus: "pending"
+});
+
+const emailNotConfiguredClient = createCustomOrderClient({ requestId: "request-email-not-configured" });
+assert.deepEqual(await createCustomOrderRequest(validPayload, {
+  env: validEnv,
+  client: emailNotConfiguredClient,
+  sendEmails: async () => ({ status: "not_configured", missingEnv: ["RESEND_API_KEY"] })
+}), {
+  status: "email_not_configured",
+  requestId: "request-email-not-configured",
+  requestStatus: "pending"
+});
+
+assert.deepEqual(getCustomOrderEmailConfig({}), {
+  isConfigured: false,
+  missingEnv: ["RESEND_API_KEY", "MARIS_EMAIL_FROM", "MARIS_ORDER_EMAIL_TO"],
+  from: "",
+  orderEmailTo: ""
+});
+const validEmailEnv = {
+  RESEND_API_KEY: "re_test",
+  MARIS_EMAIL_FROM: "Maris <orders@example.com>",
+  MARIS_ORDER_EMAIL_TO: "studio@example.com"
+};
+assert.deepEqual(getCustomOrderEmailConfig(validEmailEnv), {
+  isConfigured: true,
+  missingEnv: [],
+  from: "Maris <orders@example.com>",
+  orderEmailTo: "studio@example.com"
+});
+const emailOrder = normalizeCustomOrderPayload(validPayload);
+const emailSummary = buildCustomOrderSummary(emailOrder);
+const customerEmail = buildCustomerCustomOrderEmail({
+  order: emailOrder,
+  request: { id: "request-email", status: "pending", created_at: "2026-06-30T12:00:00.000Z" },
+  optionSummary: emailSummary
+});
+assert.match(customerEmail.text, /SR000/);
+assert.match(customerEmail.text, /18K Yellow Gold/);
+assert.doesNotMatch(customerEmail.text, /\bpaid\b|\bpayment\b|\bcheckout\b/i);
+const adminEmail = buildAdminCustomOrderEmail({
+  order: emailOrder,
+  request: { id: "request-email", status: "pending", created_at: "2026-06-30T12:00:00.000Z" },
+  customer: { id: "customer-email" },
+  optionSummary: emailSummary
+});
+assert.match(adminEmail.text, /request-email/);
+assert.match(adminEmail.text, /ada@example\.com/);
+assert.match(adminEmail.text, /customer-email/);
+
+const fetchCalls = [];
+const sentEmailResult = await sendCustomOrderEmails({
+  order: emailOrder,
+  request: { id: "request-email", status: "pending", created_at: "2026-06-30T12:00:00.000Z" },
+  customer: { id: "customer-email" },
+  optionSummary: emailSummary
+}, {
+  env: validEmailEnv,
+  fetchImpl: async (url, options) => {
+    fetchCalls.push({ url, options });
+    return {
+      ok: true,
+      async json() {
+        return { id: `email-${fetchCalls.length}` };
+      }
+    };
+  }
+});
+assert.deepEqual(sentEmailResult, {
+  status: "sent",
+  customerEmailId: "email-1",
+  adminEmailId: "email-2"
+});
+assert.equal(fetchCalls.length, 2);
+assert.equal(fetchCalls[0].options.headers["Idempotency-Key"], "custom-order-request-email-customer");
+assert.equal(fetchCalls[1].options.headers["Idempotency-Key"], "custom-order-request-email-admin");
+
+const missingEmailFetchCalls = [];
+assert.deepEqual(await sendCustomOrderEmails({
+  order: emailOrder,
+  request: { id: "request-email", status: "pending", created_at: "2026-06-30T12:00:00.000Z" },
+  customer: { id: "customer-email" },
+  optionSummary: emailSummary
+}, {
+  env: {},
+  fetchImpl: async () => {
+    missingEmailFetchCalls.push("called");
+  }
+}), {
+  status: "not_configured",
+  missingEnv: ["RESEND_API_KEY", "MARIS_EMAIL_FROM", "MARIS_ORDER_EMAIL_TO"]
+});
+assert.equal(missingEmailFetchCalls.length, 0);
+
+const routeSource = await readFile(new URL("../app/api/custom-order-requests/route.js", import.meta.url), "utf8");
+assert.match(routeSource, /createCustomOrderRequest/);
+assert.match(routeSource, /sendCustomOrderEmails/);
+assert.doesNotMatch(routeSource, /\.\.\.(?:result|data|row)\b/);
+assert.match(routeSource, /email_not_configured/);
+assert.match(routeSource, /email_failed/);
+
+const { POST } = await import("../app/api/custom-order-requests/route.js");
+const missingSupabaseResponse = await POST({
+  async json() {
+    return validPayload;
+  }
+});
+assert.equal(missingSupabaseResponse.status, 503);
+const missingSupabaseBody = await missingSupabaseResponse.json();
+assert.deepEqual(missingSupabaseBody, {
+  status: "not_configured",
+  error: "Service unavailable."
+});
+assert.equal(JSON.stringify(missingSupabaseBody).includes("serviceRoleKey"), false);
+
+const invalidPhoneResponse = await POST({
+  async json() {
+    return { ...validPayload, contact_number: "12345" };
+  }
+});
+assert.equal(invalidPhoneResponse.status, 400);
+const invalidPhoneBody = await invalidPhoneResponse.json();
+assert.equal(invalidPhoneBody.status, "invalid");
+assert.ok(Array.isArray(invalidPhoneBody.errors));
 
 const migrationFiles = await readdir(new URL("../supabase/migrations/", import.meta.url));
 const customOrderMigrationFile = migrationFiles.find((fileName) => fileName.endsWith("_create_custom_order_requests.sql"));
