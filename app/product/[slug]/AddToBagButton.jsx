@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { getPublicProductDisplayName } from "../../lib/product-display";
 
 const BAG_KEY = "marisShoppingBag";
 
@@ -24,6 +25,7 @@ function writeBag(items) {
 
 export default function AddToBagButton({ product, collectionLabel }) {
   const productId = `${product.collection}:${product.sku}`;
+  const displayName = getPublicProductDisplayName(product);
   const [isAdded, setIsAdded] = useState(false);
 
   useEffect(() => {
@@ -34,7 +36,7 @@ export default function AddToBagButton({ product, collectionLabel }) {
     return {
       id: productId,
       title: product.sku,
-      details: [product.name],
+      details: [displayName],
       image: product.primaryImageUrl,
       href: `/product/${product.slug || product.sku}`,
       collection: collectionLabel,

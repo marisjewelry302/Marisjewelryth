@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import ProductCard from "../../components/ProductCard";
+import { getPublicProductDisplayName, getPublicVariantDisplayName } from "../../lib/product-display";
 
 function parseCarat(product) {
   const text = [
@@ -15,10 +16,10 @@ function parseCarat(product) {
 
 function getSearchText(product) {
   return [
-    product.name,
+    getPublicProductDisplayName(product),
     product.category,
     product.collection,
-    ...(Array.isArray(product.variants) ? product.variants.map((variant) => `${variant.variantName} ${variant.material} ${variant.size}`) : [])
+    ...(Array.isArray(product.variants) ? product.variants.map((variant) => getPublicVariantDisplayName(variant)) : [])
   ]
     .join(" ")
     .toLowerCase()

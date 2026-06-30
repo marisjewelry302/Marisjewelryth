@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
+import { getPublicImageAltText } from "../../lib/product-display";
 
 export default function ProductGallery({ images, productCode, productName }) {
   const galleryItems = images && images.length > 0
     ? images.map((img, index) => ({
         src: img.imageUrl,
-        alt: img.altText || `${productCode} ${productName} view ${index + 1}`,
+        alt: getPublicImageAltText(img, productCode, productName, index),
         label: img.isPrimary ? "Primary View" : `View ${index + 1}`
       }))
     : [{ src: "", alt: `${productCode} ${productName}`, label: "Primary View" }];

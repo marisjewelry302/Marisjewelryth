@@ -1,4 +1,5 @@
 import { formatProductPrice } from "../lib/collections";
+import { getPublicProductAltText, getPublicProductDisplayName } from "../lib/product-display";
 import WishlistButton from "./WishlistButton";
 
 function getProductHref(product) {
@@ -7,10 +8,12 @@ function getProductHref(product) {
 
 export default function ProductCard({ product, collectionLabel }) {
   const href = getProductHref(product);
+  const displayName = getPublicProductDisplayName(product);
+  const productCode = product.sku || displayName;
   const wishlistItem = {
-    id: `${product.collection || collectionLabel}:${product.sku}`,
-    title: product.sku || product.name,
-    details: [product.name].filter(Boolean),
+    id: `${product.collection || collectionLabel}:${productCode}`,
+    title: productCode,
+    details: [displayName],
     image: product.primaryImageUrl || "/assets/images/logo.png",
     href,
     collection: collectionLabel,
@@ -20,23 +23,23 @@ export default function ProductCard({ product, collectionLabel }) {
   return (
     <article
       className="product-card is-clickable"
-      data-code={product.sku}
+      data-code={productCode}
       data-carat={product.searchCarat || ""}
       data-metal={product.searchText || ""}
       data-filters={product.searchText || ""}
     >
-      <a className="product-card-link" href={href} aria-label={`View ${product.sku || product.name}`}>
+      <a className="product-card-link" href={href} aria-label={`View ${productCode} ${displayName}`}>
         <img
           src={product.primaryImageUrl || "/assets/images/logo.png"}
-          alt={`${product.sku || "Maris"} ${product.name || "Jewelry"}`}
+          alt={getPublicProductAltText(product)}
           loading="lazy"
           decoding="async"
         />
       </a>
       <WishlistButton item={wishlistItem} />
       <div className="product-info">
-        <h3>{product.sku || product.name}</h3>
-        {product.name && <p>{product.name}</p>}
+        <h3>{productCode}</h3>
+        <p>{displayName}</p>
         <p>{formatProductPrice(product.basePrice)}</p>
       </div>
     </article>

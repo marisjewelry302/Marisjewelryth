@@ -2,6 +2,7 @@ import BestSellerSection from "./BestSellerSection";
 import HeroSlider from "./HeroSlider";
 import HomeSignupPopup from "./HomeSignupPopup";
 import { readPublicCatalogueProducts } from "./lib/maris-database.js";
+import { getPublicProductDisplayName } from "./lib/product-display.js";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 60;
@@ -10,9 +11,9 @@ const heroSlides = [
   {
     id: "hero-1",
     label: "01",
-    image: "/assets/images/home/optimized/home-hero-optimized.jpg",
-    positionStart: "50% 50%",
-    positionEnd: "46% 52%"
+    image: "/assets/images/home/optimized/home-hero-optimized.png",
+    positionStart: "62% 50%",
+    positionEnd: "58% 52%"
   },
   {
     id: "hero-2",
@@ -47,6 +48,10 @@ const atelierFallbackCards = [
     title: "Custom conversation"
   }
 ];
+
+function getAtelierProductLabel(product) {
+  return getPublicProductDisplayName(product);
+}
 
 async function getFeaturedProducts() {
   try {
@@ -86,28 +91,39 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="atelier-reveal" aria-labelledby="atelier-heading">
+      <section className="home-collection-showcase" aria-label="Shop signature collections">
+        <div className="home-collection-grid">
+          <a className="home-collection-card home-collection-card--rings" href="/category/rings">
+            <span className="home-collection-card__title">Signature Rings</span>
+            <img
+              className="home-collection-card__image"
+              src="/assets/images/home/collections/cover-rings-collection.png"
+              alt="A diamond ring on dark brown satin"
+            />
+            <span className="home-collection-card__action">View Collection</span>
+          </a>
+
+          <a className="home-collection-card home-collection-card--pendants" href="/category/necklaces-pendants">
+            <span className="home-collection-card__title">Elegant Pendants</span>
+            <img
+              className="home-collection-card__image"
+              src="/assets/images/home/collections/cover-pendants-collection.png"
+              alt="A pear-shaped diamond pendant on champagne satin"
+            />
+            <span className="home-collection-card__action">View Collection</span>
+          </a>
+        </div>
+      </section>
+
+      <section className="atelier-reveal" aria-label="New arrival catalogue">
         <div className="atelier-reveal__stage" aria-hidden="true">
           <span className="atelier-reveal__line" />
           <span className="atelier-reveal__stone" />
           <span className="atelier-reveal__line" />
         </div>
 
-        <div className="atelier-reveal__copy">
-          <p className="section-kicker">From the atelier</p>
-          <h2 id="atelier-heading">Pieces selected with calm detail.</h2>
-          <p>
-            Explore current Maris Jewelry pieces and move into a quote request when a design feels right.
-          </p>
-          <div className="atelier-reveal__actions">
-            <a href="/category/engagement-ring">View engagement rings</a>
-            <a href="/request-quote">Request availability</a>
-          </div>
-        </div>
-
         <div className="atelier-reveal__panel">
           <div className="atelier-reveal__focus">
-            <p className="atelier-reveal__status">Available catalogue</p>
             <h3>{featuredProducts.length ? "New arrival" : "Maris catalogue preview"}</h3>
             <p>
               Product availability is confirmed personally by the atelier before order details are finalized.
@@ -124,13 +140,13 @@ export default async function HomePage() {
                   style={{ "--atelier-delay": `${index * 90}ms` }}
                 >
                   {product.primaryImageUrl ? (
-                    <img src={product.primaryImageUrl} alt={`${product.sku} ${product.name}`} />
+                    <img src={product.primaryImageUrl} alt={`${product.sku || "Maris"} ${getAtelierProductLabel(product)}`} />
                   ) : (
                     <span className="atelier-product__image-fallback">Image coming soon</span>
                   )}
                   <span className="atelier-product__meta">
                     <span>{product.sku}</span>
-                    <strong>{product.name}</strong>
+                    <strong>{getAtelierProductLabel(product)}</strong>
                   </span>
                 </a>
               ))

@@ -105,7 +105,6 @@ export default function BestSellerSection() {
   return (
     <section className="best-seller-section" aria-labelledby="best-seller-heading">
       <div className="best-seller-head">
-        <p className="section-kicker">Maris selection</p>
         <h2 id="best-seller-heading">Best Seller</h2>
       </div>
 

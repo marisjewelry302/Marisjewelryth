@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { readPublicProductBySlug, readRelatedPublicProducts } from "../../lib/maris-database.js";
+import { getPublicProductAltText, getPublicProductDisplayName, getPublicVariantDisplayName } from "../../lib/product-display.js";
 import ProductGallery from "./ProductGallery";
 import AddToBagButton from "./AddToBagButton";
 
@@ -33,9 +34,11 @@ export async function generateMetadata({ params }) {
     return { title: "Maris Jewelry" };
   }
 
+  const displayName = getPublicProductDisplayName(product);
+
   return {
-    title: `${product.sku || product.name} | Maris Jewelry`,
-    description: `${product.name} — ${COLLECTION_LABELS[product.collection] || "Maris Jewelry"}.`
+    title: `${product.sku || displayName} | Maris Jewelry`,
+    description: `${displayName} in ${COLLECTION_LABELS[product.collection] || "Maris Jewelry"}.`
   };
 }
 
@@ -49,28 +52,28 @@ export default async function ProductPage({ params }) {
 
   const { products: relatedProducts } = await readRelatedPublicProducts(product.collection, product.id);
   const collectionLabel = COLLECTION_LABELS[product.collection] || product.category || "Maris Jewelry";
+  const displayName = getPublicProductDisplayName(product);
 
   return (
     <div className="product-page">
       <div className="product-detail">
         <div className="product-gallery-column">
-          <ProductGallery images={product.images} productCode={product.sku} productName={product.name} />
+          <ProductGallery images={product.images} productCode={product.sku} productName={displayName} />
         </div>
 
         <div className="product-summary">
           <p className="product-kicker" data-product-collection>{collectionLabel}</p>
           <h1 data-product-title>{product.sku}</h1>
-          <h2 data-product-name>{product.name}</h2>
+          <h2 data-product-name>{displayName}</h2>
           <p className="product-description" data-product-description>
-            {product.name}
+            {displayName}
           </p>
 
           {product.variants.length > 0 && (
             <ul className="product-details-list" data-product-details>
               {product.variants.map((variant) => (
                 <li key={variant.id}>
-                  {variant.variantName || variant.material || variant.sku}
-                  {variant.size ? ` — Size ${variant.size}` : ""}
+                  {getPublicVariantDisplayName(variant)}
                 </li>
               ))}
             </ul>
@@ -100,10 +103,10 @@ export default async function ProductPage({ params }) {
               <a key={item.id} className="also-card" href={`/product/${item.slug || item.sku}`}>
                 {item.primaryImageUrl && (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={item.primaryImageUrl} alt={`${item.sku} ${item.name}`} />
+                  <img src={item.primaryImageUrl} alt={getPublicProductAltText(item)} />
                 )}
                 <span>{item.sku}</span>
-                <small>{item.name}</small>
+                <small>{getPublicProductDisplayName(item)}</small>
               </a>
             ))}
           </div>

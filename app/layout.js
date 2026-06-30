@@ -22,8 +22,9 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    <html lang="en" translate="no" className="notranslate">
       <head>
+        <meta name="google" content="notranslate" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
@@ -31,7 +32,7 @@ export default function RootLayout({ children }) {
           rel="stylesheet"
         />
       </head>
-      <body className="has-maris-footer" suppressHydrationWarning>
+      <body className="has-maris-footer notranslate" translate="no" suppressHydrationWarning>
         <SiteHeader />
         {children}
         <SiteFooter />
