@@ -681,9 +681,10 @@ assert.deepEqual(getCustomOrderEmailConfig({
 });
 const emailOrder = normalizeCustomOrderPayload(validPayload);
 const emailSummary = buildCustomOrderSummary(emailOrder);
+const emailRequest = { id: "request-email", status: "pending", created_at: "2026-06-30T12:00:00.000Z" };
 const customerEmail = buildCustomerCustomOrderEmail({
   order: emailOrder,
-  request: { id: "request-email", status: "pending", created_at: "2026-06-30T12:00:00.000Z" },
+  request: emailRequest,
   optionSummary: emailSummary
 });
 assert.match(customerEmail.text, /SR000/);
@@ -691,7 +692,7 @@ assert.match(customerEmail.text, /18K Yellow Gold/);
 assert.doesNotMatch(customerEmail.text, /\bpaid\b|\bpayment\b|\bcheckout\b/i);
 const adminEmail = buildAdminCustomOrderEmail({
   order: emailOrder,
-  request: { id: "request-email", status: "pending", created_at: "2026-06-30T12:00:00.000Z" },
+  request: emailRequest,
   customer: { id: "customer-email" },
   optionSummary: emailSummary
 });
@@ -702,7 +703,7 @@ assert.match(adminEmail.text, /customer-email/);
 const fetchCalls = [];
 const sentEmailResult = await sendCustomOrderEmails({
   order: emailOrder,
-  request: { id: "request-email", status: "pending", created_at: "2026-06-30T12:00:00.000Z" },
+  request: emailRequest,
   customer: { id: "customer-email" },
   optionSummary: emailSummary
 }, {
@@ -723,8 +724,33 @@ assert.deepEqual(sentEmailResult, {
   adminEmailId: "email-2"
 });
 assert.equal(fetchCalls.length, 2);
-assert.equal(fetchCalls[0].options.headers["Idempotency-Key"], "custom-order-request-email-customer");
-assert.equal(fetchCalls[1].options.headers["Idempotency-Key"], "custom-order-request-email-admin");
+assert.equal(fetchCalls[0].options.headers["Idempotency-Key"], `custom-order-${emailRequest.id}-customer`);
+assert.equal(fetchCalls[1].options.headers["Idempotency-Key"], `custom-order-${emailRequest.id}-admin`);
+
+const secondRequestFetchCalls = [];
+const secondEmailRequest = { ...emailRequest, id: "request-email-second" };
+await sendCustomOrderEmails({
+  order: emailOrder,
+  request: secondEmailRequest,
+  customer: { id: "customer-email" },
+  optionSummary: emailSummary
+}, {
+  env: validEmailEnv,
+  fetchImpl: async (url, options) => {
+    secondRequestFetchCalls.push({ url, options });
+    return {
+      ok: true,
+      async json() {
+        return { id: `email-second-${secondRequestFetchCalls.length}` };
+      }
+    };
+  }
+});
+assert.equal(secondRequestFetchCalls.length, 2);
+assert.equal(secondRequestFetchCalls[0].options.headers["Idempotency-Key"], `custom-order-${secondEmailRequest.id}-customer`);
+assert.equal(secondRequestFetchCalls[1].options.headers["Idempotency-Key"], `custom-order-${secondEmailRequest.id}-admin`);
+assert.notEqual(secondRequestFetchCalls[0].options.headers["Idempotency-Key"], fetchCalls[0].options.headers["Idempotency-Key"]);
+assert.notEqual(secondRequestFetchCalls[1].options.headers["Idempotency-Key"], fetchCalls[1].options.headers["Idempotency-Key"]);
 
 const missingEmailFetchCalls = [];
 assert.deepEqual(await sendCustomOrderEmails({
