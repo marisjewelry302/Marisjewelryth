@@ -303,7 +303,7 @@ export default function CustomOrderForm({ productCode }) {
                     aria-pressed={options.metal === metal}
                     onClick={() => updateMetal(metal)}
                   >
-                    {metal}
+                    {METAL_LABELS[metal]}
                   </button>
                 ))}
               </div>
