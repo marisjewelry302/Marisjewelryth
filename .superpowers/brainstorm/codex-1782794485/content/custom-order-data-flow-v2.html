@@ -1,0 +1,264 @@
+<style>
+  .flow-canvas {
+    --maris-teal: #00493a;
+    --maris-rose: #dda4a5;
+    --maris-soft-pink: #f9cfd1;
+    --maris-gold: #c49a3c;
+    --maris-cream: #fffaf6;
+    --maris-ink: #12382f;
+    --maris-muted: rgba(16, 41, 35, .76);
+    --maris-teal-06: rgba(0, 73, 58, .06);
+    --maris-teal-12: rgba(0, 73, 58, .12);
+    --maris-teal-18: rgba(0, 73, 58, .18);
+    --maris-teal-24: rgba(0, 73, 58, .24);
+    --maris-rose-22: rgba(221, 164, 165, .22);
+    --maris-rose-34: rgba(221, 164, 165, .34);
+    --maris-pink-20: rgba(249, 207, 209, .2);
+    --maris-pink-36: rgba(249, 207, 209, .36);
+    --maris-gold-38: rgba(196, 154, 60, .38);
+    display: grid;
+    gap: 18px;
+    font-family: Urbanist, Anuphan, system-ui, sans-serif;
+    color: var(--maris-ink);
+  }
+
+  .flow-row {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+    align-items: stretch;
+  }
+
+  .flow-card {
+    min-height: 138px;
+    padding: 16px;
+    border: 1px solid var(--maris-teal-18);
+    background: rgba(255, 250, 246, .92);
+    box-shadow: 0 14px 34px var(--maris-teal-06);
+  }
+
+  .flow-card.is-api {
+    background:
+      radial-gradient(circle at top right, var(--maris-pink-36), transparent 42%),
+      rgba(255, 255, 255, .9);
+  }
+
+  .flow-card.is-table {
+    border-color: var(--maris-gold-38);
+    background: rgba(255, 255, 255, .82);
+  }
+
+  .flow-card.is-email {
+    background: rgba(0, 73, 58, .94);
+    color: var(--maris-cream);
+  }
+
+  .flow-card b {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--maris-gold);
+    font-size: 10px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+  }
+
+  .flow-card.is-email b {
+    color: rgba(249, 207, 209, .96);
+  }
+
+  .flow-card h3 {
+    margin: 0 0 8px;
+    font-size: 21px;
+    line-height: 1.1;
+    font-weight: 400;
+    color: inherit;
+  }
+
+  .flow-card p,
+  .flow-card li {
+    margin: 0;
+    color: var(--maris-muted);
+    font-size: 13px;
+    line-height: 1.58;
+  }
+
+  .flow-card.is-email p,
+  .flow-card.is-email li {
+    color: rgba(255, 250, 246, .9);
+  }
+
+  .flow-card ul {
+    margin: 8px 0 0;
+    padding-left: 18px;
+  }
+
+  .flow-arrow {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+    color: var(--maris-teal);
+    font-size: 12px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+  }
+
+  .flow-arrow span {
+    display: block;
+    border-top: 1px solid var(--maris-teal-24);
+    padding-top: 8px;
+  }
+
+  .schema {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, .8fr);
+    gap: 14px;
+  }
+
+  .schema-card {
+    padding: 16px;
+    border: 1px solid var(--maris-rose-34);
+    background: rgba(255, 255, 255, .78);
+  }
+
+  .schema-card h3 {
+    margin: 0 0 10px;
+    color: var(--maris-teal);
+    font-size: 22px;
+    font-weight: 400;
+  }
+
+  .schema-columns {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 14px;
+    font-size: 12px;
+    line-height: 1.55;
+    color: var(--maris-muted);
+  }
+
+  .schema-columns span {
+    border-bottom: 1px solid var(--maris-rose-22);
+    padding-bottom: 5px;
+  }
+
+  .note {
+    border-left: 3px solid var(--maris-gold);
+    padding: 12px 14px;
+    background: var(--maris-pink-20);
+    color: rgba(16, 41, 35, .86);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .implementation-note {
+    padding: 12px 14px;
+    border: 1px dashed var(--maris-teal-24);
+    background: var(--maris-teal-06);
+    color: rgba(16, 41, 35, .84);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  @media (max-width: 768px) {
+    .flow-row,
+    .flow-arrow,
+    .schema,
+    .schema-columns {
+      grid-template-columns: 1fr;
+    }
+
+    .flow-card {
+      min-height: auto;
+    }
+  }
+</style>
+
+<h2>Data model and API flow, revised</h2>
+<p class="subtitle">This version makes responsive behavior, color tokens, and email-card contrast explicit for the implementation spec.</p>
+
+<div class="flow-canvas">
+  <div class="flow-row">
+    <div class="flow-card">
+      <b>Client</b>
+      <h3>/contact-order/SR000</h3>
+      <p>Validates required fields, email format, phone characters, and optional specs before submit.</p>
+    </div>
+    <div class="flow-card is-api">
+      <b>Server API</b>
+      <h3>POST /api/custom-order-requests</h3>
+      <p>Re-validates everything server-side and never accepts customer_id from the browser.</p>
+    </div>
+    <div class="flow-card is-table">
+      <b>Supabase</b>
+      <h3>customers</h3>
+      <p>Find by normalized email, fallback to phone, then create or update a guest/lead customer record.</p>
+    </div>
+    <div class="flow-card is-table">
+      <b>Supabase</b>
+      <h3>custom_order_requests</h3>
+      <p>Stores the request, optional specs, status pending, and nullable customer_id link.</p>
+    </div>
+  </div>
+
+  <div class="flow-arrow">
+    <span>Submit JSON</span>
+    <span>Service role only</span>
+    <span>Lead link</span>
+    <span>Pending request</span>
+  </div>
+
+  <div class="flow-row">
+    <div class="flow-card is-email">
+      <b>Email 1</b>
+      <h3>Customer confirmation</h3>
+      <p>Thanks the customer, repeats product code and selected specs, and says the team will contact back.</p>
+    </div>
+    <div class="flow-card is-email">
+      <b>Email 2</b>
+      <h3>Admin notification</h3>
+      <p>Sends all customer details and specs to the Maris internal order inbox.</p>
+    </div>
+    <div class="flow-card">
+      <b>Response</b>
+      <h3>Success state</h3>
+      <p>Returns request id/status only. No Supabase keys, no internal customer metadata, no order checkout behavior.</p>
+    </div>
+    <div class="flow-card">
+      <b>Failure</b>
+      <h3>Helpful error</h3>
+      <p>If DB or email env is missing, show a submit error and keep the filled form intact.</p>
+    </div>
+  </div>
+
+  <div class="schema">
+    <div class="schema-card">
+      <h3>custom_order_requests</h3>
+      <div class="schema-columns">
+        <span>id uuid primary key</span>
+        <span>created_at timestamptz</span>
+        <span>customer_id uuid nullable</span>
+        <span>product_code text not null</span>
+        <span>full_name text not null</span>
+        <span>company_name text nullable</span>
+        <span>email text not null</span>
+        <span>contact_number text not null</span>
+        <span>metal text nullable</span>
+        <span>metal_purity text nullable</span>
+        <span>ring_size numeric nullable</span>
+        <span>stone_carat numeric nullable</span>
+        <span>stone_color text nullable</span>
+        <span>stone_clarity text nullable</span>
+        <span>stone_cut text nullable</span>
+        <span>origin text nullable</span>
+        <span>status text default pending</span>
+        <span>metadata jsonb default {}</span>
+      </div>
+    </div>
+
+    <div class="schema-card">
+      <h3>Implementation notes</h3>
+      <p class="note">Use the existing `customers` table, but verify the active column shape. App code expects `full_name`; the oldest migration shows `name`, so the migration/tests must make this explicit.</p>
+      <p class="implementation-note">Production CSS should reuse the repo's existing Maris tokens in `assets/css/style.css` where possible, add custom-order scoped tokens only for alpha variants, include the 768px one-column breakpoint, and keep email card body text at readable contrast.</p>
+    </div>
+  </div>
+</div>

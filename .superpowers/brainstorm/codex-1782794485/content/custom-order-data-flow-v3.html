@@ -1,0 +1,127 @@
+<style>
+  .review {
+    --teal: #00493a;
+    --rose: #dda4a5;
+    --pink: #f9cfd1;
+    --gold: #c49a3c;
+    --cream: #fffaf6;
+    --ink: #12382f;
+    display: grid;
+    gap: 16px;
+    color: var(--ink);
+    font-family: Urbanist, Anuphan, system-ui, sans-serif;
+  }
+
+  .flow-row,
+  .flow-arrow,
+  .schema {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .schema {
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, .8fr);
+  }
+
+  .box {
+    border: 1px solid rgba(0, 73, 58, .18);
+    background: var(--cream);
+    padding: 14px;
+    min-height: 96px;
+  }
+
+  .box.dark {
+    background: var(--teal);
+    color: var(--cream);
+  }
+
+  .box.dark p {
+    color: rgba(255, 250, 246, .92);
+  }
+
+  .box h3 {
+    margin: 0 0 7px;
+    color: inherit;
+    font-size: 19px;
+    font-weight: 400;
+  }
+
+  .box p,
+  .flow-arrow span,
+  .snippet {
+    margin: 0;
+    color: rgba(16, 41, 35, .78);
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  .flow-arrow span {
+    border-top: 1px solid rgba(0, 73, 58, .24);
+    padding-top: 8px;
+    color: var(--teal);
+    letter-spacing: .12em;
+    text-transform: uppercase;
+  }
+
+  .snippet {
+    overflow: auto;
+    border: 1px dashed rgba(0, 73, 58, .24);
+    background: rgba(0, 73, 58, .06);
+    padding: 14px;
+    white-space: pre-wrap;
+  }
+
+  @media (max-width: 768px) {
+    .flow-row,
+    .flow-arrow,
+    .schema {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<h2>Data/API design, compact review</h2>
+<p class="subtitle">Short v3 to avoid truncated-code confusion. The key implementation requirements are visible below.</p>
+
+<div class="review">
+  <div class="flow-row">
+    <div class="box"><h3>Client</h3><p>/contact-order/SR000 validates form and optional custom specs.</p></div>
+    <div class="box"><h3>API</h3><p>POST /api/custom-order-requests revalidates server-side.</p></div>
+    <div class="box"><h3>Customer</h3><p>Find/update/create guest lead in existing customers table.</p></div>
+    <div class="box"><h3>Request</h3><p>Insert custom_order_requests with pending status.</p></div>
+  </div>
+
+  <div class="flow-arrow">
+    <span>Submit JSON</span>
+    <span>Service role only</span>
+    <span>Lead link</span>
+    <span>Pending request</span>
+  </div>
+
+  <div class="flow-row">
+    <div class="box dark"><h3>Customer email</h3><p>Confirmation plus selected product/spec summary.</p></div>
+    <div class="box dark"><h3>Admin email</h3><p>Internal notification with all customer and spec details.</p></div>
+    <div class="box"><h3>Success</h3><p>Return request id/status. No fake checkout behavior.</p></div>
+    <div class="box"><h3>Error</h3><p>Keep form data when DB/email env is missing or failed.</p></div>
+  </div>
+
+  <div class="schema">
+    <div class="box">
+      <h3>Schema</h3>
+      <p>custom_order_requests: id, created_at, customer_id, product_code, full_name, company_name, email, contact_number, metal, metal_purity, ring_size, stone fields, origin, status, metadata.</p>
+    </div>
+    <div class="box">
+      <h3>Implementation guardrails</h3>
+      <p>Use existing Maris tokens, keep dark-card text readable, include mobile one-column breakpoint, and verify customers.full_name vs older customers.name migration shape.</p>
+    </div>
+  </div>
+
+  <pre class="snippet">@media (max-width: 768px) {
+  .flow-row,
+  .flow-arrow,
+  .schema {
+    grid-template-columns: 1fr;
+  }
+}</pre>
+</div>
