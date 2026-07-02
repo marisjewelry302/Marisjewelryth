@@ -18,6 +18,7 @@ const { GET: getPublicCatalogueProducts } = await import("../app/api/catalogue/p
 const EXPECTED_DATABASE_TABLES = [
   "admin_users",
   "customers",
+  "custom_order_requests",
   "inventory_movements",
   "inventory_logs",
   "orders",
@@ -793,6 +794,10 @@ const schemaMigrationFile = migrationFiles.find((fileName) => fileName.endsWith(
 assert.ok(schemaMigrationFile, "A Supabase migration should create the Maris admin schema");
 
 const schemaMigration = await readFile(new URL(`../supabase/migrations/${schemaMigrationFile}`, import.meta.url), "utf8");
+const allMigrations = await Promise.all(migrationFiles.map((fileName) => (
+  readFile(new URL(`../supabase/migrations/${fileName}`, import.meta.url), "utf8")
+)));
+const additiveSchema = allMigrations.join("\n\n");
 
 assert.match(adminHtml, /data-admin-panel="database"/, "Admin should expose a database status panel");
 assert.match(adminHtml, /data-database-table-status/, "Database panel should render table status rows");
@@ -810,13 +815,15 @@ assert.equal(packageJson.scripts["test:database:live"], "node scripts/test-supab
 assert.equal(packageJson.scripts.prebuild, undefined, "Build should no longer run legacy static sync before Next.js");
 
 for (const tableName of EXPECTED_DATABASE_TABLES) {
+  const migrationSource = tableName === "custom_order_requests" ? additiveSchema : schemaMigration;
+
   assert.match(
-    schemaMigration,
+    migrationSource,
     new RegExp(`create table if not exists public\\.${tableName}\\b`, "i"),
     `Migration should create ${tableName}`
   );
   assert.match(
-    schemaMigration,
+    migrationSource,
     new RegExp(`alter table public\\.${tableName}\\s+enable row level security`, "i"),
     `Migration should enable RLS for ${tableName}`
   );

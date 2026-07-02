@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 export const MARIS_DATABASE_TABLES = Object.freeze([
   "admin_users",
   "customers",
+  "custom_order_requests",
   "inventory_movements",
   "inventory_logs",
   "orders",
@@ -71,6 +72,32 @@ const PUBLIC_CATALOGUE_SELECT = `
     alt_text,
     sort_order,
     is_primary
+  )
+`;
+const ADMIN_CUSTOM_ORDER_SELECT = `
+  id,
+  customer_id,
+  product_code,
+  full_name,
+  company_name,
+  email,
+  contact_number,
+  metal,
+  metal_purity,
+  ring_size,
+  stone_carat,
+  stone_color,
+  stone_clarity,
+  stone_cut,
+  origin,
+  status,
+  metadata,
+  created_at,
+  customers (
+    id,
+    full_name,
+    email,
+    phone
   )
 `;
 
@@ -598,6 +625,57 @@ function normalizeCustomer(row) {
   };
 }
 
+function getRelatedCustomer(row) {
+  if (Array.isArray(row?.customers)) {
+    return row.customers[0] || null;
+  }
+
+  return row?.customers || null;
+}
+
+function getMetadata(row) {
+  const metadata = row?.metadata;
+
+  return metadata && typeof metadata === "object" && !Array.isArray(metadata) ? metadata : {};
+}
+
+export function normalizeCustomOrderRequest(row) {
+  if (!row) {
+    return null;
+  }
+
+  const customer = getRelatedCustomer(row);
+  const metadata = getMetadata(row);
+  const ringDesign = metadata.ringDesign && typeof metadata.ringDesign === "object"
+    ? metadata.ringDesign
+    : {};
+
+  return {
+    id: row.id,
+    customerId: row.customer_id || customer?.id || null,
+    customerName: customer?.full_name || row.full_name || "",
+    customerEmail: customer?.email || row.email || "",
+    customerPhone: customer?.phone || row.contact_number || "",
+    fullName: row.full_name || "",
+    companyName: row.company_name || "",
+    email: row.email || "",
+    contactNumber: row.contact_number || "",
+    productCode: row.product_code || "",
+    status: row.status || "pending",
+    createdAt: row.created_at || null,
+    metal: row.metal || "",
+    metalPurity: row.metal_purity || "",
+    ringSize: row.ring_size === null || row.ring_size === undefined ? null : Number(row.ring_size),
+    stoneCarat: row.stone_carat === null || row.stone_carat === undefined ? null : Number(row.stone_carat),
+    stoneColor: row.stone_color || "",
+    stoneClarity: row.stone_clarity || "",
+    stoneCut: row.stone_cut || "",
+    origin: row.origin || "",
+    metadata,
+    ringDesign
+  };
+}
+
 function normalizePayment(row) {
   if (!row) {
     return null;
@@ -715,6 +793,39 @@ export async function readAdminCustomers({ env = process.env, client, limit = 10
     projectRef: config.projectRef,
     missingEnv: [],
     customers: Array.isArray(data) ? data.map(normalizeCustomer) : [],
+    checkedAt: new Date().toISOString()
+  };
+}
+
+export async function readAdminCustomOrderRequests({ env = process.env, client, limit = 100 } = {}) {
+  const config = getSupabaseAdminConfig(env);
+
+  if (!config.isConfigured) {
+    return {
+      isConfigured: false,
+      projectRef: config.projectRef,
+      missingEnv: config.missingEnv,
+      requests: [],
+      checkedAt: new Date().toISOString()
+    };
+  }
+
+  const supabase = client || createSupabaseAdminClient(env);
+  const { data, error } = await supabase
+    .from("custom_order_requests")
+    .select(ADMIN_CUSTOM_ORDER_SELECT)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    throw new Error(error.message || "Supabase custom order requests could not be loaded.");
+  }
+
+  return {
+    isConfigured: true,
+    projectRef: config.projectRef,
+    missingEnv: [],
+    requests: Array.isArray(data) ? data.map(normalizeCustomOrderRequest).filter(Boolean) : [],
     checkedAt: new Date().toISOString()
   };
 }

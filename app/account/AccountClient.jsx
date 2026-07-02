@@ -20,6 +20,16 @@ function normalizeEmail(email) {
   return String(email || "").trim().toLowerCase();
 }
 
+function getSafeNextPath() {
+  const nextPath = new URLSearchParams(window.location.search).get("next");
+
+  if (!nextPath || !nextPath.startsWith("/") || nextPath.startsWith("//")) {
+    return "";
+  }
+
+  return nextPath;
+}
+
 function getSummary() {
   const wishlist = readJson(WISHLIST_KEY, []);
   const bag = readJson(BAG_KEY, []);
@@ -41,6 +51,7 @@ export default function AccountClient() {
   const [summary, setSummary] = useState({ wishlist: 0, bag: 0, quotes: 0 });
   const [popupEmail, setPopupEmail] = useState("");
   const [isPopupSource, setIsPopupSource] = useState(false);
+  const [safeNextPath, setSafeNextPath] = useState("");
 
   // ─── Load session on mount ──────────────────────────────────────────────
   useEffect(() => {
@@ -48,6 +59,8 @@ export default function AccountClient() {
     const email = normalizeEmail(params.get("email"));
     const source = params.get("source");
     const requestedMode = params.get("mode");
+    const nextPath = getSafeNextPath();
+    setSafeNextPath(nextPath);
 
     if ((requestedMode === "signup" || source === "popup") && email) {
       setPopupEmail(email);
@@ -98,6 +111,10 @@ export default function AccountClient() {
 
       setCustomer(data.customer);
       setProfileMessage("Account created. Welcome to Maris.");
+      if (safeNextPath) {
+        window.location.assign(safeNextPath);
+        return;
+      }
 
       try {
         const welcomeResponse = await fetch("/api/account/welcome-email", {
@@ -149,6 +166,9 @@ export default function AccountClient() {
 
       setCustomer(data.customer);
       setProfileMessage(`Welcome back, ${data.customer.fullName || "Maris Client"}.`);
+      if (safeNextPath) {
+        window.location.assign(safeNextPath);
+      }
     } catch {
       setMessage("Something went wrong. Please try again.");
     } finally {
