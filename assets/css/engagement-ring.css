@@ -381,7 +381,38 @@ body.is-page-scrolled .icons i {
   transition: opacity 0.24s ease, filter 0.24s ease, transform 0.24s ease;
 }
 
-.product-card:hover img {
+.product-card-image-frame {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  background: #f5f4f2;
+  transition: transform 0.24s ease;
+}
+
+.product-card img.product-card-image {
+  height: 100%;
+}
+
+.product-card-image-hover {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.product-card-link.has-hover-image:hover .product-card-image-primary,
+.product-card-link.has-hover-image:focus-visible .product-card-image-primary {
+  opacity: 0;
+}
+
+.product-card-link.has-hover-image:hover .product-card-image-hover,
+.product-card-link.has-hover-image:focus-visible .product-card-image-hover {
+  opacity: 1;
+}
+
+.product-card:hover .product-card-image-frame {
   transform: translateY(-2px);
 }
 
