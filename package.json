@@ -16,6 +16,7 @@
     "test:customer-collections": "node scripts/test-customer-collections.mjs",
     "test:customer-welcome-email": "node scripts/test-customer-welcome-email.mjs",
     "test:custom-order": "node scripts/test-custom-order.mjs",
+    "test:design-your-ring": "node scripts/test-design-your-ring.mjs",
     "test:site-header-nav": "node scripts/test-site-header-nav.mjs",
     "test:admin-clarity": "node scripts/test-admin-clarity.mjs",
     "test:database": "node scripts/test-supabase-admin-database.mjs",

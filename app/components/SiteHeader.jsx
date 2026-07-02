@@ -31,6 +31,7 @@ const dropdownNav = [
   {
     label: "Our Expertise",
     items: [
+      { href: "/design-your-ring", label: "Design Your Ring" },
       { href: "/our-service", label: "Our Service" },
       { href: "/oem-jewelry", label: "OEM Jewelry Service" },
       { href: "/wholesale-retail", label: "Wholesale & Retail" }

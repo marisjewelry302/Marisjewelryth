@@ -48,6 +48,7 @@ export default async function AdminPage() {
             <button type="button" data-admin-tab="products">Products</button>
             <button type="button" data-admin-tab="inventory">Inventory</button>
             <button type="button" data-admin-tab="orders">Orders</button>
+            <button type="button" data-admin-tab="custom-requests">Custom Requests</button>
             <button type="button" data-admin-tab="customers">Customers</button>
             <button type="button" data-admin-tab="database">Database</button>
             <button type="button" data-admin-tab="settings">Settings</button>
@@ -327,6 +328,35 @@ export default async function AdminPage() {
                     </tr>
                   </thead>
                   <tbody data-orders-table></tbody>
+                </table>
+              </div>
+            </section>
+
+            {/* ── CUSTOM REQUESTS ── */}
+            <section className="admin-panel" data-admin-panel="custom-requests">
+              <div className="admin-panel-head">
+                <div>
+                  <p className="admin-kicker">Design Your Ring</p>
+                  <h2>Custom Requests</h2>
+                </div>
+                <p className="admin-note">Review custom order enquiries from the product CTA and Design Your Ring page.</p>
+              </div>
+
+              <div className="admin-table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Created</th>
+                      <th>Client</th>
+                      <th>Request</th>
+                      <th>Design</th>
+                      <th>Contact</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody data-custom-requests-table>
+                    <tr><td colSpan="6">Loading custom requests...</td></tr>
+                  </tbody>
                 </table>
               </div>
             </section>

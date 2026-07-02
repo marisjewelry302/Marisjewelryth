@@ -327,6 +327,12 @@ assert.deepEqual(normalized, {
   stoneClarity: "VVS1",
   stoneCut: "Excellent",
   origin: "Lab-grown",
+  ringDesign: {
+    style: null,
+    stoneShape: null,
+    engravingEnabled: false,
+    engravingText: null
+  },
   honeypot: ""
 });
 
@@ -382,6 +388,43 @@ assert.equal(
   null,
   "Platinum should clear gold purity"
 );
+const validRingDesignResult = validateCustomOrderPayload({
+  ...validPayload,
+  custom_options: {
+    ...validPayload.custom_options,
+    ring_design: {
+      style: "Pavé",
+      stone_shape: "Oval",
+      engraving_enabled: true,
+      engraving_text: "FOREVER"
+    }
+  }
+});
+assert.equal(validRingDesignResult.isValid, true);
+assert.deepEqual(validRingDesignResult.normalized.ringDesign, {
+  style: "Pavé",
+  stoneShape: "Oval",
+  engravingEnabled: true,
+  engravingText: "FOREVER"
+});
+assert.match(buildCustomOrderSummary(validRingDesignResult.normalized), /Style Pavé · Oval stone/);
+assert.match(buildCustomOrderSummary(validRingDesignResult.normalized), /Engraving FOREVER/);
+
+const missingEngravingResult = validateCustomOrderPayload({
+  ...validPayload,
+  custom_options: {
+    ...validPayload.custom_options,
+    ring_design: {
+      style: "Halo",
+      stone_shape: "Round",
+      engraving_enabled: true,
+      engraving_text: " "
+    }
+  }
+});
+assert.equal(missingEngravingResult.isValid, false);
+assert.ok(hasFieldError(missingEngravingResult, "ring_design.engraving_text"));
+
 const invalidRingSizeResult = validateCustomOrderPayload({
   ...validPayload,
   custom_options: { ...validPayload.custom_options, ring_size: 7.25 }

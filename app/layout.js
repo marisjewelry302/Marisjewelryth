@@ -3,6 +3,7 @@ import "../assets/css/engagement-ring.css";
 import "../assets/css/category.css";
 import "../assets/css/product.css";
 import "../assets/css/custom-order.css";
+import "../assets/css/design-your-ring.css";
 import "../assets/css/placeholder.css";
 import "../assets/css/articles.css";
 import "../assets/css/site-header.css";

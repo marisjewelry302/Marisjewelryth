@@ -16,6 +16,7 @@
     catalogueDraftTable: document.querySelector("[data-catalogue-draft-table]"),
     logsTable: document.querySelector("[data-inventory-log-table]"),
     ordersTable: document.querySelector("[data-orders-table]"),
+    customRequestsTable: document.querySelector("[data-custom-requests-table]"),
     productSelect: document.querySelector("[data-product-select]"),
     orderProductSelect: document.querySelector("[data-order-product-select]"),
     message: document.querySelector("[data-admin-message]"),
@@ -68,6 +69,7 @@
   const adminCache = {
     products: [],
     orders: [],
+    customRequests: [],
     logs: [],
     isLoading: true,
     isReady: false,
@@ -77,7 +79,7 @@
   let modalGalleryDragIndex = null;
 
   async function fetchAdminApi(path, options = {}) {
-    const url = `${ADMIN_API_PREFIX}${path}`;
+    const url = path.startsWith(ADMIN_API_PREFIX) ? path : `${ADMIN_API_PREFIX}${path}`;
     const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData;
     const headers = {
       Accept: "application/json",
@@ -107,20 +109,23 @@
     adminCache.error = "";
 
     try {
-      const [productsPayload, ordersPayload, logsPayload] = await Promise.all([
+      const [productsPayload, ordersPayload, logsPayload, customRequestsPayload] = await Promise.all([
         fetchAdminApi("/products"),
         fetchAdminApi("/orders"),
-        fetchAdminApi("/inventory-logs")
+        fetchAdminApi("/inventory-logs"),
+        fetchAdminApi("/api/admin/custom-order-requests")
       ]);
 
       adminCache.products = Array.isArray(productsPayload.products) ? productsPayload.products : [];
       adminCache.orders = Array.isArray(ordersPayload.orders) ? ordersPayload.orders : [];
       adminCache.logs = Array.isArray(logsPayload.logs) ? logsPayload.logs : [];
+      adminCache.customRequests = Array.isArray(customRequestsPayload.requests) ? customRequestsPayload.requests : [];
       adminCache.isReady = true;
     } catch (error) {
       adminCache.products = [];
       adminCache.orders = [];
       adminCache.logs = [];
+      adminCache.customRequests = [];
       adminCache.isReady = false;
       adminCache.error = error instanceof Error ? error.message : "Supabase admin data could not be loaded.";
     } finally {
@@ -138,6 +143,10 @@
 
   function getCachedLogs() {
     return Array.isArray(adminCache.logs) ? adminCache.logs : [];
+  }
+
+  function getCachedCustomRequests() {
+    return Array.isArray(adminCache.customRequests) ? adminCache.customRequests : [];
   }
 
   function getStoredSettings() {
@@ -178,6 +187,10 @@
 
   function readOrders() {
     return getCachedOrders();
+  }
+
+  function readCustomRequests() {
+    return getCachedCustomRequests();
   }
 
   function readCatalogueDrafts() {
@@ -1616,6 +1629,55 @@
     elements.ordersTable.innerHTML = rows || `<tr><td colspan="7">No orders yet.</td></tr>`;
   }
 
+  function renderCustomRequestsTable() {
+    if (adminCache.isLoading) {
+      elements.customRequestsTable.innerHTML = `<tr><td colspan="6">Loading custom requests...</td></tr>`;
+      return;
+    }
+
+    if (!adminCache.isReady) {
+      elements.customRequestsTable.innerHTML = `<tr><td colspan="6">${escapeHtml(adminCache.error || "Connect Supabase before reviewing custom requests.")}</td></tr>`;
+      return;
+    }
+
+    const rows = readCustomRequests()
+      .map((request) => {
+        const createdAt = request.createdAt ? new Date(request.createdAt).toLocaleString() : "-";
+        const ringDesign = request.ringDesign || {};
+        const designSummary = [
+          ringDesign.style,
+          ringDesign.stoneShape,
+          request.metadata?.optionSummary
+        ].filter(Boolean).join(" · ");
+        const stoneSummary = [
+          request.stoneCarat ? `${request.stoneCarat} ct` : "",
+          request.stoneColor,
+          request.stoneClarity,
+          request.stoneCut
+        ].filter(Boolean).join(" ");
+
+        return `
+          <tr>
+            <td>${escapeHtml(createdAt)}</td>
+            <td>
+              <strong>${escapeHtml(request.customerName || request.fullName || "Maris Client")}</strong><br>
+              <span>${escapeHtml(request.customerEmail || request.email || "-")}</span>
+            </td>
+            <td>
+              <strong>${escapeHtml(request.productCode || "-")}</strong><br>
+              <span>${escapeHtml(request.id || "-")}</span>
+            </td>
+            <td>${escapeHtml([designSummary, stoneSummary].filter(Boolean).join(" · ") || "-")}</td>
+            <td>${escapeHtml(request.customerPhone || request.contactNumber || "-")}</td>
+            <td>${escapeHtml(request.status || "pending")}</td>
+          </tr>
+        `;
+      })
+      .join("");
+
+    elements.customRequestsTable.innerHTML = rows || `<tr><td colspan="6">No custom requests yet.</td></tr>`;
+  }
+
   function renderSettings() {
     const settings = getSettings();
     const input = elements.settingsForm?.elements.lowStockThreshold;
@@ -1636,6 +1698,7 @@
     renderDatabaseProducts();
     renderLogsTable();
     renderOrdersTable();
+    renderCustomRequestsTable();
     renderSettings();
   }
 

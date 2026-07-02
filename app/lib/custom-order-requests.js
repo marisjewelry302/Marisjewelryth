@@ -21,7 +21,20 @@ export const STONE_CLARITIES = Object.freeze(new Set([
   "VVS1", "VVS2", "VS1", "VS2", "SI1", "SI2", "I1", "I2", "I3"
 ]));
 export const STONE_CUTS = Object.freeze(new Set(["Excellent", "Very Good", "Good", "Fair", "Poor"]));
-export const ORIGINS = Object.freeze(new Set(["Lab-grown", "Natural"]));
+export const ORIGINS = Object.freeze(new Set(["Lab", "Lab-grown", "Natural"]));
+export const RING_STYLES = Object.freeze(new Set(["Solitaire", "Pavé", "Halo", "Hidden Halo", "Side Stone", "Natural"]));
+export const STONE_SHAPES = Object.freeze(new Set([
+  "Round",
+  "Oval",
+  "Pear",
+  "Emerald",
+  "Princess",
+  "Marquise",
+  "Heart",
+  "Radiant",
+  "Cushion",
+  "Baguette"
+]));
 
 const CUSTOMER_COLUMNS = `
   id,
@@ -73,12 +86,34 @@ function getStoneOptions(customOptions) {
     : {};
 }
 
+function getRingDesignOptions(customOptions) {
+  return customOptions.ring_design && typeof customOptions.ring_design === "object"
+    ? customOptions.ring_design
+    : {};
+}
+
 function getPhoneDigits(contactNumber) {
   return String(contactNumber || "").replace(/\D/g, "");
 }
 
 function isHalfStep(value) {
   return Number.isInteger(Number(value) * 2);
+}
+
+function normalizeBoolean(value) {
+  return value === true || value === "true" || value === "yes" || value === "1";
+}
+
+function normalizeRingDesign(customOptions) {
+  const ringDesign = getRingDesignOptions(customOptions);
+  const engravingEnabled = normalizeBoolean(ringDesign.engraving_enabled);
+
+  return {
+    style: cleanOptionalText(ringDesign.style),
+    stoneShape: cleanOptionalText(ringDesign.stone_shape),
+    engravingEnabled,
+    engravingText: engravingEnabled ? cleanOptionalText(ringDesign.engraving_text) : null
+  };
 }
 
 function normalizeCustomer(row) {
@@ -129,6 +164,7 @@ export function normalizeCustomOrderPayload(payload = {}) {
     stoneClarity: cleanOptionalText(stoneOptions.clarity ?? customOptions.stone_clarity),
     stoneCut: cleanOptionalText(stoneOptions.cut ?? customOptions.stone_cut),
     origin: cleanOptionalText(customOptions.origin),
+    ringDesign: normalizeRingDesign(customOptions),
     honeypot: cleanText(payload.website_url)
   };
 }
@@ -203,6 +239,22 @@ export function validateCustomOrderPayload(payload = {}) {
     addError("origin", "Origin is not supported.");
   }
 
+  if (normalized.ringDesign.style && !RING_STYLES.has(normalized.ringDesign.style)) {
+    addError("ring_design.style", "Ring style is not supported.");
+  }
+
+  if (normalized.ringDesign.stoneShape && !STONE_SHAPES.has(normalized.ringDesign.stoneShape)) {
+    addError("ring_design.stone_shape", "Stone shape is not supported.");
+  }
+
+  if (normalized.ringDesign.engravingText && normalized.ringDesign.engravingText.length > 40) {
+    addError("ring_design.engraving_text", "Engraving text must be 40 characters or fewer.");
+  }
+
+  if (normalized.ringDesign.engravingEnabled && !normalized.ringDesign.engravingText) {
+    addError("ring_design.engraving_text", "Engraving text is required when engraving is selected.");
+  }
+
   return {
     isValid: errors.length === 0,
     errors,
@@ -221,10 +273,13 @@ export function buildCustomOrderSummary(order) {
   ].filter(Boolean).join(" ");
 
   return [
+    order.ringDesign?.style ? `Style ${order.ringDesign.style}` : "",
+    order.ringDesign?.stoneShape ? `${order.ringDesign.stoneShape} stone` : "",
     metalText,
     order.ringSize === null || order.ringSize === undefined ? "" : `Size ${order.ringSize}`,
     order.origin,
-    stoneText
+    stoneText,
+    order.ringDesign?.engravingEnabled ? `Engraving ${order.ringDesign.engravingText}` : ""
   ].filter(Boolean).join(" · ");
 }
 
@@ -240,7 +295,8 @@ export function buildRequestFingerprint(order) {
     stoneColor: order.stoneColor,
     stoneClarity: order.stoneClarity,
     stoneCut: order.stoneCut,
-    origin: order.origin
+    origin: order.origin,
+    ringDesign: order.ringDesign
   };
 
   return createHash("sha256").update(JSON.stringify(fingerprintPayload)).digest("hex");
@@ -269,7 +325,13 @@ export function buildCustomOrderInsertPayload(order, { customerId = null, finger
     metadata: {
       requestFingerprint: fingerprint,
       phoneDigits: order.phoneDigits,
-      optionSummary
+      optionSummary,
+      ringDesign: {
+        style: order.ringDesign.style,
+        stoneShape: order.ringDesign.stoneShape,
+        engravingEnabled: order.ringDesign.engravingEnabled,
+        engravingText: order.ringDesign.engravingText
+      }
     },
     created_at: createdAt
   };

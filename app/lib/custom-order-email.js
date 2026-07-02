@@ -43,6 +43,8 @@ function formatValue(value) {
 function buildOptionLines(order, optionSummary) {
   return [
     `Selected options: ${optionSummary || "-"}`,
+    `Style: ${formatValue(order.ringDesign?.style)}`,
+    `Stone shape: ${formatValue(order.ringDesign?.stoneShape)}`,
     `Metal: ${formatValue(order.metal)}`,
     `Metal purity: ${formatValue(order.metalPurity)}`,
     `Ring size: ${formatValue(order.ringSize)}`,
@@ -50,7 +52,8 @@ function buildOptionLines(order, optionSummary) {
     `Stone color: ${formatValue(order.stoneColor)}`,
     `Stone clarity: ${formatValue(order.stoneClarity)}`,
     `Stone cut: ${formatValue(order.stoneCut)}`,
-    `Origin: ${formatValue(order.origin)}`
+    `Origin: ${formatValue(order.origin)}`,
+    `Engraving: ${order.ringDesign?.engravingEnabled ? formatValue(order.ringDesign?.engravingText) : "No engraving"}`
   ];
 }
 
