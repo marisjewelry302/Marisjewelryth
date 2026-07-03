@@ -1,5 +1,18 @@
 (() => {
-  const collectionMeta = window.MARIS_COLLECTION_META || {};
+  const fallbackCollectionMeta = {
+    "engagement-ring": { title: "Engagement Rings", href: "/category/engagement-ring" },
+    "wedding-set": { title: "Wedding Set", href: "/category/wedding-set" },
+    "wedding-bands": { title: "Wedding Bands", href: "/category/wedding-bands" },
+    "mens-wedding-bands": { title: "Men's Rings", href: "/category/mens-wedding-bands" },
+    "necklaces-pendants": { title: "Necklaces & Pendants", href: "/category/necklaces-pendants" },
+    bracelets: { title: "Bracelets", href: "/category/bracelets" },
+    earrings: { title: "Earrings", href: "/category/earrings" },
+    rings: { title: "Rings", href: "/category/rings" }
+  };
+  const collectionMeta = {
+    ...fallbackCollectionMeta,
+    ...(window.MARIS_COLLECTION_META || {})
+  };
   const settingsState = {
     lowStockThreshold: 2
   };
@@ -8,7 +21,7 @@
     panels: Array.from(document.querySelectorAll("[data-admin-panel]")),
     tabs: Array.from(document.querySelectorAll("[data-admin-tab]")),
     productForm: document.querySelector("[data-product-form]"),
-    catalogueForm: document.querySelector("[data-catalogue-form]"),
+    bestSellerForm: document.querySelector("[data-best-seller-form]"),
     inventoryForm: document.querySelector("[data-inventory-form]"),
     orderForm: document.querySelector("[data-order-form]"),
     settingsForm: document.querySelector("[data-settings-form]"),
@@ -28,6 +41,9 @@
     sheetLastSync: document.querySelector("[data-sheet-last-sync]"),
     sheetFeedLinks: Array.from(document.querySelectorAll("[data-sheet-feed-link], [data-sheet-feed-link-inline]")),
     sheetCatalogueTable: document.querySelector("[data-sheet-catalogue-table]"),
+    bestSellerSlots: document.querySelector("[data-best-seller-slots]"),
+    bestSellerPreview: document.querySelector("[data-best-seller-preview]"),
+    bestSellerCount: document.querySelector("[data-best-seller-count]"),
     databaseStatus: document.querySelector("[data-database-status]"),
     databaseProject: document.querySelector("[data-database-project]"),
     databaseChecked: document.querySelector("[data-database-checked]"),
@@ -66,8 +82,10 @@
 
   const ADMIN_API_PREFIX = "/api/admin";
   const ADMIN_PRODUCT_IMAGES_PATH = "/product-images";
+  const BEST_SELLER_SLOT_COUNT = 7;
   const adminCache = {
     products: [],
+    bestSellerProductIds: [],
     orders: [],
     customRequests: [],
     logs: [],
@@ -109,20 +127,23 @@
     adminCache.error = "";
 
     try {
-      const [productsPayload, ordersPayload, logsPayload, customRequestsPayload] = await Promise.all([
+      const [productsPayload, ordersPayload, logsPayload, customRequestsPayload, bestSellersPayload] = await Promise.all([
         fetchAdminApi("/products"),
         fetchAdminApi("/orders"),
         fetchAdminApi("/inventory-logs"),
-        fetchAdminApi("/api/admin/custom-order-requests")
+        fetchAdminApi("/api/admin/custom-order-requests"),
+        fetchAdminApi("/best-sellers")
       ]);
 
       adminCache.products = Array.isArray(productsPayload.products) ? productsPayload.products : [];
+      adminCache.bestSellerProductIds = Array.isArray(bestSellersPayload.productIds) ? bestSellersPayload.productIds : [];
       adminCache.orders = Array.isArray(ordersPayload.orders) ? ordersPayload.orders : [];
       adminCache.logs = Array.isArray(logsPayload.logs) ? logsPayload.logs : [];
       adminCache.customRequests = Array.isArray(customRequestsPayload.requests) ? customRequestsPayload.requests : [];
       adminCache.isReady = true;
     } catch (error) {
       adminCache.products = [];
+      adminCache.bestSellerProductIds = [];
       adminCache.orders = [];
       adminCache.logs = [];
       adminCache.customRequests = [];
@@ -135,6 +156,14 @@
 
   function getCachedProducts() {
     return Array.isArray(adminCache.products) ? adminCache.products : [];
+  }
+
+  function getBestSellerProductIds() {
+    return Array.from(new Set(
+      (Array.isArray(adminCache.bestSellerProductIds) ? adminCache.bestSellerProductIds : [])
+        .map((productId) => String(productId || "").trim())
+        .filter(Boolean)
+    )).slice(0, BEST_SELLER_SLOT_COUNT);
   }
 
   function getCachedOrders() {
@@ -271,6 +300,83 @@
     return file && typeof file === "object" && typeof file.size === "number" && file.size > 0;
   }
 
+  function getAdminImageGroupParser() {
+    return window.MARIS_ADMIN_IMAGE_GROUP && typeof window.MARIS_ADMIN_IMAGE_GROUP.buildImageFileGroup === "function"
+      ? window.MARIS_ADMIN_IMAGE_GROUP
+      : null;
+  }
+
+  function buildSmartImageGroup(files) {
+    const parser = getAdminImageGroupParser();
+
+    if (!parser) {
+      return null;
+    }
+
+    const group = parser.buildImageFileGroup(files);
+    return group?.ok ? group : null;
+  }
+
+  function getSmartImageGroupFromFormData(formData) {
+    return buildSmartImageGroup(formData.getAll("imageGroupFiles").filter(isSelectedFile));
+  }
+
+  function setFormValue(form, name, value, options = {}) {
+    const field = form?.elements?.namedItem(name);
+
+    if (!field || value === undefined || value === null || value === "") {
+      return;
+    }
+
+    if (options.force || !String(field.value || "").trim()) {
+      field.value = value;
+    }
+  }
+
+  function updateImageGroupSummary(form, group) {
+    const summary = form?.querySelector("[data-image-group-summary]");
+
+    if (!summary) {
+      return;
+    }
+
+    if (!group) {
+      summary.textContent = "No product images selected.";
+      return;
+    }
+
+    const orderedNames = group.orderedImages
+      .map((image, index) => `${index + 1}. ${escapeHtml(image.fileName)}`)
+      .join("<br>");
+
+    summary.innerHTML = `
+      <strong>${escapeHtml(group.summary || "Image group ready")}</strong>
+      <span>${orderedNames}</span>
+    `;
+  }
+
+  function applyImageGroupToProductForm(form) {
+    const input = form?.elements?.namedItem("imageGroupFiles");
+    const files = Array.from(input?.files || []).filter(isSelectedFile);
+    const group = buildSmartImageGroup(files);
+
+    updateImageGroupSummary(form, group);
+
+    if (!group) {
+      return null;
+    }
+
+    setFormValue(form, "sku", group.code);
+    setFormValue(form, "name", group.productName);
+    setFormValue(form, "category", getCollectionLabel(group.collectionKey), { force: true });
+
+    return group;
+  }
+
+  function findSmartImageMetadata(file, smartGroup) {
+    return smartGroup?.orderedImages?.find((image) => image.file === file) || null;
+  }
+
   function parseGallery(value, fallbackName, fallbackImage, fallbackHover) {
     const lines = splitTextareaLines(value);
     const gallery = lines
@@ -314,61 +420,36 @@
     return fallbackGallery;
   }
 
-  function buildCatalogueDraft(formData) {
-    const code = String(formData.get("code") || "").trim().toUpperCase();
-    const collectionKey = String(formData.get("collectionKey") || "").trim();
-    const title = String(formData.get("title") || code).trim() || code;
-    const name = String(formData.get("name") || "").trim();
-    const mainImageFile = formData.get("mainImageFile");
-    const galleryImageFiles = formData.getAll("galleryImageFiles").filter(isSelectedFile);
-    const description = String(formData.get("description") || "").trim();
-    const details = splitTextareaLines(formData.get("details"));
-    const price = String(formData.get("price") || "Price on request").trim() || "Price on request";
-    const metal = String(formData.get("metal") || "").trim();
-    const style = String(formData.get("style") || "").trim();
-    const shape = String(formData.get("shape") || "").trim();
-    const imagePresentation = String(formData.get("imagePresentation") || "").trim();
-    const manualFilters = splitTags(formData.get("filterValues"));
-    const filterValues = Array.from(new Set([...manualFilters, metal, style, shape].filter(Boolean)));
-    const stockQty = Math.max(0, Number(formData.get("catalogueStockQty")) || 0);
+  function buildProductImageUploadDraft(formData, product) {
+    const smartGroup = getSmartImageGroupFromFormData(formData);
+    const selectedFiles = formData.getAll("imageGroupFiles").filter(isSelectedFile);
+    const orderedFiles = smartGroup?.orderedImages?.length
+      ? smartGroup.orderedImages.map((image) => image.file)
+      : selectedFiles;
 
-    if (!code || !collectionKey || !name || !isSelectedFile(mainImageFile)) {
-      return {
-        ok: false,
-        message: "Product code, collection, product name, and main product image are required."
-      };
-    }
+    return {
+      product,
+      mainImageFile: orderedFiles[0] || null,
+      galleryImageFiles: orderedFiles.slice(1),
+      smartGroup
+    };
+  }
 
-    if (!collectionMeta[collectionKey]) {
-      return {
-        ok: false,
-        message: "Please choose a valid collection."
-      };
+  function buildProductImageMetadata(imageGroup) {
+    if (!imageGroup) {
+      return {};
     }
 
     return {
-      ok: true,
-      product: {
-        code,
-        title,
-        name,
-        details,
-        description,
-        image: "",
-        hover: "",
-        price,
-        metal,
-        style,
-        shape,
-        filterValues,
-        gallery: [],
-        imagePresentation,
-        collectionKey,
-        updatedAt: new Date().toISOString()
-      },
-      mainImageFile,
-      galleryImageFiles,
-      stockQty
+      source: "admin_product_form",
+      parsedImageGroup: {
+        code: imageGroup.code,
+        productName: imageGroup.productName,
+        metalLabels: imageGroup.metalLabels,
+        shape: imageGroup.shape,
+        style: imageGroup.style,
+        collectionKey: imageGroup.collectionKey
+      }
     };
   }
 
@@ -386,18 +467,18 @@
     });
   }
 
-  async function uploadCatalogueImages(product, result) {
-    await uploadProductImage(product.id, result.mainImageFile, {
-      altText: `${result.product.name || result.product.code} primary image`,
-      sortOrder: 0,
-      isPrimary: true
-    });
+  async function uploadProductImages(product, result) {
+    const productName = result.product.name || result.product.code;
+    const files = [result.mainImageFile, ...result.galleryImageFiles].filter(isSelectedFile);
 
-    await Promise.all(result.galleryImageFiles.map((file, index) => uploadProductImage(product.id, file, {
-      altText: `${result.product.name || result.product.code} gallery image ${index + 1}`,
-      sortOrder: index + 1,
-      isPrimary: false
-    })));
+    for (const [index, file] of files.entries()) {
+      const smartImage = findSmartImageMetadata(file, result.smartGroup);
+      await uploadProductImage(product.id, file, {
+        altText: smartImage?.altText || `${productName} ${index === 0 ? "primary image" : `gallery image ${index}`}`,
+        sortOrder: index,
+        isPrimary: index === 0
+      });
+    }
   }
 
   function getModalProductId() {
@@ -823,6 +904,106 @@
       .join("");
 
     elements.sheetCatalogueTable.innerHTML = rows;
+  }
+
+  function getActiveProducts() {
+    return readProducts().filter((product) => product.status === "active");
+  }
+
+  function getBestSellerProductsByIds(productIds) {
+    const products = getActiveProducts();
+
+    return productIds
+      .map((productId) => products.find((product) => product.id === productId))
+      .filter(Boolean);
+  }
+
+  function renderBestSellerSettings() {
+    if (!elements.bestSellerSlots) {
+      return;
+    }
+
+    if (adminCache.isLoading) {
+      elements.bestSellerSlots.innerHTML = `<p class="admin-note">Loading Best Seller slots...</p>`;
+      if (elements.bestSellerPreview) {
+        elements.bestSellerPreview.innerHTML = `<p class="admin-note">Loading Best Seller preview...</p>`;
+      }
+      return;
+    }
+
+    if (!adminCache.isReady) {
+      const message = escapeHtml(adminCache.error || "Connect Supabase before managing Best Seller products.");
+      elements.bestSellerSlots.innerHTML = `<p class="admin-note">${message}</p>`;
+      if (elements.bestSellerPreview) {
+        elements.bestSellerPreview.innerHTML = `<p class="admin-note">${message}</p>`;
+      }
+      if (elements.bestSellerCount) {
+        elements.bestSellerCount.textContent = "0";
+      }
+      return;
+    }
+
+    const activeProducts = getActiveProducts();
+    const selectedIds = getBestSellerProductIds();
+    const selectedProducts = getBestSellerProductsByIds(selectedIds);
+
+    if (elements.bestSellerCount) {
+      elements.bestSellerCount.textContent = String(selectedProducts.length);
+    }
+
+    const buildOptions = (selectedId) => {
+      const hasSelectedProduct = activeProducts.some((product) => product.id === selectedId);
+      const unavailableOption = selectedId && !hasSelectedProduct
+        ? `<option value="${escapeHtml(selectedId)}" selected disabled>Unavailable selected product</option>`
+        : "";
+
+      return `
+        <option value="">Empty slot</option>
+        ${unavailableOption}
+        ${activeProducts.map((product) => {
+          const productId = product.id || "";
+          const label = `${getProductSku(product)} - ${getProductName(product)}`;
+          const selected = productId === selectedId ? " selected" : "";
+
+          return `<option value="${escapeHtml(productId)}"${selected}>${escapeHtml(label)}</option>`;
+        }).join("")}
+      `;
+    };
+
+    elements.bestSellerSlots.innerHTML = Array.from({ length: BEST_SELLER_SLOT_COUNT }, (_, index) => {
+      const selectedId = selectedIds[index] || "";
+
+      return `
+        <label class="best-seller-admin-slot">
+          <span>Slot ${index + 1}</span>
+          <select name="slot-${index + 1}" data-best-seller-slot="${index}">
+            ${buildOptions(selectedId)}
+          </select>
+        </label>
+      `;
+    }).join("");
+
+    if (!elements.bestSellerPreview) {
+      return;
+    }
+
+    elements.bestSellerPreview.innerHTML = selectedProducts.length
+      ? selectedProducts.map((product, index) => {
+        const image = product.primaryImageUrl
+          ? `<img src="${escapeHtml(product.primaryImageUrl)}" alt="${escapeHtml(getProductName(product))}">`
+          : `<span class="best-seller-admin-image-fallback">Image coming soon</span>`;
+
+        return `
+          <article class="best-seller-admin-card">
+            ${image}
+            <div class="best-seller-admin-card-body">
+              <span>${String(index + 1).padStart(2, "0")} · ${escapeHtml(getProductSku(product))}</span>
+              <strong>${escapeHtml(getProductName(product))}</strong>
+            </div>
+          </article>
+        `;
+      }).join("")
+      : `<p class="admin-note">No Best Seller products selected yet.</p>`;
   }
 
   // ── EDIT MODAL ──────────────────────────────────────────────────────────────
@@ -1693,6 +1874,7 @@
     renderProductsTable();
     renderSheetFeed();
     renderSheetProductsTable();
+    renderBestSellerSettings();
     renderCatalogueDraftTable();
     renderDatabaseStatus();
     renderDatabaseProducts();
@@ -1718,6 +1900,10 @@
     });
   });
 
+  elements.productForm?.elements?.namedItem("imageGroupFiles")?.addEventListener("change", () => {
+    applyImageGroupToProductForm(elements.productForm);
+  });
+
   elements.productForm?.addEventListener("submit", async (event) => {
     event.preventDefault();
     const form = event.currentTarget;
@@ -1731,6 +1917,8 @@
     const name = String(formData.get("name")).trim();
     const stockQty = Math.max(0, Number(formData.get("stockQty")) || 0);
     const reservedQty = Math.max(0, Number(formData.get("reservedQty")) || 0);
+    const imageUploadDraft = buildProductImageUploadDraft(formData, { code: sku, name });
+    const imageGroup = imageUploadDraft.smartGroup;
     const products = readProducts();
 
     if (!sku || !name) {
@@ -1752,72 +1940,61 @@
       sku,
       name,
       category: String(formData.get("category")),
+      collection: imageGroup?.collectionKey || null,
       price: String(formData.get("price")).trim() || "Price on request",
       stockQty,
       reservedQty,
       status: String(formData.get("status")),
+      metadata: buildProductImageMetadata(imageGroup),
       createdAt: new Date().toISOString()
     };
 
     try {
-      await fetchAdminApi("/products", {
+      const payload = await fetchAdminApi("/products", {
         method: "POST",
         body: JSON.stringify(product)
       });
+      await uploadProductImages(payload.product, imageUploadDraft);
       await loadAdminBackendData();
       form.reset();
+      updateImageGroupSummary(form, null);
       renderAll();
-      setMessage("Product saved in Supabase.");
+      setMessage(imageUploadDraft.mainImageFile ? "Product and images saved in Supabase." : "Product saved in Supabase.");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Unable to save product in Supabase.", true);
+      setMessage(error instanceof Error ? error.message : "Unable to save product and images in Supabase.", true);
     }
   });
 
-  elements.catalogueForm?.addEventListener("submit", async (event) => {
+  elements.bestSellerForm?.addEventListener("submit", async (event) => {
     event.preventDefault();
-    const form = event.currentTarget;
 
     if (!ensureAdminDataReady()) {
       return;
     }
 
-    const result = buildCatalogueDraft(new FormData(form));
+    const slotSelects = Array.from(elements.bestSellerSlots?.querySelectorAll("[data-best-seller-slot]") || []);
+    const productIds = slotSelects
+      .map((select) => String(select.value || "").trim())
+      .filter(Boolean);
+    const uniqueProductIds = Array.from(new Set(productIds));
 
-    if (!result.ok) {
-      setMessage(result.message, true);
+    if (uniqueProductIds.length !== productIds.length) {
+      setMessage("Choose each Best Seller product only once.", true);
       return;
     }
 
+    setMessage("Saving Best Seller products...");
+
     try {
-      const payload = await fetchAdminApi("/products", {
-        method: "POST",
-        body: JSON.stringify({
-          sku: result.product.code,
-          name: result.product.name,
-          category: getCollectionLabel(result.product.collectionKey),
-          collection: result.product.collectionKey,
-          price: result.product.price,
-          stockQty: result.stockQty,
-          reservedQty: 0,
-          status: result.stockQty > 0 ? "Ready" : "Sold Out",
-          metadata: {
-            source: "admin_catalogue_form",
-            title: result.product.title,
-            description: result.product.description,
-            details: result.product.details,
-            filterValues: result.product.filterValues,
-            imagePresentation: result.product.imagePresentation
-          }
-        })
+      const payload = await fetchAdminApi("/best-sellers", {
+        method: "PATCH",
+        body: JSON.stringify({ productIds: uniqueProductIds })
       });
-      await uploadCatalogueImages(payload.product, result);
-      await loadAdminBackendData();
-      loadDatabaseCatalogue();
-      form.reset();
+      adminCache.bestSellerProductIds = Array.isArray(payload.productIds) ? payload.productIds : [];
       renderAll();
-      setMessage("Catalogue product and images saved in Supabase.");
+      setMessage("Best Seller carousel updated.");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Unable to save catalogue product and images in Supabase.", true);
+      setMessage(error instanceof Error ? error.message : "Unable to save Best Seller products.", true);
     }
   });
 

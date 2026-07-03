@@ -1,5 +1,8 @@
+import { buildPageMetadata } from "./seo";
+
 const serviceProcessImage = "/assets/images/service/custom-jewelry-process-storyboard.png";
 const serviceHeroImage = "/assets/images/service/custom-jewelry-service-hero.png";
+const serviceSeamlessHeroImage = "/assets/images/service/custom-jewelry-service-hero-02-seamless.png";
 
 export const staticPages = {
   "about-us": {
@@ -43,6 +46,10 @@ export const staticPages = {
       {
         src: serviceHeroImage,
         alt: "Finished custom diamond ring displayed with a plain green ring box, sketch paper, tools, and a soft CAD design screen"
+      },
+      {
+        src: serviceSeamlessHeroImage,
+        alt: "Custom jewelry service ring and pendant scene on soft satin"
       }
     ],
     features: [
@@ -254,11 +261,13 @@ export function getStaticPageMetadata(slug) {
   const page = getStaticPage(slug);
 
   if (!page) {
-    return { title: "Maris Jewelry" };
+    return buildPageMetadata({ title: "Maris Jewelry" });
   }
 
-  return {
+  return buildPageMetadata({
     title: `${page.title} | Maris Jewelry`,
-    description: page.description || page.lead
-  };
+    description: page.description || page.lead,
+    path: `/${slug}`,
+    image: page.heroImages?.[0]?.src || page.heroImage?.src
+  });
 }

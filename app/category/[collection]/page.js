@@ -1,7 +1,14 @@
 import { notFound } from "next/navigation";
 import CategoryProducts from "./CategoryProducts";
+import JsonLd from "../../components/JsonLd";
 import { COLLECTION_ORDER, getCollection, productMatchesCollection } from "../../lib/collections";
 import { readPublicCatalogueProducts } from "../../lib/maris-database.js";
+import {
+  absoluteUrl,
+  buildBreadcrumbJsonLd,
+  buildCollectionPageJsonLd,
+  buildPageMetadata
+} from "../../lib/seo";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 60;
@@ -18,9 +25,16 @@ export async function generateMetadata({ params }) {
     return { title: "Maris Jewelry" };
   }
 
-  return {
+  const canonicalPath = `/category/${collection.slug}`;
+  const metadata = buildPageMetadata({
     title: `${collection.title} | Maris Jewelry`,
-    description: collection.lead
+    description: `${collection.lead} Browse Maris Jewelry catalogue pieces and contact the atelier to confirm availability or custom details.`,
+    path: canonicalPath
+  });
+
+  return {
+    ...metadata,
+    alternates: { canonical: absoluteUrl(canonicalPath) }
   };
 }
 
@@ -42,15 +56,27 @@ export default async function CategoryPage({ params }) {
   }
 
   const products = await getCollectionProducts(collection.slug);
+  const categoryJsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      buildBreadcrumbJsonLd([
+        { name: collection.title, path: `/category/${collection.slug}` }
+      ]),
+      buildCollectionPageJsonLd({ collection, products })
+    ]
+  };
 
   return (
-    <main className="category-page site-main">
-      <section className="page-header">
-        <h1>{collection.title}</h1>
-        <p className="category-lead">{collection.lead}</p>
-      </section>
+    <>
+      <JsonLd data={categoryJsonLd} />
+      <main className="category-page site-main">
+        <section className="page-header">
+          <h1>{collection.title}</h1>
+          <p className="category-lead">{collection.lead}</p>
+        </section>
 
-      <CategoryProducts products={products} collectionTitle={collection.title} />
-    </main>
+        <CategoryProducts products={products} collectionTitle={collection.title} />
+      </main>
+    </>
   );
 }

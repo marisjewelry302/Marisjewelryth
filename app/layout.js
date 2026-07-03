@@ -9,12 +9,23 @@ import "../assets/css/articles.css";
 import "../assets/css/site-header.css";
 import "../assets/css/footer.css";
 import "./react-migration.css";
+import JsonLd from "./components/JsonLd";
 import SiteFooter from "./components/SiteFooter";
 import SiteHeader from "./components/SiteHeader";
+import {
+  buildLocalBusinessJsonLd,
+  buildOrganizationJsonLd,
+  buildPageMetadata,
+  buildWebsiteJsonLd
+} from "./lib/seo";
 
 export const metadata = {
-  title: "Maris Jewelry",
-  description: "Fine jewelry, engagement rings, wedding bands, and custom designs.",
+  ...buildPageMetadata({
+    title: "Maris Jewelry | Bangkok Fine Jewelry Atelier",
+    description:
+      "Explore Maris Jewelry for engagement rings, wedding bands, fine jewelry, custom design guidance, and atelier-led availability review in Bangkok.",
+    path: "/"
+  }),
   icons: {
     icon: "/assets/images/favicon.svg",
     apple: "/assets/images/logo.png"
@@ -23,6 +34,15 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }) {
+  const siteJsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      buildOrganizationJsonLd(),
+      buildWebsiteJsonLd(),
+      buildLocalBusinessJsonLd()
+    ]
+  };
+
   return (
     <html lang="en" translate="no" className="notranslate">
       <head>
@@ -35,6 +55,7 @@ export default function RootLayout({ children }) {
         />
       </head>
       <body className="has-maris-footer notranslate" translate="no" suppressHydrationWarning>
+        <JsonLd data={siteJsonLd} />
         <SiteHeader />
         {children}
         <SiteFooter />

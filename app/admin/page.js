@@ -46,6 +46,7 @@ export default async function AdminPage() {
           <aside className="admin-sidebar" aria-label="Admin navigation">
             <button className="is-active" type="button" data-admin-tab="dashboard">Dashboard</button>
             <button type="button" data-admin-tab="products">Products</button>
+            <button type="button" data-admin-tab="best-seller">Best Seller</button>
             <button type="button" data-admin-tab="inventory">Inventory</button>
             <button type="button" data-admin-tab="orders">Orders</button>
             <button type="button" data-admin-tab="custom-requests">Custom Requests</button>
@@ -188,6 +189,13 @@ export default async function AdminPage() {
                     <option value="Hidden">Hidden</option>
                   </select>
                 </label>
+                <label className="admin-span-2">
+                  Product Images
+                  <input name="imageGroupFiles" type="file" accept="image/*" multiple data-image-group-files />
+                </label>
+                <div className="admin-image-group-summary admin-span-2" data-image-group-summary>
+                  No product images selected.
+                </div>
                 <button className="admin-primary" type="submit">Add Product</button>
               </form>
 
@@ -231,6 +239,43 @@ export default async function AdminPage() {
                     </thead>
                     <tbody data-sheet-catalogue-table></tbody>
                   </table>
+                </div>
+              </div>
+            </section>
+
+            {/* ── BEST SELLER ── */}
+            <section className="admin-panel" data-admin-panel="best-seller">
+              <div className="admin-panel-head">
+                <div>
+                  <p className="admin-kicker">Homepage carousel</p>
+                  <h2>Best Seller</h2>
+                </div>
+                <p className="admin-note">Select the products shown in the Best Seller carousel on the homepage.</p>
+              </div>
+
+              <form className="admin-form best-seller-form" data-best-seller-form>
+                <div className="best-seller-admin-slots" data-best-seller-slots>
+                  <p className="admin-note">Loading Best Seller slots...</p>
+                </div>
+                <div className="admin-form-actions best-seller-admin-actions">
+                  <button className="admin-primary" type="submit">Save Best Seller</button>
+                  <span className="admin-inline-note">
+                    <strong data-best-seller-count>0</strong>
+                    selected
+                  </span>
+                </div>
+              </form>
+
+              <div className="admin-subsection">
+                <div className="admin-subsection-head">
+                  <div>
+                    <p className="admin-kicker">Preview</p>
+                    <h3>Homepage Order</h3>
+                  </div>
+                  <p className="admin-note">Only active products appear publicly.</p>
+                </div>
+                <div className="best-seller-admin-preview" data-best-seller-preview>
+                  <p className="admin-note">No Best Seller products selected yet.</p>
                 </div>
               </div>
             </section>
@@ -496,6 +541,7 @@ export default async function AdminPage() {
           </section>
         </main>
 
+        <Script src="/assets/js/admin-image-group-parser.js" strategy="afterInteractive" />
         <Script src="/assets/js/admin-page.js" strategy="afterInteractive" />
       </div>
     </>

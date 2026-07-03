@@ -1,9 +1,11 @@
 import { byLanguage, journalArticles } from "../lib/journal-data";
+import { buildPageMetadata } from "../lib/seo";
 
-export const metadata = {
+export const metadata = buildPageMetadata({
   title: "Articles | Maris Jewelry",
-  description: "Practical reads for buyers researching diamonds, engagement rings, and fine jewelry with more confidence."
-};
+  description: "Practical reads for buyers researching diamonds, engagement rings, and fine jewelry with more confidence.",
+  path: "/journal"
+});
 
 export default function JournalPage() {
   const language = "en";

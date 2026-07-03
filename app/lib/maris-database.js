@@ -19,6 +19,8 @@ const SUPABASE_URL_ENV = "SUPABASE_URL";
 const NEXT_PUBLIC_SUPABASE_URL_ENV = "NEXT_PUBLIC_SUPABASE_URL";
 const SUPABASE_SERVICE_ROLE_KEY_ENV = "SUPABASE_SERVICE_ROLE_KEY";
 const MAX_PRODUCT_IMAGE_BYTES = 5 * 1024 * 1024;
+const BEST_SELLER_SETTING_KEY = "home_best_sellers";
+const BEST_SELLER_SLOT_LIMIT = 7;
 const ADMIN_CATALOGUE_SELECT = `
   id,
   sku,
@@ -271,6 +273,20 @@ function cleanOptionalText(value) {
   return text || null;
 }
 
+function normalizeBestSellerProductIds(value, limit = BEST_SELLER_SLOT_LIMIT) {
+  const source = Array.isArray(value)
+    ? value
+    : Array.isArray(value?.productIds)
+      ? value.productIds
+      : [];
+
+  return Array.from(new Set(
+    source
+      .map((productId) => String(productId || "").trim())
+      .filter(Boolean)
+  )).slice(0, limit);
+}
+
 function normalizeAdminProductStatus(value) {
   const status = String(value || "").trim().toLowerCase();
 
@@ -433,6 +449,134 @@ export async function readPublicCatalogueProducts({ env = process.env, client, l
   }
 
   const products = Array.isArray(data) ? data.map(normalizePublicProduct) : [];
+
+  return {
+    source: "supabase",
+    status: products.length > 0 ? "ready" : "empty",
+    projectRef: config.projectRef,
+    missingEnv: [],
+    products,
+    checkedAt: new Date().toISOString()
+  };
+}
+
+export async function readAdminBestSellerSettings({ env = process.env, client } = {}) {
+  const config = getSupabaseAdminConfig(env);
+
+  if (!config.isConfigured) {
+    return {
+      isConfigured: false,
+      projectRef: config.projectRef,
+      missingEnv: config.missingEnv,
+      productIds: [],
+      checkedAt: new Date().toISOString()
+    };
+  }
+
+  const supabase = client || createSupabaseAdminClient(env);
+  const { data, error } = await supabase
+    .from("settings")
+    .select("value")
+    .eq("key", BEST_SELLER_SETTING_KEY)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message || "Best Seller settings could not be loaded.");
+  }
+
+  return {
+    isConfigured: true,
+    projectRef: config.projectRef,
+    missingEnv: [],
+    productIds: normalizeBestSellerProductIds(data?.value),
+    checkedAt: new Date().toISOString()
+  };
+}
+
+export async function updateAdminBestSellerSettings(productIds, { env = process.env, client } = {}) {
+  const config = getSupabaseAdminConfig(env);
+
+  if (!config.isConfigured) {
+    throw new Error(`Supabase admin database is not configured. Set ${config.missingEnv.join(", ")}.`);
+  }
+
+  const normalizedProductIds = normalizeBestSellerProductIds(productIds);
+  const supabase = client || createSupabaseAdminClient(env);
+  const value = {
+    productIds: normalizedProductIds,
+    updatedAt: new Date().toISOString()
+  };
+
+  const { data, error } = await supabase
+    .from("settings")
+    .upsert({
+      key: BEST_SELLER_SETTING_KEY,
+      value,
+      description: "Homepage Best Seller carousel product order.",
+      is_public: true
+    }, { onConflict: "key" })
+    .select("value")
+    .single();
+
+  if (error) {
+    throw new Error(error.message || "Best Seller settings could not be saved.");
+  }
+
+  return {
+    isConfigured: true,
+    projectRef: config.projectRef,
+    missingEnv: [],
+    productIds: normalizeBestSellerProductIds(data?.value || value),
+    checkedAt: new Date().toISOString()
+  };
+}
+
+export async function readPublicBestSellerProducts({ env = process.env, client, limit = BEST_SELLER_SLOT_LIMIT } = {}) {
+  const config = getSupabaseAdminConfig(env);
+
+  if (!config.isConfigured) {
+    return {
+      source: "supabase",
+      status: "unavailable",
+      projectRef: config.projectRef,
+      missingEnv: config.missingEnv,
+      products: [],
+      checkedAt: new Date().toISOString()
+    };
+  }
+
+  const supabase = client || createSupabaseAdminClient(env);
+  const settings = await readAdminBestSellerSettings({ env, client: supabase });
+  const productIds = settings.productIds.slice(0, limit);
+
+  if (!productIds.length) {
+    return {
+      source: "supabase",
+      status: "empty",
+      projectRef: config.projectRef,
+      missingEnv: [],
+      products: [],
+      checkedAt: new Date().toISOString()
+    };
+  }
+
+  const { data, error } = await supabase
+    .from("products")
+    .select(PUBLIC_CATALOGUE_SELECT)
+    .eq("status", "active")
+    .in("id", productIds)
+    .limit(productIds.length);
+
+  if (error) {
+    throw new Error(error.message || "Supabase best seller products could not be loaded.");
+  }
+
+  const productOrder = new Map(productIds.map((productId, index) => [productId, index]));
+  const products = (Array.isArray(data) ? data.map(normalizePublicProduct) : [])
+    .sort((left, right) => (
+      (productOrder.get(left.id) ?? Number.MAX_SAFE_INTEGER)
+      - (productOrder.get(right.id) ?? Number.MAX_SAFE_INTEGER)
+    ));
 
   return {
     source: "supabase",
@@ -880,7 +1024,8 @@ export async function createAdminProduct(product, { env = process.env, client } 
     base_price: parseMoneyAmount(product.price) ?? null,
     status,
     stock_quantity: Number(product.stockQty) || 0,
-    reserved_quantity: Number(product.reservedQty) || 0
+    reserved_quantity: Number(product.reservedQty) || 0,
+    metadata: product.metadata || {}
   };
 
   const { data, error } = await supabase

@@ -1,11 +1,25 @@
 import BestSellerSection from "./BestSellerSection";
 import HeroSlider from "./HeroSlider";
 import HomeSignupPopup from "./HomeSignupPopup";
-import { readPublicCatalogueProducts } from "./lib/maris-database.js";
+import JsonLd from "./components/JsonLd";
+import { readPublicBestSellerProducts, readPublicCatalogueProducts } from "./lib/maris-database.js";
 import { getPublicProductDisplayName } from "./lib/product-display.js";
+import {
+  HOME_FAQS,
+  buildBreadcrumbJsonLd,
+  buildFaqPageJsonLd,
+  buildPageMetadata
+} from "./lib/seo";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 60;
+
+export const metadata = buildPageMetadata({
+  title: "Maris Jewelry | Bangkok Fine Jewelry Atelier",
+  description:
+    "Browse engagement rings, wedding bands, fine jewelry, and custom design guidance from Maris Jewelry, a Bangkok atelier for catalogue inquiries and private requests.",
+  path: "/"
+});
 
 const heroSlides = [
   {
@@ -49,6 +63,39 @@ const atelierFallbackCards = [
   }
 ];
 
+const shopCategoryItems = [
+  {
+    label: "แหวน",
+    href: "/category/rings",
+    image: "/assets/images/home/optimized/category-focus-rings-landscape-v1.jpg",
+    alt: "Diamond rings arranged on satin"
+  },
+  {
+    label: "ต่างหู",
+    href: "/category/earrings",
+    image: "/assets/images/home/optimized/category-focus-earrings-landscape-v1.jpg",
+    alt: "Diamond earrings displayed on a soft jewellery set"
+  },
+  {
+    label: "จี้",
+    href: "/category/necklaces-pendants",
+    image: "/assets/images/home/collections/cover-pendants-collection.png",
+    alt: "Pear-shaped diamond pendant on champagne satin"
+  },
+  {
+    label: "สร้อยข้อมือและกำไล",
+    href: "/category/bracelets",
+    image: "/assets/images/home/optimized/category-focus-bracelets-landscape-v1.jpg",
+    alt: "Diamond bracelets layered on warm satin"
+  },
+  {
+    label: "สร้อยคอ",
+    href: "/category/necklaces-pendants",
+    image: "/assets/images/home/optimized/category-focus-necklaces-landscape-v1.jpg",
+    alt: "Diamond necklace and pendant selection on satin"
+  }
+];
+
 function getAtelierProductLabel(product) {
   return getPublicProductDisplayName(product);
 }
@@ -62,11 +109,32 @@ async function getFeaturedProducts() {
   }
 }
 
+async function getBestSellerProducts() {
+  try {
+    const result = await readPublicBestSellerProducts({ limit: 7 });
+    return result.products;
+  } catch (error) {
+    return [];
+  }
+}
+
 export default async function HomePage() {
-  const featuredProducts = await getFeaturedProducts();
+  const [featuredProducts, bestSellerProducts] = await Promise.all([
+    getFeaturedProducts(),
+    getBestSellerProducts()
+  ]);
+  const homeJsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      buildBreadcrumbJsonLd([{ name: "Home", path: "/" }]),
+      buildFaqPageJsonLd(HOME_FAQS)
+    ]
+  };
 
   return (
-    <main className="home-main site-main">
+    <>
+      <JsonLd data={homeJsonLd} />
+      <main className="home-main site-main">
       <section className="hero">
         <div className="hero-utility-bar" aria-label="Maris highlights">
           <span>Bangkok atelier</span>
@@ -89,6 +157,23 @@ export default async function HomePage() {
             <a className="hero-secondary" href="/design-your-ring">Design Your Ring</a>
             <a className="hero-secondary" href="/about-us">Discover Maris</a>
           </div>
+        </div>
+      </section>
+
+      <section className="shop-category-section" aria-labelledby="shop-category-heading">
+        <div className="shop-category-head">
+          <h2 id="shop-category-heading">Shop By Category</h2>
+          <span aria-hidden="true" />
+          <p>From classic earstuds to chandeliers, from timeless bracelet to chic bangles. Shop our wide selection of jewelry</p>
+        </div>
+
+        <div className="shop-category-grid">
+          {shopCategoryItems.map((item) => (
+            <a className="shop-category-card" href={item.href} key={item.label}>
+              <img src={item.image} alt={item.alt} width="480" height="360" loading="lazy" />
+              <strong>{item.label}</strong>
+            </a>
+          ))}
         </div>
       </section>
 
@@ -171,7 +256,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <BestSellerSection />
+      <BestSellerSection items={bestSellerProducts} />
 
       <section className="value-strip" aria-labelledby="value-heading">
         <div className="value-lead">
@@ -206,7 +291,27 @@ export default async function HomePage() {
         </div>
       </section>
 
+      <section className="home-answer-guide" aria-labelledby="home-answer-guide-heading">
+        <div className="home-answer-guide__intro">
+          <p className="section-kicker">Maris answers</p>
+          <h2 id="home-answer-guide-heading">Clear answers before you choose a piece.</h2>
+          <p>
+            A calm starting point for buyers comparing engagement rings, custom work, availability, and the right way to begin.
+          </p>
+        </div>
+
+        <div className="home-answer-guide__grid">
+          {HOME_FAQS.map((faq) => (
+            <article className="home-answer-guide__item" key={faq.question}>
+              <h3>{faq.question}</h3>
+              <p>{faq.answer}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
       <HomeSignupPopup />
-    </main>
+      </main>
+    </>
   );
 }

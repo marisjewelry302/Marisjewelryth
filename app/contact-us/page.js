@@ -1,9 +1,11 @@
 import LeadForm from "../components/LeadForm";
+import { buildPageMetadata } from "../lib/seo";
 
-export const metadata = {
+export const metadata = buildPageMetadata({
   title: "Contact Us | Maris Jewelry",
-  description: "Contact Maris Jewelry for catalogue questions, custom design, OEM service, wholesale support, or private consultation."
-};
+  description: "Contact Maris Jewelry for catalogue questions, custom design, OEM service, wholesale support, or private consultation.",
+  path: "/contact-us"
+});
 
 export default function ContactUsPage() {
   return (

@@ -1,4 +1,5 @@
 import CustomOrderForm from "./CustomOrderForm";
+import { buildPageMetadata } from "../../lib/seo";
 
 export const dynamic = "force-dynamic";
 
@@ -17,10 +18,11 @@ export async function generateMetadata({ params }) {
   const decodedProductCode = decodeProductCodeParam(productCode);
   const titleCode = decodedProductCode || "Custom order";
 
-  return {
+  return buildPageMetadata({
     title: `${titleCode} | Contact Maris Jewelry`,
-    description: `Contact Maris Jewelry about ${titleCode} and optional bespoke details.`
-  };
+    description: `Contact Maris Jewelry about ${titleCode} and optional bespoke details.`,
+    path: `/contact-order/${encodeURIComponent(decodedProductCode || "custom-order")}`
+  });
 }
 
 export default async function ContactOrderPage({ params }) {

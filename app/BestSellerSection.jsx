@@ -2,27 +2,57 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-const BEST_SELLER_ITEMS = Array.from({ length: 7 }, (_, index) => ({
+const BEST_SELLER_SLOT_COUNT = 7;
+const FALLBACK_BEST_SELLER_ITEMS = Array.from({ length: BEST_SELLER_SLOT_COUNT }, (_, index) => ({
   id: `best-seller-${index + 1}`,
   label: `Best Seller ${index + 1}`,
   imageSrc: "",
-  imageAlt: ""
+  imageAlt: "",
+  href: ""
 }));
 
 const LOOP_SET_COUNT = 3;
-const REAL_SET_START = BEST_SELLER_ITEMS.length;
-const INITIAL_FOCUS_INDEX = REAL_SET_START + 1;
 
-export default function BestSellerSection() {
+function normalizeBestSellerItems(items) {
+  const normalizedItems = (Array.isArray(items) ? items : [])
+    .map((item, index) => {
+      const productPath = item?.slug || item?.sku || "";
+      const productLabel = item?.name || item?.sku || `Best Seller ${index + 1}`;
+      const imageSrc = item?.primaryImageUrl || item?.images?.[0]?.imageUrl || "";
+
+      return {
+        id: item?.id || item?.sku || `best-seller-product-${index + 1}`,
+        label: productLabel,
+        imageSrc,
+        imageAlt: item?.images?.[0]?.altText || productLabel,
+        href: productPath ? `/product/${encodeURIComponent(productPath)}` : ""
+      };
+    })
+    .filter((item) => item.id);
+
+  return normalizedItems.length
+    ? normalizedItems.slice(0, BEST_SELLER_SLOT_COUNT)
+    : FALLBACK_BEST_SELLER_ITEMS;
+}
+
+export default function BestSellerSection({ items = [] }) {
   const trackRef = useRef(null);
   const carouselRef = useRef(null);
-  const [slideIndex, setSlideIndex] = useState(INITIAL_FOCUS_INDEX);
+  const bestSellerItems = useMemo(() => normalizeBestSellerItems(items), [items]);
+  const realSetStart = bestSellerItems.length;
+  const initialFocusIndex = realSetStart + (bestSellerItems.length > 1 ? 1 : 0);
+  const [slideIndex, setSlideIndex] = useState(initialFocusIndex);
   const [slideStep, setSlideStep] = useState(0);
   const [centerOffset, setCenterOffset] = useState(0);
   const [withTransition, setWithTransition] = useState(false);
   const loopItems = useMemo(() => {
-    return Array.from({ length: LOOP_SET_COUNT }, () => BEST_SELLER_ITEMS).flat();
-  }, []);
+    return Array.from({ length: LOOP_SET_COUNT }, () => bestSellerItems).flat();
+  }, [bestSellerItems]);
+
+  useEffect(() => {
+    setWithTransition(false);
+    setSlideIndex(initialFocusIndex);
+  }, [initialFocusIndex]);
 
   const measureCarousel = useCallback(() => {
     const track = trackRef.current;
@@ -70,15 +100,15 @@ export default function BestSellerSection() {
   }
 
   function handleTrackTransitionEnd() {
-    if (slideIndex >= BEST_SELLER_ITEMS.length * 2) {
+    if (slideIndex >= bestSellerItems.length * 2) {
       setWithTransition(false);
-      setSlideIndex(REAL_SET_START);
+      setSlideIndex(realSetStart);
       return;
     }
 
-    if (slideIndex < BEST_SELLER_ITEMS.length) {
+    if (slideIndex < bestSellerItems.length) {
       setWithTransition(false);
-      setSlideIndex((BEST_SELLER_ITEMS.length * 2) - 1);
+      setSlideIndex((bestSellerItems.length * 2) - 1);
     }
   }
 
@@ -110,7 +140,7 @@ export default function BestSellerSection() {
 
       <div
         className="best-seller-carousel"
-        aria-label="Best seller product placeholders"
+        aria-label="Best seller products"
         ref={carouselRef}
       >
         <div
@@ -122,30 +152,51 @@ export default function BestSellerSection() {
           {loopItems.map((item, index) => {
             const distanceFromCenter = Math.abs(index - slideIndex);
             const focusState = distanceFromCenter === 0 ? "center" : distanceFromCenter === 1 ? "side" : "away";
+            const isClone = index < realSetStart || index >= realSetStart + bestSellerItems.length;
 
             return (
-            <article
-              className="best-seller-card"
-              data-slot-id={item.id}
-              data-focus={focusState}
-              aria-hidden={index < REAL_SET_START || index >= REAL_SET_START + BEST_SELLER_ITEMS.length ? "true" : undefined}
-              key={`${item.id}-${index}`}
-            >
-              <div className="best-seller-image-frame">
-                {item.imageSrc ? (
-                  <img
-                    src={item.imageSrc}
-                    alt={item.imageAlt || item.label}
-                    width="814"
-                    height="814"
-                    loading="lazy"
-                    
-                  />
+              <article
+                className="best-seller-card"
+                data-slot-id={item.id}
+                data-focus={focusState}
+                aria-hidden={isClone ? "true" : undefined}
+                key={`${item.id}-${index}`}
+              >
+                {item.href ? (
+                  <a
+                    className="best-seller-image-frame"
+                    href={item.href}
+                    aria-label={item.label}
+                    tabIndex={isClone ? -1 : undefined}
+                  >
+                    {item.imageSrc ? (
+                      <img
+                        src={item.imageSrc}
+                        alt={item.imageAlt || item.label}
+                        width="814"
+                        height="814"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <span className="best-seller-empty-label">{item.label}</span>
+                    )}
+                  </a>
                 ) : (
-                  <span className="best-seller-empty-label">{item.label}</span>
+                  <div className="best-seller-image-frame">
+                    {item.imageSrc ? (
+                      <img
+                        src={item.imageSrc}
+                        alt={item.imageAlt || item.label}
+                        width="814"
+                        height="814"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <span className="best-seller-empty-label">{item.label}</span>
+                    )}
+                  </div>
                 )}
-              </div>
-            </article>
+              </article>
             );
           })}
         </div>

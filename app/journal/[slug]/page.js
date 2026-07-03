@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { byLanguage, getJournalArticle, journalArticles } from "../../lib/journal-data";
+import { buildPageMetadata } from "../../lib/seo";
 
 export function generateStaticParams() {
   return journalArticles.map((article) => ({ slug: article.slug }));
@@ -13,10 +14,11 @@ export async function generateMetadata({ params }) {
     return { title: "Maris Jewelry" };
   }
 
-  return {
+  return buildPageMetadata({
     title: `${byLanguage(article.title)} | Maris Jewelry`,
-    description: byLanguage(article.excerpt)
-  };
+    description: byLanguage(article.excerpt),
+    path: `/journal/${article.slug}`
+  });
 }
 
 export default async function JournalArticlePage({ params }) {

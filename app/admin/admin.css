@@ -432,6 +432,21 @@ a {
   grid-column: span 2;
 }
 
+.admin-image-group-summary {
+  min-height: 44px;
+  padding: 12px 14px;
+  border: 1px solid rgba(0, 73, 58, 0.14);
+  background: rgba(255, 250, 246, 0.72);
+  color: var(--maris-muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.admin-image-group-summary strong {
+  color: var(--maris-teal);
+  font-weight: 500;
+}
+
 .admin-form-actions {
   display: flex;
   flex-wrap: wrap;
@@ -453,6 +468,92 @@ a {
   font-family: var(--maris-font-sans);
   font-size: 28px;
   line-height: 1;
+}
+
+.best-seller-form {
+  display: block;
+}
+
+.best-seller-admin-slots {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.best-seller-admin-slot {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid rgba(221, 164, 165, 0.32);
+  background: rgba(255, 250, 246, 0.76);
+}
+
+.best-seller-admin-slot span {
+  color: var(--maris-gold);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.best-seller-admin-slot select {
+  min-height: 44px;
+  width: 100%;
+  border: 1px solid rgba(0, 73, 58, 0.18);
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--maris-ink);
+  font: inherit;
+  padding: 0 12px;
+}
+
+.best-seller-admin-actions {
+  margin-top: 6px;
+}
+
+.best-seller-admin-preview {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 14px;
+}
+
+.best-seller-admin-card {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid rgba(221, 164, 165, 0.34);
+  background: rgba(255, 255, 255, 0.68);
+}
+
+.best-seller-admin-card img,
+.best-seller-admin-card .best-seller-admin-image-fallback {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: var(--maris-silver);
+  color: var(--maris-muted);
+  object-fit: cover;
+  font-size: 12px;
+}
+
+.best-seller-admin-card-body {
+  display: grid;
+  gap: 5px;
+  padding: 12px;
+}
+
+.best-seller-admin-card-body span {
+  color: var(--maris-gold);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.best-seller-admin-card-body strong {
+  color: var(--maris-ink);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.35;
 }
 
 .admin-guide-grid {
@@ -590,6 +691,7 @@ td strong {
   .admin-stats,
   .admin-form,
   .admin-feed-grid,
+  .best-seller-admin-slots,
   .admin-guide-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -627,6 +729,7 @@ td strong {
   .admin-stats,
   .admin-form,
   .admin-feed-grid,
+  .best-seller-admin-slots,
   .admin-guide-grid {
     grid-template-columns: 1fr;
   }
