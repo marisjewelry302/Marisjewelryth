@@ -1589,3 +1589,86 @@ body.is-page-scrolled .site-header:not(.site-header--home) .icons svg {
     max-width: 58vw;
   }
 }
+
+/* Homepage hero composition repair */
+.site-header .nav-mobile-actions {
+  display: none;
+}
+
+.site-header--home .navbar .nav {
+  width: min(1160px, 100%);
+  gap: 8px clamp(18px, 2.25vw, 34px);
+}
+
+.site-header--home .navbar .nav a,
+.site-header--home .navbar .nav .nav-dropdown-trigger,
+body.is-page-scrolled .site-header--home .navbar .nav a,
+body.is-page-scrolled .site-header--home .navbar .nav .nav-dropdown-trigger {
+  white-space: nowrap;
+}
+
+body:has(.site-header--home) .home-main .hero,
+.is-home-page .home-main .hero {
+  padding-inline: clamp(44px, 7vw, 136px);
+}
+
+body:has(.site-header--home) .hero-content,
+.is-home-page .hero-content {
+  width: min(620px, 100%);
+  padding-left: 0;
+}
+
+body:has(.site-header--home) .hero-content h1,
+.is-home-page .hero-content h1 {
+  max-width: 620px;
+}
+
+@media (min-width: 921px) {
+  body:has(.site-header--home) .hero-actions,
+  .is-home-page .hero-actions {
+    max-width: 620px;
+  }
+
+  body:has(.site-header--home) .hero-primary,
+  .is-home-page .hero-primary {
+    min-width: 318px;
+  }
+
+  body:has(.site-header--home) .hero-secondary,
+  .is-home-page .hero-secondary {
+    min-width: 220px;
+  }
+}
+
+@media (max-width: 920px) {
+  .site-header .nav-mobile-actions {
+    display: grid;
+    gap: 8px;
+    width: 100%;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(16, 41, 35, 0.1);
+  }
+
+  .site-header--home .navbar .nav {
+    width: min(86vw, 340px);
+    gap: 0;
+  }
+
+  .site-header--home .navbar .nav a,
+  .site-header--home .navbar .nav .nav-dropdown-trigger,
+  body.is-page-scrolled .site-header--home .navbar .nav a,
+  body.is-page-scrolled .site-header--home .navbar .nav .nav-dropdown-trigger {
+    white-space: normal;
+  }
+
+  body:has(.site-header--home) .home-main .hero,
+  .is-home-page .home-main .hero {
+    padding-inline: 18px;
+  }
+
+  body:has(.site-header--home) .hero-content,
+  .is-home-page .hero-content {
+    width: min(100%, 370px);
+  }
+}
