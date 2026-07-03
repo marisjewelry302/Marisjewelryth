@@ -41,6 +41,8 @@ for (const shape of ["Round", "Oval", "Pear", "Emerald", "Princess", "Marquise",
 }
 
 assert.match(files.client, /DESIGN-YOUR-RING/);
+assert.match(files.client, /Choose your ring style/);
+assert.doesNotMatch(files.client, /Choose the ring silhouette/);
 assert.match(files.client, /DESIGN_RING_DRAFT_KEY/);
 assert.match(files.client, /\/api\/account\/me/);
 assert.match(files.client, /\/api\/custom-order-requests/);

@@ -306,7 +306,7 @@ export default function DesignYourRingClient() {
           {step === 0 && (
             <div className="design-ring-step">
               <p className="design-ring-kicker">Style</p>
-              <h2>Choose the ring silhouette</h2>
+              <h2>Choose your ring style</h2>
               <ChoiceGrid
                 legend="Ring style"
                 options={RING_STYLES}
