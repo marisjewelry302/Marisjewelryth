@@ -86,6 +86,7 @@ export default async function HomePage() {
           </p>
           <div className="hero-actions">
             <a className="hero-primary" href="/category/engagement-ring">Find Your Engagement Ring</a>
+            <a className="hero-secondary" href="/design-your-ring">Design Your Ring</a>
             <a className="hero-secondary" href="/about-us">Discover Maris</a>
           </div>
         </div>

@@ -6,6 +6,7 @@ async function readSource(path) {
 }
 
 const files = {
+  homepage: await readSource("../app/page.js"),
   siteHeader: await readSource("../app/components/SiteHeader.jsx"),
   routePage: await readSource("../app/design-your-ring/page.js"),
   client: await readSource("../app/design-your-ring/DesignYourRingClient.jsx"),
@@ -21,6 +22,7 @@ const files = {
   packageJson: await readSource("../package.json")
 };
 
+assert.match(files.homepage, /href="\/design-your-ring"[\s\S]*Design Your Ring/, "homepage should include a visible Design Your Ring entry link");
 assert.match(files.siteHeader, /href:\s*"\/design-your-ring",\s*label:\s*"Design Your Ring"/);
 assert.match(files.routePage, /Design Your Ring/);
 assert.match(files.routePage, /dynamic\s*=\s*["']force-dynamic["']/);
