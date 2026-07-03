@@ -435,24 +435,6 @@
     };
   }
 
-  function buildProductImageMetadata(imageGroup) {
-    if (!imageGroup) {
-      return {};
-    }
-
-    return {
-      source: "admin_product_form",
-      parsedImageGroup: {
-        code: imageGroup.code,
-        productName: imageGroup.productName,
-        metalLabels: imageGroup.metalLabels,
-        shape: imageGroup.shape,
-        style: imageGroup.style,
-        collectionKey: imageGroup.collectionKey
-      }
-    };
-  }
-
   async function uploadProductImage(productId, file, options = {}) {
     const uploadFormData = new FormData();
     uploadFormData.set("productId", productId);
@@ -1945,7 +1927,6 @@
       stockQty,
       reservedQty,
       status: String(formData.get("status")),
-      metadata: buildProductImageMetadata(imageGroup),
       createdAt: new Date().toISOString()
     };
 

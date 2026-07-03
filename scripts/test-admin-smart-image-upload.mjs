@@ -59,4 +59,5 @@ assert.ok(
 assert.match(adminJs, /buildSmartImageGroup/, "Admin page logic should read selected image groups");
 assert.match(adminJs, /applyImageGroupToProductForm/, "Admin page logic should auto-fill the existing Add Product form from filenames");
 assert.match(adminJs, /uploadProductImages/, "Add Product submit should upload selected product images after creating the product");
-assert.match(databaseJs, /metadata:\s*product\.metadata/, "Created catalogue products should keep metadata from the smart upload form");
+assert.doesNotMatch(adminJs, /metadata:\s*buildProductImageMetadata/, "Add Product must not send metadata to the current Supabase products schema");
+assert.doesNotMatch(databaseJs, /metadata:\s*product\.metadata/, "Created products must not insert a metadata column that may not exist in Supabase");
