@@ -50,6 +50,9 @@ assert.match(files.client, /engraving_text/);
 assert.match(files.client, /maxLength=\{40\}/);
 assert.match(files.client, /ring_design/);
 assert.match(files.client, /Customer Account \/ Email/);
+assert.doesNotMatch(files.client, /function\s+RingPreview/, "Design Your Ring should not render a visual ring preview component");
+assert.doesNotMatch(files.client, /<RingPreview\b/, "Design Your Ring should not include ring preview placements");
+assert.doesNotMatch(files.css, /\.ring-preview\b/, "Design Your Ring CSS should not include unused ring preview styles");
 
 assert.match(files.requests, /RING_STYLES/);
 assert.match(files.requests, /STONE_SHAPES/);

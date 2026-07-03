@@ -96,137 +96,6 @@ function ChoiceGrid({ legend, options, value, onChange, className = "" }) {
   );
 }
 
-const METAL_TONES = {
-  WG: { bandFrom: "#f6f6f5", bandTo: "#c7ccce", gemTint: "#eef1f0" },
-  YG: { bandFrom: "#f6e2a4", bandTo: "#b9862c", gemTint: "#f6e8c6" },
-  RG: { bandFrom: "#f9cfd1", bandTo: "#b97a7c", gemTint: "#f7dcda" },
-  PN: { bandFrom: "#ffffff", bandTo: "#b7c1c1", gemTint: "#eef3f3" },
-  Pd: { bandFrom: "#eeeeec", bandTo: "#9a9a95", gemTint: "#eeeeec" }
-};
-
-const GEM_SHAPES = {
-  Round: (props) => <polygon points="60,22 82.3,29.3 96.1,48.3 96.1,71.7 82.3,90.7 60,98 37.7,90.7 23.9,71.7 23.9,48.3 37.7,29.3" {...props} />,
-  Oval: (props) => <ellipse cx="60" cy="60" rx="34" ry="26" {...props} />,
-  Pear: (props) => <path d="M60,20 Q90,40 88,62 Q86,92 60,100 Q34,92 32,62 Q30,40 60,20 Z" {...props} />,
-  Emerald: (props) => <polygon points="34,30 86,30 98,42 98,78 86,90 34,90 22,78 22,42" {...props} />,
-  Princess: (props) => <rect x="28" y="28" width="64" height="64" {...props} />,
-  Marquise: (props) => <path d="M60,15 C80,30 95,45 95,60 C95,75 80,90 60,105 C40,90 25,75 25,60 C25,45 40,30 60,15 Z" {...props} />,
-  Heart: (props) => <path d="M60,95 C20,65 15,40 35,25 C48,15 60,25 60,38 C60,25 72,15 85,25 C105,40 100,65 60,95 Z" {...props} />,
-  Radiant: (props) => <polygon points="32,24 88,24 98,36 98,84 88,96 32,96 22,84 22,36" {...props} />,
-  Cushion: (props) => <rect x="26" y="26" width="68" height="68" rx="22" ry="22" {...props} />,
-  Baguette: (props) => <rect x="35" y="18" width="50" height="84" rx="4" {...props} />
-};
-
-function caratToScale(carat) {
-  const value = Number(carat);
-  const safe = Number.isFinite(value) && value > 0 ? value : 1;
-  return Math.min(1.32, Math.max(0.82, 0.86 + safe * 0.14));
-}
-
-const HALO_POINTS = Array.from({ length: 14 }, (_, index) => (index / 14) * Math.PI * 2);
-const PAVE_POINTS = Array.from({ length: 18 }, (_, index) => (index / 18) * Math.PI * 2);
-
-function RingPreview({ design, variant }) {
-  const shapeKey = STONE_SHAPES.includes(design.stone_shape) ? design.stone_shape : "Round";
-  const Gem = GEM_SHAPES[shapeKey] || GEM_SHAPES.Round;
-  const tone = METAL_TONES[design.metal] || METAL_TONES.WG;
-  const scale = caratToScale(design.carat);
-  const clipId = `ring-gem-clip-${variant}`;
-  const gemGradientId = `ring-gem-fill-${variant}`;
-  const bandGradientId = `ring-band-fill-${variant}`;
-  const sparkleId = `ring-sparkle-${variant}`;
-  const isHalo = design.style === "Halo" || design.style === "Hidden Halo";
-  const haloRadius = design.style === "Hidden Halo" ? 46 : 54;
-  const haloOpacity = design.style === "Hidden Halo" ? 0.55 : 0.92;
-  const showSideStones = design.style === "Side Stone";
-  const showPave = design.style === "Pavé";
-
-  return (
-    <figure className={`ring-preview ring-preview-${variant}`} aria-hidden="true">
-      <svg viewBox="0 0 120 150" className="ring-preview-svg">
-        <defs>
-          <linearGradient id={bandGradientId} x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor={tone.bandFrom} />
-            <stop offset="100%" stopColor={tone.bandTo} />
-          </linearGradient>
-          <linearGradient id={gemGradientId} x1="0.1" y1="0" x2="0.9" y2="1">
-            <stop offset="0%" stopColor="#fffaf6" />
-            <stop offset="55%" stopColor="#f4e9e1" />
-            <stop offset="100%" stopColor={tone.gemTint} />
-          </linearGradient>
-          <radialGradient id={sparkleId} cx="35%" cy="28%" r="65%">
-            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.95" />
-            <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
-          </radialGradient>
-          <clipPath id={clipId}>
-            <Gem />
-          </clipPath>
-        </defs>
-
-        <ellipse cx="60" cy="124" rx="40" ry="14" fill="none" stroke={`url(#${bandGradientId})`} strokeWidth="9" />
-
-        {showPave && (
-          <g>
-            {PAVE_POINTS.map((angle) => (
-              <circle
-                key={angle}
-                cx={60 + 40 * Math.cos(angle)}
-                cy={124 + 14 * Math.sin(angle)}
-                r="1.9"
-                fill="#fffaf6"
-                opacity="0.9"
-              />
-            ))}
-          </g>
-        )}
-
-        {showSideStones && (
-          <>
-            <g transform="translate(-24 20) scale(0.34)">
-              <Gem fill={`url(#${gemGradientId})`} stroke="rgba(255,255,255,0.7)" strokeWidth="1.6" />
-            </g>
-            <g transform="translate(84 20) scale(0.34)">
-              <Gem fill={`url(#${gemGradientId})`} stroke="rgba(255,255,255,0.7)" strokeWidth="1.6" />
-            </g>
-          </>
-        )}
-
-        <g transform={`translate(60 62) scale(${scale}) translate(-60 -62)`}>
-          {isHalo && (
-            <g>
-              {HALO_POINTS.map((angle) => (
-                <circle
-                  key={angle}
-                  cx={60 + haloRadius * Math.cos(angle)}
-                  cy={62 + haloRadius * Math.sin(angle)}
-                  r="2.3"
-                  fill="#fffaf6"
-                  opacity={haloOpacity}
-                />
-              ))}
-            </g>
-          )}
-
-          <Gem fill={`url(#${gemGradientId})`} stroke="rgba(255,255,255,0.75)" strokeWidth="1.4" />
-
-          <g clipPath={`url(#${clipId})`}>
-            <ellipse cx="44" cy="46" rx="30" ry="22" fill={`url(#${sparkleId})`} className="ring-preview-glint" />
-            <g transform="translate(60 62) scale(0.55) translate(-60 -62)">
-              <Gem fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="0.9" />
-            </g>
-          </g>
-        </g>
-      </svg>
-
-      <figcaption className="ring-preview-tags">
-        <span>{design.style}</span>
-        <strong>{shapeKey} · {design.carat} ct</strong>
-        <span>{[design.metal_purity, getMetalLabel(design.metal)].filter(Boolean).join(" ")} · Size {design.ring_size}</span>
-      </figcaption>
-    </figure>
-  );
-}
-
 export default function DesignYourRingClient() {
   const [step, setStep] = useState(0);
   const [design, setDesign] = useState(DEFAULT_DESIGN);
@@ -413,12 +282,10 @@ export default function DesignYourRingClient() {
             Shape a custom Maris ring before the private consultation. Your draft stays on this device until you submit it through your Maris account.
           </p>
         </div>
-        <RingPreview design={design} variant="hero" />
       </section>
 
       <section className="design-ring-workbench" aria-label="Design Your Ring builder">
         <div className="design-ring-sidebar">
-          <RingPreview design={design} variant="sidebar" />
           <nav className="design-ring-steps" aria-label="Design steps">
             {STEPS.map((label, index) => (
             <button
