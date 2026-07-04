@@ -17,12 +17,19 @@ export function getPublicProductDisplayName(product = {}) {
     return "Diamond Earrings";
   }
 
-  if (sku.startsWith("SR") || searchText.includes("ring")) {
-    return "Diamond Ring";
+  if (
+    sku.startsWith("WB")
+    || sku.startsWith("MB")
+    || sku.startsWith("MR")
+    || sku.startsWith("MWB")
+    || searchText.includes("wedding-band")
+    || searchText.includes("wedding band")
+  ) {
+    return "Wedding Band";
   }
 
-  if (sku.startsWith("WB") || searchText.includes("wedding-band") || searchText.includes("wedding band")) {
-    return "Wedding Band";
+  if (sku.startsWith("SR") || searchText.includes("ring")) {
+    return "Diamond Ring";
   }
 
   if (sku.startsWith("SN") || sku.startsWith("SP") || searchText.includes("necklace") || searchText.includes("pendant")) {

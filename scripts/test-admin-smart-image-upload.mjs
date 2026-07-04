@@ -46,9 +46,17 @@ assert.deepEqual(Array.from(group.orderedImages, (image) => image.file.name), [
 assert.equal(group.mainImageFile.name, "SR 0001 Diamond Cluster Oval Illusion Ring in white Gold The One Aura Collection Logo.png");
 assert.equal(group.galleryImageFiles.length, 5);
 
+const mensWeddingBandGroup = parser.buildImageFileGroup([
+  { name: "Main MWB 1001 Classic Comfort Band White Gold.png", type: "image/png", size: 100 }
+]);
+
+assert.equal(mensWeddingBandGroup.code, "MWB 1001");
+assert.equal(mensWeddingBandGroup.collectionKey, "mens-wedding-bands");
+
 assert.match(adminHtml, /data-product-form/, "Admin Products tab should keep image upload inside the existing Add Product form");
 assert.match(adminHtml, /Product Images[\s\S]*name="imageGroupFiles"/, "Add Product form should accept product images directly");
 assert.match(adminHtml, /data-image-group-summary/, "Add Product form should show parsed image group feedback inline");
+assert.match(adminHtml, /name="ringType"[\s\S]*value="engagement-ring"[\s\S]*value="wedding-bands"[\s\S]*value="mens-wedding-bands"[\s\S]*value="rings"/, "Add Product should let admins choose a ring type for ring products");
 assert.doesNotMatch(adminHtml, /data-catalogue-form|Smart Catalogue Upload|Save Catalogue Product/, "Admin Products tab should not add a separate catalogue upload surface");
 assert.ok(
   adminHtml.indexOf("/assets/js/admin-image-group-parser.js") > -1
@@ -59,5 +67,8 @@ assert.ok(
 assert.match(adminJs, /buildSmartImageGroup/, "Admin page logic should read selected image groups");
 assert.match(adminJs, /applyImageGroupToProductForm/, "Admin page logic should auto-fill the existing Add Product form from filenames");
 assert.match(adminJs, /uploadProductImages/, "Add Product submit should upload selected product images after creating the product");
+assert.doesNotMatch(adminJs, /id="modal-field-sku"[^>]*readonly/, "Edit modal should allow admins to change SKU");
+assert.match(adminJs, /id="modal-field-collection"[\s\S]*value="wedding-bands"[\s\S]*value="mens-wedding-bands"[\s\S]*value="rings"/, "Edit modal collection options should use canonical collection slugs");
+assert.match(adminJs, /body:\s*JSON\.stringify\(\{[\s\S]*sku,[\s\S]*collection,[\s\S]*category:/, "Edit modal should send edited SKU with the product update");
 assert.doesNotMatch(adminJs, /metadata:\s*buildProductImageMetadata/, "Add Product must not send metadata to the current Supabase products schema");
 assert.doesNotMatch(databaseJs, /metadata:\s*product\.metadata/, "Created products must not insert a metadata column that may not exist in Supabase");

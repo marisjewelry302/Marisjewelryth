@@ -3,7 +3,7 @@
     "engagement-ring": { title: "Engagement Rings", href: "/category/engagement-ring" },
     "wedding-set": { title: "Wedding Set", href: "/category/wedding-set" },
     "wedding-bands": { title: "Wedding Bands", href: "/category/wedding-bands" },
-    "mens-wedding-bands": { title: "Men's Rings", href: "/category/mens-wedding-bands" },
+    "mens-wedding-bands": { title: "Men's Wedding Bands", href: "/category/mens-wedding-bands" },
     "necklaces-pendants": { title: "Necklaces & Pendants", href: "/category/necklaces-pendants" },
     bracelets: { title: "Bracelets", href: "/category/bracelets" },
     earrings: { title: "Earrings", href: "/category/earrings" },
@@ -12,6 +12,13 @@
   const collectionMeta = {
     ...fallbackCollectionMeta,
     ...(window.MARIS_COLLECTION_META || {})
+  };
+  const ringCollectionKeys = new Set(["engagement-ring", "wedding-bands", "mens-wedding-bands", "rings"]);
+  const categoryCollectionMap = {
+    "Wedding Set": "wedding-set",
+    Earrings: "earrings",
+    Bracelets: "bracelets",
+    "Necklaces & Pendants": "necklaces-pendants"
   };
   const settingsState = {
     lowStockThreshold: 2
@@ -273,6 +280,26 @@
     return collectionMeta[collectionKey]?.title || collectionKey || "Unassigned";
   }
 
+  function getBroadCategoryLabel(collectionKey, fallbackCategory = "") {
+    if (collectionKey === "wedding-set") {
+      return "Wedding Set";
+    }
+
+    if (ringCollectionKeys.has(collectionKey)) {
+      return "Rings";
+    }
+
+    return getCollectionLabel(collectionKey) || fallbackCategory || "Unassigned";
+  }
+
+  function getProductFormCollectionKey(category, ringType) {
+    if (category === "Rings") {
+      return ringCollectionKeys.has(ringType) ? ringType : "rings";
+    }
+
+    return categoryCollectionMap[category] || "";
+  }
+
   function getCollectionHref(collectionKey) {
     return collectionMeta[collectionKey]?.href || "/category/engagement-ring";
   }
@@ -368,7 +395,11 @@
 
     setFormValue(form, "sku", group.code);
     setFormValue(form, "name", group.productName);
-    setFormValue(form, "category", getCollectionLabel(group.collectionKey), { force: true });
+    setFormValue(form, "category", getBroadCategoryLabel(group.collectionKey), { force: true });
+
+    if (ringCollectionKeys.has(group.collectionKey)) {
+      setFormValue(form, "ringType", group.collectionKey, { force: true });
+    }
 
     return group;
   }
@@ -1221,18 +1252,19 @@
         <div class="modal-grid">
           <label class="modal-label">
             SKU / Code
-            <input class="modal-input" id="modal-field-sku" type="text" readonly style="opacity:0.55;cursor:not-allowed">
+            <input class="modal-input" id="modal-field-sku" type="text">
           </label>
           <label class="modal-label">
-            Collection
+            Collection / Ring Type
             <select class="modal-select" id="modal-field-collection">
               <option value="engagement-ring">Engagement Rings</option>
-              <option value="wedding-band">Wedding Bands</option>
+              <option value="wedding-bands">Wedding Bands</option>
+              <option value="mens-wedding-bands">Men's Wedding Bands</option>
+              <option value="rings">Rings</option>
               <option value="wedding-set">Wedding Set</option>
-              <option value="ring">Rings</option>
-              <option value="earring">Earrings</option>
-              <option value="bracelet">Bracelets</option>
-              <option value="necklace">Necklaces &amp; Pendants</option>
+              <option value="earrings">Earrings</option>
+              <option value="bracelets">Bracelets</option>
+              <option value="necklaces-pendants">Necklaces &amp; Pendants</option>
             </select>
           </label>
         </div>
@@ -1374,6 +1406,7 @@
 
     try {
       // 1. PATCH text fields
+      const sku = document.getElementById("modal-field-sku").value.trim().toUpperCase();
       const name = document.getElementById("modal-field-name").value.trim();
       const collection = document.getElementById("modal-field-collection").value;
       const price = document.getElementById("modal-field-price").value.trim() || "Price on request";
@@ -1381,17 +1414,18 @@
       const stockQty = Math.max(0, Number(document.getElementById("modal-field-stock").value) || 0);
       const description = document.getElementById("modal-field-description").value.trim();
 
-      if (!name) {
-        setModalMessage("Product name is required.", true);
+      if (!sku || !name) {
+        setModalMessage("SKU and product name are required.", true);
         return;
       }
 
       await fetchAdminApi(`/products?id=${encodeURIComponent(productId)}`, {
         method: "PATCH",
         body: JSON.stringify({
+          sku,
           name,
           collection,
-          category: getCollectionLabel(collection),
+          category: getBroadCategoryLabel(collection),
           price,
           status,
           stockQty,
@@ -1897,10 +1931,13 @@
     const formData = new FormData(form);
     const sku = String(formData.get("sku")).trim().toUpperCase();
     const name = String(formData.get("name")).trim();
+    const category = String(formData.get("category")).trim();
+    const ringType = String(formData.get("ringType")).trim();
     const stockQty = Math.max(0, Number(formData.get("stockQty")) || 0);
     const reservedQty = Math.max(0, Number(formData.get("reservedQty")) || 0);
     const imageUploadDraft = buildProductImageUploadDraft(formData, { code: sku, name });
     const imageGroup = imageUploadDraft.smartGroup;
+    const collection = imageGroup?.collectionKey || getProductFormCollectionKey(category, ringType);
     const products = readProducts();
 
     if (!sku || !name) {
@@ -1921,8 +1958,8 @@
     const product = {
       sku,
       name,
-      category: String(formData.get("category")),
-      collection: imageGroup?.collectionKey || null,
+      category: getBroadCategoryLabel(collection, category),
+      collection: collection || null,
       price: String(formData.get("price")).trim() || "Price on request",
       stockQty,
       reservedQty,

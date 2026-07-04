@@ -273,6 +273,84 @@ function cleanOptionalText(value) {
   return text || null;
 }
 
+const ADMIN_PRODUCT_COLLECTION_ALIASES = Object.freeze({
+  ws: "wedding-set",
+  "wedding-set": "wedding-set",
+  "wedding-sets": "wedding-set",
+  er: "engagement-ring",
+  "engagement-ring": "engagement-ring",
+  "engagement-rings": "engagement-ring",
+  wb: "wedding-bands",
+  "wedding-band": "wedding-bands",
+  "wedding-bands": "wedding-bands",
+  mb: "mens-wedding-bands",
+  mwb: "mens-wedding-bands",
+  mr: "mens-wedding-bands",
+  "mens-ring": "mens-wedding-bands",
+  "mens-rings": "mens-wedding-bands",
+  "mens-wedding-band": "mens-wedding-bands",
+  "mens-wedding-bands": "mens-wedding-bands",
+  "men-s-wedding-band": "mens-wedding-bands",
+  "men-s-wedding-bands": "mens-wedding-bands",
+  np: "necklaces-pendants",
+  necklace: "necklaces-pendants",
+  necklaces: "necklaces-pendants",
+  pendant: "necklaces-pendants",
+  pendants: "necklaces-pendants",
+  "necklaces-pendants": "necklaces-pendants",
+  br: "bracelets",
+  bracelet: "bracelets",
+  bracelets: "bracelets",
+  ea: "earrings",
+  earring: "earrings",
+  earrings: "earrings",
+  se: "earrings",
+  rg: "rings",
+  sr: "rings",
+  ring: "rings",
+  rings: "rings"
+});
+const ADMIN_RING_COLLECTIONS = new Set([
+  "engagement-ring",
+  "wedding-bands",
+  "mens-wedding-bands",
+  "rings"
+]);
+
+function slugifyAdminProductValue(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/['’]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+function normalizeAdminProductCollection(value) {
+  const normalized = slugifyAdminProductValue(value);
+
+  return ADMIN_PRODUCT_COLLECTION_ALIASES[normalized] || "";
+}
+
+function normalizeAdminProductSku(value) {
+  return String(value || "").trim().toUpperCase();
+}
+
+function normalizeAdminProductCategory({ category, collection }) {
+  const collectionKey = normalizeAdminProductCollection(collection) || normalizeAdminProductCollection(category);
+
+  if (collectionKey === "wedding-set") {
+    return "Wedding Set";
+  }
+
+  if (ADMIN_RING_COLLECTIONS.has(collectionKey)) {
+    return "Rings";
+  }
+
+  return cleanOptionalText(category) || "";
+}
+
 function normalizeBestSellerProductIds(value, limit = BEST_SELLER_SLOT_LIMIT) {
   const source = Array.isArray(value)
     ? value
@@ -1015,12 +1093,14 @@ export async function createAdminProduct(product, { env = process.env, client } 
 
   const supabase = client || createSupabaseAdminClient(env);
   const status = normalizeAdminProductStatus(product.status);
+  const sku = normalizeAdminProductSku(product.sku);
+  const collection = normalizeAdminProductCollection(product.collection || product.ringType || product.category) || null;
   const payload = {
-    sku: product.sku,
-    slug: product.slug || product.sku?.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
+    sku,
+    slug: product.slug || sku.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
     name: product.name,
-    category: product.category,
-    collection: product.collection || null,
+    category: normalizeAdminProductCategory({ category: product.category, collection }),
+    collection,
     base_price: parseMoneyAmount(product.price) ?? null,
     status,
     stock_quantity: Number(product.stockQty) || 0,
@@ -1068,16 +1148,23 @@ export async function updateAdminProduct(productId, updates, { env = process.env
 
   const supabase = client || createSupabaseAdminClient(env);
   const status = updates.status === undefined ? undefined : normalizeAdminProductStatus(updates.status);
+  const collection = updates.collection === undefined
+    ? undefined
+    : normalizeAdminProductCollection(updates.collection || updates.category) || null;
+  const category = updates.category === undefined && updates.collection === undefined
+    ? undefined
+    : normalizeAdminProductCategory({ category: updates.category, collection });
   const isActive = updates.isActive !== undefined
     ? updates.isActive
     : status === undefined
       ? undefined
       : status === "active";
   const payload = {
+    sku: updates.sku === undefined ? undefined : normalizeAdminProductSku(updates.sku),
     slug: updates.slug,
     name: updates.name,
-    category: updates.category,
-    collection: updates.collection,
+    category,
+    collection,
     base_price: updates.price === undefined ? undefined : parseMoneyAmount(updates.price),
     status,
     stock_quantity: updates.stockQty !== undefined ? Number(updates.stockQty) : undefined,

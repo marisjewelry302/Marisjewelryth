@@ -25,11 +25,11 @@ export const COLLECTIONS = {
   },
   "mens-wedding-bands": {
     slug: "mens-wedding-bands",
-    title: "Men's Rings",
-    shortTitle: "Men's Rings",
+    title: "Men's Wedding Bands",
+    shortTitle: "Men's Wedding Bands",
     lead: "Refined bands with quiet presence, comfort, and long-term wear in mind.",
-    prefixes: ["MB", "MR"],
-    suffixes: ["MR"]
+    prefixes: ["MWB", "MB", "MR"],
+    suffixes: ["MWB", "MR"]
   },
   "necklaces-pendants": {
     slug: "necklaces-pendants",
@@ -87,6 +87,7 @@ const COLLECTION_ALIASES = {
   "mens-ring": "mens-wedding-bands",
   "mens-rings": "mens-wedding-bands",
   "men-s-rings": "mens-wedding-bands",
+  mwb: "mens-wedding-bands",
   "mens-wedding-band": "mens-wedding-bands",
   "mens-wedding-bands": "mens-wedding-bands",
   necklace: "necklaces-pendants",

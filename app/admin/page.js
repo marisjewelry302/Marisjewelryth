@@ -162,10 +162,19 @@ export default async function AdminPage() {
                   Category
                   <select name="category" required>
                     <option value="Rings">Rings</option>
+                    <option value="Wedding Set">Wedding Set</option>
                     <option value="Earrings">Earrings</option>
                     <option value="Bracelets">Bracelets</option>
                     <option value="Necklaces & Pendants">Necklaces &amp; Pendants</option>
-                    <option value="Engagement Rings">Engagement Rings</option>
+                  </select>
+                </label>
+                <label>
+                  Ring Type
+                  <select name="ringType">
+                    <option value="engagement-ring">Engagement Rings</option>
+                    <option value="wedding-bands">Wedding Bands</option>
+                    <option value="mens-wedding-bands">Men&apos;s Wedding Bands</option>
+                    <option value="rings">Rings</option>
                   </select>
                 </label>
                 <label>

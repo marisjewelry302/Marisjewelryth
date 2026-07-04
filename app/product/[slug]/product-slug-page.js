@@ -17,7 +17,7 @@ const COLLECTION_LABELS = {
   "engagement-ring": "Engagement Rings",
   "wedding-set": "Wedding Set",
   "wedding-bands": "Wedding Bands",
-  "mens-wedding-bands": "Men's Rings",
+  "mens-wedding-bands": "Men's Wedding Bands",
   "necklaces-pendants": "Necklaces & Pendants",
   bracelets: "Bracelets",
   earrings: "Earrings",

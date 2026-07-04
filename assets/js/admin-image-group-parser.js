@@ -165,7 +165,7 @@
       return "wedding-bands";
     }
 
-    if (/^(MR|MB)/.test(compactCode) || /\bmen'?s\b/.test(name)) {
+    if (/^(MR|MB|MWB)/.test(compactCode) || /\bmen'?s\b/.test(name)) {
       return "mens-wedding-bands";
     }
 

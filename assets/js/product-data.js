@@ -139,6 +139,7 @@ const marisBaseCollectionProducts = {};
       "wedding-band": "wedding-bands",
       "wedding-bands": "wedding-bands",
       mb: "mens-wedding-bands",
+      mwb: "mens-wedding-bands",
       "mens-ring": "mens-wedding-bands",
       "mens-rings": "mens-wedding-bands",
       "mens-wedding-band": "mens-wedding-bands",
@@ -188,7 +189,7 @@ const marisBaseCollectionProducts = {};
       return "wedding-bands";
     }
 
-    if (normalizedCode.startsWith("MB")) {
+    if (normalizedCode.startsWith("MB") || normalizedCode.startsWith("MWB")) {
       return "mens-wedding-bands";
     }
 
@@ -236,7 +237,7 @@ const marisBaseCollectionProducts = {};
       "wedding-set": "WS",
       "engagement-ring": "ER",
       "wedding-bands": "WB",
-      "mens-wedding-bands": "MB",
+      "mens-wedding-bands": "MWB",
       "necklaces-pendants": "NP",
       bracelets: "BR",
       earrings: "EA",
@@ -252,14 +253,15 @@ const marisBaseCollectionProducts = {};
       WS: "Wedding set / แหวนแต่งงาน",
       ER: "Engagement ring / แหวนหมั้น",
       WB: "Wedding band / แหวนแถว",
-      MB: "Men's wedding band / แหวนแต่งงานผู้ชาย"
+      MB: "Men's wedding band / แหวนแต่งงานผู้ชาย",
+      MWB: "Men's wedding band / แหวนแต่งงานผู้ชาย"
     };
 
     return labels[normalizedType] || "";
   }
 
   function expandSheetTypeLabels(text) {
-    return String(text || "").replace(/\bType\s+(WS|ER|WB|MB)\b(?!\s*\()/gi, (match, type) => {
+    return String(text || "").replace(/\bType\s+(WS|ER|WB|MB|MWB)\b(?!\s*\()/gi, (match, type) => {
       const normalizedType = type.toUpperCase();
       const typeLabel = formatSheetTypeLabel(normalizedType);
       return typeLabel ? `Type ${normalizedType} (${typeLabel})` : match;

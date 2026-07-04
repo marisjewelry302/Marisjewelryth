@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import assert from "node:assert/strict";
+import { getPublicProductDisplayName } from "../app/lib/product-display.js";
 
 const files = {
   productCard: readFileSync("app/components/ProductCard.jsx", "utf8"),
@@ -61,6 +62,17 @@ assert.match(
   files.engagementCss,
   /\.product-card-link\.has-hover-image:hover[\s\S]*\.product-card-image-hover/,
   "Catalogue CSS should reveal the hover image layer on pointer hover"
+);
+
+assert.equal(
+  getPublicProductDisplayName({
+    sku: "MWB1001",
+    collection: "mens-wedding-bands",
+    category: "Rings",
+    name: "Classic Comfort Band"
+  }),
+  "Wedding Band",
+  "Men's wedding band products should display as wedding bands even when broad category is Rings"
 );
 
 console.log("Storefront product display uses English-safe labels.");

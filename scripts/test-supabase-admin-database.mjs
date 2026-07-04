@@ -3,6 +3,7 @@ import { readdir, readFile } from "node:fs/promises";
 
 const {
   MARIS_DATABASE_TABLES,
+  createAdminProduct,
   createAdminInventoryLog,
   deleteAdminProductImage,
   getSupabaseAdminConfig,
@@ -10,6 +11,7 @@ const {
   readAdminDatabaseStatus,
   readPublicCatalogueProducts,
   reorderAdminProductImages,
+  updateAdminProduct,
   uploadAdminProductImage
 } = await import("../app/lib/maris-database.js");
 
@@ -424,6 +426,142 @@ if (previousSupabaseServiceRoleKey === undefined) {
 } else {
   process.env.SUPABASE_SERVICE_ROLE_KEY = previousSupabaseServiceRoleKey;
 }
+
+function createProductMutationClient() {
+  const state = {
+    inserts: [],
+    updates: [],
+    updateFilters: []
+  };
+
+  function buildProductRow(payload, overrides = {}) {
+    return {
+      id: overrides.id || "product-1",
+      sku: payload.sku || "SKU1001",
+      slug: payload.slug || String(payload.sku || "SKU1001").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
+      name: payload.name || "Test Product",
+      category: payload.category || "",
+      collection: payload.collection || "",
+      status: payload.status || "draft",
+      base_price: payload.base_price ?? null,
+      stock_quantity: payload.stock_quantity ?? 0,
+      reserved_quantity: payload.reserved_quantity ?? 0,
+      updated_at: "2026-07-04T00:00:00.000Z",
+      product_variants: [],
+      product_images: []
+    };
+  }
+
+  return {
+    state,
+    from(tableName) {
+      if (tableName === "products") {
+        return {
+          insert(payload) {
+            state.inserts.push(payload);
+
+            return {
+              select() {
+                return {
+                  async single() {
+                    return {
+                      data: buildProductRow(payload),
+                      error: null
+                    };
+                  }
+                };
+              }
+            };
+          },
+          update(payload) {
+            state.updates.push(payload);
+
+            return {
+              eq(column, value) {
+                state.updateFilters.push([column, value]);
+
+                return {
+                  select() {
+                    return {
+                      async single() {
+                        return {
+                          data: buildProductRow(payload, { id: value }),
+                          error: null
+                        };
+                      }
+                    };
+                  }
+                };
+              }
+            };
+          }
+        };
+      }
+
+      throw new Error(`Unexpected table ${tableName}`);
+    }
+  };
+}
+
+const productMutationEnv = {
+  SUPABASE_URL: "https://maris-test.supabase.co",
+  SUPABASE_SERVICE_ROLE_KEY: "service-role-secret"
+};
+
+const engagementProductClient = createProductMutationClient();
+await createAdminProduct({
+  sku: "ER1002",
+  name: "Engagement Halo Ring",
+  category: "Engagement Rings",
+  collection: "engagement-ring",
+  price: "18900",
+  status: "Ready",
+  stockQty: 1,
+  reservedQty: 0
+}, {
+  env: productMutationEnv,
+  client: engagementProductClient
+});
+
+assert.equal(engagementProductClient.state.inserts[0].category, "Rings");
+assert.equal(engagementProductClient.state.inserts[0].collection, "engagement-ring");
+
+const weddingSetProductClient = createProductMutationClient();
+await createAdminProduct({
+  sku: "WS1002",
+  name: "Wedding Set Pair",
+  category: "Wedding Set",
+  collection: "wedding-set",
+  price: "28900",
+  status: "Ready",
+  stockQty: 1,
+  reservedQty: 0
+}, {
+  env: productMutationEnv,
+  client: weddingSetProductClient
+});
+
+assert.equal(weddingSetProductClient.state.inserts[0].category, "Wedding Set");
+assert.equal(weddingSetProductClient.state.inserts[0].collection, "wedding-set");
+
+const editableSkuProductClient = createProductMutationClient();
+await updateAdminProduct("product-1", {
+  sku: "MWB1001",
+  name: "Men's Wedding Band",
+  category: "Men's Wedding Bands",
+  collection: "mens-wedding-bands",
+  price: "15900",
+  status: "Ready",
+  stockQty: 2
+}, {
+  env: productMutationEnv,
+  client: editableSkuProductClient
+});
+
+assert.equal(editableSkuProductClient.state.updates[0].sku, "MWB1001");
+assert.equal(editableSkuProductClient.state.updates[0].category, "Rings");
+assert.equal(editableSkuProductClient.state.updates[0].collection, "mens-wedding-bands");
+assert.deepEqual(editableSkuProductClient.state.updateFilters[0], ["id", "product-1"]);
 
 function createProductImageUploadClient() {
   const state = {
