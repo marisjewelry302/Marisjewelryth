@@ -137,3 +137,34 @@ body:has(.site-header--home) .home-main .hero-content,
     margin-top: clamp(18px, 6vh, 46px);
   }
 }
+
+@media (min-width: 921px) {
+  body:has(.site-header--home) .home-main .hero,
+  .is-home-page .home-main .hero {
+    justify-content: flex-start;
+    padding-top: 0;
+    padding-bottom: clamp(44px, 6vh, 72px);
+  }
+
+  body:has(.site-header--home) .home-main .hero-content,
+  .is-home-page .home-main .hero-content {
+    position: absolute;
+    top: clamp(304px, 38vh, 350px);
+    left: clamp(44px, 7vw, 136px);
+    width: min(620px, calc(100vw - clamp(88px, 14vw, 272px)));
+    margin: 0;
+    padding: 0;
+  }
+
+  body:has(.site-header--home) .home-main .hero-content h1,
+  .is-home-page .home-main .hero-content h1 {
+    max-width: 620px;
+    font-size: clamp(50px, 4.35vw, 74px);
+    line-height: 0.98;
+  }
+
+  body:has(.site-header--home) .home-main .hero-actions,
+  .is-home-page .home-main .hero-actions {
+    max-width: 620px;
+  }
+}
