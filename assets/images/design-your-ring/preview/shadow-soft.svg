@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" width="1200" height="760" fill="none">
+  <defs>
+    <radialGradient id="ring-shadow" cx="0" cy="0" r="1" gradientTransform="matrix(330 0 0 48 600 646)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1f2420" stop-opacity="0.22"/>
+      <stop offset="0.55" stop-color="#1f2420" stop-opacity="0.11"/>
+      <stop offset="1" stop-color="#1f2420" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <ellipse cx="600" cy="646" rx="330" ry="48" fill="url(#ring-shadow)"/></svg>

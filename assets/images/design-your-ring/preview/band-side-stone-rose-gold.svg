@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" width="1200" height="760" fill="none">
+  
+  <defs>
+    <linearGradient id="metal-rose-gold" x1="186" y1="246" x2="1018" y2="664" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffe2d8"/>
+      <stop offset="0.18" stop-color="#f0b4a5"/>
+      <stop offset="0.38" stop-color="#ca826e"/>
+      <stop offset="0.54" stop-color="#7a3f34"/>
+      <stop offset="0.69" stop-color="#f0b4a5"/>
+      <stop offset="0.88" stop-color="#ffe2d8"/>
+      <stop offset="1" stop-color="#ca826e"/>
+    </linearGradient>
+    <linearGradient id="highlight-rose-gold" x1="242" y1="282" x2="962" y2="506" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.88"/>
+      <stop offset="0.28" stop-color="#d99a86" stop-opacity="0.42"/>
+      <stop offset="0.53" stop-color="#ffffff" stop-opacity="0.22"/>
+      <stop offset="0.74" stop-color="#7a3f34" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.72"/>
+    </linearGradient>
+    <radialGradient id="gem-small" cx="0" cy="0" r="1" gradientTransform="matrix(24 0 0 24 0 0)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.32" stop-color="#eaf7fb"/>
+      <stop offset="0.64" stop-color="#9cb7c2" stop-opacity="0.58"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.12"/>
+    </radialGradient>
+    <filter id="soft-shadow" x="80" y="160" width="1040" height="580" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="26" stdDeviation="18" flood-color="#1f2420" flood-opacity="0.16"/>
+    </filter>
+  </defs>
+  <g filter="url(#soft-shadow)">
+    <path d="M214 470C254 630 392 696 600 696C808 696 946 630 986 470" stroke="#7a3f34" stroke-opacity="0.32" stroke-width="86" stroke-linecap="round"/>
+    <path d="M214 470C254 630 392 696 600 696C808 696 946 630 986 470" stroke="url(#metal-rose-gold)" stroke-width="72" stroke-linecap="round"/>
+    <path d="M214 470C254 630 392 696 600 696C808 696 946 630 986 470" stroke="url(#highlight-rose-gold)" stroke-width="28" stroke-linecap="round" opacity="0.78"/>
+    <path d="M214 470C254 630 392 696 600 696C808 696 946 630 986 470" stroke="#ffffff" stroke-opacity="0.56" stroke-width="7" stroke-linecap="round"/>
+    <path d="M286 478C346 602 462 650 600 654C738 650 854 602 914 478" stroke="#7a3f34" stroke-opacity="0.28" stroke-width="8" stroke-linecap="round"/>
+
+    <path d="M298 424C420 342 508 315 600 315C692 315 780 342 902 424" stroke="#7a3f34" stroke-opacity="0.2" stroke-width="56" stroke-linecap="round"/>
+    <path d="M298 424C420 342 508 315 600 315C692 315 780 342 902 424" stroke="url(#metal-rose-gold)" stroke-width="44" stroke-linecap="round"/>
+    <path d="M298 424C420 342 508 315 600 315C692 315 780 342 902 424" stroke="#ffffff" stroke-opacity="0.62" stroke-width="10" stroke-linecap="round"/>
+    <path d="M344 424C432 382 496 358 600 358C704 358 768 382 856 424" stroke="#7a3f34" stroke-opacity="0.22" stroke-width="38" stroke-linecap="round"/>
+    <path d="M344 424C432 382 496 358 600 358C704 358 768 382 856 424" stroke="url(#metal-rose-gold)" stroke-width="29" stroke-linecap="round"/>
+    <path d="M344 424C432 382 496 358 600 358C704 358 768 382 856 424" stroke="#ffffff" stroke-opacity="0.5" stroke-width="6" stroke-linecap="round"/>
+    
+    <g opacity="0.95">
+      <g transform="translate(430 350)" opacity="0.9">
+    <circle r="44" fill="url(#gem-small)" stroke="#ffffff" stroke-opacity="0.76" stroke-width="2"/>
+    <path d="M0 -41L40 0L0 41L-40 0Z" stroke="#9db7c2" stroke-opacity="0.32" stroke-width="1.4"/>
+  </g>
+      <g transform="translate(770 350)" opacity="0.9">
+    <circle r="44" fill="url(#gem-small)" stroke="#ffffff" stroke-opacity="0.76" stroke-width="2"/>
+    <path d="M0 -41L40 0L0 41L-40 0Z" stroke="#9db7c2" stroke-opacity="0.32" stroke-width="1.4"/>
+  </g>
+    </g>
+  </g></svg>

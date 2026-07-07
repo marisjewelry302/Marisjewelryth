@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" width="1200" height="760" fill="none">
+  
+  <defs>
+    <linearGradient id="metal-platinum" x1="186" y1="246" x2="1018" y2="664" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.18" stop-color="#f6f4ee"/>
+      <stop offset="0.38" stop-color="#d8d6ce"/>
+      <stop offset="0.54" stop-color="#7f807c"/>
+      <stop offset="0.69" stop-color="#f6f4ee"/>
+      <stop offset="0.88" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#d8d6ce"/>
+    </linearGradient>
+    <linearGradient id="highlight-platinum" x1="242" y1="282" x2="962" y2="506" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.88"/>
+      <stop offset="0.28" stop-color="#efe8dc" stop-opacity="0.42"/>
+      <stop offset="0.53" stop-color="#ffffff" stop-opacity="0.22"/>
+      <stop offset="0.74" stop-color="#7f807c" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.72"/>
+    </linearGradient>
+    <radialGradient id="gem-small" cx="0" cy="0" r="1" gradientTransform="matrix(24 0 0 24 0 0)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.32" stop-color="#eaf7fb"/>
+      <stop offset="0.64" stop-color="#9cb7c2" stop-opacity="0.58"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.12"/>
+    </radialGradient>
+    <filter id="soft-shadow" x="80" y="160" width="1040" height="580" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="26" stdDeviation="18" flood-color="#1f2420" flood-opacity="0.16"/>
+    </filter>
+  </defs>
+  <g filter="url(#soft-shadow)">
+    <path d="M490 338C510 238 548 188 600 186C652 188 690 238 710 338" stroke="#7f807c" stroke-opacity="0.22" stroke-width="44" stroke-linecap="round"/>
+    <path d="M490 338C510 238 548 188 600 186C652 188 690 238 710 338" stroke="url(#metal-platinum)" stroke-width="30" stroke-linecap="round"/>
+    <path d="M522 360L548 194M678 360L652 194M500 292L440 330M700 292L760 330" stroke="url(#metal-platinum)" stroke-width="22" stroke-linecap="round"/>
+    <path d="M522 360L548 194M678 360L652 194M500 292L440 330M700 292L760 330" stroke="#ffffff" stroke-opacity="0.64" stroke-width="5" stroke-linecap="round"/>
+    <circle cx="548" cy="194" r="26" fill="url(#metal-platinum)" stroke="#ffffff" stroke-opacity="0.72" stroke-width="4"/>
+    <circle cx="652" cy="194" r="26" fill="url(#metal-platinum)" stroke="#ffffff" stroke-opacity="0.72" stroke-width="4"/>
+    <circle cx="440" cy="330" r="22" fill="url(#metal-platinum)" stroke="#ffffff" stroke-opacity="0.68" stroke-width="4"/>
+    <circle cx="760" cy="330" r="22" fill="url(#metal-platinum)" stroke="#ffffff" stroke-opacity="0.68" stroke-width="4"/>
+  </g></svg>

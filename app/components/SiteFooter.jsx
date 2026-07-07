@@ -123,7 +123,11 @@ export default function SiteFooter() {
   const pathname = usePathname();
   const normalizedPathname = pathname.replace(/\/$/, "") || "/";
 
-  if (normalizedPathname === "/admin" || normalizedPathname.startsWith("/admin/")) {
+  if (
+    normalizedPathname === "/design-your-ring"
+    || normalizedPathname === "/admin"
+    || normalizedPathname.startsWith("/admin/")
+  ) {
     return null;
   }
 
