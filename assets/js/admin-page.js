@@ -912,7 +912,7 @@
       .map((product) => {
         const code = getProductSku(product);
         const collectionKey = product.collection || "";
-        const href = getProductPreviewHref(code);
+        const href = getProductPreviewHref(product.slug || code);
         const galleryCount = Array.isArray(product.images) ? product.images.length : (Number(product.imageCount) || 0);
         const imageLabel = product.primaryImageUrl
           ? `<a class="admin-link-inline" href="${escapeHtml(product.primaryImageUrl)}" target="_blank" rel="noopener noreferrer">Open image</a>`
