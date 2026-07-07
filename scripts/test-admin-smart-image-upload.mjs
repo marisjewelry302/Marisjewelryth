@@ -4,7 +4,6 @@ import vm from "node:vm";
 
 const adminHtml = await readFile(new URL("../app/admin/page.js", import.meta.url), "utf8");
 const adminJs = await readFile(new URL("../assets/js/admin-page.js", import.meta.url), "utf8");
-const databaseJs = await readFile(new URL("../app/lib/maris-database.js", import.meta.url), "utf8");
 const parserSource = await readFile(new URL("../assets/js/admin-image-group-parser.js", import.meta.url), "utf8");
 
 const context = {
@@ -56,6 +55,7 @@ assert.equal(mensWeddingBandGroup.collectionKey, "mens-wedding-bands");
 assert.match(adminHtml, /data-product-form/, "Admin Products tab should keep image upload inside the existing Add Product form");
 assert.match(adminHtml, /Product Images[\s\S]*name="imageGroupFiles"/, "Add Product form should accept product images directly");
 assert.match(adminHtml, /data-image-group-summary/, "Add Product form should show parsed image group feedback inline");
+assert.match(adminHtml, /Collection Name[\s\S]*name="collectionName"/, "Add Product form should let admins enter a display collection name");
 assert.match(adminHtml, /name="ringType"[\s\S]*value="engagement-ring"[\s\S]*value="wedding-bands"[\s\S]*value="mens-wedding-bands"[\s\S]*value="rings"/, "Add Product should let admins choose a ring type for ring products");
 assert.doesNotMatch(adminHtml, /data-catalogue-form|Smart Catalogue Upload|Save Catalogue Product/, "Admin Products tab should not add a separate catalogue upload surface");
 assert.ok(
@@ -69,6 +69,7 @@ assert.match(adminJs, /applyImageGroupToProductForm/, "Admin page logic should a
 assert.match(adminJs, /uploadProductImages/, "Add Product submit should upload selected product images after creating the product");
 assert.doesNotMatch(adminJs, /id="modal-field-sku"[^>]*readonly/, "Edit modal should allow admins to change SKU");
 assert.match(adminJs, /id="modal-field-collection"[\s\S]*value="wedding-bands"[\s\S]*value="mens-wedding-bands"[\s\S]*value="rings"/, "Edit modal collection options should use canonical collection slugs");
+assert.match(adminJs, /id="modal-field-collection-name"/, "Edit modal should let admins edit a display collection name");
+assert.match(adminJs, /collectionName/, "Admin product save flow should send the display collection name");
 assert.match(adminJs, /body:\s*JSON\.stringify\(\{[\s\S]*sku,[\s\S]*collection,[\s\S]*category:/, "Edit modal should send edited SKU with the product update");
 assert.doesNotMatch(adminJs, /metadata:\s*buildProductImageMetadata/, "Add Product must not send metadata to the current Supabase products schema");
-assert.doesNotMatch(databaseJs, /metadata:\s*product\.metadata/, "Created products must not insert a metadata column that may not exist in Supabase");

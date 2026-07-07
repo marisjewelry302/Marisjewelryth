@@ -138,6 +138,10 @@ const catalogueClient = {
                       status: "active",
                       base_price: 12900,
                       updated_at: "2026-05-27T00:00:00.000Z",
+                      metadata: {
+                        collectionName: "The One Aura Collection",
+                        internalCost: "admin-visible"
+                      },
                       product_variants: [
                         {
                           id: "variant-1",
@@ -197,6 +201,7 @@ assert.deepEqual(catalogue.products[0], {
   name: "Diamond Ring",
   category: "Engagement Rings",
   collection: "engagement-ring",
+  collectionName: "The One Aura Collection",
   status: "active",
   basePrice: 12900,
   stockQuantity: 0,
@@ -208,6 +213,10 @@ assert.deepEqual(catalogue.products[0], {
   imageCount: 2,
   variantCount: 1,
   totalStock: 2,
+  metadata: {
+    collectionName: "The One Aura Collection",
+    internalCost: "admin-visible"
+  },
   variants: [
     {
       id: "variant-1",
@@ -242,6 +251,10 @@ assert.equal(catalogueCalls[0][1], "products");
 assert.ok(
   catalogueCalls.some((call) => call[0] === "select" && /product_variants/.test(call[2]) && /product_images/.test(call[2])),
   "Catalogue reader should request variants and images with products"
+);
+assert.ok(
+  catalogueCalls.some((call) => call[0] === "select" && /metadata/.test(call[2])),
+  "Admin catalogue reader should request product metadata for display collection names"
 );
 
 const missingCatalogue = await readAdminCatalogueProducts({ env: {} });
@@ -446,6 +459,7 @@ function createProductMutationClient() {
       base_price: payload.base_price ?? null,
       stock_quantity: payload.stock_quantity ?? 0,
       reserved_quantity: payload.reserved_quantity ?? 0,
+      metadata: payload.metadata || {},
       updated_at: "2026-07-04T00:00:00.000Z",
       product_variants: [],
       product_images: []
@@ -514,6 +528,7 @@ await createAdminProduct({
   name: "Engagement Halo Ring",
   category: "Engagement Rings",
   collection: "engagement-ring",
+  collectionName: "The One Aura Collection",
   price: "18900",
   status: "Ready",
   stockQty: 1,
@@ -525,6 +540,9 @@ await createAdminProduct({
 
 assert.equal(engagementProductClient.state.inserts[0].category, "Rings");
 assert.equal(engagementProductClient.state.inserts[0].collection, "engagement-ring");
+assert.deepEqual(engagementProductClient.state.inserts[0].metadata, {
+  collectionName: "The One Aura Collection"
+});
 
 const weddingSetProductClient = createProductMutationClient();
 await createAdminProduct({
@@ -550,6 +568,10 @@ await updateAdminProduct("product-1", {
   name: "Men's Wedding Band",
   category: "Men's Wedding Bands",
   collection: "mens-wedding-bands",
+  collectionName: "The Men Classic Collection",
+  metadata: {
+    imagePresentation: "contain"
+  },
   price: "15900",
   status: "Ready",
   stockQty: 2
@@ -561,6 +583,10 @@ await updateAdminProduct("product-1", {
 assert.equal(editableSkuProductClient.state.updates[0].sku, "MWB1001");
 assert.equal(editableSkuProductClient.state.updates[0].category, "Rings");
 assert.equal(editableSkuProductClient.state.updates[0].collection, "mens-wedding-bands");
+assert.deepEqual(editableSkuProductClient.state.updates[0].metadata, {
+  imagePresentation: "contain",
+  collectionName: "The Men Classic Collection"
+});
 assert.deepEqual(editableSkuProductClient.state.updateFilters[0], ["id", "product-1"]);
 
 function createProductImageUploadClient() {

@@ -28,6 +28,7 @@ const ADMIN_CATALOGUE_SELECT = `
   name,
   category,
   collection,
+  metadata,
   status,
   base_price,
   stock_quantity,
@@ -273,6 +274,23 @@ function cleanOptionalText(value) {
   return text || null;
 }
 
+function cleanMetadataObject(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
+function buildAdminProductMetadata(metadata, collectionName) {
+  const nextMetadata = { ...cleanMetadataObject(metadata) };
+  const cleanCollectionName = cleanOptionalText(collectionName ?? nextMetadata.collectionName);
+
+  if (cleanCollectionName) {
+    nextMetadata.collectionName = cleanCollectionName;
+  } else {
+    delete nextMetadata.collectionName;
+  }
+
+  return Object.keys(nextMetadata).length ? nextMetadata : undefined;
+}
+
 const ADMIN_PRODUCT_COLLECTION_ALIASES = Object.freeze({
   ws: "wedding-set",
   "wedding-set": "wedding-set",
@@ -399,6 +417,8 @@ function normalizeProduct(row) {
     ? row.product_images.map(normalizeImage).sort(sortImages)
     : [];
   const primaryImage = images.find((image) => image.isPrimary) || images[0] || null;
+  const metadata = cleanMetadataObject(row.metadata);
+  const collectionName = cleanOptionalText(metadata.collectionName) || "";
 
   return {
     id: row.id,
@@ -407,6 +427,7 @@ function normalizeProduct(row) {
     name: row.name || "",
     category: row.category || "",
     collection: row.collection || "",
+    collectionName,
     status: row.status || "draft",
     basePrice: row.base_price === null || row.base_price === undefined ? null : Number(row.base_price),
     stockQuantity: Number(row.stock_quantity) || 0,
@@ -418,6 +439,7 @@ function normalizeProduct(row) {
     imageCount: images.length,
     variantCount: variants.length,
     totalStock: variants.reduce((total, variant) => total + variant.stockQuantity, 0),
+    metadata,
     variants,
     images
   };
@@ -1095,7 +1117,8 @@ export async function createAdminProduct(product, { env = process.env, client } 
   const status = normalizeAdminProductStatus(product.status);
   const sku = normalizeAdminProductSku(product.sku);
   const collection = normalizeAdminProductCollection(product.collection || product.ringType || product.category) || null;
-  const payload = {
+  const metadata = buildAdminProductMetadata(product.metadata, product.collectionName);
+  const payload = Object.fromEntries(Object.entries({
     sku,
     slug: product.slug || sku.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
     name: product.name,
@@ -1104,8 +1127,9 @@ export async function createAdminProduct(product, { env = process.env, client } 
     base_price: parseMoneyAmount(product.price) ?? null,
     status,
     stock_quantity: Number(product.stockQty) || 0,
-    reserved_quantity: Number(product.reservedQty) || 0
-  };
+    reserved_quantity: Number(product.reservedQty) || 0,
+    metadata
+  }).filter(([, value]) => value !== undefined));
 
   const { data, error } = await supabase
     .from("products")
@@ -1154,6 +1178,9 @@ export async function updateAdminProduct(productId, updates, { env = process.env
   const category = updates.category === undefined && updates.collection === undefined
     ? undefined
     : normalizeAdminProductCategory({ category: updates.category, collection });
+  const metadata = updates.metadata === undefined && updates.collectionName === undefined
+    ? undefined
+    : buildAdminProductMetadata(updates.metadata, updates.collectionName);
   const isActive = updates.isActive !== undefined
     ? updates.isActive
     : status === undefined
@@ -1169,7 +1196,7 @@ export async function updateAdminProduct(productId, updates, { env = process.env
     status,
     stock_quantity: updates.stockQty !== undefined ? Number(updates.stockQty) : undefined,
     reserved_quantity: updates.reservedQty !== undefined ? Number(updates.reservedQty) : undefined,
-    metadata: updates.metadata
+    metadata
   };
 
   const cleanedPayload = Object.fromEntries(

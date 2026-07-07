@@ -249,6 +249,37 @@
     return product.category || getCollectionLabel(product.collection) || "Fine Jewelry";
   }
 
+  function getProductMetadata(product) {
+    const metadata = product?.metadata;
+    return metadata && typeof metadata === "object" && !Array.isArray(metadata) ? metadata : {};
+  }
+
+  function getProductCollectionName(product) {
+    return product?.collectionName || getProductMetadata(product).collectionName || "";
+  }
+
+  function parseModalMetadata(value) {
+    try {
+      const parsed = JSON.parse(value || "{}");
+      return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+    } catch {
+      return {};
+    }
+  }
+
+  function buildProductMetadata(product, collectionName) {
+    const metadata = { ...getProductMetadata(product) };
+    const cleanCollectionName = String(collectionName || "").trim();
+
+    if (cleanCollectionName) {
+      metadata.collectionName = cleanCollectionName;
+    } else {
+      delete metadata.collectionName;
+    }
+
+    return metadata;
+  }
+
   function getProductPrice(product) {
     if (product.price) {
       return product.price;
@@ -1280,6 +1311,13 @@
           </label>
         </div>
 
+        <div class="modal-grid modal-full">
+          <label class="modal-label">
+            Collection Name
+            <input class="modal-input" id="modal-field-collection-name" type="text" placeholder="The One Aura Collection">
+          </label>
+        </div>
+
         <div class="modal-grid">
           <label class="modal-label">
             Status
@@ -1355,11 +1393,13 @@
     // Store product id on modal
     modal.dataset.productId = product.id;
     modal.dataset.productCode = getProductSku(product);
+    modal.dataset.productMetadata = JSON.stringify(getProductMetadata(product));
 
     // Fill fields
     document.getElementById("modal-field-sku").value = getProductSku(product);
     document.getElementById("modal-field-collection").value = product.collection || "engagement-ring";
     document.getElementById("modal-field-name").value = getProductName(product);
+    document.getElementById("modal-field-collection-name").value = getProductCollectionName(product);
     document.getElementById("modal-field-price").value =
       product.basePrice != null ? String(product.basePrice) : (product.price || "");
     document.getElementById("modal-field-status").value = product.status || "Ready";
@@ -1408,11 +1448,16 @@
       // 1. PATCH text fields
       const sku = document.getElementById("modal-field-sku").value.trim().toUpperCase();
       const name = document.getElementById("modal-field-name").value.trim();
+      const collectionName = document.getElementById("modal-field-collection-name").value.trim();
       const collection = document.getElementById("modal-field-collection").value;
       const price = document.getElementById("modal-field-price").value.trim() || "Price on request";
       const status = document.getElementById("modal-field-status").value;
       const stockQty = Math.max(0, Number(document.getElementById("modal-field-stock").value) || 0);
       const description = document.getElementById("modal-field-description").value.trim();
+      const metadata = buildProductMetadata(
+        { metadata: parseModalMetadata(modal.dataset.productMetadata) },
+        collectionName
+      );
 
       if (!sku || !name) {
         setModalMessage("SKU and product name are required.", true);
@@ -1424,12 +1469,14 @@
         body: JSON.stringify({
           sku,
           name,
+          collectionName,
           collection,
           category: getBroadCategoryLabel(collection),
           price,
           status,
           stockQty,
-          description
+          description,
+          metadata
         })
       });
 
@@ -1931,6 +1978,7 @@
     const formData = new FormData(form);
     const sku = String(formData.get("sku")).trim().toUpperCase();
     const name = String(formData.get("name")).trim();
+    const collectionName = String(formData.get("collectionName")).trim();
     const category = String(formData.get("category")).trim();
     const ringType = String(formData.get("ringType")).trim();
     const stockQty = Math.max(0, Number(formData.get("stockQty")) || 0);
@@ -1958,12 +2006,14 @@
     const product = {
       sku,
       name,
+      collectionName,
       category: getBroadCategoryLabel(collection, category),
       collection: collection || null,
       price: String(formData.get("price")).trim() || "Price on request",
       stockQty,
       reservedQty,
       status: String(formData.get("status")),
+      metadata: buildProductMetadata(null, collectionName),
       createdAt: new Date().toISOString()
     };
 

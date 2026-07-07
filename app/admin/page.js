@@ -159,6 +159,10 @@ export default async function AdminPage() {
                   <input name="name" type="text" placeholder="Maris Diamond Halo Ring" required />
                 </label>
                 <label>
+                  Collection Name
+                  <input name="collectionName" type="text" placeholder="The One Aura Collection" />
+                </label>
+                <label>
                   Category
                   <select name="category" required>
                     <option value="Rings">Rings</option>
