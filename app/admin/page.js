@@ -30,11 +30,6 @@ export default async function AdminPage() {
           </div>
 
           <div className="admin-actions">
-            <div className="language-switch" aria-label="Language selector">
-              <button className="is-active" type="button" data-lang-switch="en">EN</button>
-              <span>/</span>
-              <button type="button" data-lang-switch="th">TH</button>
-            </div>
             <a href="/">View Storefront</a>
             <form method="post" action="/api/admin/logout">
               <button className="admin-logout" type="submit">Log Out</button>

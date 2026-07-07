@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-// localStorage keys ยังคงเก็บไว้เพื่อแสดง wishlist/bag counts (ยังไม่ migrate)
+// Keep localStorage keys for wishlist/bag counts until those surfaces are migrated.
 const WISHLIST_KEY = "marisWishlist";
 const BAG_KEY = "marisShoppingBag";
 const LEAD_KEY = "marisLeadInbox";

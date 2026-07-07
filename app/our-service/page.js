@@ -4,5 +4,7 @@ import { getStaticPage, getStaticPageMetadata } from "../lib/static-pages";
 export const metadata = getStaticPageMetadata("our-service");
 
 export default function OurServicePage() {
-  return <ContentPage page={getStaticPage("our-service")} />;
+  const page = getStaticPage("our-service");
+
+  return <ContentPage page={{ ...page, heroImages: [] }} />;
 }

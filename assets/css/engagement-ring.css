@@ -33,17 +33,6 @@ body {
     linear-gradient(180deg, var(--maris-paper) 0%, var(--maris-white) 42%, var(--maris-silver) 100%);
 }
 
-html[lang="th"] body {
-  font-family: var(--maris-font-thai);
-}
-
-html[lang="th"] .navbar .nav a,
-html[lang="th"] .navbar .nav .nav-dropdown-trigger,
-html[lang="th"] .toolbar-group label,
-html[lang="th"] .footer-col h3 {
-  letter-spacing: 0.04em;
-}
-
 /* TOP BAR */
 .top-bar {
   display: flex;
@@ -57,24 +46,6 @@ html[lang="th"] .footer-col h3 {
 .top-left {
   display: flex;
   gap: 18px;
-}
-
-.top-right .language-switch {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.top-right .language-switch button {
-  border: 0;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
-}
-
-.top-right .language-switch button.is-active {
-  color: var(--maris-gold);
 }
 
 .top-left a {
@@ -504,7 +475,7 @@ body.is-page-scrolled .icons i {
   color: var(--maris-muted);
 }
 
-/* FOOTER (ย่อ) */
+/* Compact footer */
 .footer {
   background: var(--maris-teal);
   color: var(--maris-white);

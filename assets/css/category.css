@@ -17,10 +17,6 @@
   font-weight: 500;
 }
 
-html[lang="th"] .category-lead {
-  line-height: 1.9;
-}
-
 @media (max-width: 768px) {
   .category-page .page-header {
     padding-bottom: 22px;
@@ -30,10 +26,6 @@ html[lang="th"] .category-lead {
     margin-top: 8px;
     font-size: 14px;
     line-height: 1.7;
-  }
-
-  html[lang="th"] .category-lead {
-    line-height: 1.8;
   }
 }
 
@@ -47,10 +39,6 @@ html[lang="th"] .category-lead {
     margin-top: 6px;
     font-size: 13px;
     line-height: 1.65;
-  }
-
-  html[lang="th"] .category-lead {
-    line-height: 1.72;
   }
 }
 

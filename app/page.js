@@ -65,31 +65,31 @@ const atelierFallbackCards = [
 
 const shopCategoryItems = [
   {
-    label: "แหวน",
+    label: "Rings",
     href: "/category/rings",
     image: "/assets/images/home/optimized/category-focus-rings-landscape-v1.jpg",
     alt: "Diamond rings arranged on satin"
   },
   {
-    label: "ต่างหู",
+    label: "Earrings",
     href: "/category/earrings",
     image: "/assets/images/home/optimized/category-focus-earrings-landscape-v1.jpg",
     alt: "Diamond earrings displayed on a soft jewellery set"
   },
   {
-    label: "จี้",
+    label: "Pendants",
     href: "/category/necklaces-pendants",
     image: "/assets/images/home/collections/cover-pendants-collection.png",
     alt: "Pear-shaped diamond pendant on champagne satin"
   },
   {
-    label: "สร้อยข้อมือและกำไล",
+    label: "Bracelets & Bangles",
     href: "/category/bracelets",
     image: "/assets/images/home/optimized/category-focus-bracelets-landscape-v1.jpg",
     alt: "Diamond bracelets layered on warm satin"
   },
   {
-    label: "สร้อยคอ",
+    label: "Necklaces",
     href: "/category/necklaces-pendants",
     image: "/assets/images/home/optimized/category-focus-necklaces-landscape-v1.jpg",
     alt: "Diamond necklace and pendant selection on satin"

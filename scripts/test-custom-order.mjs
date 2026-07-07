@@ -950,7 +950,7 @@ for (const fieldName of ["product_code", "full_name", "company_name", "email", "
   assert.match(customOrderFormSource, new RegExp(`name=["']${fieldName}["']`), `Custom order form should include ${fieldName}`);
 }
 assert.match(customOrderFormSource, /readOnly/);
-assert.match(customOrderFormSource, /ตัวเลือกเพิ่มเติม/);
+assert.match(customOrderFormSource, /Additional Options/);
 assert.match(customOrderFormSource, /\/api\/custom-order-requests/);
 assert.match(customOrderFormSource, /custom_options/);
 assert.match(customOrderFormSource, /product_code:\s*productCode/);
@@ -958,7 +958,7 @@ assert.match(customOrderFormSource, /pending/);
 assert.match(customOrderFormSource, /disabled=\{pending\}/);
 assert.match(customOrderFormSource, /created/);
 assert.match(customOrderFormSource, /duplicate/);
-assert.match(customOrderFormSource, /ติดต่อกลับสำเร็จ/);
+assert.match(customOrderFormSource, /Request received\. The Maris team will contact you to confirm product details\./);
 assert.match(customOrderFormSource, /aria-live=["']polite["']/);
 assert.match(customOrderFormSource, /role=["']dialog["']/);
 assert.match(customOrderFormSource, /aria-modal=["']true["']/);
@@ -1003,7 +1003,7 @@ assert.ok(customOrderCssImportIndex > productCssImportIndex, "Custom order CSS s
 
 const productPageSource = await readRequiredSource("../app/product/[slug]/product-slug-page.js");
 assert.match(productPageSource, /href=\{`\/contact-order\/\$\{encodeURIComponent\(product\.sku\)\}`\}/);
-assert.match(productPageSource, /ติดต่อสั่งสินค้า/);
+assert.match(productPageSource, /Contact Maris to Order/);
 assert.doesNotMatch(productPageSource, /\/request-quote\?collection=/);
 assert.doesNotMatch(productPageSource, /Confirm Availability/);
 

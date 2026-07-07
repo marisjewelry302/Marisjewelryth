@@ -31,17 +31,6 @@ body.admin-page {
     linear-gradient(180deg, var(--maris-paper), var(--maris-white) 46%, var(--maris-silver));
 }
 
-html[lang="th"] body.admin-page {
-  font-family: var(--maris-font-thai);
-}
-
-html[lang="th"] .admin-kicker,
-html[lang="th"] .admin-sidebar button,
-html[lang="th"] th,
-html[lang="th"] label {
-  letter-spacing: 0.04em;
-}
-
 a {
   color: inherit;
 }
@@ -99,40 +88,9 @@ a {
   margin: 0;
 }
 
-.admin-actions a,
-.admin-logout,
-.language-switch {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 38px;
-  padding: 0 14px;
-  border: 1px solid rgba(0, 73, 58, 0.18);
-  background: rgba(255, 255, 255, 0.5);
-  color: var(--maris-ink);
-  font-size: 12px;
-  text-decoration: none;
-}
-
 .admin-logout {
   cursor: pointer;
   font: inherit;
-}
-
-.language-switch {
-  gap: 6px;
-}
-
-.language-switch button {
-  border: 0;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
-}
-
-.language-switch button.is-active {
-  color: var(--maris-gold);
 }
 
 .admin-shell {

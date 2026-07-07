@@ -3831,22 +3831,22 @@
 .\assets\images\archive\legacy-home-th
 .\assets\images\catalogue\editorial
 .\assets\images\catalogue\INfinite hold
-.\assets\images\catalogue\ChatGPT-Image-17-เม_01.png
-.\assets\images\catalogue\ChatGPT-Image-17-เม_02.png
-.\assets\images\catalogue\ChatGPT-Image-17-เม_03.png
-.\assets\images\catalogue\ChatGPT-Image-17-เม_04.png
-.\assets\images\catalogue\ChatGPT-Image-17-เม_05.png
-.\assets\images\catalogue\ChatGPT-Image-17-เม_06.png
-.\assets\images\catalogue\ChatGPT-Image-17-เม_07.png
-.\assets\images\catalogue\ChatGPT-Image-17-เม_08.png
-.\assets\images\catalogue\ChatGPT-Image-17-เม_09.png
-.\assets\images\catalogue\ChatGPT-Image-17-เม_10.png
-.\assets\images\catalogue\ChatGPT-Image-17-เม_11.png
-.\assets\images\catalogue\ChatGPT-Image-17-เม_12.png
-.\assets\images\catalogue\editorial\4รูป_01.png
-.\assets\images\catalogue\editorial\4รูป_02.png
-.\assets\images\catalogue\editorial\4รูป_03.png
-.\assets\images\catalogue\editorial\4รูป_04.png
+.\assets\images\catalogue\ChatGPT-Image-17-apr_01.png
+.\assets\images\catalogue\ChatGPT-Image-17-apr_02.png
+.\assets\images\catalogue\ChatGPT-Image-17-apr_03.png
+.\assets\images\catalogue\ChatGPT-Image-17-apr_04.png
+.\assets\images\catalogue\ChatGPT-Image-17-apr_05.png
+.\assets\images\catalogue\ChatGPT-Image-17-apr_06.png
+.\assets\images\catalogue\ChatGPT-Image-17-apr_07.png
+.\assets\images\catalogue\ChatGPT-Image-17-apr_08.png
+.\assets\images\catalogue\ChatGPT-Image-17-apr_09.png
+.\assets\images\catalogue\ChatGPT-Image-17-apr_10.png
+.\assets\images\catalogue\ChatGPT-Image-17-apr_11.png
+.\assets\images\catalogue\ChatGPT-Image-17-apr_12.png
+.\assets\images\catalogue\editorial\4images_01.png
+.\assets\images\catalogue\editorial\4images_02.png
+.\assets\images\catalogue\editorial\4images_03.png
+.\assets\images\catalogue\editorial\4images_04.png
 .\assets\images\catalogue\INfinite hold\Front The Infinite Hold Collection - Pear Shaped diamond Wedding set white gold.png
 .\assets\images\catalogue\INfinite hold\Left The Infinite Hold Collection - Pear Shaped diamond Wedding set white gold.png
 .\assets\images\catalogue\INfinite hold\The Infinite Hold Collection - Pear Shaped diamond Wedding set rose gold - with Logo.png

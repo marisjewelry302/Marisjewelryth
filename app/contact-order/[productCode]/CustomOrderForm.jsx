@@ -163,7 +163,7 @@ export default function CustomOrderForm({ productCode }) {
 
     setPending(true);
     setStatusTone("idle");
-    setStatusMessage("กำลังส่งคำขอติดต่อกลับ");
+    setStatusMessage("Sending contact request");
 
     try {
       const response = await fetch("/api/custom-order-requests", {
@@ -177,7 +177,7 @@ export default function CustomOrderForm({ productCode }) {
 
       if (response.ok && (result.status === "created" || result.status === "duplicate")) {
         setStatusTone("success");
-        setStatusMessage("ติดต่อกลับสำเร็จ ทีม Maris จะติดต่อกลับเพื่อยืนยันรายละเอียดสินค้า");
+        setStatusMessage("Request received. The Maris team will contact you to confirm product details.");
         return;
       }
 
@@ -185,10 +185,10 @@ export default function CustomOrderForm({ productCode }) {
         ? result.errors.map((error) => error.message).filter(Boolean).join(" ")
         : "";
       setStatusTone("error");
-      setStatusMessage(validationText || result.error || "ไม่สามารถส่งคำขอได้ในขณะนี้ กรุณาตรวจสอบข้อมูลอีกครั้ง");
+      setStatusMessage(validationText || result.error || "We could not send your request right now. Please check your details and try again.");
     } catch {
       setStatusTone("error");
-      setStatusMessage("ไม่สามารถเชื่อมต่อเพื่อส่งคำขอได้ กรุณาลองใหม่อีกครั้ง");
+      setStatusMessage("We could not connect to send your request. Please try again.");
     } finally {
       setPending(false);
     }
@@ -209,7 +209,7 @@ export default function CustomOrderForm({ productCode }) {
         <div className="custom-order-workspace">
           <div className="custom-order-heading">
             <p>Contact order request</p>
-            <h1 id="custom-order-title">ติดต่อสั่งสินค้า</h1>
+            <h1 id="custom-order-title">Contact Maris to Order</h1>
             <span>Share your contact details and optional preferences. Our atelier will confirm availability before any next step.</span>
           </div>
 
@@ -251,7 +251,7 @@ export default function CustomOrderForm({ productCode }) {
                 onClick={() => setIsOptionsOpen(true)}
                 ref={optionTriggerRef}
               >
-                ตัวเลือกเพิ่มเติม
+                Additional Options
               </button>
               {selectedOptionSummary ? (
                 <p className="custom-order-selected">{selectedOptionSummary}</p>
@@ -265,7 +265,7 @@ export default function CustomOrderForm({ productCode }) {
             </p>
 
             <button className="custom-order-submit" type="submit" disabled={pending}>
-              {pending ? "กำลังส่งคำขอ" : "ส่งคำขอติดต่อกลับ"}
+              {pending ? "Sending Request" : "Send Contact Request"}
             </button>
           </form>
         </div>
@@ -285,7 +285,7 @@ export default function CustomOrderForm({ productCode }) {
             <div className="custom-order-modal__header">
               <div>
                 <p>Optional details</p>
-                <h2 id="custom-order-options-title">ตัวเลือกสินค้า</h2>
+                <h2 id="custom-order-options-title">Product Options</h2>
               </div>
               <button className="custom-order-modal__close" type="button" onClick={closeOptions} aria-label="Close options">
                 Close

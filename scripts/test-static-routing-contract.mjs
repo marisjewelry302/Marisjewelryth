@@ -14,6 +14,7 @@ const [
   hasAppPage,
   hasAppRoute,
   hasOurServicePage,
+  ourServicePage,
   adminPage,
   homepage,
   productPage,
@@ -27,6 +28,7 @@ const [
   fileExists("app/page.js"),
   fileExists("app/route.js"),
   fileExists("app/our-service/page.js"),
+  readFile("app/our-service/page.js", "utf8"),
   readFile("assets/js/admin-page.js", "utf8"),
   readFile("app/page.js", "utf8"),
   readFile("app/product/[slug]/product-slug-page.js", "utf8"),
@@ -61,8 +63,8 @@ assert.match(
 );
 assert.match(
   productPage,
-  /ติดต่อสั่งสินค้า/,
-  "product page custom order CTA must use the Thai contact order copy"
+  /Contact Maris to Order/,
+  "product page custom order CTA must use the English contact order copy"
 );
 assert.doesNotMatch(
   productPage,
@@ -81,6 +83,7 @@ assert.match(staticPages, /custom-jewelry-process-storyboard\.png/, "our-service
 assert.match(staticPages, /custom-jewelry-service-hero\.png/, "our-service hero must use a dedicated image that is not the step storyboard");
 assert.match(staticPages, /custom-jewelry-service-hero-02-seamless\.png/, "our-service hero gallery must include the seamless satin jewelry hero image");
 assert.match(staticPages, /heroImages:\s*\[/, "our-service must support multiple hero images");
+assert.match(ourServicePage, /heroImages:\s*\[\]/, "our-service route must suppress the top hero gallery");
 assert.match(siteHeader, /href: "\/our-service", label: "Our Service"/, "Our Expertise nav must link to Our Service");
 assert.match(
   await readFile("app/components/ContentPage.jsx", "utf8"),

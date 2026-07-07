@@ -32,35 +32,6 @@ body {
     linear-gradient(180deg, var(--maris-paper) 0%, var(--maris-white) 48%, var(--maris-silver) 100%);
 }
 
-html[lang="th"] body {
-  font-family: var(--maris-font-thai);
-}
-
-html[lang="th"] .site-nav a,
-html[lang="th"] .eyebrow,
-html[lang="th"] .page-actions a,
-html[lang="th"] .account-tabs button,
-html[lang="th"] .bag-controls label {
-  letter-spacing: 0.04em;
-}
-
-html[lang="th"] .placeholder-card h1,
-html[lang="th"] .policy-section h2,
-html[lang="th"] .subpage-feature-card h2,
-html[lang="th"] .subpage-panel h2,
-html[lang="th"] .subpage-article-card h2 {
-  font-family: var(--maris-font-thai);
-  line-height: 1.12;
-}
-
-html[lang="th"] .subpage-stack h3,
-html[lang="th"] .subpage-step-card h3,
-html[lang="th"] .subpage-info-list dt,
-html[lang="th"] .subpage-article-meta,
-html[lang="th"] .subpage-step-index {
-  letter-spacing: 0.05em;
-}
-
 a {
   color: inherit;
 }
@@ -99,31 +70,6 @@ a {
 .site-nav a:hover {
   color: var(--maris-rose);
   text-decoration: underline;
-}
-
-.site-header .language-switch {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 34px;
-  padding: 0 10px;
-  border: 1px solid rgba(221, 164, 165, 0.42);
-  color: var(--maris-muted);
-  font-size: 11px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.site-header .language-switch button {
-  border: 0;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
-}
-
-.site-header .language-switch button.is-active {
-  color: var(--maris-gold);
 }
 
 .placeholder-main {

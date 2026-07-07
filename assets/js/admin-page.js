@@ -242,7 +242,7 @@
   }
 
   function getProductName(product) {
-    return product.name || product.nameEn || product.nameTh || getProductSku(product);
+    return product.name || product.nameEn || getProductSku(product);
   }
 
   function getProductCategory(product) {
@@ -1354,7 +1354,7 @@
         <hr class="modal-divider">
         <span class="modal-kicker">Gallery Images</span>
         <p id="modal-gallery-count" class="modal-gallery-count">No gallery images yet</p>
-        <p class="modal-gallery-hint" style="margin-top:6px">ลากเพื่อเรียงลำดับ · กด ✕ เพื่อลบรูป</p>
+        <p class="modal-gallery-hint" style="margin-top:6px">Drag to reorder · Press ✕ to delete an image</p>
         <div id="modal-gallery-grid"></div>
         <label class="modal-label" style="margin-top:4px">
           Add More Images
@@ -1747,7 +1747,7 @@
           <tr>
             <td><strong>${escapeHtml(product.productCode || product.id)}</strong></td>
             <td>
-              <strong>${escapeHtml(product.nameEn || product.nameTh || product.productCode)}</strong>
+              <strong>${escapeHtml(product.nameEn || product.productCode)}</strong>
               <div>${escapeHtml(product.category || "-")}</div>
             </td>
             <td class="${product.isActive ? "stock-ok" : "stock-low"}">${escapeHtml(product.status || "draft")}</td>

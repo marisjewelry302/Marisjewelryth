@@ -3,42 +3,34 @@ const marisBaseProducts = [];
 const marisBaseCollectionMeta = {
   "wedding-set": {
     title: "Wedding set",
-    titleTh: "แหวนแต่งงาน",
     href: "/category/wedding-set"
   },
   "engagement-ring": {
     title: "Engagement Rings",
-    titleTh: "แหวนหมั้น",
     href: "/category/engagement-ring"
   },
   "wedding-bands": {
     title: "Wedding Bands",
-    titleTh: "แหวนแถว",
     href: "/category/wedding-bands"
   },
   "mens-wedding-bands": {
     title: "Men's Wedding Bands",
-    titleTh: "แหวนแต่งงานผู้ชาย",
     href: "/category/mens-wedding-bands"
   },
   "necklaces-pendants": {
     title: "Necklaces & Pendants",
-    titleTh: "สร้อยคอและจี้",
     href: "/category/necklaces-pendants"
   },
   bracelets: {
     title: "Bracelets",
-    titleTh: "สร้อยข้อมือ",
     href: "/category/bracelets"
   },
   earrings: {
     title: "Earrings",
-    titleTh: "ต่างหู",
     href: "/category/earrings"
   },
   rings: {
     title: "Rings",
-    titleTh: "แหวน",
     href: "/category/rings"
   }
 };
@@ -250,11 +242,11 @@ const marisBaseCollectionProducts = {};
   function formatSheetTypeLabel(type) {
     const normalizedType = String(type || "").trim().toUpperCase();
     const labels = {
-      WS: "Wedding set / แหวนแต่งงาน",
-      ER: "Engagement ring / แหวนหมั้น",
-      WB: "Wedding band / แหวนแถว",
-      MB: "Men's wedding band / แหวนแต่งงานผู้ชาย",
-      MWB: "Men's wedding band / แหวนแต่งงานผู้ชาย"
+      WS: "Wedding set",
+      ER: "Engagement ring",
+      WB: "Wedding band",
+      MB: "Men's wedding band",
+      MWB: "Men's wedding band"
     };
 
     return labels[normalizedType] || "";
@@ -1129,7 +1121,6 @@ const marisBaseCollectionProducts = {};
       code: product.sku || product.code,
       title: product.name || product.sku || product.code,
       name: product.name || product.title || product.sku || product.code,
-      nameTh: product.nameTh || "",
       collectionKey: product.collectionKey
         || mapCollectionAlias(product.collection || product.category || ""),
       category: product.category || "",

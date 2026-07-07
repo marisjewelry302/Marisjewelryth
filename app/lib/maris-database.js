@@ -593,8 +593,7 @@ export async function updateAdminBestSellerSettings(productIds, { env = process.
     .upsert({
       key: BEST_SELLER_SETTING_KEY,
       value,
-      description: "Homepage Best Seller carousel product order.",
-      is_public: true
+      updated_at: new Date().toISOString()
     }, { onConflict: "key" })
     .select("value")
     .single();

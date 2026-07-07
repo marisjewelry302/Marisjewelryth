@@ -117,7 +117,7 @@ export default async function ProductPage({ params }) {
                 className="product-action is-primary"
                 href={`/contact-order/${encodeURIComponent(product.sku)}`}
               >
-                ติดต่อสั่งสินค้า
+                Contact Maris to Order
               </a>
             </div>
 

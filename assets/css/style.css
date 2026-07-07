@@ -42,65 +42,6 @@ body {
   overflow-x: clip;
 }
 
-html[lang="th"] body {
-  font-family: var(--maris-font-thai);
-}
-
-html[lang="en"] .hero-header .nav a,
-html[lang="en"] .hero-header .nav-dropdown-trigger,
-html[lang="en"] .language-switch,
-html[lang="en"] .hero-eyebrow,
-html[lang="en"] .hero-actions a,
-html[lang="en"] .footer-col h3,
-html[lang="en"] .section-kicker,
-html[lang="en"] .value-card h3 {
-  font-family: var(--maris-font-sans);
-  font-weight: 500;
-}
-
-html[lang="th"] .hero-content h1,
-html[lang="th"] .atelier-reveal__copy h2,
-html[lang="th"] .category-section h2,
-html[lang="th"] .category-feature-link strong,
-html[lang="th"] .value-lead h2,
-html[lang="th"] .category-card-title {
-  font-family: var(--maris-font-thai);
-  letter-spacing: 0;
-  line-height: 1.12;
-}
-
-html[lang="th"] .hero-header .nav a,
-html[lang="th"] .hero-header .nav-dropdown-trigger,
-html[lang="th"] .hero-actions a,
-html[lang="th"] .hero-eyebrow,
-html[lang="th"] .language-switch,
-html[lang="th"] .footer-col h3,
-html[lang="th"] .category-card-cta,
-html[lang="th"] .section-kicker,
-html[lang="th"] .value-card h3 {
-  letter-spacing: 0.03em;
-  font-weight: 500;
-}
-
-html[lang="th"] .hero-tagline,
-html[lang="th"] .atelier-reveal__copy p:last-child,
-html[lang="th"] .footer-col p,
-html[lang="th"] .footer-col a,
-html[lang="th"] .category-intro,
-html[lang="th"] .category-feature-link,
-html[lang="th"] .value-lead p:last-child,
-html[lang="th"] .value-card p {
-  font-family: var(--maris-font-thai);
-  letter-spacing: 0;
-  line-height: 1.82;
-}
-
-html[lang="th"] .atelier-reveal__copy h2 {
-  max-width: 540px;
-  font-size: clamp(40px, 4.4vw, 70px);
-  line-height: 1.08;
-}
-
 /* HERO */
 .hero {
   min-height: clamp(600px, 92svh, 820px);
@@ -516,37 +457,6 @@ html[lang="th"] .atelier-reveal__copy h2 {
   gap: 16px;
 }
 
-.language-switch {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 34px;
-  padding: 0 10px;
-  border: 1px solid rgba(255, 250, 246, 0.34);
-  background: rgba(0, 73, 58, 0.2);
-  color: rgba(255, 255, 255, 0.76);
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  box-shadow: 0 10px 24px rgba(0, 34, 28, 0.12);
-}
-
-.language-switch button {
-  border: 0;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
-  transition: color 0.2s ease;
-}
-
-.language-switch button.is-active {
-  color: var(--maris-gold);
-}
-
-.language-switch button:hover {
-  color: var(--maris-white);
-}
-
 .hero-icons a {
   position: relative;
   display: inline-flex;
@@ -604,23 +514,6 @@ html[lang="th"] .atelier-reveal__copy h2 {
   letter-spacing: 0.01em;
   text-wrap: pretty;
   text-shadow: 0 8px 22px rgba(0, 0, 0, 0.14);
-}
-
-html[lang="th"] .hero-content {
-  width: min(640px, 100%);
-}
-
-html[lang="th"] .hero-content h1 {
-  max-width: 620px;
-  font-size: clamp(34px, 4.7vw, 58px);
-  line-height: 1.1;
-  font-family: var(--maris-font-thai);
-}
-
-html[lang="th"] .hero-tagline {
-  max-width: 500px;
-  font-size: clamp(13.5px, 0.98vw, 15px);
-  line-height: 1.64;
 }
 
 .hero-actions {
@@ -1577,18 +1470,6 @@ html[lang="th"] .hero-tagline {
     height: 44px;
   }
 
-  .language-switch {
-    min-height: 44px;
-  }
-
-  .language-switch button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 44px;
-    min-width: 44px;
-  }
-
   .hero-header .nav a ,
   .hero-header .nav-dropdown-trigger ,
   .hero-slide-dot {
@@ -1665,7 +1546,7 @@ html[lang="th"] .hero-tagline {
   max-width: 290px;
 }
 
-/* hover หรู */
+/* Luxury hover */
 .footer-col a:hover {
   color: var(--maris-rose);
 }
@@ -1757,12 +1638,6 @@ html[lang="th"] .hero-tagline {
     max-width: min(350px, 100%);
     font-size: clamp(32px, 10vw, 42px);
     line-height: 1.05;
-  }
-
-  html[lang="th"] .atelier-reveal__copy h2 {
-    max-width: min(350px, 100%);
-    font-size: clamp(32px, 10vw, 42px);
-    line-height: 1.08;
   }
 
   .atelier-reveal__copy p:last-child {
@@ -2087,29 +1962,6 @@ html[lang="th"] .hero-tagline {
     flex-shrink: 0;
   }
 
-  .language-switch {
-    gap: 4px;
-    padding: 0 6px;
-    min-height: 44px;
-    border-color: rgba(255, 250, 246, 0.42);
-    background: rgba(0, 73, 58, 0.42);
-    color: rgba(255, 250, 246, 0.88);
-    font-size: 9.5px;
-    flex-shrink: 0;
-  }
-
-  .language-switch button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 44px;
-    min-height: 44px;
-  }
-
-  .language-switch button.is-active {
-    color: var(--maris-blush);
-  }
-
   .hero-icons a {
     width: 44px;
     height: 44px;
@@ -2348,12 +2200,6 @@ html[lang="th"] .hero-tagline {
     font-size: 15px;
   }
 
-  .language-switch {
-    min-height: 44px;
-    padding-inline: 6px;
-    font-size: 8.5px;
-  }
-
   .hero-header .logo img {
     width: 120px;
   }
@@ -2474,27 +2320,11 @@ html[lang="th"] .hero-tagline {
     line-height: 1.01;
   }
 
-  html[lang="th"] .hero-content {
-    width: min(430px, 62vw);
-  }
-
-  html[lang="th"] .hero-content h1 {
-    max-width: 430px;
-    font-size: clamp(24px, 4.2vw, 31px);
-    line-height: 1.12;
-  }
-
   .hero-tagline {
     max-width: 340px;
     margin: 8px 0 0;
     font-size: 12px;
     line-height: 1.42;
-  }
-
-  html[lang="th"] .hero-tagline {
-    max-width: 360px;
-    font-size: 11.5px;
-    line-height: 1.48;
   }
 
   .hero-actions {
@@ -3443,13 +3273,6 @@ html[lang="th"] .hero-tagline {
 
   .atelier-reveal::before {
     inset: 12px;
-  }
-
-  .atelier-reveal__copy h2,
-  html[lang="th"] .atelier-reveal__copy h2 {
-    max-width: min(360px, 100%);
-    font-size: clamp(32px, 9vw, 42px);
-    line-height: 1.07;
   }
 
   .atelier-reveal__actions {

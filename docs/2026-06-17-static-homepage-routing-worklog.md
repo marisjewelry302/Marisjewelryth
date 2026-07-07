@@ -1,7 +1,7 @@
 # Maris Jewelry Static Homepage Routing Worklog
 
 Date: 2026-06-17
-Project root: `C:\Users\smakj\OneDrive\เดสก์ท็อป\Marisjewelryth`
+Project root: `Marisjewelryth root checkout`
 Production URL: `https://marisjewelryth.vercel.app/`
 
 ## Goal

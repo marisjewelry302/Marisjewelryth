@@ -18,7 +18,6 @@ const publicCataloguePayload = {
       slug: "column-shuffle-ring",
       title: "Column Shuffle Ring",
       name: "Column Shuffle Ring",
-      nameTh: "แหวนเพชร",
       collectionKey: "engagement-ring",
       category: "Engagement Rings",
       description: "Mapped by public API",

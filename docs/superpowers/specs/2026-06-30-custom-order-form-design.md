@@ -38,7 +38,7 @@ This keeps the new behavior isolated from `/request-quote` and from unrelated he
 
 ### Product page CTA
 
-The product detail page should expose a primary or secondary action labelled `ติดต่อสั่งสินค้า`. The destination should use the product SKU/code:
+The product detail page should expose a primary or secondary action labelled `Contact Maris to Order`. The destination should use the product SKU/code:
 
 ```text
 /contact-order/[productCode]
@@ -67,13 +67,13 @@ Main form fields:
 Submit success should replace or clearly transform the form into a success state:
 
 ```text
-ติดต่อกลับสำเร็จ
-ขอบคุณค่ะ/ครับ ทีม Maris Jewelry ได้รับคำขอของคุณแล้ว และจะติดต่อกลับเพื่อยืนยันรายละเอียดก่อนดำเนินการขั้นต่อไป
+Request received
+Thank you. The Maris Jewelry team has received your request and will contact you to confirm product details before the next step.
 ```
 
 ### Optional specs modal
 
-The "ตัวเลือกเพิ่มเติม" control opens a modal on desktop and can behave as a full-screen or bottom sheet on mobile. These values are optional and should not appear as always-visible form fields.
+The "Additional Options" control opens a modal on desktop and can behave as a full-screen or bottom sheet on mobile. These values are optional and should not appear as always-visible form fields.
 
 State shape:
 

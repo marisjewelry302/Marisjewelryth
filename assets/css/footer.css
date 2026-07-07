@@ -267,11 +267,6 @@ body.not-found-page.has-maris-footer {
     text-align: left;
   }
 
-  html[lang="th"] .maris-footer__toggle-label {
-    font-family: var(--maris-font-thai, "Anuphan", "Urbanist", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
-    letter-spacing: 0.03em;
-  }
-
   .maris-footer__chevron {
     width: 11px;
     height: 11px;

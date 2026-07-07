@@ -126,7 +126,6 @@ Successful response:
       "slug": "er1001",
       "title": "ER1001",
       "name": "The Infinite Hold Collection Round",
-      "nameTh": "The Infinite Hold Collection Round",
       "collectionKey": "engagement-ring",
       "category": "Engagement Rings",
       "description": "Round diamond engagement ring in white gold.",

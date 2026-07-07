@@ -21,11 +21,11 @@ assert.match(
 );
 assert.match(pageSource, /className="shop-category-grid"/);
 
-const expectedLabels = ["แหวน", "ต่างหู", "จี้", "สร้อยข้อมือและกำไล", "สร้อยคอ"];
+const expectedLabels = ["Rings", "Earrings", "Pendants", "Bracelets & Bangles", "Necklaces"];
 for (const label of expectedLabels) {
   assert.match(pageSource, new RegExp(`label:\\s*"${label}"`), `Missing category label: ${label}`);
 }
-assert.doesNotMatch(pageSource, /label:\s*"เข็มกลัด"/, "Brooch category should not render on the homepage.");
+assert.doesNotMatch(pageSource, /label:\s*"Brooches"/, "Brooch category should not render on the homepage.");
 
 const categoryItemsMatch = pageSource.match(/const shopCategoryItems = \[([\s\S]*?)\];/);
 assert.ok(categoryItemsMatch, "Homepage should keep category items in a local array.");
