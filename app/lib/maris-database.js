@@ -28,7 +28,7 @@ const ADMIN_CATALOGUE_SELECT = `
   name,
   category,
   collection,
-  metadata,
+  collection_name,
   status,
   base_price,
   stock_quantity,
@@ -274,23 +274,6 @@ function cleanOptionalText(value) {
   return text || null;
 }
 
-function cleanMetadataObject(value) {
-  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
-}
-
-function buildAdminProductMetadata(metadata, collectionName) {
-  const nextMetadata = { ...cleanMetadataObject(metadata) };
-  const cleanCollectionName = cleanOptionalText(collectionName ?? nextMetadata.collectionName);
-
-  if (cleanCollectionName) {
-    nextMetadata.collectionName = cleanCollectionName;
-  } else {
-    delete nextMetadata.collectionName;
-  }
-
-  return Object.keys(nextMetadata).length ? nextMetadata : undefined;
-}
-
 const ADMIN_PRODUCT_COLLECTION_ALIASES = Object.freeze({
   ws: "wedding-set",
   "wedding-set": "wedding-set",
@@ -417,8 +400,7 @@ function normalizeProduct(row) {
     ? row.product_images.map(normalizeImage).sort(sortImages)
     : [];
   const primaryImage = images.find((image) => image.isPrimary) || images[0] || null;
-  const metadata = cleanMetadataObject(row.metadata);
-  const collectionName = cleanOptionalText(metadata.collectionName) || "";
+  const collectionName = cleanOptionalText(row.collection_name) || "";
 
   return {
     id: row.id,
@@ -439,7 +421,6 @@ function normalizeProduct(row) {
     imageCount: images.length,
     variantCount: variants.length,
     totalStock: variants.reduce((total, variant) => total + variant.stockQuantity, 0),
-    metadata,
     variants,
     images
   };
@@ -1117,18 +1098,18 @@ export async function createAdminProduct(product, { env = process.env, client } 
   const status = normalizeAdminProductStatus(product.status);
   const sku = normalizeAdminProductSku(product.sku);
   const collection = normalizeAdminProductCollection(product.collection || product.ringType || product.category) || null;
-  const metadata = buildAdminProductMetadata(product.metadata, product.collectionName);
+  const collectionName = cleanOptionalText(product.collectionName) || null;
   const payload = Object.fromEntries(Object.entries({
     sku,
     slug: product.slug || sku.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
     name: product.name,
     category: normalizeAdminProductCategory({ category: product.category, collection }),
     collection,
+    collection_name: collectionName,
     base_price: parseMoneyAmount(product.price) ?? null,
     status,
     stock_quantity: Number(product.stockQty) || 0,
-    reserved_quantity: Number(product.reservedQty) || 0,
-    metadata
+    reserved_quantity: Number(product.reservedQty) || 0
   }).filter(([, value]) => value !== undefined));
 
   const { data, error } = await supabase
@@ -1178,9 +1159,9 @@ export async function updateAdminProduct(productId, updates, { env = process.env
   const category = updates.category === undefined && updates.collection === undefined
     ? undefined
     : normalizeAdminProductCategory({ category: updates.category, collection });
-  const metadata = updates.metadata === undefined && updates.collectionName === undefined
+  const collectionName = updates.collectionName === undefined
     ? undefined
-    : buildAdminProductMetadata(updates.metadata, updates.collectionName);
+    : cleanOptionalText(updates.collectionName) || null;
   const isActive = updates.isActive !== undefined
     ? updates.isActive
     : status === undefined
@@ -1192,11 +1173,11 @@ export async function updateAdminProduct(productId, updates, { env = process.env
     name: updates.name,
     category,
     collection,
+    collection_name: collectionName,
     base_price: updates.price === undefined ? undefined : parseMoneyAmount(updates.price),
     status,
     stock_quantity: updates.stockQty !== undefined ? Number(updates.stockQty) : undefined,
-    reserved_quantity: updates.reservedQty !== undefined ? Number(updates.reservedQty) : undefined,
-    metadata
+    reserved_quantity: updates.reservedQty !== undefined ? Number(updates.reservedQty) : undefined
   };
 
   const cleanedPayload = Object.fromEntries(
