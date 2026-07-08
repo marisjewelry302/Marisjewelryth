@@ -28,11 +28,14 @@
     panels: Array.from(document.querySelectorAll("[data-admin-panel]")),
     tabs: Array.from(document.querySelectorAll("[data-admin-tab]")),
     productForm: document.querySelector("[data-product-form]"),
+    productSearch: document.querySelector("[data-products-search]"),
     bestSellerForm: document.querySelector("[data-best-seller-form]"),
     inventoryForm: document.querySelector("[data-inventory-form]"),
     orderForm: document.querySelector("[data-order-form]"),
     settingsForm: document.querySelector("[data-settings-form]"),
     productsTable: document.querySelector("[data-products-table]"),
+    productsPagination: document.querySelector("[data-products-pagination]"),
+    productsPageSummary: document.querySelector("[data-products-page-summary]"),
     catalogueDraftTable: document.querySelector("[data-catalogue-draft-table]"),
     logsTable: document.querySelector("[data-inventory-log-table]"),
     ordersTable: document.querySelector("[data-orders-table]"),
@@ -90,6 +93,7 @@
   const ADMIN_API_PREFIX = "/api/admin";
   const ADMIN_PRODUCT_IMAGES_PATH = "/product-images";
   const BEST_SELLER_SLOT_COUNT = 7;
+  const PRODUCT_LIST_PAGE_SIZE = 5;
   const adminCache = {
     products: [],
     bestSellerProductIds: [],
@@ -99,6 +103,10 @@
     isLoading: true,
     isReady: false,
     error: ""
+  };
+  const productListState = {
+    searchTerm: "",
+    page: 1
   };
   let modalGalleryImages = [];
   let modalGalleryDragIndex = null;
@@ -231,6 +239,85 @@
 
   function readCatalogueDrafts() {
     return [];
+  }
+
+  function getProductSearchText(product) {
+    return [
+      getProductSku(product),
+      getProductName(product),
+      getProductCategory(product),
+      getProductCollectionName(product),
+      getProductPrice(product),
+      product?.status,
+      product?.slug,
+      product?.description
+    ].filter(Boolean).join(" ").toLowerCase();
+  }
+
+  function getProductListView() {
+    const products = readProducts();
+    const searchLabel = productListState.searchTerm.trim();
+    const query = searchLabel.toLowerCase();
+    const filteredProducts = query
+      ? products.filter((product) => getProductSearchText(product).includes(query))
+      : products;
+    const pageCount = Math.max(1, Math.ceil(filteredProducts.length / PRODUCT_LIST_PAGE_SIZE));
+    const currentPage = Math.min(Math.max(Number(productListState.page) || 1, 1), pageCount);
+    const startIndex = (currentPage - 1) * PRODUCT_LIST_PAGE_SIZE;
+
+    productListState.page = currentPage;
+
+    return {
+      query,
+      searchLabel,
+      totalProducts: products.length,
+      filteredProducts,
+      filteredCount: filteredProducts.length,
+      pageProducts: filteredProducts.slice(startIndex, startIndex + PRODUCT_LIST_PAGE_SIZE),
+      pageCount,
+      currentPage,
+      startItem: filteredProducts.length ? startIndex + 1 : 0,
+      endItem: Math.min(startIndex + PRODUCT_LIST_PAGE_SIZE, filteredProducts.length)
+    };
+  }
+
+  function renderProductListControls(view) {
+    if (elements.productsPageSummary) {
+      if (adminCache.isLoading) {
+        elements.productsPageSummary.textContent = "Loading Supabase products...";
+      } else if (!adminCache.isReady) {
+        elements.productsPageSummary.textContent = adminCache.error || "Connect Supabase before managing admin products.";
+      } else if (!view.filteredCount && view.query) {
+        elements.productsPageSummary.textContent = `No products match "${view.searchLabel}".`;
+      } else if (!view.filteredCount) {
+        elements.productsPageSummary.textContent = "No Supabase products yet.";
+      } else if (view.query) {
+        elements.productsPageSummary.textContent = `Showing ${view.startItem}-${view.endItem} of ${view.filteredCount} matches for "${view.searchLabel}" (${view.totalProducts} total).`;
+      } else {
+        elements.productsPageSummary.textContent = `Showing ${view.startItem}-${view.endItem} of ${view.filteredCount} products.`;
+      }
+    }
+
+    if (!elements.productsPagination) {
+      return;
+    }
+
+    if (adminCache.isLoading || !adminCache.isReady || view.pageCount <= 1) {
+      elements.productsPagination.innerHTML = "";
+      return;
+    }
+
+    const pageButtons = Array.from({ length: view.pageCount }, (_, index) => {
+      const page = index + 1;
+      const isCurrent = page === view.currentPage;
+      return `<button type="button" data-products-page="${page}"${isCurrent ? ' aria-current="page"' : ""}>${page}</button>`;
+    }).join("");
+
+    elements.productsPagination.innerHTML = `
+      <button type="button" data-products-page="${Math.max(1, view.currentPage - 1)}"${view.currentPage === 1 ? " disabled" : ""}>Prev</button>
+      ${pageButtons}
+      <button type="button" data-products-page="${Math.min(view.pageCount, view.currentPage + 1)}"${view.currentPage === view.pageCount ? " disabled" : ""}>Next</button>
+    `;
   }
 
   function getAvailable(product) {
@@ -754,7 +841,8 @@
 
   function renderProductsTable() {
     const settings = getSettings();
-    const products = readProducts();
+    const view = getProductListView();
+    renderProductListControls(view);
 
     if (adminCache.isLoading) {
       elements.productsTable.innerHTML = `<tr><td colspan="8">Loading Supabase products...</td></tr>`;
@@ -766,7 +854,7 @@
       return;
     }
 
-    const rows = products
+    const rows = view.pageProducts
       .map((product) => {
         const available = getAvailable(product);
         const stockClass = available <= settings.lowStockThreshold ? "stock-low" : "stock-ok";
@@ -794,7 +882,10 @@
       })
       .join("");
 
-    elements.productsTable.innerHTML = rows || `<tr><td colspan="8">No Supabase products yet.</td></tr>`;
+    const emptyMessage = view.query
+      ? `No products match "${view.searchLabel}".`
+      : "No Supabase products yet.";
+    elements.productsTable.innerHTML = rows || `<tr><td colspan="8">${escapeHtml(emptyMessage)}</td></tr>`;
   }
 
   function renderCatalogueDraftTable() {
@@ -898,9 +989,10 @@
       return;
     }
 
-    const sheetProducts = getCachedProducts();
+    const view = getProductListView();
+    const sheetProducts = view.pageProducts;
 
-    if (!adminCache.isReady || !sheetProducts.length) {
+    if (!adminCache.isReady || !getCachedProducts().length) {
       const emptyMessage = !adminCache.isReady
         ? (adminCache.error || "Supabase catalogue is unavailable right now. No catalogue products can be loaded.")
         : "No Supabase catalogue products are available yet.";
@@ -947,7 +1039,10 @@
       })
       .join("");
 
-    elements.sheetCatalogueTable.innerHTML = rows;
+    const emptyMessage = view.query
+      ? `No catalogue products match "${view.searchLabel}".`
+      : "No Supabase catalogue products are available yet.";
+    elements.sheetCatalogueTable.innerHTML = rows || `<tr><td colspan="6">${escapeHtml(emptyMessage)}</td></tr>`;
   }
 
   function getActiveProducts() {
@@ -2182,6 +2277,22 @@
     settingsState.lowStockThreshold = lowStockThreshold;
     renderAll();
     setMessage("Settings applied for this admin view.");
+  });
+
+  elements.productSearch?.addEventListener("input", (event) => {
+    productListState.searchTerm = String(event.currentTarget.value || "");
+    productListState.page = 1;
+    renderAll();
+  });
+
+  elements.productsPagination?.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-products-page]");
+    if (!button || button.disabled) {
+      return;
+    }
+
+    productListState.page = Number(button.dataset.productsPage) || 1;
+    renderAll();
   });
 
   elements.resetDemo?.addEventListener("click", async () => {

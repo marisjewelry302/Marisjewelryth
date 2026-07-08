@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { readPublicProductBySlug, readRelatedPublicProducts } from "../../lib/maris-database.js";
 import { getPublicProductAltText, getPublicProductDisplayName, getPublicVariantDisplayName } from "../../lib/product-display.js";
 import JsonLd from "../../components/JsonLd";
+import WishlistButton from "../../components/WishlistButton";
 import ProductGallery from "./ProductGallery";
 import AddToBagButton from "./AddToBagButton";
 import {
@@ -71,6 +72,15 @@ export default async function ProductPage({ params }) {
   const collectionLabel = COLLECTION_LABELS[product.collection] || product.category || "Maris Jewelry";
   const displayName = getPublicProductDisplayName(product);
   const productPath = `/product/${product.slug || product.sku}`;
+  const wishlistItem = {
+    id: `${product.collection || collectionLabel}:${product.sku}`,
+    title: product.sku,
+    details: [displayName],
+    image: product.primaryImageUrl,
+    href: productPath,
+    collection: collectionLabel,
+    priceLabel: formatPrice(product.basePrice)
+  };
   const productJsonLd = {
     "@context": "https://schema.org",
     "@graph": [
@@ -113,8 +123,9 @@ export default async function ProductPage({ params }) {
 
             <div className="product-actions">
               <AddToBagButton product={product} collectionLabel={collectionLabel} />
+              <WishlistButton item={wishlistItem} variant="action" />
               <a
-                className="product-action is-primary"
+                className="product-action is-primary is-contact"
                 href={`/contact-order/${encodeURIComponent(product.sku)}`}
               >
                 Contact Maris to Order

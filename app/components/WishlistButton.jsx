@@ -18,7 +18,7 @@ function writeWishlist(items) {
   window.dispatchEvent(new CustomEvent("maris:wishlistchange"));
 }
 
-export default function WishlistButton({ item }) {
+export default function WishlistButton({ item, variant = "icon" }) {
   const [isSaved, setIsSaved] = useState(false);
 
   useEffect(() => {
@@ -47,6 +47,21 @@ export default function WishlistButton({ item }) {
 
     writeWishlist([{ ...item, addedAt: new Date().toISOString() }, ...currentWishlist]);
     setIsSaved(true);
+  }
+
+  if (variant === "action") {
+    return (
+      <button
+        type="button"
+        className={`product-action wishlist-action${isSaved ? " is-added is-saved" : ""}`}
+        aria-pressed={isSaved}
+        aria-label={isSaved ? `Remove ${item.title} from wishlist` : `Save ${item.title} to wishlist`}
+        onClick={toggleWishlist}
+      >
+        <span className="wishlist-action-icon" aria-hidden="true">{isSaved ? "♥" : "♡"}</span>
+        <span>{isSaved ? "Saved to Wishlist" : "Add to Wishlist"}</span>
+      </button>
+    );
   }
 
   return (

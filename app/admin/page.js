@@ -207,6 +207,20 @@ export default async function AdminPage() {
                 <button className="admin-primary" type="submit">Add Product</button>
               </form>
 
+              <div className="admin-list-tools" aria-label="Product list controls">
+                <label className="admin-search-field" htmlFor="admin-products-search">
+                  Search products
+                  <input
+                    id="admin-products-search"
+                    type="search"
+                    placeholder="Search SKU, name, category..."
+                    data-products-search
+                  />
+                </label>
+                <p className="admin-page-summary" aria-live="polite" data-products-page-summary>Showing 0 products</p>
+                <div className="admin-pagination" data-products-pagination aria-label="Product pages"></div>
+              </div>
+
               <div className="admin-table-wrap">
                 <table>
                   <thead>

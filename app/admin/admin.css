@@ -412,6 +412,76 @@ a {
   align-items: end;
 }
 
+.admin-list-tools {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) auto;
+  gap: 12px 16px;
+  align-items: end;
+  margin: -8px 0 16px;
+  padding: 16px;
+  border: 1px solid rgba(221, 164, 165, 0.3);
+  background: rgba(255, 250, 246, 0.68);
+}
+
+.admin-search-field {
+  display: grid;
+  gap: 8px;
+  color: var(--maris-gold);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.admin-search-field input {
+  min-height: 44px;
+  width: 100%;
+  border: 1px solid rgba(0, 73, 58, 0.18);
+  background: rgba(255, 255, 255, 0.76);
+  color: var(--maris-ink);
+  font: inherit;
+  letter-spacing: 0;
+  padding: 0 12px;
+  text-transform: none;
+}
+
+.admin-page-summary {
+  color: var(--maris-muted);
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: right;
+}
+
+.admin-pagination {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-pagination button {
+  min-height: 36px;
+  min-width: 38px;
+  padding: 0 12px;
+  border: 1px solid rgba(0, 73, 58, 0.2);
+  background: rgba(255, 255, 255, 0.74);
+  color: var(--maris-ink);
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.admin-pagination button[aria-current="page"] {
+  background: var(--maris-teal);
+  color: var(--maris-white);
+}
+
+.admin-pagination button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
 .admin-inline-note {
   display: flex;
   align-items: baseline;
@@ -664,6 +734,14 @@ td strong {
 
   .admin-subsection-head {
     flex-direction: column;
+  }
+
+  .admin-list-tools {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-page-summary {
+    text-align: left;
   }
 }
 

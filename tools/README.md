@@ -5,7 +5,7 @@ Helper scripts for Next.js, local preview, browser testing, and artifact storage
 ## Next.js workflow
 
 - `start-next-dev.ps1`: runs the Next.js dev server with the bundled Node runtime when PATH is missing `node` or `npm`
-- `build-next.ps1`: runs the legacy static sync and `next build` with the bundled Node runtime
+- `build-next.ps1`: runs `next build` with the bundled Node runtime when PATH is missing `node` or `npm`
 - `start-next-dev.cmd`: Windows launcher that bypasses local PowerShell execution-policy friction
 - `build-next.cmd`: Windows launcher that bypasses local PowerShell execution-policy friction
 

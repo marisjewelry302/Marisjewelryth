@@ -27,7 +27,6 @@ if (-not (Test-Path -LiteralPath $NextCli)) {
 
 Push-Location $ProjectRoot
 try {
-  & $NodePath "scripts\sync-legacy-public.mjs"
   & $NodePath $NextCli dev --hostname $Hostname --port $Port
 }
 finally {

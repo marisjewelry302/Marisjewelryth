@@ -381,6 +381,19 @@
   background: #00382d;
 }
 
+.wishlist-action {
+  gap: 8px;
+}
+
+.wishlist-action-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.product-action.is-contact {
+  grid-column: 1 / -1;
+}
+
 .product-note {
   font-size: 13px;
   line-height: 1.7;
