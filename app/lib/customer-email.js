@@ -62,7 +62,7 @@ export function buildWelcomeEmail(customer) {
   const subject = "Welcome to Maris Jewelry - your 10% first-purchase offer";
   const preview = "Thank you for joining Maris Jewelry. Your first confirmed order includes 10% off.";
   const html = `
-    <div style="font-family: Georgia, 'Times New Roman', serif; color: #2f2924; line-height: 1.6;">
+    <div style="font-family: Urbanist, Anuphan, Arial, sans-serif; color: #2f2924; line-height: 1.6;">
       <p style="font-size: 13px; letter-spacing: .18em; text-transform: uppercase; color: #9b7c52;">Maris Jewelry</p>
       <h1 style="font-size: 28px; font-weight: 400; margin: 0 0 16px;">Welcome, ${safeName}</h1>
       <p>${preview}</p>

@@ -99,7 +99,7 @@ export function buildCustomerCustomOrderEmail({ order, request, optionSummary })
     "This message confirms that your enquiry was received. Final availability, production details, and any next steps are confirmed directly by the Maris team."
   ];
   const html = `
-    <div style="font-family: Georgia, 'Times New Roman', serif; color: #2f2924; line-height: 1.6;">
+    <div style="font-family: Urbanist, Anuphan, Arial, sans-serif; color: #2f2924; line-height: 1.6;">
       <p style="font-size: 13px; letter-spacing: .18em; text-transform: uppercase; color: #9b7c52;">Maris Jewelry</p>
       <h1 style="font-size: 26px; font-weight: 400; margin: 0 0 16px;">Custom request received</h1>
       <p>Hello ${escapeHtml(order.fullName || "Maris Client")},</p>
@@ -132,7 +132,7 @@ export function buildAdminCustomOrderEmail({ order, request, customer, optionSum
     `Customer ID: ${customer?.id || "-"}`
   ];
   const html = `
-    <div style="font-family: Arial, sans-serif; color: #222; line-height: 1.5;">
+    <div style="font-family: Urbanist, Anuphan, Arial, sans-serif; color: #222; line-height: 1.5;">
       <h1 style="font-size: 22px; margin: 0 0 16px;">New custom order request</h1>
       ${buildHtmlList(lines)}
     </div>

@@ -18,6 +18,7 @@
     "test:custom-order": "node scripts/test-custom-order.mjs",
     "test:design-your-ring": "node scripts/test-design-your-ring.mjs",
     "test:home-category-showcase": "node scripts/test-home-category-showcase.mjs",
+    "test:site-typography": "node scripts/test-site-typography.mjs",
     "test:product-wishlist": "node scripts/test-product-wishlist-button.mjs",
     "test:seo-aeo-geo": "node scripts/test-seo-aeo-geo.mjs",
     "test:site-header-nav": "node scripts/test-site-header-nav.mjs",
