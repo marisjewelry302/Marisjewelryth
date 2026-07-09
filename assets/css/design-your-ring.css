@@ -398,6 +398,22 @@ body:has(.design-ring-page) .site-footer {
   max-width: 100%;
   margin: clamp(-132px, -7vw, -72px) auto 0;
   aspect-ratio: 1.18;
+  transition: width 220ms ease;
+}
+
+.design-ring-preview-frame.is-zoomed {
+  width: min(92vw, 980px);
+}
+
+.design-ring-preview-frame:fullscreen {
+  width: min(80vw, 900px);
+  max-width: 90vw;
+  margin: 0;
+  background: var(--design-ring-paper);
+}
+
+.design-ring-preview-frame:fullscreen::after {
+  display: none;
 }
 
 .design-ring-preview-frame::after {
@@ -594,6 +610,12 @@ body:has(.design-ring-page) .site-footer {
   color: var(--design-ring-green);
   outline: 2px solid rgba(0, 73, 58, 0.12);
   outline-offset: 2px;
+}
+
+.design-ring-view-controls button.is-active {
+  border-color: rgba(0, 73, 58, 0.4);
+  background: rgba(0, 73, 58, 0.1);
+  color: var(--design-ring-green);
 }
 
 .design-ring-summary-panel {

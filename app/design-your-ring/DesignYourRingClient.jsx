@@ -472,33 +472,59 @@ function buildRingScene({ bandSlug, metalSwatch, stoneSlug }) {
 
   const bandTube = bandSlug === "side-stone" ? 0.072 : 0.062;
   const naturalLift = bandSlug === "natural" ? 0.04 : 0;
+
+  // Shared join points so the shank, shoulders, and gallery connect exactly
+  // (previously these used mismatched coordinates, leaving visible gaps).
+  const shoulderJoinLeft = new THREE.Vector3(-1.04, -0.02 + naturalLift, 0.05);
+  const shoulderJoinRight = new THREE.Vector3(1.04, -0.02 - naturalLift, 0.05);
+  const galleryJoinLeft = new THREE.Vector3(-0.29, 0.4, 0.07);
+  const galleryJoinRight = new THREE.Vector3(0.29, 0.4, 0.07);
+
+  // The shank is an OPEN arc (finger-side only). It used to close into a
+  // second loop over the back of the setting, which produced the stray
+  // "double band" artifact.
   const band = createCurveTube([
-    new THREE.Vector3(-1.18, 0.02 + naturalLift, -0.02),
+    shoulderJoinLeft,
     new THREE.Vector3(-1.08, -0.34, 0.02),
     new THREE.Vector3(-0.62, -0.72 - naturalLift, 0.04),
     new THREE.Vector3(0, -0.84, 0.06),
     new THREE.Vector3(0.62, -0.72 + naturalLift, 0.04),
     new THREE.Vector3(1.08, -0.34, 0.02),
-    new THREE.Vector3(1.18, 0.02 - naturalLift, -0.02),
-    new THREE.Vector3(0.78, 0.13, -0.14),
-    new THREE.Vector3(0, 0.18, -0.2),
-    new THREE.Vector3(-0.78, 0.13, -0.14)
-  ], bandTube, metalMaterial, { closed: true, segments: 220, radialSegments: 28 });
+    shoulderJoinRight
+  ], bandTube, metalMaterial, { closed: false, segments: 160, radialSegments: 28 });
   group.add(band);
 
   const leftShoulder = createCurveTube([
-    new THREE.Vector3(-1.04, -0.02, 0.05),
+    shoulderJoinLeft,
     new THREE.Vector3(-0.76, 0.12, 0.1),
     new THREE.Vector3(-0.48, 0.29, 0.14),
-    new THREE.Vector3(-0.27, 0.39, 0.12)
+    galleryJoinLeft
   ], bandTube * 0.72, metalMaterial, { segments: 90, radialSegments: 22 });
   const rightShoulder = createCurveTube([
-    new THREE.Vector3(1.04, -0.02, 0.05),
+    shoulderJoinRight,
     new THREE.Vector3(0.76, 0.12, 0.1),
     new THREE.Vector3(0.48, 0.29, 0.14),
-    new THREE.Vector3(0.27, 0.39, 0.12)
+    galleryJoinRight
   ], bandTube * 0.72, metalMaterial, { segments: 90, radialSegments: 22 });
   group.add(leftShoulder, rightShoulder);
+
+  // Fillet spheres at every join hide the seams between separate tube
+  // meshes so the shank/shoulders/gallery read as one fused piece, the
+  // same trick already used for the prong tips below.
+  const shankJointRadius = bandTube * 1.05;
+  const galleryJointRadius = bandTube * 0.72 * 1.15;
+  [
+    [shoulderJoinLeft, shankJointRadius],
+    [shoulderJoinRight, shankJointRadius],
+    [galleryJoinLeft, galleryJointRadius],
+    [galleryJoinRight, galleryJointRadius]
+  ].forEach(([point, radius]) => {
+    const joint = new THREE.Mesh(new THREE.SphereGeometry(radius, 20, 16), metalMaterial);
+    joint.position.copy(point);
+    joint.castShadow = true;
+    joint.receiveShadow = true;
+    group.add(joint);
+  });
 
   const setting = createOvalLoop(0.32, 0.23, 0.42, 0.04, 0.024, metalMaterial);
   group.add(setting);
@@ -618,13 +644,25 @@ function PhotorealRingPreview({
   );
 }
 
-function InteractiveRingPreview({ design, selectedMetal, selectedBand }) {
+function InteractiveRingPreview({
+  design,
+  selectedMetal,
+  selectedBand,
+  isRotating = true,
+  isZoomed = false,
+  frameRef
+}) {
   const stageRef = useRef(null);
   const canvasRef = useRef(null);
+  const isRotatingRef = useRef(isRotating);
   const stoneSlug = getDesignSlug(design.stone_shape);
   const bandSlug = getDesignSlug(selectedBand.value);
   const metalSwatch = selectedMetal?.swatch || "platinum";
   const [previewLayerFailed, setPreviewLayerFailed] = useState(false);
+
+  useEffect(() => {
+    isRotatingRef.current = isRotating;
+  }, [isRotating]);
   const engravingText = design.engraving_enabled && design.engraving_text
     ? design.engraving_text
     : "Maris private atelier";
@@ -692,7 +730,7 @@ function InteractiveRingPreview({ design, selectedMetal, selectedBand }) {
 
     const render = () => {
       const elapsed = performance.now() - startedAt;
-      if (!reduceMotion) {
+      if (!reduceMotion && isRotatingRef.current) {
         ringGroup.rotation.y = 0.12 + Math.sin(elapsed * 0.0007) * 0.22;
         ringGroup.rotation.x = -0.16 + Math.sin(elapsed * 0.00045) * 0.035;
       }
@@ -750,7 +788,8 @@ function InteractiveRingPreview({ design, selectedMetal, selectedBand }) {
 
   return (
     <figure
-      className="design-ring-preview-frame"
+      ref={frameRef}
+      className={`design-ring-preview-frame ${isZoomed ? "is-zoomed" : ""}`}
       aria-label={`${formatMetalSummary(design)} ${design.stone_shape} ${selectedBand.label} ring preview`}
     >
       <PhotorealRingPreview
@@ -780,6 +819,30 @@ function InteractiveRingPreview({ design, selectedMetal, selectedBand }) {
 
 function RingPreviewStudio({ design, selectedBand, onStepChange }) {
   const selectedMetal = METALS.find((metal) => metal.value === design.metal) || METALS[0];
+  const frameRef = useRef(null);
+  const [isRotating, setIsRotating] = useState(true);
+  const [isZoomed, setIsZoomed] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    function handleFullscreenChange() {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+    }
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
+  }, []);
+
+  function toggleFullscreen() {
+    const node = frameRef.current;
+    if (!node) {
+      return;
+    }
+    if (document.fullscreenElement) {
+      document.exitFullscreen?.();
+    } else {
+      node.requestFullscreen?.();
+    }
+  }
 
   return (
     <section className="design-ring-preview-studio" aria-labelledby="design-ring-title">
@@ -793,6 +856,9 @@ function RingPreviewStudio({ design, selectedBand, onStepChange }) {
         design={design}
         selectedMetal={selectedMetal}
         selectedBand={selectedBand}
+        isRotating={isRotating}
+        isZoomed={isZoomed}
+        frameRef={frameRef}
       />
 
       <div className="design-ring-preview-meta" aria-label="Current preview">
@@ -802,11 +868,33 @@ function RingPreviewStudio({ design, selectedBand, onStepChange }) {
       </div>
 
       <div className="design-ring-view-controls" aria-label="Preview controls">
-        <button type="button" aria-label="Rotate preview 360 degrees">
+        <button
+          type="button"
+          className={isRotating ? "is-active" : ""}
+          aria-pressed={isRotating}
+          aria-label={isRotating ? "Pause 360 degree rotation" : "Resume 360 degree rotation"}
+          onClick={() => setIsRotating((current) => !current)}
+        >
           <span aria-hidden="true">360</span>
         </button>
-        <button type="button" aria-label="Zoom preview">Zoom</button>
-        <button type="button" aria-label="Open preview fullscreen">Fullscreen</button>
+        <button
+          type="button"
+          className={isZoomed ? "is-active" : ""}
+          aria-pressed={isZoomed}
+          aria-label={isZoomed ? "Zoom out preview" : "Zoom in preview"}
+          onClick={() => setIsZoomed((current) => !current)}
+        >
+          Zoom
+        </button>
+        <button
+          type="button"
+          className={isFullscreen ? "is-active" : ""}
+          aria-pressed={isFullscreen}
+          aria-label={isFullscreen ? "Exit fullscreen preview" : "Open preview fullscreen"}
+          onClick={toggleFullscreen}
+        >
+          {isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+        </button>
         <button type="button" onClick={() => onStepChange("review")}>Review</button>
       </div>
     </section>
@@ -1177,8 +1265,8 @@ function ReviewOptions({
         <Field label="Contact number" className="is-wide">
           <input
             type="tel"
-            value={design.contact_number}
-            placeholder={customer?.phone || "+66"}
+            value={contactNumber}
+            placeholder="+66"
             onChange={(event) => updateDesign("contact_number", event.target.value)}
           />
         </Field>
