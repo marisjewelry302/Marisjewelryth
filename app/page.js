@@ -211,6 +211,7 @@ export default async function HomePage() {
         <div className="atelier-reveal__panel">
           <div className="atelier-reveal__focus">
             <h3>{featuredProducts.length ? "New arrival" : "Maris catalogue preview"}</h3>
+            <span className="atelier-reveal__heading-rule" aria-hidden="true" />
             <p>
               Product availability is confirmed personally by the atelier before order details are finalized.
             </p>

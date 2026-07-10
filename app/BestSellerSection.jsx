@@ -136,6 +136,7 @@ export default function BestSellerSection({ items = [] }) {
     <section className="best-seller-section" aria-labelledby="best-seller-heading">
       <div className="best-seller-head">
         <h2 id="best-seller-heading">Best Seller</h2>
+        <span aria-hidden="true" />
       </div>
 
       <div

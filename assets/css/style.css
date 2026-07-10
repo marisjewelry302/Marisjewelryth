@@ -696,7 +696,7 @@ body {
 .atelier-reveal__focus {
   display: grid;
   justify-items: center;
-  gap: 12px;
+  gap: 16px;
   min-height: 148px;
   padding: clamp(6px, 1.4vw, 18px) 0 clamp(4px, 1vw, 12px);
   border: 0;
@@ -1658,8 +1658,9 @@ body {
   }
 
   .atelier-reveal__focus h3 {
-    font-size: clamp(32px, 9vw, 44px);
-    line-height: 1.08;
+    font-size: clamp(36px, 3.7vw, 58px);
+    letter-spacing: 0.08em;
+    line-height: 1;
   }
 
   .atelier-product-grid {
@@ -3040,6 +3041,7 @@ body {
 .best-seller-head {
   display: grid;
   justify-items: center;
+  gap: 16px;
   padding: 0 var(--best-seller-side) clamp(2.25rem, 2.75rem, 3.25rem);
   text-align: center;
 }
@@ -3208,7 +3210,8 @@ body {
   }
 
   .best-seller-head h2 {
-    font-size: clamp(2.75rem, 3.4rem, 4rem);
+    font-size: clamp(30px, 9vw, 40px);
+    letter-spacing: 0.05em;
   }
 
   .best-seller-card {
@@ -3351,7 +3354,9 @@ body {
   text-align: center;
 }
 
-.shop-category-head h2 {
+.shop-category-head h2,
+.best-seller-head h2,
+.atelier-reveal__focus h3 {
   margin: 0;
   color: oklch(18% 0.03 76);
   font-family: var(--maris-font-display);
@@ -3362,7 +3367,9 @@ body {
   text-transform: uppercase;
 }
 
-.shop-category-head span {
+.shop-category-head span,
+.best-seller-head span,
+.atelier-reveal__heading-rule {
   width: 112px;
   height: 2px;
   background: var(--maris-gold);
@@ -3561,12 +3568,16 @@ body {
     margin-bottom: 28px;
   }
 
-  .shop-category-head h2 {
+  .shop-category-head h2,
+  .best-seller-head h2,
+  .atelier-reveal__focus h3 {
     font-size: clamp(30px, 9vw, 40px);
     letter-spacing: 0.05em;
   }
 
-  .shop-category-head span {
+  .shop-category-head span,
+  .best-seller-head span,
+  .atelier-reveal__heading-rule {
     width: 76px;
   }
 

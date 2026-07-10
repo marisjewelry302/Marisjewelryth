@@ -16,7 +16,9 @@ const sources = {
   designYourRing: await readSource("../assets/css/design-your-ring.css"),
   customerEmail: await readSource("../app/lib/customer-email.js"),
   customOrderEmail: await readSource("../app/lib/custom-order-email.js"),
-  layout: await readSource("../app/layout.js")
+  layout: await readSource("../app/layout.js"),
+  homepage: await readSource("../app/page.js"),
+  bestSeller: await readSource("../app/BestSellerSection.jsx")
 };
 
 assert.match(
@@ -66,5 +68,40 @@ for (const [name, source] of Object.entries(sources)) {
     `${name} should not override Maris typography with legacy serif/system families.`
   );
 }
+
+const sharedHomeHeadingStyles = sources.global.match(
+  /\.shop-category-head h2,\s*\.best-seller-head h2,\s*\.atelier-reveal__focus h3\s*\{([\s\S]*?)\n\}/
+)?.[1] ?? "";
+
+for (const declaration of [
+  "color: oklch(18% 0.03 76);",
+  "font-family: var(--maris-font-display);",
+  "font-size: clamp(36px, 3.7vw, 58px);",
+  "font-weight: 400;",
+  "letter-spacing: 0.08em;",
+  "line-height: 1;",
+  "text-transform: uppercase;"
+]) {
+  assert.ok(
+    sharedHomeHeadingStyles.includes(declaration),
+    `Best Seller and New arrival headings should share Shop By Category declaration: ${declaration}`
+  );
+}
+
+assert.match(
+  sources.global,
+  /\.shop-category-head span,\s*\.best-seller-head span,\s*\.atelier-reveal__heading-rule\s*\{[\s\S]*?width:\s*112px;[\s\S]*?height:\s*2px;[\s\S]*?background:\s*var\(--maris-gold\);[\s\S]*?\n\}/,
+  "Best Seller and New arrival headings should use the same gold rule as Shop By Category."
+);
+assert.match(
+  sources.bestSeller,
+  /<span aria-hidden="true" \/>/,
+  "Best Seller heading should render the same decorative rule element as Shop By Category."
+);
+assert.match(
+  sources.homepage,
+  /<span className="atelier-reveal__heading-rule" aria-hidden="true" \/>/,
+  "New arrival heading should render the same decorative rule element as Shop By Category."
+);
 
 console.log("PASS: Site typography uses Urbanist through shared Maris font tokens.");
