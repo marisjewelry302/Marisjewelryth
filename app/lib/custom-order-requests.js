@@ -23,6 +23,7 @@ export const STONE_CLARITIES = Object.freeze(new Set([
 export const STONE_CUTS = Object.freeze(new Set(["Excellent", "Very Good", "Good", "Fair", "Poor"]));
 export const ORIGINS = Object.freeze(new Set(["Lab", "Lab-grown", "Natural"]));
 export const RING_STYLES = Object.freeze(new Set(["Solitaire", "Pavé", "Halo", "Hidden Halo", "Side Stone", "Natural"]));
+export const RING_SETTINGS = Object.freeze(new Set(["Four Prong", "Six Prong", "Bezel", "Cathedral"]));
 export const STONE_SHAPES = Object.freeze(new Set([
   "Round",
   "Oval",
@@ -111,6 +112,7 @@ function normalizeRingDesign(customOptions) {
   return {
     style: cleanOptionalText(ringDesign.style),
     stoneShape: cleanOptionalText(ringDesign.stone_shape),
+    setting: cleanOptionalText(ringDesign.setting),
     engravingEnabled,
     engravingText: engravingEnabled ? cleanOptionalText(ringDesign.engraving_text) : null
   };
@@ -247,6 +249,10 @@ export function validateCustomOrderPayload(payload = {}) {
     addError("ring_design.stone_shape", "Stone shape is not supported.");
   }
 
+  if (normalized.ringDesign.setting && !RING_SETTINGS.has(normalized.ringDesign.setting)) {
+    addError("ring_design.setting", "Setting is not supported.");
+  }
+
   if (normalized.ringDesign.engravingText && normalized.ringDesign.engravingText.length > 40) {
     addError("ring_design.engraving_text", "Engraving text must be 40 characters or fewer.");
   }
@@ -275,6 +281,7 @@ export function buildCustomOrderSummary(order) {
   return [
     order.ringDesign?.style ? `Style ${order.ringDesign.style}` : "",
     order.ringDesign?.stoneShape ? `${order.ringDesign.stoneShape} stone` : "",
+    order.ringDesign?.setting ? `Setting ${order.ringDesign.setting}` : "",
     metalText,
     order.ringSize === null || order.ringSize === undefined ? "" : `Size ${order.ringSize}`,
     order.origin,
@@ -329,6 +336,7 @@ export function buildCustomOrderInsertPayload(order, { customerId = null, finger
       ringDesign: {
         style: order.ringDesign.style,
         stoneShape: order.ringDesign.stoneShape,
+        setting: order.ringDesign.setting,
         engravingEnabled: order.ringDesign.engravingEnabled,
         engravingText: order.ringDesign.engravingText
       }

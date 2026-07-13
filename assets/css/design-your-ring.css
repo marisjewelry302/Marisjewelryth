@@ -501,7 +501,7 @@ body:has(.design-ring-page) .site-footer {
   transition: opacity 180ms ease;
 }
 
-.design-ring-3d-preview.is-visible-fallback {
+.design-ring-3d-preview.is-visible {
   opacity: 1;
 }
 
@@ -1055,6 +1055,14 @@ body:has(.design-ring-page) .site-footer {
   grid-column: 2;
 }
 
+.design-ring-setting-note {
+  grid-column: 2;
+  margin: -2px 0 0;
+  color: rgba(31, 36, 32, 0.58);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .design-ring-field {
   display: grid;
   gap: 6px;
@@ -1243,6 +1251,7 @@ body:has(.design-ring-page) .site-footer {
   }
 
   .design-ring-field-row,
+  .design-ring-setting-note,
   .design-ring-review-actions,
   .design-ring-review-note,
   .design-ring-request-id {

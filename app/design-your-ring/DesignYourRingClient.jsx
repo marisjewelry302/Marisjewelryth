@@ -436,7 +436,7 @@ function createOvalLoop(width, height, centerY, z, radius, material) {
   return createCurveTube(points, radius, material, { closed: true, segments: 120, radialSegments: 18 });
 }
 
-function buildRingScene({ bandSlug, metalSwatch, stoneSlug }) {
+function buildRingScene({ bandSlug, metalSwatch, stoneSlug, settingSlug }) {
   const group = new THREE.Group();
   const metalColor = THREE_METAL_COLORS[metalSwatch] || THREE_METAL_COLORS.platinum;
   const metalMaterial = new THREE.MeshPhysicalMaterial({
@@ -526,20 +526,48 @@ function buildRingScene({ bandSlug, metalSwatch, stoneSlug }) {
     group.add(joint);
   });
 
-  const setting = createOvalLoop(0.32, 0.23, 0.42, 0.04, 0.024, metalMaterial);
+  const isBezel = settingSlug === "bezel";
+  const setting = createOvalLoop(
+    isBezel ? 0.36 : 0.32,
+    isBezel ? 0.27 : 0.23,
+    0.42,
+    isBezel ? 0.09 : 0.04,
+    isBezel ? 0.034 : 0.024,
+    metalMaterial
+  );
   group.add(setting);
 
-  for (const [x, y] of [[-0.24, 0.54], [0.24, 0.54], [-0.24, 0.3], [0.24, 0.3]]) {
-    const prong = createTaperedCylinderBetween(
-      new THREE.Vector3(x, y - 0.16, 0.04),
-      new THREE.Vector3(x * 0.9, y + 0.1, 0.12),
-      0.017,
-      0.03,
-      metalMaterial
-    );
-    const tip = new THREE.Mesh(new THREE.SphereGeometry(0.045, 20, 16), metalMaterial);
-    tip.position.set(x * 0.9, y + 0.11, 0.12);
-    group.add(prong, tip);
+  const prongPositions = settingSlug === "six-prong"
+    ? [[-0.24, 0.55], [0.24, 0.55], [-0.3, 0.42], [0.3, 0.42], [-0.24, 0.29], [0.24, 0.29]]
+    : [[-0.24, 0.54], [0.24, 0.54], [-0.24, 0.3], [0.24, 0.3]];
+
+  if (!isBezel) {
+    for (const [x, y] of prongPositions) {
+      const prong = createTaperedCylinderBetween(
+        new THREE.Vector3(x, y - 0.16, 0.04),
+        new THREE.Vector3(x * 0.9, y + 0.1, 0.12),
+        0.017,
+        0.03,
+        metalMaterial
+      );
+      const tip = new THREE.Mesh(new THREE.SphereGeometry(0.045, 20, 16), metalMaterial);
+      tip.position.set(x * 0.9, y + 0.11, 0.12);
+      group.add(prong, tip);
+    }
+  }
+
+  if (settingSlug === "cathedral") {
+    const leftCathedral = createCurveTube([
+      galleryJoinLeft,
+      new THREE.Vector3(-0.34, 0.46, 0.08),
+      new THREE.Vector3(-0.2, 0.56, 0.09)
+    ], 0.032, metalMaterial, { segments: 54, radialSegments: 18 });
+    const rightCathedral = createCurveTube([
+      galleryJoinRight,
+      new THREE.Vector3(0.34, 0.46, 0.08),
+      new THREE.Vector3(0.2, 0.56, 0.09)
+    ], 0.032, metalMaterial, { segments: 54, radialSegments: 18 });
+    group.add(leftCathedral, rightCathedral);
   }
 
   const stone = createStoneModel(stoneSlug, diamondMaterial, edgeMaterial);
@@ -648,6 +676,7 @@ function InteractiveRingPreview({
   design,
   selectedMetal,
   selectedBand,
+  previewMode,
   isRotating = true,
   isZoomed = false,
   frameRef
@@ -657,8 +686,11 @@ function InteractiveRingPreview({
   const isRotatingRef = useRef(isRotating);
   const stoneSlug = getDesignSlug(design.stone_shape);
   const bandSlug = getDesignSlug(selectedBand.value);
+  const settingSlug = getDesignSlug(design.setting);
   const metalSwatch = selectedMetal?.swatch || "platinum";
   const [previewLayerFailed, setPreviewLayerFailed] = useState(false);
+  const [threeFailed, setThreeFailed] = useState(false);
+  const show3dPreview = !threeFailed && (previewMode === "3d" || previewLayerFailed);
 
   useEffect(() => {
     isRotatingRef.current = isRotating;
@@ -679,7 +711,15 @@ function InteractiveRingPreview({
     }
 
     let disposed = false;
-    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: "high-performance" });
+    let renderer;
+
+    try {
+      renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: "high-performance" });
+      setThreeFailed(false);
+    } catch {
+      setThreeFailed(true);
+      return undefined;
+    }
     renderer.setClearColor(0x000000, 0);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -712,7 +752,7 @@ function InteractiveRingPreview({
     warmLight.position.set(0, -1.4, 3.5);
     scene.add(warmLight);
 
-    const ringGroup = buildRingScene({ bandSlug, metalSwatch, stoneSlug });
+    const ringGroup = buildRingScene({ bandSlug, metalSwatch, stoneSlug, settingSlug });
     scene.add(ringGroup);
 
     const resize = () => {
@@ -784,27 +824,28 @@ function InteractiveRingPreview({
       renderer.dispose();
       startedAt = 0;
     };
-  }, [bandSlug, metalSwatch, stoneSlug]);
+  }, [bandSlug, metalSwatch, settingSlug, stoneSlug]);
 
   return (
     <figure
       ref={frameRef}
       className={`design-ring-preview-frame ${isZoomed ? "is-zoomed" : ""}`}
-      aria-label={`${formatMetalSummary(design)} ${design.stone_shape} ${selectedBand.label} ring preview`}
+      aria-label={`${formatMetalSummary(design)} ${design.stone_shape} ${selectedBand.label} ring with ${design.setting} setting preview`}
     >
       <PhotorealRingPreview
         bandSlug={bandSlug}
         metalSwatch={metalSwatch}
         stoneSlug={stoneSlug}
-        isHidden={previewLayerFailed}
+        isHidden={show3dPreview}
         onLayerError={() => setPreviewLayerFailed(true)}
       />
       <div
         ref={stageRef}
-        className={`design-ring-3d-preview ${previewLayerFailed ? "is-visible-fallback" : ""}`}
+        className={`design-ring-3d-preview ${show3dPreview ? "is-visible" : ""}`}
         data-metal={selectedMetal?.swatch || "platinum"}
         data-stone={stoneSlug}
         data-band={bandSlug}
+        data-setting={settingSlug}
         aria-hidden="true"
       >
         <canvas ref={canvasRef} className="design-ring-3d-canvas" />
@@ -817,7 +858,7 @@ function InteractiveRingPreview({
   );
 }
 
-function RingPreviewStudio({ design, selectedBand, onStepChange }) {
+function RingPreviewStudio({ design, selectedBand, previewMode, onPreviewModeChange, onStepChange }) {
   const selectedMetal = METALS.find((metal) => metal.value === design.metal) || METALS[0];
   const frameRef = useRef(null);
   const [isRotating, setIsRotating] = useState(true);
@@ -856,6 +897,7 @@ function RingPreviewStudio({ design, selectedBand, onStepChange }) {
         design={design}
         selectedMetal={selectedMetal}
         selectedBand={selectedBand}
+        previewMode={previewMode}
         isRotating={isRotating}
         isZoomed={isZoomed}
         frameRef={frameRef}
@@ -870,13 +912,31 @@ function RingPreviewStudio({ design, selectedBand, onStepChange }) {
       <div className="design-ring-view-controls" aria-label="Preview controls">
         <button
           type="button"
-          className={isRotating ? "is-active" : ""}
-          aria-pressed={isRotating}
-          aria-label={isRotating ? "Pause 360 degree rotation" : "Resume 360 degree rotation"}
-          onClick={() => setIsRotating((current) => !current)}
+          className={previewMode === "image" ? "is-active" : ""}
+          aria-pressed={previewMode === "image"}
+          onClick={() => onPreviewModeChange("image")}
         >
-          <span aria-hidden="true">360</span>
+          Image
         </button>
+        <button
+          type="button"
+          className={previewMode === "3d" ? "is-active" : ""}
+          aria-pressed={previewMode === "3d"}
+          onClick={() => onPreviewModeChange("3d")}
+        >
+          3D
+        </button>
+        {previewMode === "3d" && (
+          <button
+            type="button"
+            className={isRotating ? "is-active" : ""}
+            aria-pressed={isRotating}
+            aria-label={isRotating ? "Pause 360 degree rotation" : "Resume 360 degree rotation"}
+            onClick={() => setIsRotating((current) => !current)}
+          >
+            <span aria-hidden="true">360</span>
+          </button>
+        )}
         <button
           type="button"
           className={isZoomed ? "is-active" : ""}
@@ -1151,7 +1211,7 @@ function StoneOptions({ design, updateDesign }) {
   );
 }
 
-function BandOptions({ design, updateDesign }) {
+function BandOptions({ design, updateDesign, onPreviewModeChange }) {
   return (
     <div className="design-ring-option-zone">
       <div className="design-ring-zone-title">
@@ -1184,12 +1244,16 @@ function BandOptions({ design, updateDesign }) {
           <OptionButton
             key={setting}
             selected={design.setting === setting}
-            onClick={() => updateDesign("setting", setting)}
+            onClick={() => {
+              updateDesign("setting", setting);
+              onPreviewModeChange("3d");
+            }}
           >
             {setting}
           </OptionButton>
         ))}
       </div>
+      <p className="design-ring-setting-note">Setting details are previewed in 3D.</p>
     </div>
   );
 }
@@ -1244,7 +1308,8 @@ function ReviewOptions({
   submitting,
   updateDesign,
   onSave,
-  onSubmit
+  onSubmit,
+  onPreviewModeChange
 }) {
   return (
     <div className="design-ring-option-zone is-review">
@@ -1299,7 +1364,8 @@ function BottomOptionTray({
   updateDesign,
   onStepChange,
   onSave,
-  onSubmit
+  onSubmit,
+  onPreviewModeChange
 }) {
   const activeIndex = getStepIndex(activeStep);
   const activeStepDetails = STEPS[activeIndex] || STEPS[0];
@@ -1332,7 +1398,13 @@ function BottomOptionTray({
       <div className="design-ring-tray-body">
         {activeStep === "metal" && <MetalOptions design={design} updateDesign={updateDesign} />}
         {activeStep === "stone" && <StoneOptions design={design} updateDesign={updateDesign} />}
-        {activeStep === "band" && <BandOptions design={design} updateDesign={updateDesign} />}
+        {activeStep === "band" && (
+          <BandOptions
+            design={design}
+            updateDesign={updateDesign}
+            onPreviewModeChange={onPreviewModeChange}
+          />
+        )}
         {activeStep === "engrave" && <EngraveOptions design={design} updateDesign={updateDesign} />}
         {activeStep === "review" && (
           <ReviewOptions
@@ -1363,6 +1435,7 @@ function BottomOptionTray({
 
 export default function DesignYourRingClient() {
   const [activeStep, setActiveStep] = useState("metal");
+  const [previewMode, setPreviewMode] = useState("image");
   const [design, setDesign] = useState(DEFAULT_DESIGN);
   const [customer, setCustomer] = useState(null);
   const [accountLoading, setAccountLoading] = useState(true);
@@ -1550,6 +1623,8 @@ export default function DesignYourRingClient() {
         <RingPreviewStudio
           design={design}
           selectedBand={selectedBand}
+          previewMode={previewMode}
+          onPreviewModeChange={setPreviewMode}
           onStepChange={setActiveStep}
         />
 
@@ -1576,6 +1651,7 @@ export default function DesignYourRingClient() {
           onStepChange={setActiveStep}
           onSave={saveDesign}
           onSubmit={submitDesign}
+          onPreviewModeChange={setPreviewMode}
         />
       </div>
     </main>

@@ -81,6 +81,12 @@ assert.match(files.client, /Contact number/);
 assert.match(files.client, /function\s+ToolRail/);
 assert.match(files.client, /function\s+RingPreviewStudio/);
 assert.match(files.client, /function\s+InteractiveRingPreview/);
+assert.match(files.client, /previewMode\s*===\s*"3d"/);
+assert.match(files.client, /onPreviewModeChange\("3d"\)/, "Choosing a setting should reveal the 3D preview");
+assert.match(files.client, /buildRingScene\(\{\s*bandSlug,\s*metalSwatch,\s*stoneSlug,\s*settingSlug\s*\}\)/);
+assert.match(files.client, /settingSlug\s*===\s*"six-prong"/);
+assert.match(files.client, /settingSlug\s*===\s*"bezel"/);
+assert.match(files.client, /settingSlug\s*===\s*"cathedral"/);
 assert.match(files.client, /function\s+DesignSummary/);
 assert.match(files.client, /function\s+BottomOptionTray/);
 assert.match(files.client, /<RingPreviewStudio\b/);
@@ -121,6 +127,7 @@ assert.match(files.modelSources, /MIT License/);
 assert.match(files.client, /RoomEnvironment/, "3D preview should use an environment for realistic metal and diamond reflections");
 assert.match(files.client, /useRef/);
 assert.match(files.client, /new THREE\.WebGLRenderer\(\{\s*canvas,\s*alpha:\s*true/);
+assert.match(files.client, /catch\s*\{[\s\S]*setThreeFailed\(true\)/, "WebGL failure should keep the image preview usable");
 assert.match(files.client, /renderer\.setClearColor\(0x000000,\s*0\)/);
 assert.match(files.client, /THREE\.ACESFilmicToneMapping/, "3D preview should use filmic tone mapping for jewelry-style highlights");
 assert.match(files.client, /renderer\.toneMappingExposure/, "3D preview should tune exposure instead of relying on flat colors");
@@ -142,16 +149,19 @@ assert.doesNotMatch(files.client, /Buy Now|Checkout|Add to Cart|Payment/i, "Desi
 assert.doesNotMatch(files.client, /[\u0E00-\u0E7F]/, "Design Your Ring UI copy should remain English-only");
 
 assert.match(files.requests, /RING_STYLES/);
+assert.match(files.requests, /RING_SETTINGS/);
 assert.match(files.requests, /STONE_SHAPES/);
 assert.match(files.requests, /ringDesign/);
 assert.match(files.requests, /engraving_enabled/);
 assert.match(files.requests, /metadata:\s*\{[\s\S]*ringDesign/);
 assert.match(files.requests, /style: order\.ringDesign\.style/);
 assert.match(files.requests, /stoneShape: order\.ringDesign\.stoneShape/);
+assert.match(files.requests, /setting: order\.ringDesign\.setting/);
 assert.match(files.requests, /Engraving text is required/);
 
 assert.match(files.email, /Style:/);
 assert.match(files.email, /Stone shape:/);
+assert.match(files.email, /Setting:/);
 assert.match(files.email, /Engraving:/);
 
 assert.match(files.account, /safeNextPath/);
@@ -175,6 +185,7 @@ assert.match(files.css, /design-ring-preview-band-image/);
 assert.match(files.css, /design-ring-preview-stone-image/);
 assert.match(files.css, /design-ring-preview-setting-image/);
 assert.match(files.css, /design-ring-3d-preview/);
+assert.match(files.css, /design-ring-3d-preview\.is-visible/);
 assert.match(files.css, /design-ring-3d-canvas/);
 assert.match(files.css, /background:\s*transparent/);
 assert.match(files.css, /data-metal="yellow-gold"/);

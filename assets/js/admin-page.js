@@ -1986,6 +1986,7 @@
         const designSummary = [
           ringDesign.style,
           ringDesign.stoneShape,
+          ringDesign.setting,
           request.metadata?.optionSummary
         ].filter(Boolean).join(" · ");
         const stoneSummary = [

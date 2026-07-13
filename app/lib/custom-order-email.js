@@ -45,6 +45,7 @@ function buildOptionLines(order, optionSummary) {
     `Selected options: ${optionSummary || "-"}`,
     `Style: ${formatValue(order.ringDesign?.style)}`,
     `Stone shape: ${formatValue(order.ringDesign?.stoneShape)}`,
+    `Setting: ${formatValue(order.ringDesign?.setting)}`,
     `Metal: ${formatValue(order.metal)}`,
     `Metal purity: ${formatValue(order.metalPurity)}`,
     `Ring size: ${formatValue(order.ringSize)}`,

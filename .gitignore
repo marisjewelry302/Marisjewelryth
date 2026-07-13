@@ -1,6 +1,8 @@
 # Generated browser/runtime artifacts
 docs/runtime/
 docs/temp-previews/
+.codex/
+.superpowers/brainstorm/
 
 # Visual QA exports and local backups
 docs/screenshots/

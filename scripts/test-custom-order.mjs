@@ -330,6 +330,7 @@ assert.deepEqual(normalized, {
   ringDesign: {
     style: null,
     stoneShape: null,
+    setting: null,
     engravingEnabled: false,
     engravingText: null
   },
@@ -395,6 +396,7 @@ const validRingDesignResult = validateCustomOrderPayload({
     ring_design: {
       style: "Pavé",
       stone_shape: "Oval",
+      setting: "Six Prong",
       engraving_enabled: true,
       engraving_text: "FOREVER"
     }
@@ -404,11 +406,25 @@ assert.equal(validRingDesignResult.isValid, true);
 assert.deepEqual(validRingDesignResult.normalized.ringDesign, {
   style: "Pavé",
   stoneShape: "Oval",
+  setting: "Six Prong",
   engravingEnabled: true,
   engravingText: "FOREVER"
 });
 assert.match(buildCustomOrderSummary(validRingDesignResult.normalized), /Style Pavé · Oval stone/);
+assert.match(buildCustomOrderSummary(validRingDesignResult.normalized), /Setting Six Prong/);
 assert.match(buildCustomOrderSummary(validRingDesignResult.normalized), /Engraving FOREVER/);
+
+const invalidSettingResult = validateCustomOrderPayload({
+  ...validPayload,
+  custom_options: {
+    ...validPayload.custom_options,
+    ring_design: {
+      setting: "Invisible Tension"
+    }
+  }
+});
+assert.equal(invalidSettingResult.isValid, false);
+assert.ok(hasFieldError(invalidSettingResult, "ring_design.setting"));
 
 const missingEngravingResult = validateCustomOrderPayload({
   ...validPayload,
@@ -722,7 +738,7 @@ assert.deepEqual(getCustomOrderEmailConfig({
   from: "Maris <orders@example.com>",
   orderEmailTo: ""
 });
-const emailOrder = normalizeCustomOrderPayload(validPayload);
+const emailOrder = validRingDesignResult.normalized;
 const emailSummary = buildCustomOrderSummary(emailOrder);
 const emailRequest = { id: "request-email", status: "pending", created_at: "2026-06-30T12:00:00.000Z" };
 const customerEmail = buildCustomerCustomOrderEmail({
@@ -732,6 +748,7 @@ const customerEmail = buildCustomerCustomOrderEmail({
 });
 assert.match(customerEmail.text, /SR000/);
 assert.match(customerEmail.text, /18K Yellow Gold/);
+assert.match(customerEmail.text, /Setting: Six Prong/);
 assert.doesNotMatch(customerEmail.text, /\bpaid\b|\bpayment\b|\bcheckout\b/i);
 const adminEmail = buildAdminCustomOrderEmail({
   order: emailOrder,
@@ -742,6 +759,7 @@ const adminEmail = buildAdminCustomOrderEmail({
 assert.match(adminEmail.text, /request-email/);
 assert.match(adminEmail.text, /ada@example\.com/);
 assert.match(adminEmail.text, /customer-email/);
+assert.match(adminEmail.text, /Setting: Six Prong/);
 
 const fetchCalls = [];
 const sentEmailResult = await sendCustomOrderEmails({
