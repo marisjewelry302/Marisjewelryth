@@ -67,32 +67,32 @@ const shopCategoryItems = [
   {
     label: "Rings",
     href: "/category/rings",
-    image: "/assets/images/home/optimized/category-focus-rings-landscape-v1.jpg",
-    alt: "Diamond rings arranged on satin"
+    image: "/assets/images/home/optimized/category-focus-rings-pink-v2.webp",
+    alt: "Diamond rings arranged on blush pink satin"
   },
   {
     label: "Earrings",
     href: "/category/earrings",
-    image: "/assets/images/home/optimized/category-focus-earrings-landscape-v1.jpg",
-    alt: "Diamond earrings displayed on a soft jewellery set"
+    image: "/assets/images/home/optimized/category-focus-earrings-pink-v2.webp",
+    alt: "Pear-shaped diamond earrings on blush pink satin"
   },
   {
     label: "Pendants",
     href: "/category/necklaces-pendants",
-    image: "/assets/images/home/collections/cover-pendants-collection.png",
-    alt: "Pear-shaped diamond pendant on champagne satin"
+    image: "/assets/images/home/optimized/category-focus-pendants-pink-v2.webp",
+    alt: "Pear-shaped diamond pendant on blush pink satin"
   },
   {
     label: "Bracelets & Bangles",
     href: "/category/bracelets",
-    image: "/assets/images/home/optimized/category-focus-bracelets-landscape-v1.jpg",
-    alt: "Diamond bracelets layered on warm satin"
+    image: "/assets/images/home/optimized/category-focus-bracelets-pink-v2.webp",
+    alt: "Diamond bracelet and rose gold bangle on blush pink satin"
   },
   {
     label: "Necklaces",
     href: "/category/necklaces-pendants",
-    image: "/assets/images/home/optimized/category-focus-necklaces-landscape-v1.jpg",
-    alt: "Diamond necklace and pendant selection on satin"
+    image: "/assets/images/home/optimized/category-focus-necklaces-pink-v2.webp",
+    alt: "Rose gold diamond necklace on blush pink satin"
   }
 ];
 
