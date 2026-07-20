@@ -21,6 +21,14 @@ const SUPABASE_SERVICE_ROLE_KEY_ENV = "SUPABASE_SERVICE_ROLE_KEY";
 const MAX_PRODUCT_IMAGE_BYTES = 5 * 1024 * 1024;
 const BEST_SELLER_SETTING_KEY = "home_best_sellers";
 const BEST_SELLER_SLOT_LIMIT = 7;
+export const ADMIN_CUSTOM_ORDER_STATUSES = Object.freeze([
+  "pending",
+  "contacted",
+  "completed",
+  "cancelled"
+]);
+const ADMIN_CUSTOM_ORDER_NOTE_LIMIT = 1000;
+const ADMIN_CUSTOM_ORDER_HISTORY_LIMIT = 50;
 const ADMIN_CATALOGUE_SELECT = `
   id,
   sku,
@@ -96,6 +104,7 @@ const ADMIN_CUSTOM_ORDER_SELECT = `
   status,
   metadata,
   created_at,
+  updated_at,
   customers (
     id,
     full_name,
@@ -863,6 +872,34 @@ function getMetadata(row) {
   return metadata && typeof metadata === "object" && !Array.isArray(metadata) ? metadata : {};
 }
 
+function normalizeCustomOrderTracking(metadata) {
+  const tracking = metadata?.tracking;
+
+  if (!tracking || typeof tracking !== "object" || Array.isArray(tracking)) {
+    return {
+      lastActionAt: null,
+      lastActionBy: "",
+      history: []
+    };
+  }
+
+  const history = Array.isArray(tracking.history)
+    ? tracking.history.slice(-ADMIN_CUSTOM_ORDER_HISTORY_LIMIT).map((event) => ({
+        at: event?.at || null,
+        actor: String(event?.actor || ""),
+        fromStatus: String(event?.fromStatus || ""),
+        toStatus: String(event?.toStatus || ""),
+        note: String(event?.note || "")
+      }))
+    : [];
+
+  return {
+    lastActionAt: tracking.lastActionAt || history.at(-1)?.at || null,
+    lastActionBy: String(tracking.lastActionBy || history.at(-1)?.actor || ""),
+    history
+  };
+}
+
 export function normalizeCustomOrderRequest(row) {
   if (!row) {
     return null;
@@ -873,6 +910,7 @@ export function normalizeCustomOrderRequest(row) {
   const ringDesign = metadata.ringDesign && typeof metadata.ringDesign === "object"
     ? metadata.ringDesign
     : {};
+  const tracking = normalizeCustomOrderTracking(metadata);
 
   return {
     id: row.id,
@@ -887,6 +925,7 @@ export function normalizeCustomOrderRequest(row) {
     productCode: row.product_code || "",
     status: row.status || "pending",
     createdAt: row.created_at || null,
+    updatedAt: row.updated_at || null,
     metal: row.metal || "",
     metalPurity: row.metal_purity || "",
     ringSize: row.ring_size === null || row.ring_size === undefined ? null : Number(row.ring_size),
@@ -896,7 +935,8 @@ export function normalizeCustomOrderRequest(row) {
     stoneCut: row.stone_cut || "",
     origin: row.origin || "",
     metadata,
-    ringDesign
+    ringDesign,
+    tracking
   };
 }
 
@@ -1052,6 +1092,120 @@ export async function readAdminCustomOrderRequests({ env = process.env, client, 
     requests: Array.isArray(data) ? data.map(normalizeCustomOrderRequest).filter(Boolean) : [],
     checkedAt: new Date().toISOString()
   };
+}
+
+export class AdminCustomOrderRequestError extends Error {
+  constructor(message, statusCode = 400) {
+    super(message);
+    this.name = "AdminCustomOrderRequestError";
+    this.statusCode = statusCode;
+  }
+}
+
+export async function updateAdminCustomOrderRequest(requestId, updates = {}, {
+  env = process.env,
+  client,
+  actor = "admin",
+  now
+} = {}) {
+  const config = getSupabaseAdminConfig(env);
+
+  if (!config.isConfigured) {
+    throw new AdminCustomOrderRequestError(
+      `Supabase admin database is not configured. Set ${config.missingEnv.join(", ")}.`,
+      503
+    );
+  }
+
+  const cleanRequestId = String(requestId || "").trim();
+  const requestedStatus = updates.status === undefined
+    ? null
+    : String(updates.status || "").trim().toLowerCase();
+  const note = String(updates.note || "").trim();
+
+  if (!cleanRequestId) {
+    throw new AdminCustomOrderRequestError("Custom request id is required.");
+  }
+
+  if (requestedStatus && !ADMIN_CUSTOM_ORDER_STATUSES.includes(requestedStatus)) {
+    throw new AdminCustomOrderRequestError("Custom request status is not supported.");
+  }
+
+  if (note.length > ADMIN_CUSTOM_ORDER_NOTE_LIMIT) {
+    throw new AdminCustomOrderRequestError(`Follow-up note must be ${ADMIN_CUSTOM_ORDER_NOTE_LIMIT} characters or fewer.`);
+  }
+
+  const supabase = client || createSupabaseAdminClient(env);
+  const { data: existing, error: existingError } = await supabase
+    .from("custom_order_requests")
+    .select(ADMIN_CUSTOM_ORDER_SELECT)
+    .eq("id", cleanRequestId)
+    .limit(1)
+    .maybeSingle();
+
+  if (existingError) {
+    throw new AdminCustomOrderRequestError(existingError.message || "Custom request could not be loaded.", 500);
+  }
+
+  if (!existing) {
+    throw new AdminCustomOrderRequestError("Custom request not found.", 404);
+  }
+
+  const currentStatus = ADMIN_CUSTOM_ORDER_STATUSES.includes(existing.status) ? existing.status : "pending";
+  const nextStatus = requestedStatus || currentStatus;
+
+  if (nextStatus === currentStatus && !note) {
+    throw new AdminCustomOrderRequestError("Change the status or add a follow-up note before saving.");
+  }
+
+  const metadata = getMetadata(existing);
+  const previousTracking = normalizeCustomOrderTracking(metadata);
+  const actionAt = (typeof now === "function" ? now() : new Date()).toISOString();
+  const actionBy = String(actor || "admin").trim().slice(0, 120) || "admin";
+  const history = [...previousTracking.history, {
+    at: actionAt,
+    actor: actionBy,
+    fromStatus: currentStatus,
+    toStatus: nextStatus,
+    note
+  }].slice(-ADMIN_CUSTOM_ORDER_HISTORY_LIMIT);
+  const nextMetadata = {
+    ...metadata,
+    tracking: {
+      lastActionAt: actionAt,
+      lastActionBy: actionBy,
+      history
+    }
+  };
+
+  let updateQuery = supabase
+    .from("custom_order_requests")
+    .update({
+      status: nextStatus,
+      metadata: nextMetadata
+    })
+    .eq("id", cleanRequestId);
+
+  if (existing.updated_at) {
+    updateQuery = updateQuery.eq("updated_at", existing.updated_at);
+  }
+
+  const { data, error } = await updateQuery
+    .select(ADMIN_CUSTOM_ORDER_SELECT)
+    .single();
+
+  if (error || !data) {
+    if (error?.code === "PGRST116") {
+      throw new AdminCustomOrderRequestError(
+        "This request changed in another admin session. Refresh and try again.",
+        409
+      );
+    }
+
+    throw new AdminCustomOrderRequestError(error?.message || "Custom request could not be updated.", 500);
+  }
+
+  return normalizeCustomOrderRequest(data);
 }
 
 export async function readAdminPayments({ env = process.env, client, limit = 100 } = {}) {

@@ -406,19 +406,60 @@ export default async function AdminPage() {
                   <p className="admin-kicker">Design Your Ring</p>
                   <h2>Custom Requests</h2>
                 </div>
-                <p className="admin-note">Review custom order enquiries from the product CTA and Design Your Ring page.</p>
+                <p className="admin-note">Track every atelier enquiry from first contact to completion, with notes and a visible action history.</p>
+              </div>
+
+              <div className="custom-request-summary" aria-label="Custom request status summary">
+                <button type="button" data-custom-request-status-filter="pending">
+                  <span data-custom-request-count="pending">0</span>
+                  <strong>New</strong>
+                  <small>Awaiting first contact</small>
+                </button>
+                <button type="button" data-custom-request-status-filter="contacted">
+                  <span data-custom-request-count="contacted">0</span>
+                  <strong>In progress</strong>
+                  <small>Client contacted</small>
+                </button>
+                <button type="button" data-custom-request-status-filter="completed">
+                  <span data-custom-request-count="completed">0</span>
+                  <strong>Completed</strong>
+                  <small>Consultation closed</small>
+                </button>
+                <button type="button" data-custom-request-status-filter="cancelled">
+                  <span data-custom-request-count="cancelled">0</span>
+                  <strong>Cancelled</strong>
+                  <small>No further action</small>
+                </button>
+              </div>
+
+              <div className="custom-request-tools">
+                <label>
+                  Search requests
+                  <input type="search" placeholder="Name, email, phone, product or request ID" data-custom-request-search />
+                </label>
+                <label>
+                  Workflow status
+                  <select defaultValue="all" data-custom-request-status>
+                    <option value="all">All statuses</option>
+                    <option value="pending">New</option>
+                    <option value="contacted">In progress</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
+                </label>
+                <p data-custom-request-list-summary>Loading custom requests...</p>
               </div>
 
               <div className="admin-table-wrap">
-                <table>
+                <table className="custom-request-table">
                   <thead>
                     <tr>
                       <th>Created</th>
                       <th>Client</th>
                       <th>Request</th>
                       <th>Design</th>
-                      <th>Contact</th>
                       <th>Status</th>
+                      <th>Follow-up</th>
                     </tr>
                   </thead>
                   <tbody data-custom-requests-table>
@@ -426,6 +467,8 @@ export default async function AdminPage() {
                   </tbody>
                 </table>
               </div>
+
+              <section className="custom-request-detail" data-custom-request-detail hidden aria-live="polite"></section>
             </section>
 
             {/* ── CUSTOMERS ── */}

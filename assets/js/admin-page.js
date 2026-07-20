@@ -40,6 +40,12 @@
     logsTable: document.querySelector("[data-inventory-log-table]"),
     ordersTable: document.querySelector("[data-orders-table]"),
     customRequestsTable: document.querySelector("[data-custom-requests-table]"),
+    customRequestDetail: document.querySelector("[data-custom-request-detail]"),
+    customRequestSearch: document.querySelector("[data-custom-request-search]"),
+    customRequestStatus: document.querySelector("[data-custom-request-status]"),
+    customRequestListSummary: document.querySelector("[data-custom-request-list-summary]"),
+    customRequestStatusFilters: Array.from(document.querySelectorAll("[data-custom-request-status-filter]")),
+    customRequestCounts: Array.from(document.querySelectorAll("[data-custom-request-count]")),
     productSelect: document.querySelector("[data-product-select]"),
     orderProductSelect: document.querySelector("[data-order-product-select]"),
     message: document.querySelector("[data-admin-message]"),
@@ -107,6 +113,25 @@
   const productListState = {
     searchTerm: "",
     page: 1
+  };
+  const customRequestListState = {
+    searchTerm: "",
+    status: "all",
+    selectedId: ""
+  };
+  const customRequestStatuses = ["pending", "contacted", "completed", "cancelled"];
+  const customRequestStatusLabels = {
+    pending: "New",
+    contacted: "In progress",
+    completed: "Completed",
+    cancelled: "Cancelled"
+  };
+  const customRequestMetalLabels = {
+    WG: "White Gold",
+    YG: "Yellow Gold",
+    RG: "Rose Gold",
+    PN: "Platinum",
+    Pd: "Palladium"
   };
   let modalGalleryImages = [];
   let modalGalleryDragIndex = null;
@@ -191,6 +216,109 @@
 
   function getCachedCustomRequests() {
     return Array.isArray(adminCache.customRequests) ? adminCache.customRequests : [];
+  }
+
+  function getCustomRequestStatus(request) {
+    const status = String(request?.status || "pending").toLowerCase();
+    return customRequestStatuses.includes(status) ? status : "pending";
+  }
+
+  function getCustomRequestStatusLabel(status) {
+    return customRequestStatusLabels[status] || customRequestStatusLabels.pending;
+  }
+
+  function formatCustomRequestDate(value) {
+    if (!value) {
+      return "-";
+    }
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+      return "-";
+    }
+
+    return date.toLocaleString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+  }
+
+  function getCustomRequestAge(value) {
+    const createdAt = new Date(value || "");
+
+    if (Number.isNaN(createdAt.getTime())) {
+      return { label: "", isOverdue: false };
+    }
+
+    const elapsedHours = Math.max(0, Math.floor((Date.now() - createdAt.getTime()) / (60 * 60 * 1000)));
+
+    if (elapsedHours < 1) {
+      return { label: "Just received", isOverdue: false };
+    }
+
+    if (elapsedHours < 24) {
+      return { label: `${elapsedHours}h ago`, isOverdue: elapsedHours >= 4 };
+    }
+
+    const days = Math.floor(elapsedHours / 24);
+    return { label: `${days}d ago`, isOverdue: true };
+  }
+
+  function getCustomRequestHistory(request) {
+    return Array.isArray(request?.tracking?.history) ? request.tracking.history : [];
+  }
+
+  function getFilteredCustomRequests() {
+    const searchTerm = customRequestListState.searchTerm.trim().toLowerCase();
+
+    return getCachedCustomRequests().filter((request) => {
+      const status = getCustomRequestStatus(request);
+
+      if (customRequestListState.status !== "all" && status !== customRequestListState.status) {
+        return false;
+      }
+
+      if (!searchTerm) {
+        return true;
+      }
+
+      return [
+        request.id,
+        request.productCode,
+        request.customerName,
+        request.fullName,
+        request.customerEmail,
+        request.email,
+        request.customerPhone,
+        request.contactNumber,
+        request.companyName
+      ].some((value) => String(value || "").toLowerCase().includes(searchTerm));
+    });
+  }
+
+  function buildCustomRequestDesignSummary(request) {
+    const ringDesign = request.ringDesign || {};
+    const metal = [request.metalPurity, customRequestMetalLabels[request.metal] || request.metal].filter(Boolean).join(" ");
+    const stone = [
+      request.stoneCarat ? `${request.stoneCarat} ct` : "",
+      ringDesign.stoneShape,
+      request.stoneColor,
+      request.stoneClarity,
+      request.stoneCut
+    ].filter(Boolean).join(" ");
+
+    return [
+      ringDesign.style,
+      ringDesign.setting,
+      metal,
+      request.ringSize ? `Size ${request.ringSize}` : "",
+      request.origin,
+      stone
+    ].filter(Boolean).join(" · ") || request.metadata?.optionSummary || "Preferences not specified";
   }
 
   function getStoredSettings() {
@@ -1968,54 +2096,194 @@
     elements.ordersTable.innerHTML = rows || `<tr><td colspan="7">No orders yet.</td></tr>`;
   }
 
+  function renderCustomRequestSummary() {
+    const requests = getCachedCustomRequests();
+    const counts = Object.fromEntries(customRequestStatuses.map((status) => [status, 0]));
+
+    requests.forEach((request) => {
+      counts[getCustomRequestStatus(request)] += 1;
+    });
+
+    elements.customRequestCounts.forEach((element) => {
+      element.textContent = String(counts[element.dataset.customRequestCount] || 0);
+    });
+
+    elements.customRequestStatusFilters.forEach((button) => {
+      const isActive = customRequestListState.status === button.dataset.customRequestStatusFilter;
+      button.classList.toggle("is-active", isActive);
+      button.setAttribute("aria-pressed", String(isActive));
+    });
+
+    if (elements.customRequestStatus) {
+      elements.customRequestStatus.value = customRequestListState.status;
+    }
+  }
+
+  function renderCustomRequestDetail() {
+    if (!elements.customRequestDetail) {
+      return;
+    }
+
+    const request = getCachedCustomRequests().find((item) => item.id === customRequestListState.selectedId);
+
+    if (!request) {
+      elements.customRequestDetail.hidden = true;
+      elements.customRequestDetail.innerHTML = "";
+      return;
+    }
+
+    const status = getCustomRequestStatus(request);
+    const email = request.customerEmail || request.email || "";
+    const phone = request.customerPhone || request.contactNumber || "";
+    const phoneHref = String(phone).replace(/[^\d+]/g, "");
+    const ringDesign = request.ringDesign || {};
+    const history = getCustomRequestHistory(request).slice().reverse();
+    const details = [
+      ["Product / request", `${request.productCode || "-"} · ${request.id || "-"}`],
+      ["Metal", [request.metalPurity, customRequestMetalLabels[request.metal] || request.metal].filter(Boolean).join(" ") || "Not specified"],
+      ["Ring size", request.ringSize ?? "Not specified"],
+      ["Style", ringDesign.style || "Not specified"],
+      ["Stone shape", ringDesign.stoneShape || "Not specified"],
+      ["Setting", ringDesign.setting || "Not specified"],
+      ["Stone", [request.stoneCarat ? `${request.stoneCarat} ct` : "", request.stoneColor, request.stoneClarity, request.stoneCut].filter(Boolean).join(" ") || "Not specified"],
+      ["Origin", request.origin || "Not specified"],
+      ["Engraving", ringDesign.engravingEnabled ? (ringDesign.engravingText || "Requested") : "None"]
+    ];
+    const statusOptions = customRequestStatuses.map((value) => (
+      `<option value="${value}" ${value === status ? "selected" : ""}>${escapeHtml(getCustomRequestStatusLabel(value))}</option>`
+    )).join("");
+    const historyMarkup = history.length > 0
+      ? history.map((event) => {
+          const fromStatus = getCustomRequestStatusLabel(event.fromStatus);
+          const toStatus = getCustomRequestStatusLabel(event.toStatus);
+          const action = event.fromStatus === event.toStatus
+            ? "Follow-up note"
+            : `${fromStatus} to ${toStatus}`;
+
+          return `
+            <li>
+              <strong>${escapeHtml(action)}</strong>
+              <span>${escapeHtml(formatCustomRequestDate(event.at))} · ${escapeHtml(event.actor || "admin")}</span>
+              ${event.note ? `<p>${escapeHtml(event.note)}</p>` : ""}
+            </li>
+          `;
+        }).join("")
+      : `<li class="is-empty"><p>No follow-up has been recorded yet.</p></li>`;
+
+    elements.customRequestDetail.hidden = false;
+    elements.customRequestDetail.innerHTML = `
+      <div class="custom-request-detail-head">
+        <div>
+          <p class="admin-kicker">Active request</p>
+          <h3>${escapeHtml(request.customerName || request.fullName || "Maris Client")}</h3>
+          <p>Received ${escapeHtml(formatCustomRequestDate(request.createdAt))}</p>
+        </div>
+        <button type="button" class="admin-secondary" data-custom-request-close>Close detail</button>
+      </div>
+
+      <div class="custom-request-contact-actions">
+        ${email ? `<a href="mailto:${encodeURIComponent(email)}">Email ${escapeHtml(email)}</a>` : ""}
+        ${phoneHref ? `<a href="tel:${escapeHtml(phoneHref)}">Call ${escapeHtml(phone)}</a>` : ""}
+      </div>
+
+      <dl class="custom-request-specs">
+        ${details.map(([label, value]) => `
+          <div>
+            <dt>${escapeHtml(label)}</dt>
+            <dd>${escapeHtml(value)}</dd>
+          </div>
+        `).join("")}
+      </dl>
+
+      <div class="custom-request-workflow">
+        <form data-custom-request-update data-request-id="${escapeHtml(request.id)}">
+          <div>
+            <p class="admin-kicker">Next action</p>
+            <h4>Update follow-up</h4>
+          </div>
+          <label>
+            Workflow status
+            <select name="status">${statusOptions}</select>
+          </label>
+          <label class="custom-request-note-field">
+            Follow-up note
+            <textarea name="note" maxLength="1000" placeholder="Example: Called client, consultation booked for Friday."></textarea>
+          </label>
+          <button class="admin-primary" type="submit">Save update</button>
+        </form>
+
+        <div class="custom-request-history">
+          <div>
+            <p class="admin-kicker">Audit trail</p>
+            <h4>Follow-up history</h4>
+          </div>
+          <ol>${historyMarkup}</ol>
+        </div>
+      </div>
+    `;
+  }
+
   function renderCustomRequestsTable() {
+    renderCustomRequestSummary();
+
     if (adminCache.isLoading) {
       elements.customRequestsTable.innerHTML = `<tr><td colspan="6">Loading custom requests...</td></tr>`;
+      elements.customRequestListSummary.textContent = "Loading custom requests...";
+      renderCustomRequestDetail();
       return;
     }
 
     if (!adminCache.isReady) {
       elements.customRequestsTable.innerHTML = `<tr><td colspan="6">${escapeHtml(adminCache.error || "Connect Supabase before reviewing custom requests.")}</td></tr>`;
+      elements.customRequestListSummary.textContent = "Custom requests are unavailable.";
+      renderCustomRequestDetail();
       return;
     }
 
-    const rows = readCustomRequests()
+    const filteredRequests = getFilteredCustomRequests();
+    const rows = filteredRequests
       .map((request) => {
-        const createdAt = request.createdAt ? new Date(request.createdAt).toLocaleString() : "-";
-        const ringDesign = request.ringDesign || {};
-        const designSummary = [
-          ringDesign.style,
-          ringDesign.stoneShape,
-          ringDesign.setting,
-          request.metadata?.optionSummary
-        ].filter(Boolean).join(" · ");
-        const stoneSummary = [
-          request.stoneCarat ? `${request.stoneCarat} ct` : "",
-          request.stoneColor,
-          request.stoneClarity,
-          request.stoneCut
-        ].filter(Boolean).join(" ");
+        const status = getCustomRequestStatus(request);
+        const age = getCustomRequestAge(request.createdAt);
+        const history = getCustomRequestHistory(request);
+        const lastAction = request.tracking?.lastActionAt || request.updatedAt;
+        const needsFollowUp = status === "pending" && age.isOverdue;
 
         return `
-          <tr>
-            <td>${escapeHtml(createdAt)}</td>
+          <tr data-custom-request-row="${escapeHtml(request.id)}">
+            <td>
+              <strong>${escapeHtml(formatCustomRequestDate(request.createdAt))}</strong><br>
+              <span class="custom-request-age ${needsFollowUp ? "is-overdue" : ""}">${escapeHtml(needsFollowUp ? `Needs follow-up · ${age.label}` : age.label)}</span>
+            </td>
             <td>
               <strong>${escapeHtml(request.customerName || request.fullName || "Maris Client")}</strong><br>
-              <span>${escapeHtml(request.customerEmail || request.email || "-")}</span>
+              <span>${escapeHtml(request.customerEmail || request.email || "-")}</span><br>
+              <span>${escapeHtml(request.customerPhone || request.contactNumber || "-")}</span>
             </td>
             <td>
               <strong>${escapeHtml(request.productCode || "-")}</strong><br>
-              <span>${escapeHtml(request.id || "-")}</span>
+              <span class="custom-request-id">${escapeHtml(request.id || "-")}</span>
             </td>
-            <td>${escapeHtml([designSummary, stoneSummary].filter(Boolean).join(" · ") || "-")}</td>
-            <td>${escapeHtml(request.customerPhone || request.contactNumber || "-")}</td>
-            <td>${escapeHtml(request.status || "pending")}</td>
+            <td>${escapeHtml(buildCustomRequestDesignSummary(request))}</td>
+            <td>
+              <span class="custom-request-status" data-status="${escapeHtml(status)}">${escapeHtml(getCustomRequestStatusLabel(status))}</span><br>
+              <span>${history.length > 0 ? `${history.length} action${history.length === 1 ? "" : "s"}` : "No action yet"}</span>
+              ${lastAction && history.length > 0 ? `<br><span>${escapeHtml(formatCustomRequestDate(lastAction))}</span>` : ""}
+            </td>
+            <td>
+              <div class="admin-row-actions">
+                <button type="button" data-custom-request-open="${escapeHtml(request.id)}">Open</button>
+              </div>
+            </td>
           </tr>
         `;
       })
       .join("");
 
-    elements.customRequestsTable.innerHTML = rows || `<tr><td colspan="6">No custom requests yet.</td></tr>`;
+    const hasFilters = Boolean(customRequestListState.searchTerm.trim()) || customRequestListState.status !== "all";
+    elements.customRequestsTable.innerHTML = rows || `<tr><td colspan="6">${hasFilters ? "No requests match these filters." : "No custom requests yet."}</td></tr>`;
+    elements.customRequestListSummary.textContent = `Showing ${filteredRequests.length} of ${getCachedCustomRequests().length} requests`;
+    renderCustomRequestDetail();
   }
 
   function renderSettings() {
@@ -2057,6 +2325,92 @@
     button.addEventListener("click", () => {
       activatePanel(button.dataset.adminTab);
     });
+  });
+
+  elements.customRequestSearch?.addEventListener("input", (event) => {
+    customRequestListState.searchTerm = String(event.currentTarget.value || "");
+    renderCustomRequestsTable();
+  });
+
+  elements.customRequestStatus?.addEventListener("change", (event) => {
+    customRequestListState.status = String(event.currentTarget.value || "all");
+    renderCustomRequestsTable();
+  });
+
+  elements.customRequestStatusFilters.forEach((button) => {
+    button.addEventListener("click", () => {
+      const selectedStatus = String(button.dataset.customRequestStatusFilter || "all");
+      customRequestListState.status = customRequestListState.status === selectedStatus ? "all" : selectedStatus;
+      renderCustomRequestsTable();
+    });
+  });
+
+  elements.customRequestsTable?.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-custom-request-open]");
+    const requestId = button?.dataset.customRequestOpen;
+
+    if (!requestId) {
+      return;
+    }
+
+    customRequestListState.selectedId = requestId;
+    renderCustomRequestDetail();
+    elements.customRequestDetail?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+
+  elements.customRequestDetail?.addEventListener("click", (event) => {
+    if (!event.target.closest("[data-custom-request-close]")) {
+      return;
+    }
+
+    customRequestListState.selectedId = "";
+    renderCustomRequestDetail();
+  });
+
+  elements.customRequestDetail?.addEventListener("submit", async (event) => {
+    const form = event.target.closest("[data-custom-request-update]");
+
+    if (!form) {
+      return;
+    }
+
+    event.preventDefault();
+
+    if (!ensureAdminDataReady()) {
+      return;
+    }
+
+    const requestId = String(form.dataset.requestId || "");
+    const currentRequest = getCachedCustomRequests().find((request) => request.id === requestId);
+    const formData = new FormData(form);
+    const status = String(formData.get("status") || "pending");
+    const note = String(formData.get("note") || "").trim();
+
+    if (currentRequest && getCustomRequestStatus(currentRequest) === status && !note) {
+      setMessage("Change the status or add a follow-up note before saving.", true);
+      return;
+    }
+
+    const submitButton = form.querySelector("button[type='submit']");
+    submitButton.disabled = true;
+    submitButton.textContent = "Saving...";
+    setMessage("Saving custom request follow-up...");
+
+    try {
+      const payload = await fetchAdminApi(`/custom-order-requests?id=${encodeURIComponent(requestId)}`, {
+        method: "PATCH",
+        body: JSON.stringify({ status, note })
+      });
+      adminCache.customRequests = getCachedCustomRequests().map((request) => (
+        request.id === payload.request?.id ? payload.request : request
+      ));
+      renderCustomRequestsTable();
+      setMessage("Custom request follow-up saved in Supabase.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not update the custom request.", true);
+      submitButton.disabled = false;
+      submitButton.textContent = "Save update";
+    }
   });
 
   elements.productForm?.elements?.namedItem("imageGroupFiles")?.addEventListener("change", () => {

@@ -16,6 +16,7 @@
     "test:customer-collections": "node scripts/test-customer-collections.mjs",
     "test:customer-welcome-email": "node scripts/test-customer-welcome-email.mjs",
     "test:custom-order": "node scripts/test-custom-order.mjs",
+    "test:admin-custom-requests": "node scripts/test-admin-custom-requests.mjs",
     "test:design-your-ring": "node scripts/test-design-your-ring.mjs",
     "test:home-category-showcase": "node scripts/test-home-category-showcase.mjs",
     "test:site-typography": "node scripts/test-site-typography.mjs",
