@@ -1,6 +1,6 @@
 export const SITE_URL = "https://marisjewelryth.vercel.app";
 export const BRAND_NAME = "Maris Jewelry";
-export const DEFAULT_OG_IMAGE = "/assets/images/home/optimized/home-hero-optimized.png";
+export const DEFAULT_OG_IMAGE = "/assets/images/home/optimized/home-hero-optimized.webp";
 
 export const BRAND_CONTACT = {
   email: "marisjewelryth@gmail.com",

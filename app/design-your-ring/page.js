@@ -1,7 +1,6 @@
 import DesignYourRingClient from "./DesignYourRingClient";
+import "../../assets/css/design-your-ring.css";
 import { buildPageMetadata } from "../lib/seo";
-
-export const dynamic = "force-dynamic";
 
 export const metadata = buildPageMetadata({
   title: "Design Your Ring | Maris Jewelry",

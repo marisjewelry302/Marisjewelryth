@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { SESSION_COOKIE_NAME, verifyAdminSession } from "../../../../lib/admin-auth";
+import { requireAdminPermission } from "../../../../lib/admin-api-auth";
 import { readAdminCatalogueProducts } from "../../../../lib/maris-database";
 
 export const runtime = "nodejs";
@@ -15,11 +15,8 @@ function json(payload, status = 200) {
 }
 
 export async function GET(request) {
-  const session = request.cookies.get(SESSION_COOKIE_NAME)?.value;
-
-  if (!verifyAdminSession(session).isValid) {
-    return json({ error: "unauthorized" }, 401);
-  }
+  const authorization = await requireAdminPermission(request);
+  if (!authorization.ok) return authorization.response;
 
   try {
     const catalogue = await readAdminCatalogueProducts();

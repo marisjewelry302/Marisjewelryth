@@ -940,7 +940,8 @@ const packageJson = JSON.parse(await readFile(new URL("../package.json", import.
 assert.equal(packageJson.scripts["test:custom-order"], "node scripts/test-custom-order.mjs");
 
 const contactOrderPageSource = await readRequiredSource("../app/contact-order/[productCode]/page.js");
-assert.match(contactOrderPageSource, /dynamic\s*=\s*["']force-dynamic["']/);
+assert.doesNotMatch(contactOrderPageSource, /dynamic\s*=\s*["']force-dynamic["']/);
+assert.match(contactOrderPageSource, /revalidate\s*=\s*3600/);
 assert.match(contactOrderPageSource, /decodeURIComponent/);
 assert.match(contactOrderPageSource, /\.toUpperCase\(\)/);
 assert.match(contactOrderPageSource, /generateMetadata/);
@@ -1001,7 +1002,7 @@ assert.match(customOrderFormSource, /selectedOptionSummary/);
 assert.doesNotMatch(customOrderFormSource, /\bcheckout\b|\bpayment\b|\bpaid\b/i);
 
 const customOrderCss = await readRequiredSource("../assets/css/custom-order.css");
-assert.match(customOrderCss, /custom-jewelry-service-hero-02-seamless\.png/);
+assert.match(customOrderCss, /custom-jewelry-service-hero-02-seamless\.webp/);
 assert.match(customOrderCss, /var\(--maris-teal\)/);
 assert.match(customOrderCss, /var\(--maris-paper\)/);
 assert.match(customOrderCss, /var\(--maris-gold\)/);
@@ -1014,10 +1015,10 @@ assert.doesNotMatch(customOrderCss, /font-size:\s*[^;]*vw/);
 assert.doesNotMatch(customOrderCss, /orb|blob|bokeh/i);
 
 const layoutSource = await readRequiredSource("../app/layout.js");
-const productCssImportIndex = layoutSource.indexOf('import "../assets/css/product.css";');
-const customOrderCssImportIndex = layoutSource.indexOf('import "../assets/css/custom-order.css";');
-assert.ok(productCssImportIndex >= 0, "Root layout should import product CSS");
-assert.ok(customOrderCssImportIndex > productCssImportIndex, "Custom order CSS should load after product CSS");
+assert.doesNotMatch(layoutSource, /assets\/css\/(?:product|custom-order)\.css/, "Route CSS should not inflate the root layout");
+assert.match(contactOrderPageSource, /assets\/css\/custom-order\.css/, "Contact order should load its route CSS");
+const productRouteSource = await readRequiredSource("../app/product/[slug]/page.js");
+assert.match(productRouteSource, /assets\/css\/product\.css/, "Product should load its route CSS");
 
 const productPageSource = await readRequiredSource("../app/product/[slug]/product-slug-page.js");
 assert.match(productPageSource, /href=\{`\/contact-order\/\$\{encodeURIComponent\(product\.sku\)\}`\}/);

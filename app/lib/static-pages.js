@@ -1,8 +1,8 @@
 import { buildPageMetadata } from "./seo";
 
-const serviceProcessImage = "/assets/images/service/custom-jewelry-process-storyboard.png";
-const serviceHeroImage = "/assets/images/service/custom-jewelry-service-hero.png";
-const serviceSeamlessHeroImage = "/assets/images/service/custom-jewelry-service-hero-02-seamless.png";
+const serviceProcessImage = "/assets/images/service/custom-jewelry-process-storyboard.webp";
+const serviceHeroImage = "/assets/images/service/custom-jewelry-service-hero.webp";
+const serviceSeamlessHeroImage = "/assets/images/service/custom-jewelry-service-hero-02-seamless.webp";
 
 export const staticPages = {
   "about-us": {

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 const BAG_KEY = "marisShoppingBag";
 
@@ -151,7 +151,10 @@ function SocialIcon({ name }) {
 export default function SiteHeader() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const [bagCount, setBagCount] = useState(0);
+  const menuButtonRef = useRef(null);
+  const navRef = useRef(null);
 
   const normalizedPathname = useMemo(() => pathname.replace(/\/$/, "") || "/", [pathname]);
   const isHome = normalizedPathname === "/";
@@ -193,6 +196,47 @@ export default function SiteHeader() {
   useEffect(() => {
     document.body.classList.toggle("is-mobile-menu-open", isOpen);
   }, [isOpen]);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 900px)");
+    const updateMobileState = () => setIsMobile(mediaQuery.matches);
+
+    updateMobileState();
+    mediaQuery.addEventListener("change", updateMobileState);
+    return () => mediaQuery.removeEventListener("change", updateMobileState);
+  }, []);
+
+  useEffect(() => {
+    if (!isMobile || !isOpen || !navRef.current) return undefined;
+
+    const nav = navRef.current;
+    const focusable = [...nav.querySelectorAll('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])')];
+    focusable[0]?.focus();
+
+    function handleMenuKeydown(event) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setIsOpen(false);
+        menuButtonRef.current?.focus();
+        return;
+      }
+
+      if (event.key !== "Tab" || focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+
+    document.addEventListener("keydown", handleMenuKeydown);
+    return () => document.removeEventListener("keydown", handleMenuKeydown);
+  }, [isMobile, isOpen]);
 
   useEffect(() => {
     document.body.classList.toggle("is-home-page", isHome);
@@ -243,6 +287,8 @@ export default function SiteHeader() {
           className="mobile-menu-toggle"
           aria-label={isOpen ? "Close menu" : "Open menu"}
           aria-expanded={isOpen}
+          aria-controls="maris-primary-navigation"
+          ref={menuButtonRef}
           onClick={() => setIsOpen((current) => !current)}
         >
           <span />
@@ -260,7 +306,14 @@ export default function SiteHeader() {
           <SearchIcon />
         </Link>
 
-        <nav className="nav" aria-label="Primary navigation">
+        <nav
+          id="maris-primary-navigation"
+          className="nav"
+          aria-label="Primary navigation"
+          aria-hidden={isMobile && !isOpen}
+          inert={isMobile && !isOpen}
+          ref={navRef}
+        >
           {primaryNav.map((item) => (
             <Link key={item.href} href={item.href} aria-current={isCurrent(item.href) ? "page" : undefined}>
               {item.label}

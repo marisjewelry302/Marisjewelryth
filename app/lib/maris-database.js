@@ -1,7 +1,9 @@
 import { createClient } from "@supabase/supabase-js";
+import { sanitizeCustomerMetadata } from "./customer-data.js";
 
 export const MARIS_DATABASE_TABLES = Object.freeze([
   "admin_users",
+  "auth_rate_limits",
   "customers",
   "custom_order_requests",
   "inventory_movements",
@@ -852,7 +854,7 @@ function normalizeCustomer(row) {
     address: row.address || {},
     tags: Array.isArray(row.tags) ? row.tags : [],
     notes: row.notes || "",
-    metadata: row.metadata || {},
+    metadata: sanitizeCustomerMetadata(row.metadata || {}),
     createdAt: row.created_at || null,
     updatedAt: row.updated_at || null
   };
@@ -1499,53 +1501,17 @@ export async function createAdminInventoryLog(log, { env = process.env, client }
     throw new Error("Product id is required for inventory movement.");
   }
 
-  const productResult = await supabase
-    .from("products")
-    .select("id, sku, name, stock_quantity, reserved_quantity")
-    .eq("id", productId)
-    .limit(1)
-    .maybeSingle();
-
-  if (productResult.error || !productResult.data) {
-    throw new Error(productResult.error?.message || "Product not found for inventory movement.");
-  }
-
-  const nextQuantities = calculateInventoryQuantities(productResult.data, changeType, quantity);
-  const productUpdate = {
-    stock_quantity: nextQuantities.stockQuantity,
-    reserved_quantity: nextQuantities.reservedQuantity,
-    updated_at: new Date().toISOString()
-  };
-  const updateResult = await supabase
-    .from("products")
-    .update(productUpdate)
-    .eq("id", productId);
-
-  if (updateResult.error) {
-    throw new Error(updateResult.error.message || "Product stock could not be updated.");
-  }
-
-  const payload = {
-    product_id: productId,
-    variant_id: log.variantId || null,
-    change_type: changeType,
-    quantity,
-    note: log.note || "",
-    reference_type: log.referenceType || null,
-    reference_id: log.referenceId || null,
-    metadata: {
-      ...(log.metadata || {}),
-      stockQuantity: nextQuantities.stockQuantity,
-      reservedQuantity: nextQuantities.reservedQuantity
-    },
-    created_by: log.createdBy || null
-  };
-
-  const { data, error } = await supabase
-    .from("inventory_logs")
-    .insert(payload)
-    .select("*, products ( id, sku, name, stock_quantity, reserved_quantity )")
-    .single();
+  const { data, error } = await supabase.rpc("maris_apply_inventory_movement", {
+    p_product_id: productId,
+    p_movement_type: changeType,
+    p_quantity: quantity,
+    p_variant_id: log.variantId || null,
+    p_note: log.note || "",
+    p_reference_type: log.referenceType || null,
+    p_reference_id: log.referenceId || null,
+    p_metadata: log.metadata || {},
+    p_created_by: log.createdBy || null
+  });
 
   if (error) {
     throw new Error(error.message || "Inventory log could not be created.");
@@ -1561,88 +1527,41 @@ export async function createAdminOrder(orderData, { env = process.env, client } 
   }
 
   const supabase = client || createSupabaseAdminClient(env);
-
-  const productResult = await supabase
-    .from("products")
-    .select("id, sku, name, stock_quantity, reserved_quantity")
-    .eq("id", orderData.productId)
-    .limit(1)
-    .maybeSingle();
-
-  if (productResult.error || !productResult.data) {
-    throw new Error(productResult.error?.message || "Product not found for order.");
-  }
-
-  const product = productResult.data;
-  const available = Number(product.stock_quantity || 0) - Number(product.reserved_quantity || 0);
   const quantity = Number(orderData.qty) || 1;
+  const { data: result, error: rpcError } = await supabase.rpc("maris_create_admin_order", {
+    p_product_id: orderData.productId || null,
+    p_quantity: quantity,
+    p_customer_name: orderData.customerName || null,
+    p_customer_email: orderData.customerEmail || null,
+    p_customer_phone: orderData.customerPhone || null,
+    p_channel: orderData.channel || "admin",
+    p_unit_price_amount: orderData.unitPriceAmount ?? null,
+    p_subtotal_amount: orderData.subtotalAmount ?? null,
+    p_discount_amount: orderData.discountAmount ?? 0,
+    p_shipping_amount: orderData.shippingAmount ?? 0,
+    p_total_amount: orderData.totalAmount ?? null,
+    p_currency: orderData.currency || "THB",
+    p_placed_at: orderData.placedAt || null,
+    p_notes: orderData.notes || "",
+    p_metadata: orderData.metadata || {},
+    p_created_by: orderData.createdBy || null
+  });
 
-  if (available < quantity) {
-    throw new Error("Not enough available stock to reserve for this order.");
+  if (rpcError) {
+    throw new Error(rpcError.message || "Order could not be created.");
   }
 
-  const orderNumber = `ORD-${Date.now()}`;
-
-  const orderPayload = {
-    order_number: orderNumber,
-    status: "draft",
-    payment_status: "unpaid",
-    channel: orderData.channel || "admin",
-    subtotal_amount: Number(orderData.subtotalAmount || 0) || 0,
-    discount_amount: Number(orderData.discountAmount || 0) || 0,
-    shipping_amount: Number(orderData.shippingAmount || 0) || 0,
-    total_amount: Number(orderData.totalAmount || 0) || 0,
-    currency: orderData.currency || "THB",
-    placed_at: orderData.placedAt || null,
-    notes: orderData.notes || "",
-    created_at: new Date().toISOString()
-  };
-
-  const { data: order, error: orderError } = await supabase
+  const { data, error } = await supabase
     .from("orders")
-    .insert(orderPayload)
-    .select("*")
+    .select(ADMIN_ORDER_SELECT)
+    .eq("id", result?.orderId)
     .single();
 
-  if (orderError) {
-    throw new Error(orderError.message || "Order could not be created.");
+  if (error || !data) {
+    throw new Error(error?.message || "Created order could not be loaded.");
   }
 
-  const orderItemPayload = {
-    order_id: order.id,
-    product_id: product.id,
-    product_code: product.sku,
-    item_name: product.name || product.sku,
-    quantity,
-    unit_price_amount: Number(orderData.unitPriceAmount || 0) || 0,
-    total_amount: Number(orderData.totalAmount || 0) || 0,
-    metadata: orderData.metadata || {}
-  };
-
-  const { data: itemData, error: itemError } = await supabase
-    .from("order_items")
-    .insert(orderItemPayload)
-    .select("*")
-    .single();
-
-  if (itemError) {
-    throw new Error(itemError.message || "Order item could not be created.");
-  }
-
-  await createAdminInventoryLog({
-    productId: product.id,
-    changeType: "reserve",
-    quantity,
-    note: `Reserved by order ${orderNumber}`
-  }, { env, client: supabase });
-
-  const orderWithItems = {
-    ...order,
-    order_items: [itemData],
-    customers: { full_name: orderData.customerName || "Guest", email: orderData.customerEmail || "", phone: orderData.customerPhone || "" }
-  };
-
-  return normalizeOrder(orderWithItems);
+  return normalizeOrder(data);
 }
 
 export async function updateAdminOrder(orderId, updates, { env = process.env, client } = {}) {
@@ -1653,50 +1572,25 @@ export async function updateAdminOrder(orderId, updates, { env = process.env, cl
 
   const supabase = client || createSupabaseAdminClient(env);
 
-  if (updates.status === "paid") {
+  if (updates.status === "paid" || updates.paymentStatus === "paid") {
     throw new Error("Payment status must be updated by the payment gateway webhook only.");
   }
+  const { data: result, error: rpcError } = await supabase.rpc("maris_update_admin_order", {
+    p_order_id: orderId,
+    p_status: updates.status ?? null,
+    p_payment_status: updates.paymentStatus ?? null,
+    p_notes: updates.notes ?? null,
+    p_created_by: updates.createdBy || null
+  });
 
-  const { data: existingOrder, error: existingOrderError } = await supabase
-    .from("orders")
-    .select("*, order_items(*)")
-    .eq("id", orderId)
-    .limit(1)
-    .maybeSingle();
-
-  if (existingOrderError || !existingOrder) {
-    throw new Error(existingOrderError?.message || "Order not found.");
+  if (rpcError) {
+    throw new Error(rpcError.message || "Order could not be updated.");
   }
-
-  if (updates.status === "cancelled" && existingOrder.status !== "cancelled") {
-    const item = Array.isArray(existingOrder.order_items) ? existingOrder.order_items[0] : null;
-
-    if (item && item.product_id) {
-      await createAdminInventoryLog({
-        productId: item.product_id,
-        changeType: "release",
-        quantity: Number(item.quantity || 0),
-        note: `Released reservation for cancelled order ${existingOrder.order_number}`
-      }, { env, client: supabase });
-    }
-  }
-
-  const payload = {
-    status: updates.status,
-    payment_status: updates.paymentStatus,
-    notes: updates.notes,
-    updated_at: new Date().toISOString()
-  };
-
-  const cleanedPayload = Object.fromEntries(
-    Object.entries(payload).filter(([, value]) => value !== undefined)
-  );
 
   const { data, error } = await supabase
     .from("orders")
-    .update(cleanedPayload)
-    .eq("id", orderId)
     .select(ADMIN_ORDER_SELECT)
+    .eq("id", result?.orderId)
     .single();
 
   if (error) {
@@ -1713,22 +1607,32 @@ export async function createAdminPayment(payment, { env = process.env, client } 
   }
 
   const supabase = client || createSupabaseAdminClient(env);
-  const payload = {
-    order_id: payment.orderId || null,
-    customer_id: payment.customerId || null,
-    payment_gateway: payment.gateway || "manual",
-    gateway_transaction_id: payment.transactionId || null,
-    amount: Number(payment.amount) || 0,
-    currency: payment.currency || "THB",
-    status: payment.status || "pending",
-    captured_at: payment.capturedAt || null,
-    metadata: payment.metadata || {}
-  };
+  const status = String(payment.status || "pending").toLowerCase();
+
+  if (status === "paid") {
+    throw new Error("Paid status must be updated by the payment gateway webhook only.");
+  }
+
+  const { data: result, error: rpcError } = await supabase.rpc("maris_create_admin_payment", {
+    p_order_id: payment.orderId || null,
+    p_customer_id: payment.customerId || null,
+    p_gateway: payment.gateway || "manual",
+    p_transaction_id: payment.transactionId || null,
+    p_amount: Number(payment.amount) || 0,
+    p_currency: payment.currency || "THB",
+    p_status: status,
+    p_captured_at: payment.capturedAt || null,
+    p_metadata: payment.metadata || {}
+  });
+
+  if (rpcError) {
+    throw new Error(rpcError.message || "Payment record could not be created.");
+  }
 
   const { data, error } = await supabase
     .from("payments")
-    .insert(payload)
     .select("*")
+    .eq("id", result?.paymentId)
     .single();
 
   if (error) {

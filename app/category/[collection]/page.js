@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import "../../../assets/css/category.css";
 import CategoryProducts from "./CategoryProducts";
 import JsonLd from "../../components/JsonLd";
 import { COLLECTION_ORDER, getCollection, productMatchesCollection } from "../../lib/collections";
@@ -10,7 +11,6 @@ import {
   buildPageMetadata
 } from "../../lib/seo";
 
-export const dynamic = "force-dynamic";
 export const revalidate = 60;
 
 export function generateStaticParams() {

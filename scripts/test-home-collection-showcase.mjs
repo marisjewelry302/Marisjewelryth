@@ -10,8 +10,8 @@ async function fileExists(path) {
   }
 }
 
-const ringImagePath = "assets/images/home/collections/cover-rings-collection.png";
-const pendantImagePath = "assets/images/home/collections/cover-pendants-collection.png";
+const ringImagePath = "assets/images/home/collections/cover-rings-collection.webp";
+const pendantImagePath = "assets/images/home/collections/cover-pendants-collection.webp";
 
 const [homepage, siteCss, hasRingImage, hasPendantImage] = await Promise.all([
   readFile("app/page.js", "utf8"),
@@ -30,13 +30,13 @@ assert.ok(atelierIndex > showcaseIndex, "collection showcase must appear before 
 
 assert.match(
   homepage,
-  /href="\/category\/rings"[\s\S]*Signature Rings[\s\S]*\/assets\/images\/home\/collections\/cover-rings-collection\.png/,
+  /href="\/category\/rings"[\s\S]*Signature Rings[\s\S]*\/assets\/images\/home\/collections\/cover-rings-collection\.webp/,
   "showcase must link the rings tile to the Rings collection with the provided ring cover image"
 );
 
 assert.match(
   homepage,
-  /href="\/category\/necklaces-pendants"[\s\S]*Elegant Pendants[\s\S]*\/assets\/images\/home\/collections\/cover-pendants-collection\.png/,
+  /href="\/category\/necklaces-pendants"[\s\S]*Elegant Pendants[\s\S]*\/assets\/images\/home\/collections\/cover-pendants-collection\.webp/,
   "showcase must link the pendant tile to the Necklaces and Pendants collection with the provided pendant cover image"
 );
 
@@ -46,7 +46,7 @@ assert.equal(hasPendantImage, true, "pendant showcase image must exist");
 assert.match(siteCss, /\.home-collection-showcase\s*\{/, "showcase section styles must exist");
 assert.match(siteCss, /\.home-collection-showcase\s*\{[\s\S]*background:\s*oklch\(96\.5%\s+0\.014\s+78\)/, "showcase must use a warm editorial surface while keeping the existing layout");
 assert.match(siteCss, /\.home-collection-grid\s*\{[\s\S]*grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/, "showcase must use a two-column grid on desktop");
-assert.match(siteCss, /\.home-collection-card__title\s*\{[\s\S]*font-family:\s*Georgia,\s*serif/, "showcase titles must use the refined serif mood from the reference");
+assert.match(siteCss, /\.home-collection-card__title\s*\{[\s\S]*font-family:\s*var\(--maris-font-display\)/, "showcase titles must use the current Maris display typography token");
 assert.match(siteCss, /@media\s*\(max-width:\s*820px\)[\s\S]*\.home-collection-grid\s*\{[\s\S]*grid-template-columns:\s*1fr/, "showcase must stack to one column on narrow mobile and tablet viewports");
 
 console.log("Home collection showcase contract is valid.");

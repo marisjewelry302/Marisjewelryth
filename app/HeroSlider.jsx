@@ -28,6 +28,29 @@ export default function HeroSlider({ slides }) {
     return () => clearInterval(timerRef.current);
   }, [slides.length, activeIndex]);
 
+  useEffect(() => {
+    if (slides.length <= 1) return undefined;
+
+    const nextImage = slides[(activeIndex + 1) % slides.length]?.image;
+    if (!nextImage) return undefined;
+
+    const preload = () => {
+      const image = new Image();
+      image.src = nextImage;
+    };
+    const idleId = "requestIdleCallback" in window
+      ? window.requestIdleCallback(preload, { timeout: 1500 })
+      : window.setTimeout(preload, 750);
+
+    return () => {
+      if ("cancelIdleCallback" in window) {
+        window.cancelIdleCallback(idleId);
+      } else {
+        window.clearTimeout(idleId);
+      }
+    };
+  }, [activeIndex, slides]);
+
   function handleTouchStart(event) {
     touchStartXRef.current = event.touches[0].clientX;
   }
@@ -56,7 +79,7 @@ export default function HeroSlider({ slides }) {
             key={slide.id || index}
             className={`hero-slide ${stateClass}`}
             style={{
-              backgroundImage: slide.image ? `url(${slide.image})` : undefined,
+              backgroundImage: index === activeIndex && slide.image ? `url(${slide.image})` : undefined,
               "--hero-position-start": slide.positionStart,
               "--hero-position-end": slide.positionEnd,
               "--hero-size-start": slide.sizeStart,

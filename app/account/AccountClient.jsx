@@ -289,10 +289,11 @@ export default function AccountClient() {
         {!customer ? (
           // ─── Auth Forms ─────────────────────────────────────────────────
           <div className="account-auth">
-            <div className="account-tabs" role="tablist" aria-label="Account forms">
+            <div className="account-tabs" aria-label="Account forms">
               <button
                 className={mode === "signin" ? "is-active" : ""}
                 type="button"
+                aria-pressed={mode === "signin"}
                 onClick={() => { setMode("signin"); setMessage(""); }}
               >
                 Sign In
@@ -300,6 +301,7 @@ export default function AccountClient() {
               <button
                 className={mode === "create" ? "is-active" : ""}
                 type="button"
+                aria-pressed={mode === "create"}
                 onClick={() => { setMode("create"); setMessage(""); }}
               >
                 Create Account
@@ -333,7 +335,7 @@ export default function AccountClient() {
                 <label htmlFor="create-phone">Phone</label>
                 <input id="create-phone" name="phone" type="tel" autoComplete="tel" />
                 <label htmlFor="create-password">Password</label>
-                <input id="create-password" name="password" type="password" autoComplete="new-password" minLength="6" required />
+                <input id="create-password" name="password" type="password" autoComplete="new-password" minLength="12" required />
                 <button className="account-submit" type="submit" disabled={submitting}>
                   {submitting ? "Creating…" : "Create Account"}
                 </button>
@@ -407,9 +409,9 @@ export default function AccountClient() {
               <label htmlFor="current-password">Current password</label>
               <input id="current-password" name="currentPassword" type="password" autoComplete="current-password" required />
               <label htmlFor="new-password">New password</label>
-              <input id="new-password" name="newPassword" type="password" autoComplete="new-password" minLength="6" required />
+              <input id="new-password" name="newPassword" type="password" autoComplete="new-password" minLength="12" required />
               <label htmlFor="confirm-password">Confirm new password</label>
-              <input id="confirm-password" name="confirmPassword" type="password" autoComplete="new-password" minLength="6" required />
+              <input id="confirm-password" name="confirmPassword" type="password" autoComplete="new-password" minLength="12" required />
               <button className="account-submit" type="submit" disabled={submitting}>
                 {submitting ? "Updating…" : "Change Password"}
               </button>

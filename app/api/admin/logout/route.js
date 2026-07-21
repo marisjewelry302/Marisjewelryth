@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { SESSION_COOKIE_NAME } from "../../../lib/admin-auth";
+import { isSameOriginRequest } from "../../../lib/request-security";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,10 +21,17 @@ function clearSessionAndRedirect(request) {
   return response;
 }
 
-export async function GET(request) {
-  return clearSessionAndRedirect(request);
+export async function GET() {
+  return NextResponse.json(
+    { error: "Method not allowed." },
+    { status: 405, headers: { Allow: "POST" } }
+  );
 }
 
 export async function POST(request) {
+  if (!isSameOriginRequest(request)) {
+    return NextResponse.json({ error: "Cross-origin request blocked." }, { status: 403 });
+  }
+
   return clearSessionAndRedirect(request);
 }

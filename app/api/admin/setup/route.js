@@ -5,6 +5,8 @@ import {
   createAdminSession
 } from "../../../lib/admin-auth";
 import { createInitialAdminUser } from "../../../lib/admin-users";
+import { consumeAuthAttempt } from "../../../lib/auth-rate-limit";
+import { isSameOriginRequest } from "../../../lib/request-security";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,11 +20,27 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
+  if (!isSameOriginRequest(request)) {
+    return redirectTo(request, "/admin/setup?error=security");
+  }
+
   const formData = await request.formData();
   const username = String(formData.get("username") || "");
   const displayName = String(formData.get("displayName") || "");
   const password = String(formData.get("password") || "");
   const confirmPassword = String(formData.get("confirmPassword") || "");
+  const rateLimit = await consumeAuthAttempt({
+    request,
+    action: "admin_setup",
+    identifier: username,
+    maxAttempts: 3,
+    windowSeconds: 60 * 60,
+    blockSeconds: 60 * 60
+  });
+
+  if (!rateLimit.allowed) {
+    return redirectTo(request, "/admin/setup?error=rate_limit");
+  }
 
   if (password !== confirmPassword) {
     return redirectTo(request, "/admin/setup?error=mismatch");
@@ -52,6 +70,16 @@ export async function POST(request) {
     return redirectTo(request, "/admin/setup?error=invalid");
   }
 
+  await consumeAuthAttempt({
+    request,
+    action: "admin_setup",
+    identifier: username,
+    maxAttempts: 3,
+    windowSeconds: 60 * 60,
+    blockSeconds: 60 * 60,
+    success: true
+  });
+
   const response = redirectTo(request, "/admin");
 
   response.cookies.set({
@@ -61,6 +89,7 @@ export async function POST(request) {
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
     maxAge: SESSION_MAX_AGE_SECONDS,
+    priority: "high",
     path: "/"
   });
 

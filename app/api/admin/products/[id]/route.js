@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { SESSION_COOKIE_NAME, verifyAdminSession } from "../../../../lib/admin-auth";
+import { ADMIN_PERMISSIONS, requireAdminPermission } from "../../../../lib/admin-api-auth";
 import { createSupabaseAdminClient } from "../../../../lib/maris-database";
 
 export const runtime = "nodejs";
@@ -12,22 +12,9 @@ function json(payload, status = 200) {
   });
 }
 
-function unauthorized() {
-  return json({ error: "unauthorized" }, 401);
-}
-
-function getSession(request) {
-  const session = request.cookies.get(SESSION_COOKIE_NAME)?.value;
-  if (!verifyAdminSession(session).isValid) {
-    return null;
-  }
-  return session;
-}
-
 export async function DELETE(request, { params }) {
-  if (!getSession(request)) {
-    return unauthorized();
-  }
+  const authorization = await requireAdminPermission(request, ADMIN_PERMISSIONS.CATALOGUE_DELETE);
+  if (!authorization.ok) return authorization.response;
 
   const { id } = params;
 

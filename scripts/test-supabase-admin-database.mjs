@@ -19,6 +19,7 @@ const { GET: getPublicCatalogueProducts } = await import("../app/api/catalogue/p
 
 const EXPECTED_DATABASE_TABLES = [
   "admin_users",
+  "auth_rate_limits",
   "customers",
   "custom_order_requests",
   "inventory_movements",
@@ -807,78 +808,36 @@ function createInventoryMovementClient() {
       stock_quantity: 5,
       reserved_quantity: 1
     },
-    inserts: [],
-    updates: []
+    rpcCalls: []
   };
 
   return {
     state,
-    from(tableName) {
-      if (tableName === "products") {
-        return {
-          select(columns) {
-            state.productSelect = columns;
+    async rpc(functionName, args) {
+      state.rpcCalls.push({ functionName, args });
+      state.product.reserved_quantity += args.p_quantity;
 
-            return {
-              eq(column, value) {
-                state.productFilter = [column, value];
-                return this;
-              },
-              limit(value) {
-                state.productLimit = value;
-                return this;
-              },
-              async maybeSingle() {
-                return { data: { ...state.product }, error: null };
-              }
-            };
+      return {
+        data: {
+          id: "log-1",
+          product_id: args.p_product_id,
+          variant_id: args.p_variant_id,
+          change_type: args.p_movement_type,
+          quantity: args.p_quantity,
+          note: args.p_note,
+          reference_type: args.p_reference_type,
+          reference_id: args.p_reference_id,
+          metadata: {
+            ...args.p_metadata,
+            stockQuantity: state.product.stock_quantity,
+            reservedQuantity: state.product.reserved_quantity
           },
-          update(payload) {
-            state.updates.push(payload);
-            state.product = {
-              ...state.product,
-              ...payload
-            };
-
-            return {
-              async eq(column, value) {
-                state.updateFilter = [column, value];
-                return { error: null };
-              }
-            };
-          }
-        };
-      }
-
-      if (tableName === "inventory_logs") {
-        return {
-          insert(payload) {
-            state.inserts.push(payload);
-
-            return {
-              select(columns) {
-                state.logSelect = columns;
-
-                return {
-                  async single() {
-                    return {
-                      data: {
-                        id: "log-1",
-                        ...payload,
-                        products: { ...state.product },
-                        created_at: "2026-06-02T00:00:00.000Z"
-                      },
-                      error: null
-                    };
-                  }
-                };
-              }
-            };
-          }
-        };
-      }
-
-      throw new Error(`Unexpected table ${tableName}`);
+          created_by: args.p_created_by,
+          products: { ...state.product },
+          created_at: "2026-06-02T00:00:00.000Z"
+        },
+        error: null
+      };
     }
   };
 }
@@ -897,26 +856,19 @@ const inventoryLog = await createAdminInventoryLog({
   client: inventoryClient
 });
 
-assert.equal(inventoryClient.state.productSelect, "id, sku, name, stock_quantity, reserved_quantity");
-assert.deepEqual(inventoryClient.state.productFilter, ["id", "product-1"]);
-assert.deepEqual(inventoryClient.state.updates[0], {
-  stock_quantity: 5,
-  reserved_quantity: 3,
-  updated_at: inventoryClient.state.updates[0].updated_at
-});
-assert.deepEqual(inventoryClient.state.inserts[0], {
-  product_id: "product-1",
-  variant_id: null,
-  change_type: "reserve",
-  quantity: 2,
-  note: "Admin reserve",
-  reference_type: null,
-  reference_id: null,
-  metadata: {
-    stockQuantity: 5,
-    reservedQuantity: 3
-  },
-  created_by: null
+assert.deepEqual(inventoryClient.state.rpcCalls[0], {
+  functionName: "maris_apply_inventory_movement",
+  args: {
+    p_product_id: "product-1",
+    p_movement_type: "reserve",
+    p_quantity: 2,
+    p_variant_id: null,
+    p_note: "Admin reserve",
+    p_reference_type: null,
+    p_reference_id: null,
+    p_metadata: {},
+    p_created_by: null
+  }
 });
 assert.equal(inventoryLog.productCode, "ER1001");
 assert.equal(inventoryLog.stockQuantity, 5);
@@ -978,6 +930,7 @@ for (const tableName of EXPECTED_DATABASE_TABLES) {
 
 for (const indexName of [
   "idx_products_sku",
+  "idx_auth_rate_limits_updated_at",
   "idx_product_variants_product_id",
   "idx_product_images_product_id",
   "idx_orders_customer_id",
@@ -993,6 +946,45 @@ for (const indexName of [
     `Migration should include ${indexName}`
   );
 }
+
+assert.match(
+  additiveSchema,
+  /create unique index if not exists idx_payments_gateway_transaction_unique\b/i,
+  "Gateway transaction ids should be idempotent"
+);
+
+for (const functionName of [
+  "maris_apply_inventory_movement",
+  "maris_create_admin_order",
+  "maris_update_admin_order",
+  "maris_create_admin_payment",
+  "maris_capture_order_payment"
+]) {
+  assert.match(
+    additiveSchema,
+    new RegExp(`create or replace function public\\.${functionName}\\b`, "i"),
+    `Migration should define atomic RPC ${functionName}`
+  );
+  assert.match(
+    additiveSchema,
+    new RegExp(`grant execute on function public\\.${functionName}[\\s\\S]*?to service_role`, "i"),
+    `Atomic RPC ${functionName} should be service-role only`
+  );
+}
+
+assert.match(
+  additiveSchema,
+  /create or replace function public\.maris_consume_auth_rate_limit\b/i,
+  "Authentication must use a durable database rate limiter"
+);
+assert.match(
+  additiveSchema,
+  /grant execute on function public\.maris_consume_auth_rate_limit[\s\S]*?to service_role/i,
+  "Authentication rate limiting must be service-role only"
+);
+
+assert.match(additiveSchema, /from public\.products[\s\S]*?for update/i, "Inventory and order writes must lock product rows");
+assert.match(additiveSchema, /from public\.orders[\s\S]*?for update/i, "Order and payment writes must lock order rows");
 
 const liveSchemaTest = await readFile(new URL("../scripts/test-supabase-admin-database-live.mjs", import.meta.url), "utf8");
 assert.match(liveSchemaTest, /readAdminDatabaseStatus/, "Live database script should use the same status helper as the admin API");

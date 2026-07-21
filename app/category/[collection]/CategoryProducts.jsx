@@ -95,6 +95,7 @@ export default function CategoryProducts({ products, collectionTitle }) {
       </section>
 
       <section className="products" aria-label={`${collectionTitle} products`}>
+        <h2 className="sr-only">Available {collectionTitle}</h2>
         {visibleProducts.length ? (
           visibleProducts.map((product) => (
             <ProductCard key={product.id || product.sku} product={product} collectionLabel={collectionTitle} />

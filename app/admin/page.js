@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { SESSION_COOKIE_NAME, verifyAdminSession } from "../lib/admin-auth";
+import { SESSION_COOKIE_NAME } from "../lib/admin-auth";
+import { authorizeAdminSessionValue } from "../lib/admin-authorization";
 import Script from "next/script";
 import AdminBodyClass from "./AdminBodyClass";
 import "./admin.css";
@@ -11,7 +12,9 @@ export default async function AdminPage() {
   const cookieStore = await cookies();
   const session = cookieStore.get(SESSION_COOKIE_NAME)?.value;
 
-  if (!verifyAdminSession(session).isValid) {
+  const authorization = await authorizeAdminSessionValue(session);
+
+  if (!authorization.ok) {
     redirect("/admin/login");
   }
 
@@ -362,7 +365,7 @@ export default async function AdminPage() {
                   <p className="admin-kicker">Order workflow</p>
                   <h2>Orders</h2>
                 </div>
-                <p className="admin-note">Create a test order to reserve stock, then mark it paid or cancel it.</p>
+                <p className="admin-note">Create a test order to reserve stock, then cancel it or let a verified payment capture mark it paid.</p>
               </div>
 
               <form className="admin-form order-form" data-order-form>
@@ -598,7 +601,7 @@ export default async function AdminPage() {
 
               <div className="admin-explainer">
                 <h3>Current Boundary</h3>
-                <p>Catalogue, image uploads, inventory, and order records use protected Supabase APIs. Public checkout, payment capture, and role-based permissions are not live yet.</p>
+                <p>Catalogue, image uploads, inventory, and order records use protected Supabase APIs with role-based permissions. Public checkout and gateway payment capture remain disabled until a verified provider webhook is connected.</p>
               </div>
             </section>
 

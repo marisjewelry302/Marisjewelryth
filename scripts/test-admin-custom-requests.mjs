@@ -207,8 +207,9 @@ const adminCss = await readFile(new URL("../app/admin/admin.css", import.meta.ur
 
 assert.match(adminRoute, /export async function PATCH/);
 assert.match(adminRoute, /updateAdminCustomOrderRequest/);
-assert.match(adminRoute, /session\.username/);
-assert.match(adminRoute, /isSameOrigin/);
+assert.match(adminRoute, /authorization\.user\.username/);
+assert.match(adminRoute, /requireAdminPermission/);
+assert.match(adminRoute, /ADMIN_PERMISSIONS\.OPERATIONS_WRITE/);
 assert.match(adminPage, /data-custom-request-status-filter="pending"/);
 assert.match(adminPage, /data-custom-request-search/);
 assert.match(adminPage, /data-custom-request-detail/);
@@ -227,7 +228,22 @@ const adminAuthUrl = new URL("../app/lib/admin-auth.js", import.meta.url).href;
 const databaseUrl = new URL("../app/lib/maris-database.js", import.meta.url).href;
 const routeForDirectImport = adminRoute
   .replace('from "next/server"', `from "${nextServerUrl}"`)
-  .replace('from "../../../lib/admin-auth"', `from "${adminAuthUrl}"`)
+  .replace(
+    'import { ADMIN_PERMISSIONS, requireAdminPermission } from "../../../lib/admin-api-auth";',
+    `import { SESSION_COOKIE_NAME, verifyAdminSession } from "${adminAuthUrl}";
+const ADMIN_PERMISSIONS = { OPERATIONS_WRITE: "operations:write" };
+async function requireAdminPermission(request) {
+  const origin = request.headers.get("origin");
+  if (origin && origin !== request.nextUrl.origin) {
+    return { ok: false, response: NextResponse.json({ error: "blocked" }, { status: 403 }) };
+  }
+  const session = verifyAdminSession(request.cookies.get(SESSION_COOKIE_NAME)?.value);
+  if (!session.isValid) {
+    return { ok: false, response: NextResponse.json({ error: "unauthorized" }, { status: 401 }) };
+  }
+  return { ok: true, user: { id: session.userId, username: session.username } };
+}`
+  )
   .replace('from "../../../lib/maris-database"', `from "${databaseUrl}"`);
 const routeModuleUrl = `data:text/javascript;base64,${Buffer.from(routeForDirectImport).toString("base64")}`;
 const { PATCH } = await import(routeModuleUrl);

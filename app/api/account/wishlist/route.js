@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { SESSION_COOKIE_NAME, verifyCustomerSession } from "@/app/lib/customer-auth";
 import { readCustomerWishlist, replaceCustomerWishlist } from "@/app/lib/customer-collections";
+import { isSameOriginRequest } from "@/app/lib/request-security";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -48,6 +49,10 @@ export async function GET() {
 }
 
 async function saveWishlist(request) {
+  if (!isSameOriginRequest(request)) {
+    return json({ error: "Cross-origin request blocked." }, 403);
+  }
+
   const customerId = await getSessionCustomerId();
 
   if (!customerId) {

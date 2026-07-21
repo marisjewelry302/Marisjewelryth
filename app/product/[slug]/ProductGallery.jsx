@@ -15,7 +15,8 @@ export default function ProductGallery({ images, productCode, productName }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const thumbnailsRef = useRef(null);
-  const galleryRef = useRef(null);
+  const galleryButtonRef = useRef(null);
+  const lightboxRef = useRef(null);
 
   const activeItem = galleryItems[activeIndex];
 
@@ -32,6 +33,7 @@ export default function ProductGallery({ images, productCode, productName }) {
     function handleKeydown(event) {
       if (event.key === "Escape" && lightboxOpen) {
         setLightboxOpen(false);
+        window.requestAnimationFrame(() => galleryButtonRef.current?.focus());
         return;
       }
 
@@ -42,6 +44,21 @@ export default function ProductGallery({ images, productCode, productName }) {
 
       if (event.key === "ArrowRight" && lightboxOpen) {
         stepGallery(1);
+        return;
+      }
+
+      if (event.key === "Tab" && lightboxOpen && lightboxRef.current) {
+        const focusable = [...lightboxRef.current.querySelectorAll('button:not([disabled]), [tabindex]:not([tabindex="-1"])')];
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last?.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first?.focus();
+        }
       }
     }
 
@@ -51,6 +68,7 @@ export default function ProductGallery({ images, productCode, productName }) {
 
   useEffect(() => {
     document.body.classList.toggle("is-lightbox-open", lightboxOpen);
+    return () => document.body.classList.remove("is-lightbox-open");
   }, [lightboxOpen]);
 
   function handleGalleryKeydown(event) {
@@ -66,10 +84,11 @@ export default function ProductGallery({ images, productCode, productName }) {
       return;
     }
 
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      setLightboxOpen(true);
-    }
+  }
+
+  function closeLightbox() {
+    setLightboxOpen(false);
+    window.requestAnimationFrame(() => galleryButtonRef.current?.focus());
   }
 
   function scrollThumbnailRail(direction) {
@@ -82,20 +101,20 @@ export default function ProductGallery({ images, productCode, productName }) {
 
   return (
     <>
-      <div
-        className="product-gallery"
-        data-product-gallery
-        tabIndex={0}
-        role="button"
-        ref={galleryRef}
-        onClick={() => setLightboxOpen(true)}
-        onKeyDown={handleGalleryKeydown}
-        aria-label={`Open ${activeItem.label.toLowerCase()} preview for ${productCode}`}
-      >
-        {activeItem.src && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={activeItem.src} alt={activeItem.alt} data-product-image />
-        )}
+      <div className="product-gallery" data-product-gallery>
+        <button
+          type="button"
+          className="product-gallery-open"
+          ref={galleryButtonRef}
+          onClick={() => setLightboxOpen(true)}
+          onKeyDown={handleGalleryKeydown}
+          aria-label={`Open ${activeItem.label.toLowerCase()} preview for ${productCode}`}
+        >
+          {activeItem.src && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={activeItem.src} alt={activeItem.alt} data-product-image />
+          )}
+        </button>
 
         {galleryItems.length > 1 && (
           <>
@@ -133,6 +152,7 @@ export default function ProductGallery({ images, productCode, productName }) {
             type="button"
             className="product-thumbnails-nav is-prev"
             onClick={() => scrollThumbnailRail(-1)}
+            aria-label="Scroll thumbnails backward"
           >
             <span aria-hidden="true">‹</span>
           </button>
@@ -158,6 +178,7 @@ export default function ProductGallery({ images, productCode, productName }) {
             type="button"
             className="product-thumbnails-nav is-next"
             onClick={() => scrollThumbnailRail(1)}
+            aria-label="Scroll thumbnails forward"
           >
             <span aria-hidden="true">›</span>
           </button>
@@ -168,9 +189,13 @@ export default function ProductGallery({ images, productCode, productName }) {
         <div
           className="product-lightbox"
           data-product-lightbox
+          role="dialog"
+          aria-modal="true"
+          aria-label={`${productCode} image preview`}
+          ref={lightboxRef}
           onClick={(event) => {
             if (event.target === event.currentTarget) {
-              setLightboxOpen(false);
+              closeLightbox();
             }
           }}
         >
@@ -181,7 +206,8 @@ export default function ProductGallery({ images, productCode, productName }) {
           <button
             type="button"
             className="product-lightbox-close"
-            onClick={() => setLightboxOpen(false)}
+            onClick={closeLightbox}
+            aria-label="Close image preview"
             autoFocus
           >
             ×

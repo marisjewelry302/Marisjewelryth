@@ -13,9 +13,16 @@ const {
 const {
   authenticateAdminUser,
   createInitialAdminUser,
+  getActiveAdminUserForSession,
   getAdminSetupState,
   normalizeAdminUsername
 } = await import("../app/lib/admin-users.js");
+
+const {
+  ADMIN_PERMISSIONS,
+  adminRoleHasPermission,
+  normalizeAdminRole
+} = await import("../app/lib/admin-authorization.js");
 
 function createAdminUsersClient({ users = [], count = users.length, insertError = null } = {}) {
   const state = {
@@ -108,6 +115,13 @@ const env = {
 
 assert.equal(normalizeAdminUsername("  Owner "), "owner");
 assert.equal(normalizeAdminUsername(""), "");
+assert.equal(normalizeAdminRole("  Developer "), "developer");
+assert.equal(adminRoleHasPermission("CEO", ADMIN_PERMISSIONS.PAYMENTS_WRITE), true);
+assert.equal(adminRoleHasPermission("Manager", ADMIN_PERMISSIONS.OPERATIONS_WRITE), true);
+assert.equal(adminRoleHasPermission("Manager", ADMIN_PERMISSIONS.PAYMENTS_WRITE), false);
+assert.equal(adminRoleHasPermission("Viewer", ADMIN_PERMISSIONS.READ), true);
+assert.equal(adminRoleHasPermission("Viewer", ADMIN_PERMISSIONS.CATALOGUE_WRITE), false);
+assert.equal(adminRoleHasPermission("unknown", ADMIN_PERMISSIONS.READ), false);
 assert.equal(getAdminConfig({ MARIS_ADMIN_SESSION_SECRET: "replace-with-a-long-random-secret" }).isConfigured, false);
 assert.equal(getAdminConfig({ MARIS_ADMIN_SESSION_SECRET: "real-session-secret" }).isConfigured, true);
 
@@ -138,6 +152,14 @@ assert.deepEqual(authResult.user, {
   isActive: true
 });
 assert.deepEqual(activeClient.state.updates[0], { last_signed_in_at: activeClient.state.updates[0].last_signed_in_at });
+
+const activeSessionUser = await getActiveAdminUserForSession({
+  userId: activeUser.id,
+  username: activeUser.username
+}, { env, client: activeClient });
+assert.equal(activeSessionUser.status, "valid");
+assert.equal(activeSessionUser.user.id, activeUser.id);
+assert.equal("passwordHash" in activeSessionUser.user, false);
 
 const badPassword = await authenticateAdminUser("owner", "wrong-password", {
   env,
@@ -218,6 +240,7 @@ assert.match(envExample, /^MARIS_ADMIN_SESSION_SECRET=/m, "Session signing secre
 assert.match(loginRoute, /authenticateAdminUser/, "Login route should authenticate against admin_users");
 assert.match(setupRoute, /createInitialAdminUser/, "Setup route should create the first database owner");
 assert.match(setupPage, /Create Owner Account/, "Setup page should exist for the first owner account");
-assert.match(uploadRoute, /verifyAdminSession/, "Product image upload route must verify the admin session");
+assert.match(uploadRoute, /requireAdminPermission/, "Product image upload route must enforce current database-backed authorization");
+assert.match(uploadRoute, /ADMIN_PERMISSIONS\.CATALOGUE_WRITE/, "Product image upload must require catalogue write permission");
 assert.match(uploadRoute, /request\.formData/, "Product image upload route should parse multipart form data");
 assert.match(uploadRoute, /uploadAdminProductImage/, "Product image upload route should delegate Storage writes to the database helper");

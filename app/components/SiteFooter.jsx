@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useId, useState } from "react";
 
 const footerSections = [
   {
@@ -85,14 +85,27 @@ function SocialLinks() {
 
 function FooterSection({ section, index }) {
   const [isOpen, setIsOpen] = useState(index === 0);
+  const panelId = useId();
 
   return (
     <section className={`maris-footer__section${isOpen ? " is-open" : ""}`}>
-      <button className="maris-footer__toggle" type="button" onClick={() => setIsOpen((current) => !current)}>
+      <button
+        className="maris-footer__toggle"
+        type="button"
+        aria-expanded={isOpen}
+        aria-controls={panelId}
+        onClick={() => setIsOpen((current) => !current)}
+      >
         <span className="maris-footer__toggle-label">{section.title}</span>
         <span className="maris-footer__chevron" aria-hidden="true" />
       </button>
-      <div className="maris-footer__panel" style={{ maxHeight: isOpen ? 320 : 0 }}>
+      <div
+        id={panelId}
+        className="maris-footer__panel"
+        style={{ maxHeight: isOpen ? 320 : 0 }}
+        aria-hidden={!isOpen}
+        inert={!isOpen}
+      >
         <div className="maris-footer__panel-inner">
           {section.body && <p>{section.body}</p>}
           {section.links && (
@@ -110,10 +123,12 @@ function FooterSection({ section, index }) {
 }
 
 function NewsletterForm() {
+  const emailId = useId();
+
   return (
     <form className="maris-footer__email-box" action="/newsletter" method="get">
-      <label className="maris-footer__sr-only" htmlFor="footer-email">Email address</label>
-      <input id="footer-email" name="email" type="email" placeholder="Email address" />
+      <label className="maris-footer__sr-only" htmlFor={emailId}>Email address</label>
+      <input id={emailId} name="email" type="email" placeholder="Email address" />
       <button type="submit" aria-label="Join newsletter">Join</button>
     </form>
   );
@@ -137,7 +152,7 @@ export default function SiteFooter() {
         <div className="maris-footer__desktop">
           {footerSections.map((section) => (
             <section className="maris-footer__desktop-col" key={section.title}>
-              <h3>{section.title}</h3>
+              <h2>{section.title}</h2>
               {section.body && <p>{section.body}</p>}
               {section.links && (
                 <ul>

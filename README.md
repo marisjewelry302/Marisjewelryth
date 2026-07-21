@@ -12,16 +12,13 @@ The public storefront now renders through Next.js App Router routes in `app/`. S
 maris-jewelry/
 |-- app/                    Next.js App Router pages, route handlers, and shared app code
 |-- assets/                 Tracked storefront CSS, JavaScript, images, and models
-|-- pages/                  Legacy reference files kept outside the deploy surface
 |-- scripts/                Local checks, data helpers, migrations, and diagnostics
 |-- tools/                  Local helper scripts for preview and artifact workflows
 |-- docs/
 |   |-- guides/             Active workflow notes and how-to documents
-|   |-- reports/structure/  Generated structure reports and tree snapshots
 |   |-- superpowers/        Planning/spec artifacts from agent workflows
 |   `-- archive/backups/    Manual backup files kept for reference
 |-- supabase/               Local Supabase config and migrations
-|-- nginx/                  Legacy deployment reference
 |-- next.config.mjs         Next.js routing config
 |-- vercel.json             Vercel install/build settings
 |-- package.json            Next.js scripts and dependencies
@@ -69,9 +66,7 @@ or:
 - `npm run check:sheet-images` is still available as a manual historical Google Sheet diagnostic, but it is no longer part of the build gate.
 - Vercel deploys from the repository root and uses `vercel.json` for `npm ci` plus `npm run build`.
 - Do not create or deploy nested Next.js apps inside this checkout; shared site work belongs in the root app.
-- Legacy Netlify, Docker, and Nginx deploy files are not part of the supported workflow.
 - Generated screenshots, runtime folders, temp previews, and logs are stored outside the repository.
-- Generated tree reports live in `docs/reports/structure/` instead of the repository root.
 - Artifact workflow details live in `docs/guides/LOCAL_ARTIFACTS.md`.
 - Documentation structure is summarized in `docs/README.md`.
 - Helper script descriptions live in `tools/README.md`.

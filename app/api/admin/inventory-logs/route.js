@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { SESSION_COOKIE_NAME, verifyAdminSession } from "../../../lib/admin-auth";
+import { ADMIN_PERMISSIONS, requireAdminPermission } from "../../../lib/admin-api-auth";
 import { createAdminInventoryLog, readAdminInventoryLogs } from "../../../lib/maris-database";
 
 export const runtime = "nodejs";
@@ -14,24 +14,9 @@ function json(payload, status = 200) {
   });
 }
 
-function unauthorized() {
-  return json({ error: "unauthorized" }, 401);
-}
-
-function getSession(request) {
-  const session = request.cookies.get(SESSION_COOKIE_NAME)?.value;
-
-  if (!verifyAdminSession(session).isValid) {
-    return null;
-  }
-
-  return session;
-}
-
 export async function GET(request) {
-  if (!getSession(request)) {
-    return unauthorized();
-  }
+  const authorization = await requireAdminPermission(request);
+  if (!authorization.ok) return authorization.response;
 
   try {
     const logs = await readAdminInventoryLogs();
@@ -42,9 +27,8 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
-  if (!getSession(request)) {
-    return unauthorized();
-  }
+  const authorization = await requireAdminPermission(request, ADMIN_PERMISSIONS.OPERATIONS_WRITE);
+  if (!authorization.ok) return authorization.response;
 
   let body;
 
@@ -55,7 +39,10 @@ export async function POST(request) {
   }
 
   try {
-    const log = await createAdminInventoryLog(body);
+    const log = await createAdminInventoryLog({
+      ...body,
+      createdBy: authorization.user.id
+    });
     return json({ log }, 201);
   } catch (error) {
     return json({ error: error instanceof Error ? error.message : "Inventory log could not be created." }, 500);

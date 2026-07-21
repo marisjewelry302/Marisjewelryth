@@ -1,14 +1,16 @@
 import { readPublicCatalogueProducts } from "../../../lib/maris-database.js";
 
 export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 function json(payload, status = 200) {
   return new Response(JSON.stringify(payload), {
     status,
     headers: {
       "Content-Type": "application/json",
-      "Cache-Control": "no-store"
+      "Cache-Control": status >= 500 || payload?.status === "unavailable"
+        ? "no-store"
+        : "public, s-maxage=60, stale-while-revalidate=300"
     }
   });
 }

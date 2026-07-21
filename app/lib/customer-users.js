@@ -1,4 +1,5 @@
 import { hashCustomerPassword, verifyCustomerPassword } from "./customer-auth.js";
+import { sanitizeCustomerMetadata } from "./customer-data.js";
 import { createSupabaseAdminClient, getSupabaseAdminConfig } from "./maris-database.js";
 
 const CUSTOMER_COLUMNS = `
@@ -6,6 +7,7 @@ const CUSTOMER_COLUMNS = `
   full_name,
   email,
   phone,
+  password_hash,
   metadata,
   created_at,
   updated_at
@@ -26,7 +28,7 @@ export function normalizeCustomerProfile(row) {
     fullName: row.full_name || "",
     email: row.email || "",
     phone: row.phone || "",
-    metadata: row.metadata || {},
+    metadata: sanitizeCustomerMetadata(row.metadata || {}),
     createdAt: row.created_at || null,
     updatedAt: row.updated_at || null
   };
@@ -49,8 +51,8 @@ export async function createCustomer({ fullName, email, phone, password }, { env
 
   const normalizedEmail = normalizeEmail(email);
 
-  if (!cleanText(fullName) || !normalizedEmail || String(password || "").length < 6) {
-    return { status: "invalid", message: "Name, email, and password (min 6 chars) are required." };
+  if (!cleanText(fullName) || !normalizedEmail || String(password || "").length < 12) {
+    return { status: "invalid", message: "Name, email, and password (min 12 chars) are required." };
   }
 
   // Check duplicate email
@@ -72,7 +74,8 @@ export async function createCustomer({ fullName, email, phone, password }, { env
       full_name: cleanText(fullName),
       email: normalizedEmail,
       phone: cleanText(phone),
-      metadata: { password_hash: passwordHash }
+      password_hash: passwordHash,
+      metadata: {}
     })
     .select(CUSTOMER_COLUMNS)
     .single();
@@ -111,7 +114,7 @@ export async function authenticateCustomer(email, password, { env = process.env 
     return { status: "invalid" };
   }
 
-  const passwordHash = data.metadata?.password_hash;
+  const passwordHash = data.password_hash || data.metadata?.password_hash;
 
   if (!passwordHash || !verifyCustomerPassword(password, passwordHash)) {
     return { status: "invalid" };
@@ -191,30 +194,30 @@ export async function changeCustomerPassword(id, currentPassword, newPassword, {
 
   if (!config.isConfigured) return { status: "not_configured" };
 
-  if (String(newPassword || "").length < 6) {
-    return { status: "invalid", message: "New password must be at least 6 characters." };
+  if (String(newPassword || "").length < 12) {
+    return { status: "invalid", message: "New password must be at least 12 characters." };
   }
 
   const { data, error } = await supabase
     .from("customers")
-    .select("id, metadata")
+    .select("id, password_hash, metadata")
     .eq("id", id)
     .maybeSingle();
 
   if (error || !data) return { status: "not_found" };
 
-  const currentHash = data.metadata?.password_hash;
+  const currentHash = data.password_hash || data.metadata?.password_hash;
 
   if (!currentHash || !verifyCustomerPassword(currentPassword, currentHash)) {
     return { status: "wrong_password" };
   }
 
   const newHash = hashCustomerPassword(newPassword);
-  const newMetadata = { ...(data.metadata || {}), password_hash: newHash };
+  const newMetadata = sanitizeCustomerMetadata(data.metadata || {});
 
   await supabase
     .from("customers")
-    .update({ metadata: newMetadata, updated_at: new Date().toISOString() })
+    .update({ password_hash: newHash, metadata: newMetadata, updated_at: new Date().toISOString() })
     .eq("id", id);
 
   return { status: "updated" };

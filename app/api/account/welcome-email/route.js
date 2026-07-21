@@ -4,6 +4,7 @@ import { SESSION_COOKIE_NAME, verifyCustomerSession } from "@/app/lib/customer-a
 import { sendWelcomeEmail } from "@/app/lib/customer-email";
 import { markWelcomeEmailSent, upsertEmailSubscriber } from "@/app/lib/customer-subscribers";
 import { getCustomerById } from "@/app/lib/customer-users";
+import { isSameOriginRequest } from "@/app/lib/request-security";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -30,6 +31,10 @@ async function getSignedInCustomer() {
 }
 
 export async function POST(request) {
+  if (!isSameOriginRequest(request)) {
+    return json({ error: "Cross-origin request blocked." }, 403);
+  }
+
   const customer = await getSignedInCustomer();
 
   if (!customer) {

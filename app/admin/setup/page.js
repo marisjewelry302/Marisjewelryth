@@ -82,7 +82,7 @@ export default async function AdminSetupPage({ searchParams }) {
               name="password"
               type="password"
               autoComplete="new-password"
-              minLength={8}
+              minLength={12}
               required
             />
           </label>
@@ -94,7 +94,7 @@ export default async function AdminSetupPage({ searchParams }) {
               name="confirmPassword"
               type="password"
               autoComplete="new-password"
-              minLength={8}
+              minLength={12}
               required
             />
           </label>

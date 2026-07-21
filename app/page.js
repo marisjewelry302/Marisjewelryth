@@ -11,7 +11,6 @@ import {
   buildPageMetadata
 } from "./lib/seo";
 
-export const dynamic = "force-dynamic";
 export const revalidate = 60;
 
 export const metadata = buildPageMetadata({
@@ -25,21 +24,21 @@ const heroSlides = [
   {
     id: "hero-1",
     label: "01",
-    image: "/assets/images/home/optimized/home-hero-optimized.png",
+    image: "/assets/images/home/optimized/home-hero-optimized.webp",
     positionStart: "62% 50%",
     positionEnd: "58% 52%"
   },
   {
     id: "hero-2",
     label: "02",
-    image: "/assets/images/service/custom-jewelry-service-hero-02-seamless.png",
+    image: "/assets/images/service/custom-jewelry-service-hero-02-seamless.webp",
     positionStart: "50% 50%",
     positionEnd: "50% 50%"
   },
   {
     id: "hero-3",
     label: "03",
-    image: "/assets/images/home/optimized/home-hero-pendant-earrings.png",
+    image: "/assets/images/home/optimized/home-hero-pendant-earrings.webp",
     positionStart: "50% 50%",
     positionEnd: "46% 52%"
   }
@@ -133,6 +132,7 @@ export default async function HomePage() {
 
   return (
     <>
+      <link rel="preload" as="image" href={heroSlides[0].image} type="image/webp" fetchPriority="high" />
       <JsonLd data={homeJsonLd} />
       <main className="home-main site-main">
       <section className="hero">
@@ -183,8 +183,11 @@ export default async function HomePage() {
             <span className="home-collection-card__title">Signature Rings</span>
             <img
               className="home-collection-card__image"
-              src="/assets/images/home/collections/cover-rings-collection.png"
+              src="/assets/images/home/collections/cover-rings-collection.webp"
               alt="A diamond ring on dark brown satin"
+              width="1254"
+              height="1254"
+              loading="lazy"
             />
             <span className="home-collection-card__action">View Collection</span>
           </a>
@@ -193,8 +196,11 @@ export default async function HomePage() {
             <span className="home-collection-card__title">Elegant Pendants</span>
             <img
               className="home-collection-card__image"
-              src="/assets/images/home/collections/cover-pendants-collection.png"
+              src="/assets/images/home/collections/cover-pendants-collection.webp"
               alt="A pear-shaped diamond pendant on champagne satin"
+              width="1254"
+              height="1254"
+              loading="lazy"
             />
             <span className="home-collection-card__action">View Collection</span>
           </a>
@@ -210,7 +216,7 @@ export default async function HomePage() {
 
         <div className="atelier-reveal__panel">
           <div className="atelier-reveal__focus">
-            <h3>{featuredProducts.length ? "New arrival" : "Maris catalogue preview"}</h3>
+            <h2>{featuredProducts.length ? "New arrival" : "Maris catalogue preview"}</h2>
             <span className="atelier-reveal__heading-rule" aria-hidden="true" />
             <p>
               Product availability is confirmed personally by the atelier before order details are finalized.

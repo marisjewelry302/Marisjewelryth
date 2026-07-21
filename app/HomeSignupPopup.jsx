@@ -29,7 +29,9 @@ function isValidEmail(email) {
 export default function HomeSignupPopup() {
   const router = useRouter();
   const emailId = useId();
+  const titleId = useId();
   const dialogRef = useRef(null);
+  const previousFocusRef = useRef(null);
   const [isOpen, setIsOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [hideToday, setHideToday] = useState(false);
@@ -49,12 +51,28 @@ export default function HomeSignupPopup() {
     if (!isOpen) return undefined;
 
     const previousOverflow = document.body.style.overflow;
+    previousFocusRef.current = document.activeElement;
     document.body.style.overflow = "hidden";
     dialogRef.current?.focus();
 
     function handleKeyDown(event) {
       if (event.key === "Escape") {
         closePopup();
+        return;
+      }
+
+      if (event.key === "Tab" && dialogRef.current) {
+        const focusable = [...dialogRef.current.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])')];
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last?.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first?.focus();
+        }
       }
     }
 
@@ -63,6 +81,7 @@ export default function HomeSignupPopup() {
     return () => {
       document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", handleKeyDown);
+      previousFocusRef.current?.focus?.();
     };
   }, [isOpen]);
 
@@ -92,17 +111,18 @@ export default function HomeSignupPopup() {
 
   return (
     <div className="home-signup-popup" role="presentation">
-      <button className="home-signup-popup__backdrop" type="button" aria-label="Close signup popup" onClick={closePopup} />
+      <button className="home-signup-popup__backdrop" type="button" tabIndex={-1} aria-hidden="true" onClick={closePopup} />
       <section
         className="home-signup-popup__dialog"
         role="dialog"
         aria-modal="true"
-        aria-label="Maris Jewelry signup offer"
+        aria-labelledby={titleId}
         tabIndex={-1}
         ref={dialogRef}
       >
+        <h2 id={titleId} className="sr-only">Join Maris Jewelry</h2>
         <div className="home-signup-popup__image-panel">
-          <img src="/assets/images/home/popup/popup-background.png" alt="" aria-hidden="true" />
+          <img src="/assets/images/home/popup/popup-background.webp" alt="" aria-hidden="true" width="1024" height="1536" decoding="async" />
           <span className="home-signup-popup__image-brand">
             MARIS
             <small>JEWELRY</small>

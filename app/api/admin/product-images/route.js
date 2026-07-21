@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { SESSION_COOKIE_NAME, verifyAdminSession } from "../../../lib/admin-auth";
+import { ADMIN_PERMISSIONS, requireAdminPermission } from "../../../lib/admin-api-auth";
 import { deleteAdminProductImage, reorderAdminProductImages } from "../../../lib/maris-database";
 
 export const runtime = "nodejs";
@@ -12,20 +12,6 @@ function json(payload, status = 200) {
       "Cache-Control": "private, no-store"
     }
   });
-}
-
-function unauthorized() {
-  return json({ error: "unauthorized" }, 401);
-}
-
-function getSession(request) {
-  const session = request.cookies.get(SESSION_COOKIE_NAME)?.value;
-
-  if (!verifyAdminSession(session).isValid) {
-    return null;
-  }
-
-  return session;
 }
 
 function getErrorStatus(error) {
@@ -41,9 +27,8 @@ function getErrorStatus(error) {
 }
 
 export async function PATCH(request) {
-  if (!getSession(request)) {
-    return unauthorized();
-  }
+  const authorization = await requireAdminPermission(request, ADMIN_PERMISSIONS.CATALOGUE_WRITE);
+  if (!authorization.ok) return authorization.response;
 
   let body;
 
@@ -68,9 +53,8 @@ export async function PATCH(request) {
 }
 
 export async function DELETE(request) {
-  if (!getSession(request)) {
-    return unauthorized();
-  }
+  const authorization = await requireAdminPermission(request, ADMIN_PERMISSIONS.CATALOGUE_WRITE);
+  if (!authorization.ok) return authorization.response;
 
   const productId = request.nextUrl.searchParams.get("productId");
   const imageId = request.nextUrl.searchParams.get("imageId");

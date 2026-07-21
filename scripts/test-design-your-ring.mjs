@@ -28,7 +28,7 @@ assert.match(files.homepage, /href="\/design-your-ring"[\s\S]*Design Your Ring/,
 assert.match(files.siteHeader, /href:\s*"\/design-your-ring",\s*label:\s*"Design Your Ring"/);
 assert.match(files.siteFooter, /normalizedPathname\s*===\s*"\/design-your-ring"/, "Design Your Ring should use an immersive no-footer shell");
 assert.match(files.routePage, /Design Your Ring/);
-assert.match(files.routePage, /dynamic\s*=\s*["']force-dynamic["']/);
+assert.doesNotMatch(files.routePage, /dynamic\s*=\s*["']force-dynamic["']/);
 assert.match(files.routePage, /DesignYourRingClient/);
 
 for (const step of ["Metal", "Stone", "Band", "Engrave", "Review"]) {
@@ -204,7 +204,8 @@ assert.match(files.css, /design-ring-bottom-tray/);
 assert.match(files.css, /#00493a/i);
 assert.match(files.css, /@media\s*\(max-width:\s*1100px\)/);
 assert.match(files.css, /@media\s*\(max-width:\s*768px\)/);
-assert.match(files.layout, /design-your-ring\.css/);
+assert.doesNotMatch(files.layout, /design-your-ring\.css/);
+assert.match(files.routePage, /design-your-ring\.css/);
 
 const packageJson = JSON.parse(files.packageJson);
 assert.equal(packageJson.scripts["test:design-your-ring"], "node scripts/test-design-your-ring.mjs");

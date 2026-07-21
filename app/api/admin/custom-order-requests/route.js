@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { SESSION_COOKIE_NAME, verifyAdminSession } from "../../../lib/admin-auth";
+import { ADMIN_PERMISSIONS, requireAdminPermission } from "../../../lib/admin-api-auth";
 import {
   readAdminCustomOrderRequests,
   updateAdminCustomOrderRequest
@@ -18,31 +18,9 @@ function json(payload, status = 200) {
   });
 }
 
-function unauthorized() {
-  return json({ error: "unauthorized" }, 401);
-}
-
-function getSession(request) {
-  const session = request.cookies.get(SESSION_COOKIE_NAME)?.value;
-  const verification = verifyAdminSession(session);
-
-  if (!verification.isValid) {
-    return null;
-  }
-
-  return verification;
-}
-
-function isSameOrigin(request) {
-  const origin = request.headers.get("origin");
-
-  return !origin || origin === request.nextUrl.origin;
-}
-
 export async function GET(request) {
-  if (!getSession(request)) {
-    return unauthorized();
-  }
+  const authorization = await requireAdminPermission(request);
+  if (!authorization.ok) return authorization.response;
 
   try {
     const requests = await readAdminCustomOrderRequests();
@@ -53,15 +31,8 @@ export async function GET(request) {
 }
 
 export async function PATCH(request) {
-  const session = getSession(request);
-
-  if (!session) {
-    return unauthorized();
-  }
-
-  if (!isSameOrigin(request)) {
-    return json({ error: "Cross-origin admin updates are not allowed." }, 403);
-  }
+  const authorization = await requireAdminPermission(request, ADMIN_PERMISSIONS.OPERATIONS_WRITE);
+  if (!authorization.ok) return authorization.response;
 
   const requestId = request.nextUrl.searchParams.get("id");
 
@@ -79,7 +50,7 @@ export async function PATCH(request) {
 
   try {
     const customRequest = await updateAdminCustomOrderRequest(requestId, body, {
-      actor: session.username
+      actor: authorization.user.username
     });
     return json({ request: customRequest }, 200);
   } catch (error) {

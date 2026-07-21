@@ -79,9 +79,9 @@ assert.doesNotMatch(
 
 assert.equal(hasOurServicePage, true, "our-service page route must exist");
 assert.match(staticPages, /"our-service":/, "our-service content must be defined in static pages");
-assert.match(staticPages, /custom-jewelry-process-storyboard\.png/, "our-service must use the process storyboard image");
-assert.match(staticPages, /custom-jewelry-service-hero\.png/, "our-service hero must use a dedicated image that is not the step storyboard");
-assert.match(staticPages, /custom-jewelry-service-hero-02-seamless\.png/, "our-service hero gallery must include the seamless satin jewelry hero image");
+assert.match(staticPages, /custom-jewelry-process-storyboard\.webp/, "our-service must use the optimized process storyboard image");
+assert.match(staticPages, /custom-jewelry-service-hero\.webp/, "our-service hero must use an optimized dedicated image that is not the step storyboard");
+assert.match(staticPages, /custom-jewelry-service-hero-02-seamless\.webp/, "our-service hero gallery must include the optimized seamless satin jewelry hero image");
 assert.match(staticPages, /heroImages:\s*\[/, "our-service must support multiple hero images");
 assert.match(ourServicePage, /heroImages:\s*\[\]/, "our-service route must suppress the top hero gallery");
 assert.match(siteHeader, /href: "\/our-service", label: "Our Service"/, "Our Expertise nav must link to Our Service");

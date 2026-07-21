@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { cache } from "react";
 import { readPublicProductBySlug, readRelatedPublicProducts } from "../../lib/maris-database.js";
 import { getPublicProductAltText, getPublicProductDisplayName, getPublicVariantDisplayName } from "../../lib/product-display.js";
 import JsonLd from "../../components/JsonLd";
@@ -12,7 +13,7 @@ import {
 } from "../../lib/seo";
 
 export const revalidate = 60;
-export const dynamic = "force-dynamic";
+const getProductBySlug = cache((slug) => readPublicProductBySlug(slug));
 
 const COLLECTION_LABELS = {
   "engagement-ring": "Engagement Rings",
@@ -35,7 +36,7 @@ function formatPrice(basePrice) {
 
 export async function generateMetadata({ params }) {
   const { slug } = await params;
-  const { product } = await readPublicProductBySlug(slug);
+  const { product } = await getProductBySlug(slug);
 
   if (!product) {
     return { title: "Maris Jewelry" };
@@ -62,7 +63,7 @@ export async function generateMetadata({ params }) {
 
 export default async function ProductPage({ params }) {
   const { slug } = await params;
-  const { product } = await readPublicProductBySlug(slug);
+  const { product } = await getProductBySlug(slug);
 
   if (!product) {
     notFound();
@@ -95,7 +96,7 @@ export default async function ProductPage({ params }) {
   return (
     <>
       <JsonLd data={productJsonLd} />
-      <div className="product-page">
+      <main className="product-page">
         <div className="product-detail">
           <div className="product-gallery-column">
             <ProductGallery images={product.images} productCode={product.sku} productName={displayName} />
@@ -153,7 +154,7 @@ export default async function ProductPage({ params }) {
             </div>
           </section>
         )}
-      </div>
+      </main>
     </>
   );
 }

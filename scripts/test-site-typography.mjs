@@ -70,7 +70,7 @@ for (const [name, source] of Object.entries(sources)) {
 }
 
 const sharedHomeHeadingStyles = sources.global.match(
-  /\.shop-category-head h2,\s*\.best-seller-head h2,\s*\.atelier-reveal__focus h3\s*\{([\s\S]*?)\n\}/
+  /\.shop-category-head h2,\s*\.best-seller-head h2,\s*\.atelier-reveal__focus h2\s*\{([\s\S]*?)\n\}/
 )?.[1] ?? "";
 
 for (const declaration of [

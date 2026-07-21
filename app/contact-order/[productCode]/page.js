@@ -1,7 +1,8 @@
 import CustomOrderForm from "./CustomOrderForm";
+import "../../../assets/css/custom-order.css";
 import { buildPageMetadata } from "../../lib/seo";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 
 function decodeProductCodeParam(productCode = "") {
   const rawProductCode = Array.isArray(productCode) ? productCode[0] : productCode;

@@ -13,6 +13,19 @@ function assertAppearsBefore(source, earlierPattern, laterPattern, message) {
 const signupRoute = await readFile(new URL("../app/api/account/signup/route.js", import.meta.url), "utf8");
 const signinRoute = await readFile(new URL("../app/api/account/signin/route.js", import.meta.url), "utf8");
 const envExample = await readFile(new URL("../.env.example", import.meta.url), "utf8");
+const { sanitizeCustomerMetadata } = await import("../app/lib/customer-data.js");
+
+assert.deepEqual(
+  sanitizeCustomerMetadata({
+    preferredService: "Engagement Rings",
+    password_hash: "must-not-leak",
+    nested: { resetToken: "must-not-leak", note: "safe" }
+  }),
+  {
+    preferredService: "Engagement Rings",
+    nested: { note: "safe" }
+  }
+);
 
 for (const [label, routeSource, dbPattern] of [
   ["signup", signupRoute, /createCustomer\(/],

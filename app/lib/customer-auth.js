@@ -1,9 +1,9 @@
 import { createHmac, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 
 export const SESSION_COOKIE_NAME = "maris_customer_session";
-export const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 30; // 30 days
+export const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7;
 
-const SESSION_VERSION = 1;
+const SESSION_VERSION = 2;
 const PASSWORD_HASH_ALGORITHM = "scrypt";
 const PASSWORD_HASH_VERSION = "v1";
 const PASSWORD_KEY_LENGTH = 64;

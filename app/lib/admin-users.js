@@ -18,7 +18,7 @@ export function normalizeAdminUsername(value) {
   return cleanText(value).toLowerCase();
 }
 
-function normalizeAdminUser(row) {
+export function normalizeAdminUser(row) {
   if (!row) {
     return null;
   }
@@ -30,6 +30,39 @@ function normalizeAdminUser(row) {
     role: row.role || "admin",
     isActive: row.is_active !== false
   };
+}
+
+export async function getActiveAdminUserForSession(session, { env = process.env, client } = {}) {
+  const { config, client: supabase } = getAdminUsersClient({ env, client });
+
+  if (!config.isConfigured) {
+    return { status: "not_configured", missingEnv: config.missingEnv };
+  }
+
+  if (!session?.userId && !session?.username) {
+    return { status: "invalid" };
+  }
+
+  let query = supabase
+    .from("admin_users")
+    .select("id, username, display_name, role, is_active")
+    .limit(1);
+
+  query = session.userId
+    ? query.eq("id", session.userId)
+    : query.eq("username", normalizeAdminUsername(session.username));
+
+  const { data, error } = await query.maybeSingle();
+
+  if (error) {
+    throw new Error(error.message || "Admin user could not be authorized.");
+  }
+
+  if (!data || data.is_active === false) {
+    return { status: "invalid" };
+  }
+
+  return { status: "valid", user: normalizeAdminUser(data) };
 }
 
 function getAdminUsersConfig(env = process.env) {
@@ -144,7 +177,7 @@ export async function authenticateAdminUser(username, password, { env = process.
 export async function createInitialAdminUser({ username, displayName, password }, { env = process.env, client } = {}) {
   const normalizedUsername = normalizeAdminUsername(username);
 
-  if (!normalizedUsername || String(password || "").length < 8) {
+  if (!normalizedUsername || String(password || "").length < 12) {
     return { status: "invalid" };
   }
 
