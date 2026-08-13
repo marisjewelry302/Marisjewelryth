@@ -361,6 +361,10 @@ assert.ok(
   publicCatalogueCalls.some((call) => call[0] === "select" && /product_variants/.test(call[2]) && /product_images/.test(call[2])),
   "Public catalogue reader should request variants and images with products"
 );
+assert.ok(
+  publicCatalogueCalls.some((call) => call[0] === "select" && /collection_name/.test(call[2])),
+  "Public catalogue reader should request the named collection for the product page"
+);
 assert.deepEqual(publicCatalogue.products[0], {
   id: "product-1",
   sku: "ER1001",
@@ -368,6 +372,7 @@ assert.deepEqual(publicCatalogue.products[0], {
   name: "Diamond Ring",
   category: "Engagement Rings",
   collection: "engagement-ring",
+  collectionName: "",
   status: "active",
   basePrice: 12900,
   primaryImageUrl: "https://example.com/ring-main.png",

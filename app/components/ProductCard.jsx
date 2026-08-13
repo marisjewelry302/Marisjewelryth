@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { formatProductPrice } from "../lib/collections";
 import { isOptimizableImageSrc } from "../lib/image-source";
-import { getPublicProductAltText, getPublicProductDisplayName } from "../lib/product-display";
+import { formatPublicProductCode, getPublicProductAltText, getPublicProductDisplayName } from "../lib/product-display";
 import WishlistButton from "./WishlistButton";
 
 // Catalogue photography is square; the card frame fixes both axes in CSS, so
@@ -88,7 +88,7 @@ export default function ProductCard({ product, collectionLabel }) {
       </a>
       <WishlistButton item={wishlistItem} />
       <div className="product-info">
-        <h3>{productCode}</h3>
+        <h3>{formatPublicProductCode(productCode)}</h3>
         <p>{displayName}</p>
         <p>{formatProductPrice(product.basePrice)}</p>
       </div>

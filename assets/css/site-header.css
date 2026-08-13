@@ -1521,9 +1521,13 @@ body:has(.site-header--home) .hero-content h1,
 }
 
 @media (min-width: 921px) {
+  /* The row holds a 318px primary plus two 220px secondaries and two 18px gaps,
+     which needs 794px. Capping it at the 620px headline measure forced the third
+     button onto a line of its own; the headline keeps its own narrower width. */
   body:has(.site-header--home) .hero-actions,
   .is-home-page .hero-actions {
-    max-width: 620px;
+    flex-wrap: nowrap;
+    max-width: min(800px, calc(100vw - 48px));
   }
 
   body:has(.site-header--home) .hero-primary,

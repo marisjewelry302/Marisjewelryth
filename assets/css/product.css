@@ -204,8 +204,8 @@
 }
 
 .product-thumbnail.is-active {
-  border-color: #df6a4f;
-  box-shadow: inset 0 0 0 2px #df6a4f;
+  border-color: var(--maris-gold);
+  box-shadow: inset 0 0 0 2px var(--maris-gold);
 }
 
 .product-thumbnail img {
@@ -279,7 +279,11 @@
   overflow: hidden;
 }
 
+/* The gallery is a 1:1 square and the summary is short, so pinning the summary
+   to the top left a tall dead gap under it. Centring it against the gallery
+   splits that slack above and below instead. */
 .product-summary {
+  align-self: center;
   position: sticky;
   top: 118px;
   display: grid;
@@ -430,10 +434,14 @@
   text-align: center;
 }
 
+/* Related products often number fewer than four. Sizing the tracks instead of
+   splitting the row four ways keeps two items looking deliberate rather than
+   stranded against a wide empty gap. */
 .also-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(0, 300px));
+  justify-content: center;
+  gap: 20px;
 }
 
 .also-card {

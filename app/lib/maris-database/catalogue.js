@@ -46,6 +46,7 @@ const PUBLIC_CATALOGUE_SELECT = `
   name,
   category,
   collection,
+  collection_name,
   status,
   base_price,
   product_variants (
@@ -277,6 +278,7 @@ function normalizePublicProduct(row) {
     name: row.name || "",
     category: row.category || "",
     collection: row.collection || "",
+    collectionName: cleanOptionalText(row.collection_name) || "",
     status: row.status || "active",
     basePrice: row.base_price === null || row.base_price === undefined ? null : Number(row.base_price),
     primaryImageUrl: primaryImage?.imageUrl || "",

@@ -366,7 +366,9 @@ a {
 .wishlist-main {
   width: min(1280px, 100%);
   margin: 0 auto;
-  padding: 36px 28px 90px;
+  /* Block padding matches .placeholder-main so this page opens and closes on
+     the same rhythm as the other content pages. */
+  padding: 46px 28px 80px;
 }
 
 .wishlist-hero {
@@ -376,11 +378,13 @@ a {
   padding: 36px 20px 44px;
 }
 
+/* Matches .placeholder-card h1 so the account-area pages sit on the same
+   heading step as About, Contact, Journal, and Request a Quote. */
 .wishlist-hero h1 {
   font-family: var(--maris-font-sans);
-  font-size: clamp(52px, 8vw, 86px);
+  font-size: clamp(48px, 7vw, 72px);
   font-weight: 300;
-  line-height: 0.92;
+  line-height: 0.95;
   margin-bottom: 18px;
 }
 
@@ -413,9 +417,10 @@ a {
 .wishlist-empty h2 {
   margin-bottom: 12px;
   font-family: var(--maris-font-sans);
-  font-size: clamp(36px, 5vw, 54px);
+  /* Sits a clear step below the 72px page title instead of rivalling it. */
+  font-size: clamp(28px, 3.4vw, 38px);
   font-weight: 300;
-  line-height: 1;
+  line-height: 1.1;
 }
 
 .wishlist-empty p:not(.eyebrow) {
@@ -756,7 +761,8 @@ a {
 .bag-main {
   width: min(1280px, 100%);
   margin: 0 auto;
-  padding: 36px 28px 90px;
+  /* Same block rhythm as the wishlist and the other content pages. */
+  padding: 46px 28px 80px;
 }
 
 .bag-hero {
@@ -766,11 +772,12 @@ a {
   padding: 36px 20px 44px;
 }
 
+/* Same heading step as the wishlist and the other content pages. */
 .bag-hero h1 {
   font-family: var(--maris-font-sans);
-  font-size: clamp(52px, 8vw, 86px);
+  font-size: clamp(48px, 7vw, 72px);
   font-weight: 300;
-  line-height: 0.92;
+  line-height: 0.95;
   margin-bottom: 18px;
 }
 
@@ -803,9 +810,10 @@ a {
 .bag-empty h2 {
   margin-bottom: 12px;
   font-family: var(--maris-font-sans);
-  font-size: clamp(36px, 5vw, 54px);
+  /* Sits a clear step below the 72px page title instead of rivalling it. */
+  font-size: clamp(28px, 3.4vw, 38px);
   font-weight: 300;
-  line-height: 1;
+  line-height: 1.1;
 }
 
 .bag-empty p:not(.eyebrow) {
@@ -872,7 +880,7 @@ a {
 
 .bag-copy h2 {
   margin-bottom: 10px;
-  font-size: 24px;
+  font-size: 22px;
   line-height: 1.15;
 }
 

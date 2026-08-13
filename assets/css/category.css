@@ -11,10 +11,14 @@
   text-align: center;
 }
 
+/* This line reads "Price on request" on every card. In the brand action colour
+   it looked like a link on all of them and pulled focus from the piece itself,
+   so it sits back as meta text. */
 .category-page .product-info p:last-child {
   margin-top: 8px;
-  color: var(--maris-teal);
-  font-weight: 500;
+  color: var(--maris-muted);
+  font-weight: 400;
+  letter-spacing: 0.04em;
 }
 
 @media (max-width: 768px) {

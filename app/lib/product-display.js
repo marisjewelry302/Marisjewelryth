@@ -43,6 +43,23 @@ export function getPublicProductDisplayName(product = {}) {
   return "Fine Jewelry Piece";
 }
 
+// Catalogue codes are entered by hand and most follow "SR 0101 ER", but a few
+// arrive unspaced ("SR0033WS"). Normalising for display only keeps a product
+// grid from looking untidy without rewriting the stored SKU.
+const PRODUCT_CODE_PATTERN = /^([A-Z]{2,3})\s*(\d{3,4})\s*([A-Z]{0,3})$/;
+
+export function formatPublicProductCode(sku) {
+  const value = String(sku || "").trim().toUpperCase();
+  const match = value.match(PRODUCT_CODE_PATTERN);
+
+  if (!match) {
+    return value;
+  }
+
+  const [, prefix, digits, suffix] = match;
+  return [prefix, digits, suffix].filter(Boolean).join(" ");
+}
+
 export function getPublicProductAltText(product = {}) {
   return `${product.sku || "Maris"} ${getPublicProductDisplayName(product)}`;
 }

@@ -286,7 +286,11 @@ body.is-page-scrolled .icons i {
 .products {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
+  /* Photography sits on a near-white tile, so a tight gutter let neighbouring
+     pieces read as one block. Column gap carries most of the separation; the
+     row gap also has to clear each card's caption. */
+  column-gap: clamp(18px, 2vw, 30px);
+  row-gap: clamp(30px, 3vw, 48px);
   width: min(calc(100% - 40px), 1400px);
   margin: 0 auto;
   padding: 24px 0 72px;

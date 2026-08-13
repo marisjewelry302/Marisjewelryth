@@ -108,9 +108,13 @@ export default async function ProductPage({ params }) {
             <p className="product-kicker" data-product-collection>{collectionLabel}</p>
             <h1 data-product-title>{product.sku}</h1>
             <h2 data-product-name>{displayName}</h2>
-            <p className="product-description" data-product-description>
-              {displayName}
-            </p>
+            {/* The catalogue carries no per-product copy yet, so show the named
+                collection when the record has one instead of repeating the title. */}
+            {product.collectionName && (
+              <p className="product-description" data-product-description>
+                {product.collectionName}
+              </p>
+            )}
 
             {product.variants.length > 0 && (
               <ul className="product-details-list" data-product-details>
