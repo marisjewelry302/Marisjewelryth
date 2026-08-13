@@ -23,26 +23,61 @@ const sources = {
 
 assert.match(
   sources.layout,
-  /family=Anuphan:[^"]+family=Urbanist:/,
-  "Root layout should keep loading Urbanist with Anuphan fallback glyph coverage."
+  /import \{ Anuphan, Urbanist \} from "next\/font\/google"/,
+  "Root layout should self-host Urbanist with Anuphan fallback glyph coverage through next/font."
+);
+assert.doesNotMatch(
+  sources.layout,
+  /fonts\.googleapis\.com|fonts\.gstatic\.com/,
+  "Root layout must not reach out to Google Fonts at runtime."
+);
+for (const token of ["--font-urbanist", "--font-anuphan"]) {
+  assert.match(
+    sources.layout,
+    new RegExp(`variable:\\s*"${token}"`),
+    `Root layout should expose ${token} for the Maris font tokens to resolve through.`
+  );
+}
+assert.match(
+  sources.layout,
+  /className=\{`notranslate \$\{urbanist\.variable\} \$\{anuphan\.variable\}`\}/,
+  "Both font variables must be mounted on <html> or the tokens resolve to nothing."
 );
 
+const FONT_TOKENS = ["--maris-font-sans", "--maris-font-thai", "--maris-font-display", "--maris-font-body"];
+const prefersUrbanist = (token) =>
+  new RegExp(`${token}:\\s*var\\(--font-urbanist\\),\\s*var\\(--font-anuphan\\)`);
+
+// style.css is the single source of truth for the storefront palette and type
+// tokens. Admin ships its own sheet, so it declares them for itself.
 for (const [token, source] of [
-  ["--maris-font-sans", sources.global],
-  ["--maris-font-thai", sources.global],
-  ["--maris-font-display", sources.global],
-  ["--maris-font-body", sources.global],
-  ["--maris-font-thai", sources.siteHeader],
-  ["--maris-font-thai", sources.engagementRing],
-  ["--maris-font-thai", sources.placeholder],
+  ...FONT_TOKENS.map((token) => [token, sources.global]),
   ["--maris-font-thai", sources.adminAsset],
   ["--maris-font-thai", sources.adminApp]
 ]) {
-  assert.match(
+  assert.match(source, prefersUrbanist(token), `${token} should prefer Urbanist before any fallback.`);
+}
+
+// These three used to re-declare :root themselves. Because they all load after
+// style.css at the same specificity, whichever came last silently won and the
+// style.css palette never applied. Keep them from drifting back.
+for (const [name, source] of [
+  ["site-header.css", sources.siteHeader],
+  ["engagement-ring.css", sources.engagementRing],
+  ["placeholder.css", sources.placeholder]
+]) {
+  assert.doesNotMatch(
     source,
-    new RegExp(`${token}:\\s*"Urbanist",\\s*"Anuphan"`),
-    `${token} should prefer Urbanist before any fallback.`
+    /^:root\s*\{/m,
+    `${name} must not re-declare :root; it would override the style.css palette.`
   );
+  for (const token of FONT_TOKENS) {
+    assert.doesNotMatch(
+      source,
+      new RegExp(`^\\s*${token}\\s*:`, "m"),
+      `${name} must not redefine ${token}; style.css owns it.`
+    );
+  }
 }
 
 assert.match(

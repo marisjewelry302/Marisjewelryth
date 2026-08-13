@@ -6,21 +6,21 @@
 }
 
 :root {
-  --maris-teal: oklch(34% 0.072 171);
-  --maris-rose: oklch(78% 0.065 18);
-  --maris-blush: oklch(88% 0.044 18);
-  --maris-silver: oklch(94% 0.006 80);
-  --maris-gold: oklch(63% 0.105 86);
-  --maris-red: oklch(61% 0.17 20);
-  --maris-ink: oklch(25% 0.045 170);
-  --maris-muted: rgba(16, 41, 35, 0.74);
-  --maris-paper: oklch(98% 0.016 76);
-  --maris-white: oklch(98.5% 0.008 76);
-  --maris-shadow: rgba(0, 73, 58, 0.14);
-  --maris-font-sans: "Urbanist", "Anuphan", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --maris-font-thai: "Urbanist", "Anuphan", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --maris-font-display: "Urbanist", "Anuphan", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --maris-font-body: "Urbanist", "Anuphan", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --maris-teal: #00493a;
+  --maris-rose: #dda4a5;
+  --maris-blush: #f9cfd1;
+  --maris-silver: #ececec;
+  --maris-gold: #b9933a;
+  --maris-red: #d94a5a;
+  --maris-ink: #102923;
+  --maris-muted: #5c6d68;
+  --maris-paper: #fffaf6;
+  --maris-white: #ffffff;
+  --maris-shadow: rgba(0, 73, 58, 0.12);
+  --maris-font-sans: var(--font-urbanist), var(--font-anuphan), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --maris-font-thai: var(--font-urbanist), var(--font-anuphan), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --maris-font-display: var(--font-urbanist), var(--font-anuphan), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --maris-font-body: var(--font-urbanist), var(--font-anuphan), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --home-tone-light: oklch(94.5% 0.024 75);
   --home-tone-depth: rgba(0, 73, 58, 0.78);
   --home-tone-accent: rgba(221, 164, 165, 0.72);
@@ -33,14 +33,16 @@
   --space-xl: clamp(54px, 7vw, 118px);
 }
 
-/* BODY */
 body {
   font-family: var(--maris-font-sans);
-  background: var(--maris-paper);
+  background: radial-gradient(circle at top left, rgba(249, 207, 209, 0.42), transparent 34%),
+    radial-gradient(circle at bottom right, rgba(0, 73, 58, 0.08), transparent 32%),
+    linear-gradient(180deg, var(--maris-paper) 0%, var(--maris-white) 48%, var(--maris-silver) 100%);
   color: var(--maris-ink);
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   overflow-x: clip;
+  min-height: 100vh;
 }
 
 /* HERO */

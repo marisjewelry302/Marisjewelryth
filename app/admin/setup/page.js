@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Image from "next/image";
 import { getAdminSetupState } from "../../lib/admin-users";
 import styles from "../login/login.module.css";
 
@@ -42,7 +43,7 @@ export default async function AdminSetupPage({ searchParams }) {
   return (
     <main className={styles.page}>
       <section className={styles.panel} aria-labelledby="admin-setup-title">
-        <img className={styles.logo} src="/assets/images/logo.png" alt="Maris Jewelry" />
+        <Image className={styles.logo} src="/assets/images/logo.png" alt="Maris Jewelry" width={128} height={128} priority />
         <p className={styles.kicker}>Protected Back Office</p>
         <h1 className={styles.title} id="admin-setup-title">Create Owner Account</h1>
         <p className={styles.copy}>

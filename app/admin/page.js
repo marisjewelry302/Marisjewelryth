@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import Image from "next/image";
 import { redirect } from "next/navigation";
 import { SESSION_COOKIE_NAME } from "../lib/admin-auth";
 import { authorizeAdminSessionValue } from "../lib/admin-authorization";
@@ -24,7 +25,8 @@ export default async function AdminPage() {
       <div className="admin-page-shell">
         <header className="admin-topbar">
           <a className="admin-logo" href="/" aria-label="Go to storefront">
-            <img src="/assets/images/logo.png" alt="Maris Jewelry Logo" />
+            {/* .admin-logo img sets width only, so height must stay auto. */}
+            <Image src="/assets/images/logo.png" alt="Maris Jewelry Logo" width={118} height={118} priority style={{ height: "auto" }} />
           </a>
 
           <div>

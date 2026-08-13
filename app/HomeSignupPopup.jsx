@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 const CLOSED_KEY = "marisSignupPopupClosedUntil";
@@ -122,7 +123,7 @@ export default function HomeSignupPopup() {
       >
         <h2 id={titleId} className="sr-only">Join Maris Jewelry</h2>
         <div className="home-signup-popup__image-panel">
-          <img src="/assets/images/home/popup/popup-background.webp" alt="" aria-hidden="true" width="1024" height="1536" decoding="async" />
+          <Image src="/assets/images/home/popup/popup-background.webp" alt="" aria-hidden={true} width={1024} height={1536} sizes="(max-width: 900px) 100vw, 420px" />
           <span className="home-signup-popup__image-brand">
             MARIS
             <small>JEWELRY</small>
@@ -135,7 +136,7 @@ export default function HomeSignupPopup() {
           </button>
 
           <p className="home-signup-popup__eyebrow">Welcome to</p>
-          <img className="home-signup-popup__logo" src="/assets/images/home/popup/maris-popup-logo.png" alt="Maris Jewelry" />
+          <Image className="home-signup-popup__logo" src="/assets/images/home/popup/maris-popup-logo.png" alt="Maris Jewelry" width={1321} height={740} sizes="220px" />
           <span className="home-signup-popup__rule" aria-hidden="true" />
 
           <p className="home-signup-popup__intro">Sign up for our mailing list and enjoy</p>
@@ -144,17 +145,17 @@ export default function HomeSignupPopup() {
 
           <div className="home-signup-popup__perks" aria-label="Member benefits">
             <div>
-              <img src="/assets/images/home/popup/popup-icon-tag.png" alt="" aria-hidden="true" />
+              <Image src="/assets/images/home/popup/popup-icon-tag.png" alt="" aria-hidden={true} width={355} height={369} sizes="23px" />
               <strong>10% OFF</strong>
               <small>your first confirmed order</small>
             </div>
             <div>
-              <img src="/assets/images/home/popup/popup-icon-clock-v2.png" alt="" aria-hidden="true" />
+              <Image src="/assets/images/home/popup/popup-icon-clock-v2.png" alt="" aria-hidden={true} width={371} height={397} sizes="23px" />
               <strong>Early access</strong>
               <small>to new Maris pieces</small>
             </div>
             <div>
-              <img src="/assets/images/home/popup/popup-icon-gift.png" alt="" aria-hidden="true" />
+              <Image src="/assets/images/home/popup/popup-icon-gift.png" alt="" aria-hidden={true} width={405} height={388} sizes="23px" />
               <strong>Private offers</strong>
               <small>for Maris members</small>
             </div>

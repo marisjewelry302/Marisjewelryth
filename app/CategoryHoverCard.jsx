@@ -1,6 +1,8 @@
 "use client";
 
 import { useRef, useCallback } from "react";
+import Image from "next/image";
+import { isOptimizableImageSrc } from "./lib/image-source";
 
 export default function CategoryHoverCard({ href, className, imageSrc, imageAlt, order, title, ctaLabel }) {
   const cardRef = useRef(null);
@@ -52,7 +54,7 @@ export default function CategoryHoverCard({ href, className, imageSrc, imageAlt,
     >
       {imageSrc && (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={imageSrc} alt={imageAlt} loading="lazy" decoding="async" />
+        <Image src={imageSrc} alt={imageAlt} width={1024} height={1024} sizes="(max-width: 900px) 50vw, 25vw" unoptimized={!isOptimizableImageSrc(imageSrc)} />
       )}
       <div className="category-card-overlay" />
       <div className="category-card-meta">

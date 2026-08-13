@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import Image from "next/image";
 import { redirect } from "next/navigation";
 import { SESSION_COOKIE_NAME, verifyAdminSession } from "../../lib/admin-auth";
 import { getAdminSetupState } from "../../lib/admin-users";
@@ -35,7 +36,7 @@ export default async function AdminLoginPage({ searchParams }) {
   return (
     <main className={styles.page}>
       <section className={styles.panel} aria-labelledby="admin-login-title">
-        <img className={styles.logo} src="/assets/images/logo.png" alt="Maris Jewelry" />
+        <Image className={styles.logo} src="/assets/images/logo.png" alt="Maris Jewelry" width={128} height={128} priority />
         <p className={styles.kicker}>Protected Back Office</p>
         <h1 className={styles.title} id="admin-login-title">Admin Login</h1>
         <p className={styles.copy}>Sign in before opening the Maris admin workspace.</p>

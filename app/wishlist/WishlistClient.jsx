@@ -1,7 +1,9 @@
 "use client";
 
+import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useCustomerSession } from "../hooks/useCustomerSession";
+import { isOptimizableImageSrc } from "../lib/image-source";
 
 const WISHLIST_KEY = "marisWishlist";
 const WISHLIST_API = "/api/account/wishlist";
@@ -193,7 +195,7 @@ export default function WishlistClient() {
               return (
                 <article className="wishlist-item" key={item.id || item.title}>
                   <a className="wishlist-image" href={item.href || "/category/engagement-ring"}>
-                    <img src={item.image || "/assets/images/logo.png"} alt={item.title || "Wishlist item"} />
+                    <Image src={item.image || "/assets/images/logo.png"} alt={item.title || "Wishlist item"} width={1024} height={1024} sizes="(max-width: 900px) 50vw, 390px" unoptimized={!isOptimizableImageSrc(item.image || "/assets/images/logo.png")} />
                   </a>
                   <div className="wishlist-copy">
                     <p className="wishlist-collection">{item.collection || "Maris Jewelry"}</p>

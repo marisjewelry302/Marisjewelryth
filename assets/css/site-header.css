@@ -1,17 +1,3 @@
-:root {
-  --maris-teal: #00493a;
-  --maris-rose: #dda4a5;
-  --maris-silver: #ececec;
-  --maris-gold: #b9933a;
-  --maris-ink: #102923;
-  --maris-paper: #fffaf6;
-  --maris-white: #ffffff;
-  --maris-font-sans: "Urbanist", "Anuphan", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --maris-font-thai: "Urbanist", "Anuphan", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --maris-font-display: "Urbanist", "Anuphan", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --maris-font-body: "Urbanist", "Anuphan", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-}
-
 .top-bar,
 .navbar {
   font-family: var(--maris-font-sans);

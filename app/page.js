@@ -1,4 +1,6 @@
 import BestSellerSection from "./BestSellerSection";
+import { isOptimizableImageSrc } from "./lib/image-source";
+import Image from "next/image";
 import HeroSlider from "./HeroSlider";
 import HomeSignupPopup from "./HomeSignupPopup";
 import JsonLd from "./components/JsonLd";
@@ -170,7 +172,7 @@ export default async function HomePage() {
         <div className="shop-category-grid">
           {shopCategoryItems.map((item) => (
             <a className="shop-category-card" href={item.href} key={item.label}>
-              <img src={item.image} alt={item.alt} width="480" height="360" loading="lazy" />
+              <Image src={item.image} alt={item.alt} width={480} height={360} sizes="(max-width: 700px) 50vw, 25vw" unoptimized={!isOptimizableImageSrc(item.image)} />
               <strong>{item.label}</strong>
             </a>
           ))}
@@ -181,26 +183,26 @@ export default async function HomePage() {
         <div className="home-collection-grid">
           <a className="home-collection-card home-collection-card--rings" href="/category/rings">
             <span className="home-collection-card__title">Signature Rings</span>
-            <img
+            <Image
               className="home-collection-card__image"
               src="/assets/images/home/collections/cover-rings-collection.webp"
               alt="A diamond ring on dark brown satin"
-              width="1254"
-              height="1254"
-              loading="lazy"
+              width={1254}
+              height={1254}
+              sizes="(max-width: 900px) 100vw, 50vw"
             />
             <span className="home-collection-card__action">View Collection</span>
           </a>
 
           <a className="home-collection-card home-collection-card--pendants" href="/category/necklaces-pendants">
             <span className="home-collection-card__title">Elegant Pendants</span>
-            <img
+            <Image
               className="home-collection-card__image"
               src="/assets/images/home/collections/cover-pendants-collection.webp"
               alt="A pear-shaped diamond pendant on champagne satin"
-              width="1254"
-              height="1254"
-              loading="lazy"
+              width={1254}
+              height={1254}
+              sizes="(max-width: 900px) 100vw, 50vw"
             />
             <span className="home-collection-card__action">View Collection</span>
           </a>
@@ -233,7 +235,7 @@ export default async function HomePage() {
                   style={{ "--atelier-delay": `${index * 90}ms` }}
                 >
                   {product.primaryImageUrl ? (
-                    <img src={product.primaryImageUrl} alt={`${product.sku || "Maris"} ${getAtelierProductLabel(product)}`} />
+                    <Image src={product.primaryImageUrl} alt={`${product.sku || "Maris"} ${getAtelierProductLabel(product)}`} width={1024} height={1024} sizes="(max-width: 900px) 50vw, 25vw" unoptimized={!isOptimizableImageSrc(product.primaryImageUrl)} />
                   ) : (
                     <span className="atelier-product__image-fallback">Image coming soon</span>
                   )}

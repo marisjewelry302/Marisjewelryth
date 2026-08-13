@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
+import { isOptimizableImageSrc } from "../lib/image-source";
 import { useSearchParams } from "next/navigation";
 import LeadForm from "../components/LeadForm";
 
@@ -95,7 +97,7 @@ export default function RequestQuoteClient() {
                 {selectedItems.map((item) => (
                   <article className="selected-piece-card" key={item.id || item.title}>
                     <a className="selected-piece-image" href={item.href || "/category/engagement-ring"}>
-                      <img src={item.image || "/assets/images/logo.png"} alt={item.title || "Selected piece"} />
+                      <Image src={item.image || "/assets/images/logo.png"} alt={item.title || "Selected piece"} width={1024} height={1024} sizes="(max-width: 900px) 50vw, 320px" unoptimized={!isOptimizableImageSrc(item.image || "/assets/images/logo.png")} />
                     </a>
                     <div className="selected-piece-copy">
                       <p className="selected-piece-collection">{item.collection || "Maris Jewelry"}</p>

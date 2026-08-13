@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
@@ -627,6 +628,10 @@ function PhotorealRingPreview({
       data-band={bandSlug}
       aria-hidden="true"
     >
+      {/* These four layers are SVG. Routing SVG through next/image would mean
+          turning on dangerouslyAllowSVG, which lets any optimized SVG carry
+          script, so they stay plain <img> on purpose. They are vector files of a
+          few KB each; there is nothing for the optimizer to save here anyway. */}
       <img
         className="design-ring-preview-layer design-ring-preview-shadow-image"
         src={previewImage("shadow-soft")}
@@ -966,7 +971,7 @@ function SummaryItem({ label, value, swatch, icon, imageSrc }) {
     <div className="design-ring-summary-item">
       <span className={`design-ring-summary-mark ${swatch ? `is-${swatch}` : ""}`} aria-hidden="true">
         {imageSrc ? (
-          <img src={imageSrc} alt="" width="42" height="42" loading="eager" />
+          <Image src={imageSrc} alt="" width={42} height={42} priority />
         ) : (
           icon || ""
         )}
@@ -1092,13 +1097,13 @@ function MetalSwatch({ metal, selected, onClick }) {
       aria-pressed={selected}
       onClick={onClick}
     >
-      <img
+      <Image
         className="design-ring-option-media"
         src={metal.imageSrc}
         alt=""
-        width="64"
-        height="64"
-        loading="eager"
+        width={64}
+        height={64}
+        priority
       />
       <strong>{metal.shortLabel}</strong>
     </button>
@@ -1163,13 +1168,13 @@ function StoneOptions({ design, updateDesign }) {
             selected={design.stone_shape === stone.value}
             onClick={() => updateDesign("stone_shape", stone.value)}
           >
-            <img
+            <Image
               className="design-ring-option-media"
               src={stone.imageSrc}
               alt=""
-              width="64"
-              height="64"
-              loading="eager"
+              width={64}
+              height={64}
+              priority
             />
             {stone.value}
           </OptionButton>
@@ -1226,13 +1231,13 @@ function BandOptions({ design, updateDesign, onPreviewModeChange }) {
             selected={design.style === band.value}
             onClick={() => updateDesign("style", band.value)}
           >
-            <img
+            <Image
               className="design-ring-option-media"
               src={band.imageSrc}
               alt=""
-              width="88"
-              height="64"
-              loading="eager"
+              width={88}
+              height={64}
+              priority
             />
             <strong>{band.label}</strong>
             <small>{band.profile}</small>

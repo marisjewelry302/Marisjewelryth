@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
+import { isOptimizableImageSrc } from "./lib/image-source";
 
 const BEST_SELLER_SLOT_COUNT = 7;
 const FALLBACK_BEST_SELLER_ITEMS = Array.from({ length: BEST_SELLER_SLOT_COUNT }, (_, index) => ({
@@ -171,12 +173,13 @@ export default function BestSellerSection({ items = [] }) {
                     tabIndex={isClone ? -1 : undefined}
                   >
                     {item.imageSrc ? (
-                      <img
+                      <Image
                         src={item.imageSrc}
                         alt={item.imageAlt || item.label}
-                        width="814"
-                        height="814"
-                        loading="lazy"
+                        width={814}
+                        height={814}
+                        sizes="(max-width: 900px) 100vw, 33vw"
+                        unoptimized={!isOptimizableImageSrc(item.imageSrc)}
                       />
                     ) : (
                       <span className="best-seller-empty-label">{item.label}</span>
@@ -185,12 +188,13 @@ export default function BestSellerSection({ items = [] }) {
                 ) : (
                   <div className="best-seller-image-frame">
                     {item.imageSrc ? (
-                      <img
+                      <Image
                         src={item.imageSrc}
                         alt={item.imageAlt || item.label}
-                        width="814"
-                        height="814"
-                        loading="lazy"
+                        width={814}
+                        height={814}
+                        sizes="(max-width: 900px) 100vw, 33vw"
+                        unoptimized={!isOptimizableImageSrc(item.imageSrc)}
                       />
                     ) : (
                       <span className="best-seller-empty-label">{item.label}</span>

@@ -1,3 +1,4 @@
+import { Anuphan, Urbanist } from "next/font/google";
 import "../assets/css/style.css";
 import "../assets/css/engagement-ring.css";
 import "../assets/css/placeholder.css";
@@ -13,6 +14,23 @@ import {
   buildPageMetadata,
   buildWebsiteJsonLd
 } from "./lib/seo";
+
+// Self-hosted at build time, so the storefront makes no request to Google and the
+// CSP needs no font exceptions. Urbanist carries Latin; Anuphan covers Thai glyphs.
+// Both expose a CSS variable that the --maris-font-* tokens resolve through.
+const urbanist = Urbanist({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  display: "swap",
+  variable: "--font-urbanist"
+});
+
+const anuphan = Anuphan({
+  subsets: ["latin", "thai"],
+  weight: ["300", "400", "500", "600", "700"],
+  display: "swap",
+  variable: "--font-anuphan"
+});
 
 export const metadata = {
   ...buildPageMetadata({
@@ -39,15 +57,9 @@ export default function RootLayout({ children }) {
   };
 
   return (
-    <html lang="en" translate="no" className="notranslate">
+    <html lang="en" translate="no" className={`notranslate ${urbanist.variable} ${anuphan.variable}`}>
       <head>
         <meta name="google" content="notranslate" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Anuphan:wght@300;400;500;600;700&family=Urbanist:wght@300;400;500;600;700&display=swap"
-          rel="stylesheet"
-        />
       </head>
       <body className="has-maris-footer notranslate" translate="no" suppressHydrationWarning>
         <JsonLd data={siteJsonLd} />

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -298,7 +299,16 @@ export default function SiteHeader() {
 
         <div className="logo">
           <Link href="/" aria-label="Go to homepage">
-            <img src="/assets/images/logo.png" alt="Maris Jewelry Logo" />
+            {/* CSS drives the width across scroll and breakpoints, so height must
+                stay auto or the intrinsic height attribute would squash it. */}
+            <Image
+              src="/assets/images/logo.png"
+              alt="Maris Jewelry Logo"
+              width={122}
+              height={122}
+              priority
+              style={{ height: "auto" }}
+            />
           </Link>
         </div>
 

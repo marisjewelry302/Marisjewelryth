@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
+import Image from "next/image";
+import { isOptimizableImageSrc } from "../../lib/image-source";
 import { getPublicImageAltText } from "../../lib/product-display";
 
 export default function ProductGallery({ images, productCode, productName }) {
@@ -111,8 +113,7 @@ export default function ProductGallery({ images, productCode, productName }) {
           aria-label={`Open ${activeItem.label.toLowerCase()} preview for ${productCode}`}
         >
           {activeItem.src && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={activeItem.src} alt={activeItem.alt} data-product-image />
+            <Image src={activeItem.src} alt={activeItem.alt} data-product-image width={1024} height={1024} sizes="(max-width: 900px) 100vw, 620px" priority unoptimized={!isOptimizableImageSrc(activeItem.src)} />
           )}
         </button>
 
@@ -167,8 +168,7 @@ export default function ProductGallery({ images, productCode, productName }) {
                 aria-label={`Show ${item.label}`}
                 aria-pressed={index === activeIndex}
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={item.src} alt={item.alt} />
+                <Image src={item.src} alt={item.alt} width={1024} height={1024} sizes="96px" unoptimized={!isOptimizableImageSrc(item.src)} />
                 <span className="product-thumbnail-label">{item.label}</span>
               </button>
             ))}
@@ -200,8 +200,7 @@ export default function ProductGallery({ images, productCode, productName }) {
           }}
         >
           {activeItem.src && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={activeItem.src} alt={`${activeItem.alt} large preview`} />
+            <Image src={activeItem.src} alt={`${activeItem.alt} large preview`} width={1024} height={1024} sizes="90vw" unoptimized={!isOptimizableImageSrc(activeItem.src)} />
           )}
           <button
             type="button"

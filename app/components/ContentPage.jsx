@@ -1,3 +1,6 @@
+import Image from "next/image";
+import { isOptimizableImageSrc } from "../lib/image-source";
+
 export default function ContentPage({ page }) {
   const hasStepImages = page.steps?.some((step) => step.image);
   const heroImages = page.heroImages ?? (page.heroImage ? [page.heroImage] : []);
@@ -20,7 +23,7 @@ export default function ContentPage({ page }) {
           <div className="subpage-hero-gallery">
             {heroImages.map((image) => (
               <figure className="subpage-hero-image" key={image.src}>
-                <img src={image.src} alt={image.alt} />
+                <Image src={image.src} alt={image.alt} width={1600} height={681} sizes="(max-width: 1100px) 100vw, 1040px" unoptimized={!isOptimizableImageSrc(image.src)} />
               </figure>
             ))}
           </div>

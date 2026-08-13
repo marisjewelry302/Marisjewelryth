@@ -1,7 +1,9 @@
 "use client";
 
+import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useCustomerSession } from "../hooks/useCustomerSession";
+import { isOptimizableImageSrc } from "../lib/image-source";
 
 const BAG_KEY = "marisShoppingBag";
 const BAG_API = "/api/account/bag";
@@ -206,7 +208,7 @@ export default function ShoppingBagClient() {
               {items.map((item) => (
                 <article className="bag-item" key={item.id || item.title}>
                   <a className="bag-image" href={item.href || "/category/engagement-ring"}>
-                    <img src={item.image || "/assets/images/logo.png"} alt={item.title || "Shopping bag item"} />
+                    <Image src={item.image || "/assets/images/logo.png"} alt={item.title || "Shopping bag item"} width={1024} height={1024} sizes="(max-width: 900px) 50vw, 320px" unoptimized={!isOptimizableImageSrc(item.image || "/assets/images/logo.png")} />
                   </a>
                   <div className="bag-copy">
                     <p className="bag-collection">{item.collection || "Maris Jewelry"}</p>

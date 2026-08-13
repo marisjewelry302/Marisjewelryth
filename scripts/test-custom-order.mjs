@@ -1026,8 +1026,13 @@ assert.match(productPageSource, /Contact Maris to Order/);
 assert.doesNotMatch(productPageSource, /\/request-quote\?collection=/);
 assert.doesNotMatch(productPageSource, /Confirm Availability/);
 
-const databaseLib = await readFile(new URL("../app/lib/maris-database.js", import.meta.url), "utf8");
-assert.match(databaseLib, /"custom_order_requests"/, "Database table status contract should include custom_order_requests");
+// Assert the exported contract rather than the file text, so splitting
+// maris-database.js into domain modules cannot silently break this check.
+const { MARIS_DATABASE_TABLES } = await import("../app/lib/maris-database.js");
+assert.ok(
+  MARIS_DATABASE_TABLES.includes("custom_order_requests"),
+  "Database table status contract should include custom_order_requests"
+);
 
 const databaseTest = await readFile(new URL("../scripts/test-supabase-admin-database.mjs", import.meta.url), "utf8");
 assert.match(databaseTest, /"custom_order_requests"/, "Database schema test should expect custom_order_requests");

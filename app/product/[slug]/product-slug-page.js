@@ -12,6 +12,8 @@ import {
   buildProductJsonLd
 } from "../../lib/seo";
 
+import Image from "next/image";
+import { isOptimizableImageSrc } from "../../lib/image-source";
 export const revalidate = 60;
 const getProductBySlug = cache((slug) => readPublicProductBySlug(slug));
 
@@ -144,8 +146,7 @@ export default async function ProductPage({ params }) {
               {relatedProducts.map((item) => (
                 <a key={item.id} className="also-card" href={`/product/${item.slug || item.sku}`}>
                   {item.primaryImageUrl && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={item.primaryImageUrl} alt={getPublicProductAltText(item)} />
+                    <Image src={item.primaryImageUrl} alt={getPublicProductAltText(item)} width={1024} height={1024} sizes="(max-width: 900px) 50vw, 25vw" unoptimized={!isOptimizableImageSrc(item.primaryImageUrl)} />
                   )}
                   <span>{item.sku}</span>
                   <small>{getPublicProductDisplayName(item)}</small>

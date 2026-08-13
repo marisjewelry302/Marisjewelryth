@@ -1,6 +1,13 @@
+import Image from "next/image";
 import { formatProductPrice } from "../lib/collections";
+import { isOptimizableImageSrc } from "../lib/image-source";
 import { getPublicProductAltText, getPublicProductDisplayName } from "../lib/product-display";
 import WishlistButton from "./WishlistButton";
+
+// Catalogue photography is square; the card frame fixes both axes in CSS, so
+// these values only reserve the right aspect ratio before the file arrives.
+const CARD_IMAGE_SIZE = 1024;
+const CARD_IMAGE_SIZES = "(max-width: 700px) 50vw, (max-width: 1100px) 33vw, 25vw";
 
 const FALLBACK_IMAGE = "/assets/images/logo.png";
 
@@ -56,21 +63,25 @@ export default function ProductCard({ product, collectionLabel }) {
     >
       <a className={`product-card-link${hasHoverImage ? " has-hover-image" : ""}`} href={href} aria-label={`View ${productCode} ${displayName}`}>
         <span className="product-card-image-frame">
-          <img
+          <Image
             className="product-card-image product-card-image-primary"
             src={primaryImage}
             alt={getPublicProductAltText(product)}
-            loading="lazy"
-            decoding="async"
+            width={CARD_IMAGE_SIZE}
+            height={CARD_IMAGE_SIZE}
+            sizes={CARD_IMAGE_SIZES}
+            unoptimized={!isOptimizableImageSrc(primaryImage)}
           />
           {hasHoverImage ? (
-            <img
+            <Image
               className="product-card-image product-card-image-hover"
               src={hoverImage}
               alt=""
-              aria-hidden="true"
-              loading="lazy"
-              decoding="async"
+              aria-hidden={true}
+              width={CARD_IMAGE_SIZE}
+              height={CARD_IMAGE_SIZE}
+              sizes={CARD_IMAGE_SIZES}
+              unoptimized={!isOptimizableImageSrc(hoverImage)}
             />
           ) : null}
         </span>

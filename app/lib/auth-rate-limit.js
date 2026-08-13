@@ -1,9 +1,25 @@
 import { createHash } from "node:crypto";
 import { createSupabaseAdminClient, getSupabaseAdminConfig } from "./maris-database.js";
 
+// Only the deployment proxy may decide who the caller is. `x-forwarded-for` is a
+// chain the client can seed, so its leftmost entry is attacker-controlled and must
+// never key a rate limit. Vercel sets the two single-value headers below itself;
+// the chain is a last resort and is read from the right, where the closest trusted
+// proxy appends the address it actually received the request from.
 function getClientIp(request) {
-  const forwarded = request.headers.get("x-forwarded-for");
-  return String(forwarded?.split(",")[0] || request.headers.get("x-real-ip") || "unknown").trim();
+  const trusted = request.headers.get("x-vercel-forwarded-for")
+    || request.headers.get("x-real-ip");
+
+  if (trusted?.trim()) {
+    return trusted.trim();
+  }
+
+  const chain = String(request.headers.get("x-forwarded-for") || "")
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+
+  return chain.at(-1) || "unknown";
 }
 
 function createRateLimitKey(request, action, identifier) {
