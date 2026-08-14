@@ -1576,3 +1576,20 @@ a {
   }
 }
 
+
+/* Contact details are the whole point of the contact page, and on a phone the
+   mail and phone links rendered 17px tall — under the 24px minimum tap target
+   for something a visitor is meant to tap. */
+@media (max-width: 900px) {
+  .subpage-info-list dd a,
+  .subpage-panel a[href^="mailto:"],
+  .subpage-panel a[href^="tel:"],
+  .subpage-stack a[href^="mailto:"],
+  .subpage-stack a[href^="tel:"],
+  a[href^="mailto:"],
+  a[href^="tel:"] {
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+  }
+}

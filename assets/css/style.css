@@ -2697,10 +2697,17 @@ body {
   text-align: center;
 }
 
+/* The dialog covers about 80% of a phone screen, so its only dismissal control
+   has to be easy to hit. The glyph rendered a 16x27 box, under the 24x24
+   minimum; the box grows, the character does not. */
 .home-signup-popup__close {
   position: absolute;
-  top: 0.8rem;
-  right: 0.9rem;
+  top: 0.4rem;
+  right: 0.5rem;
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
   border: 0;
   background: transparent;
   color: var(--maris-teal);

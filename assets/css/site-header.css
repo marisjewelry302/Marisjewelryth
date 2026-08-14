@@ -1463,9 +1463,20 @@ body.is-page-scrolled .site-header:not(.site-header--home) .icons svg {
     padding: 6px 12px;
   }
 
+  /* Two problems met here on a phone. width: fit-content let the paragraph run
+     wider than its 1fr track and slide under the social icons, and the
+     nowrap + overflow:hidden pair then clipped the tail of the line — which is
+     exactly where the "Contact Maris" link sits. The link was invisible and
+     untappable. Fill the track and let the line wrap instead of truncating. */
   .site-header .top-announcement {
     grid-column: 1;
-    justify-self: start;
+    justify-self: stretch;
+    width: 100%;
+    max-width: 100%;
+    overflow: visible;
+    white-space: normal;
+    text-overflow: clip;
+    line-height: 1.35;
     text-align: left;
   }
 
@@ -1571,5 +1582,45 @@ body:has(.site-header--home) .hero-content h1,
   body:has(.site-header--home) .hero-content,
   .is-home-page .hero-content {
     width: min(100%, 370px);
+  }
+}
+
+/* ---- Tap target sizes (touch viewports) ---------------------------------- */
+/* The header icons draw at 16-18px and the announcement link is 10px tall, well
+   under the 24x24 CSS px minimum in WCAG 2.2 (2.5.8). Overlapping the hit areas
+   with a pseudo-element does not work here because the icons sit 13px apart and
+   the overlays then steal each other's taps, so each control gets a real box
+   instead. The glyphs keep their drawn size; only the boxes around them grow.
+   Desktop is untouched. */
+@media (max-width: 768px) {
+  .icons a,
+  .top-socials a {
+    display: inline-grid;
+    place-items: center;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  /* The box is the tap target, not the artwork. .site-header .top-socials svg
+     sizes the glyph at 100%, so without an override it stretches to fill all
+     44px of the enlarged box. */
+  .site-header .top-socials a svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  /* Spacing now comes from each box, so the per-icon margin would double it. */
+  .icons svg,
+  body.is-page-scrolled .icons svg {
+    margin-left: 0;
+  }
+
+  .top-announcement a {
+    display: inline-block;
+    padding-block: 8px;
+  }
+
+  .top-socials {
+    gap: 4px;
   }
 }

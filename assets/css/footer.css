@@ -323,3 +323,17 @@ body.not-found-page.has-maris-footer {
     text-align: left;
   }
 }
+
+/* Footer links sat 21px tall, just under the 24px minimum tap target. The row
+   pitch is preserved: each link grows by 3px and the column gap loses 3px. */
+@media (max-width: 900px) {
+  .maris-footer__links a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+  }
+
+  .maris-footer__links {
+    gap: 6px;
+  }
+}

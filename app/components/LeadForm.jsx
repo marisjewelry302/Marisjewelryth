@@ -2,39 +2,33 @@
 
 import { useState } from "react";
 
-const LEAD_KEY = "marisLeadInbox";
+const INQUIRY_ENDPOINT = "/api/inquiries";
 
 const messages = {
   contact: {
-    status: "Saved to this browser. Copy the summary and send it through your preferred Maris contact channel.",
-    title: "Your message is ready",
-    body: "Maris Jewelry can review your inquiry and reply through your preferred contact channel."
+    status: "Your inquiry has been sent to the Maris atelier.",
+    title: "Your inquiry is with us",
+    body: "The atelier has received your message and will reply through your preferred contact channel."
   },
   quote: {
-    status: "Saved to this browser. Copy the summary and send it through your preferred Maris contact channel.",
-    title: "Your quote request is ready",
-    body: "Maris Jewelry can review your selected pieces, confirm availability, and reply with pricing direction."
+    status: "Your quote request has been sent to the Maris atelier.",
+    title: "Your quote request is with us",
+    body: "The atelier will confirm availability for your selected pieces and reply with pricing direction."
   },
   newsletter: {
-    status: "Saved to this browser. Copy the summary and send it through your preferred Maris contact channel.",
+    status: "Your details have been sent to the Maris atelier.",
     title: "You're on the Maris list",
-    body: "Maris Jewelry can use this request for future collection and custom design updates."
+    body: "The atelier will use these details for future collection and custom design updates."
   }
 };
 
-function readLeads() {
-  try {
-    const value = JSON.parse(window.localStorage.getItem(LEAD_KEY));
-    return Array.isArray(value) ? value : [];
-  } catch (error) {
-    return [];
-  }
-}
-
-function writeLeads(items) {
-  window.localStorage.setItem(LEAD_KEY, JSON.stringify(items));
-  window.dispatchEvent(new CustomEvent("maris:leadchange"));
-}
+// Shown when the submission never reached the server. The summary and copy
+// button below give the visitor a way to send it themselves rather than losing
+// what they typed.
+const FAILURE_RESULT = {
+  title: "We could not send that",
+  body: "Your message did not reach the atelier. Copy the summary below and send it through Line, email, or phone, and we will pick it up from there."
+};
 
 function collectData(formData) {
   const ignored = new Set(["form-name", "subject"]);
@@ -84,9 +78,15 @@ export default function LeadForm({
   const [result, setResult] = useState(null);
   const [summary, setSummary] = useState([]);
   const [copied, setCopied] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [failed, setFailed] = useState(false);
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
+
+    if (sending) {
+      return;
+    }
 
     const form = event.currentTarget;
     const formData = new FormData(form);
@@ -100,28 +100,58 @@ export default function LeadForm({
     const data = collectData(formData);
     const nextSummary = buildSummary(type, data);
 
+    setSending(true);
+    setStatus("Sending...");
+
+    // Keep the summary ready either way: on success it is a receipt, on failure
+    // it is what the visitor copies instead of retyping everything.
+    setSummary(nextSummary);
+    setCopied(false);
+
     try {
-      writeLeads([
-        {
-          id: `${type}-${Date.now()}`,
-          type,
-          submittedAt: new Date().toISOString(),
-          path: window.location.pathname,
-          data
-        },
-        ...readLeads()
-      ]);
+      const response = await fetch(INQUIRY_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({
+          kind: type === "quote" ? "quote" : "contact",
+          subject,
+          sourcePage,
+          fields: data
+        })
+      });
+      const payload = await response.json().catch(() => ({}));
 
-      setStatus(messages[type]?.status || "Saved to this browser.");
-      setResult(messages[type]);
-      setSummary(nextSummary);
-      setCopied(false);
+      if (response.ok) {
+        // "duplicate" means this exact message is already with the atelier, so
+        // from the visitor's point of view it went through.
+        setStatus(messages[type]?.status || "Your message has been sent.");
+        setResult(messages[type]);
+        setFailed(false);
 
-      if (resetOnSuccess) {
-        form.reset();
+        if (resetOnSuccess) {
+          form.reset();
+        }
+
+        return;
       }
-    } catch (error) {
-      setStatus("This browser could not save the preview submission. Please try again.");
+
+      if (response.status === 400 && Array.isArray(payload.errors) && payload.errors.length) {
+        setStatus(payload.errors[0].message || "Please check the form details.");
+        setResult(null);
+        setFailed(false);
+        return;
+      }
+
+      setStatus(payload.error || "Your message could not be sent.");
+      setResult(FAILURE_RESULT);
+      setFailed(true);
+    } catch {
+      setStatus("Your message could not be sent. Please check your connection.");
+      setResult(FAILURE_RESULT);
+      setFailed(true);
+    } finally {
+      setSending(false);
     }
   }
 
@@ -142,8 +172,10 @@ export default function LeadForm({
         <input type="hidden" name="source_page" value={sourcePage} />
         {children}
         <p className="form-status" role="status" aria-live="polite">{status}</p>
-        <button className="inquiry-submit" type="submit">
-          {type === "quote" ? "Send Quote Request" : type === "newsletter" ? "Join Newsletter" : "Send Inquiry"}
+        <button className="inquiry-submit" type="submit" disabled={sending}>
+          {sending
+            ? "Sending..."
+            : type === "quote" ? "Send Quote Request" : type === "newsletter" ? "Join Newsletter" : "Send Inquiry"}
         </button>
       </form>
 
@@ -152,7 +184,11 @@ export default function LeadForm({
           <h2>{result.title}</h2>
           <p>{result.body}</p>
           <div className="page-actions">
-            <button type="button" onClick={copySummary}>{copied ? "Copied" : "Copy summary"}</button>
+            {/* Only worth offering when the send failed; on success the atelier
+                already has the message and copying it serves no purpose. */}
+            {failed && (
+              <button type="button" onClick={copySummary}>{copied ? "Copied" : "Copy summary"}</button>
+            )}
             <a href={type === "quote" ? "/contact-us" : "/request-quote"}>
               {type === "quote" ? "Contact Maris directly" : "Request a quote instead"}
             </a>

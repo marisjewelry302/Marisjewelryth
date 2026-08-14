@@ -50,6 +50,7 @@ export default async function AdminPage() {
             <button type="button" data-admin-tab="inventory">Inventory</button>
             <button type="button" data-admin-tab="orders">Orders</button>
             <button type="button" data-admin-tab="custom-requests">Custom Requests</button>
+            <button type="button" data-admin-tab="inquiries">Inquiries</button>
             <button type="button" data-admin-tab="customers">Customers</button>
             <button type="button" data-admin-tab="database">Database</button>
             <button type="button" data-admin-tab="settings">Settings</button>
@@ -474,6 +475,64 @@ export default async function AdminPage() {
               </div>
 
               <section className="custom-request-detail" data-custom-request-detail hidden aria-live="polite"></section>
+            </section>
+
+            {/* ── INQUIRIES ── */}
+            <section className="admin-panel" data-admin-panel="inquiries">
+              <div className="admin-panel-head">
+                <div>
+                  <p className="admin-kicker">Contact &amp; quote forms</p>
+                  <h2>Inquiries</h2>
+                </div>
+                <p className="admin-note">Messages sent from the Contact Us and Request a Quote pages. Enquiries about a specific catalogue piece appear under Custom Requests.</p>
+              </div>
+
+              <div className="custom-request-summary" aria-label="Inquiry status summary">
+                <button type="button" data-inquiry-status-filter="new">
+                  <span data-inquiry-count="new">0</span>
+                  <strong>New</strong>
+                  <small>Not yet opened</small>
+                </button>
+                <button type="button" data-inquiry-status-filter="read">
+                  <span data-inquiry-count="read">0</span>
+                  <strong>Read</strong>
+                  <small>Seen, no reply yet</small>
+                </button>
+                <button type="button" data-inquiry-status-filter="replied">
+                  <span data-inquiry-count="replied">0</span>
+                  <strong>Replied</strong>
+                  <small>Answered the client</small>
+                </button>
+                <button type="button" data-inquiry-status-filter="closed">
+                  <span data-inquiry-count="closed">0</span>
+                  <strong>Closed</strong>
+                  <small>No further action</small>
+                </button>
+              </div>
+
+              <div className="admin-panel-toolbar">
+                <p data-inquiry-list-summary>Loading inquiries...</p>
+              </div>
+
+              <div className="admin-table-wrap">
+                <table className="custom-request-table">
+                  <thead>
+                    <tr>
+                      <th>Received</th>
+                      <th>From</th>
+                      <th>Type</th>
+                      <th>Message</th>
+                      <th>Status</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody data-inquiries-table>
+                    <tr><td colSpan="6">Loading inquiries...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <section className="custom-request-detail" data-inquiry-detail hidden aria-live="polite"></section>
             </section>
 
             {/* ── CUSTOMERS ── */}

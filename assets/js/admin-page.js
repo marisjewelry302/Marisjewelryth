@@ -46,6 +46,11 @@
     customRequestListSummary: document.querySelector("[data-custom-request-list-summary]"),
     customRequestStatusFilters: Array.from(document.querySelectorAll("[data-custom-request-status-filter]")),
     customRequestCounts: Array.from(document.querySelectorAll("[data-custom-request-count]")),
+    inquiriesTable: document.querySelector("[data-inquiries-table]"),
+    inquiryDetail: document.querySelector("[data-inquiry-detail]"),
+    inquiryListSummary: document.querySelector("[data-inquiry-list-summary]"),
+    inquiryStatusFilters: Array.from(document.querySelectorAll("[data-inquiry-status-filter]")),
+    inquiryCounts: Array.from(document.querySelectorAll("[data-inquiry-count]")),
     productSelect: document.querySelector("[data-product-select]"),
     orderProductSelect: document.querySelector("[data-order-product-select]"),
     message: document.querySelector("[data-admin-message]"),
@@ -105,6 +110,7 @@
     bestSellerProductIds: [],
     orders: [],
     customRequests: [],
+    inquiries: [],
     logs: [],
     isLoading: true,
     isReady: false,
@@ -167,12 +173,20 @@
     adminCache.error = "";
 
     try {
-      const [productsPayload, ordersPayload, logsPayload, customRequestsPayload, bestSellersPayload] = await Promise.all([
+      const [
+        productsPayload,
+        ordersPayload,
+        logsPayload,
+        customRequestsPayload,
+        bestSellersPayload,
+        inquiriesPayload
+      ] = await Promise.all([
         fetchAdminApi("/products"),
         fetchAdminApi("/orders"),
         fetchAdminApi("/inventory-logs"),
         fetchAdminApi("/api/admin/custom-order-requests"),
-        fetchAdminApi("/best-sellers")
+        fetchAdminApi("/best-sellers"),
+        fetchAdminApi("/api/admin/inquiries")
       ]);
 
       adminCache.products = Array.isArray(productsPayload.products) ? productsPayload.products : [];
@@ -180,6 +194,7 @@
       adminCache.orders = Array.isArray(ordersPayload.orders) ? ordersPayload.orders : [];
       adminCache.logs = Array.isArray(logsPayload.logs) ? logsPayload.logs : [];
       adminCache.customRequests = Array.isArray(customRequestsPayload.requests) ? customRequestsPayload.requests : [];
+      adminCache.inquiries = Array.isArray(inquiriesPayload.inquiries) ? inquiriesPayload.inquiries : [];
       adminCache.isReady = true;
     } catch (error) {
       adminCache.products = [];
@@ -187,6 +202,7 @@
       adminCache.orders = [];
       adminCache.logs = [];
       adminCache.customRequests = [];
+      adminCache.inquiries = [];
       adminCache.isReady = false;
       adminCache.error = error instanceof Error ? error.message : "Supabase admin data could not be loaded.";
     } finally {
@@ -2295,6 +2311,185 @@
     }
   }
 
+  // ── Inquiries (Contact Us / Request a Quote) ──────────────────────────────
+  const INQUIRY_STATUSES = ["new", "read", "replied", "closed"];
+  const INQUIRY_STATUS_LABELS = {
+    new: "New",
+    read: "Read",
+    replied: "Replied",
+    closed: "Closed"
+  };
+  const inquiryListState = { status: "all" };
+
+  function getCachedInquiries() {
+    return Array.isArray(adminCache.inquiries) ? adminCache.inquiries : [];
+  }
+
+  function getFilteredInquiries() {
+    const all = getCachedInquiries();
+    return inquiryListState.status === "all"
+      ? all
+      : all.filter((item) => (item.status || "new") === inquiryListState.status);
+  }
+
+  function renderInquiryCounts() {
+    const all = getCachedInquiries();
+    elements.inquiryCounts.forEach((node) => {
+      const status = node.dataset.inquiryCount;
+      node.textContent = String(all.filter((item) => (item.status || "new") === status).length);
+    });
+    elements.inquiryStatusFilters.forEach((button) => {
+      button.classList.toggle("is-active", button.dataset.inquiryStatusFilter === inquiryListState.status);
+    });
+  }
+
+  function renderInquiriesTable() {
+    if (!elements.inquiriesTable) {
+      return;
+    }
+
+    if (adminCache.isLoading) {
+      elements.inquiriesTable.innerHTML = `<tr><td colspan="6">Loading inquiries...</td></tr>`;
+      return;
+    }
+
+    if (!adminCache.isReady) {
+      elements.inquiriesTable.innerHTML = `<tr><td colspan="6">${escapeHtml(adminCache.error || "Connect Supabase before reviewing inquiries.")}</td></tr>`;
+      return;
+    }
+
+    renderInquiryCounts();
+
+    const filtered = getFilteredInquiries();
+    const rows = filtered.map((inquiry) => {
+      const status = inquiry.status || "new";
+      const message = inquiry.message || Object.values(inquiry.fields || {})[0] || "-";
+
+      return `
+        <tr data-inquiry-row="${escapeHtml(inquiry.id)}">
+          <td><strong>${escapeHtml(formatCustomRequestDate(inquiry.createdAt))}</strong></td>
+          <td>
+            <strong>${escapeHtml(inquiry.fullName || "Maris Client")}</strong><br>
+            <span>${escapeHtml(inquiry.email || "-")}</span><br>
+            <span>${escapeHtml(inquiry.phone || "-")}</span>
+          </td>
+          <td>
+            <strong>${escapeHtml(inquiry.kind === "quote" ? "Quote request" : "Contact")}</strong><br>
+            <span class="custom-request-id">${escapeHtml(inquiry.sourcePage || "-")}</span>
+          </td>
+          <td>${escapeHtml(String(message).slice(0, 120))}</td>
+          <td><span class="custom-request-status" data-status="${escapeHtml(status)}">${escapeHtml(INQUIRY_STATUS_LABELS[status] || status)}</span></td>
+          <td>
+            <div class="admin-row-actions">
+              <button type="button" data-inquiry-open="${escapeHtml(inquiry.id)}">Open</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join("");
+
+    const filtering = inquiryListState.status !== "all";
+    elements.inquiriesTable.innerHTML = rows
+      || `<tr><td colspan="6">${filtering ? "No inquiries with this status." : "No inquiries yet."}</td></tr>`;
+
+    if (elements.inquiryListSummary) {
+      elements.inquiryListSummary.textContent = `Showing ${filtered.length} of ${getCachedInquiries().length} inquiries`;
+    }
+  }
+
+  function renderInquiryDetail(inquiryId) {
+    const detail = elements.inquiryDetail;
+    if (!detail) return;
+
+    const inquiry = getCachedInquiries().find((item) => item.id === inquiryId);
+
+    if (!inquiry) {
+      detail.hidden = true;
+      detail.innerHTML = "";
+      return;
+    }
+
+    const entries = [
+      ["Received", formatCustomRequestDate(inquiry.createdAt)],
+      ["Type", inquiry.kind === "quote" ? "Quote request" : "Contact inquiry"],
+      ["Name", inquiry.fullName],
+      ["Email", inquiry.email],
+      ["Phone", inquiry.phone],
+      ["Page", inquiry.sourcePage],
+      ...Object.entries(inquiry.fields || {})
+    ].filter(([, value]) => Boolean(value));
+
+    detail.hidden = false;
+    detail.innerHTML = `
+      <div class="admin-panel-head">
+        <div>
+          <p class="admin-kicker">Inquiry</p>
+          <h3>${escapeHtml(inquiry.fullName || "Maris Client")}</h3>
+        </div>
+        <button type="button" data-inquiry-close>Close</button>
+      </div>
+      <dl class="custom-request-detail-grid">
+        ${entries.map(([label, value]) => `
+          <div><dt>${escapeHtml(String(label).replaceAll("_", " "))}</dt><dd>${escapeHtml(String(value))}</dd></div>
+        `).join("")}
+      </dl>
+      ${inquiry.message ? `<p class="admin-note admin-note-wide">${escapeHtml(inquiry.message)}</p>` : ""}
+      <div class="admin-row-actions">
+        ${INQUIRY_STATUSES.map((status) => `
+          <button type="button" data-inquiry-set-status="${escapeHtml(status)}" data-inquiry-id="${escapeHtml(inquiry.id)}"${status === (inquiry.status || "new") ? " disabled" : ""}>
+            ${escapeHtml(INQUIRY_STATUS_LABELS[status])}
+          </button>
+        `).join("")}
+        <a href="mailto:${escapeHtml(inquiry.email)}">Reply by email</a>
+      </div>
+    `;
+  }
+
+  elements.inquiryStatusFilters.forEach((button) => {
+    button.addEventListener("click", () => {
+      const next = button.dataset.inquiryStatusFilter;
+      inquiryListState.status = inquiryListState.status === next ? "all" : next;
+      renderInquiriesTable();
+    });
+  });
+
+  elements.inquiriesTable?.addEventListener("click", (event) => {
+    const open = event.target.closest("[data-inquiry-open]");
+    if (open) renderInquiryDetail(open.dataset.inquiryOpen);
+  });
+
+  elements.inquiryDetail?.addEventListener("click", async (event) => {
+    if (event.target.closest("[data-inquiry-close]")) {
+      elements.inquiryDetail.hidden = true;
+      elements.inquiryDetail.innerHTML = "";
+      return;
+    }
+
+    const setStatus = event.target.closest("[data-inquiry-set-status]");
+    if (!setStatus) return;
+
+    const inquiryId = setStatus.dataset.inquiryId;
+    const status = setStatus.dataset.inquirySetStatus;
+    setStatus.disabled = true;
+
+    try {
+      const payload = await fetchAdminApi(`/api/admin/inquiries?id=${encodeURIComponent(inquiryId)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status })
+      });
+
+      if (payload.inquiry) {
+        adminCache.inquiries = getCachedInquiries().map((item) => (item.id === inquiryId ? payload.inquiry : item));
+        renderInquiriesTable();
+        renderInquiryDetail(inquiryId);
+      }
+    } catch (error) {
+      setStatus.disabled = false;
+      window.alert(error instanceof Error ? error.message : "Inquiry could not be updated.");
+    }
+  });
+
   function renderAll() {
     renderStats();
     renderSelects();
@@ -2308,6 +2503,7 @@
     renderLogsTable();
     renderOrdersTable();
     renderCustomRequestsTable();
+    renderInquiriesTable();
     renderSettings();
   }
 

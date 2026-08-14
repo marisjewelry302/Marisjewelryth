@@ -379,10 +379,16 @@ body.is-page-scrolled .icons i {
   padding: 10px 28px 14px 0;
 }
 
+/* The heart glyph measured 15px wide, under the 24x24 minimum tap target and
+   fiddly on a phone. The box is squared off around it; the glyph is unchanged. */
 .wishlist-toggle {
   position: absolute;
-  top: 14px;
-  right: 8px;
+  top: 6px;
+  right: 0;
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
   border: 0;
   background: transparent;
   color: var(--maris-rose);

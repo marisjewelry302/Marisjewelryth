@@ -42,6 +42,12 @@ export {
   updateAdminCustomOrderRequest
 } from "./maris-database/custom-orders.js";
 export {
+  ADMIN_INQUIRY_STATUSES,
+  normalizeInquiry,
+  readAdminInquiries,
+  updateAdminInquiryStatus
+} from "./maris-database/inquiries.js";
+export {
   AdminProductImageUploadError,
   deleteAdminProductImage,
   reorderAdminProductImages,
