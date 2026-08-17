@@ -97,6 +97,36 @@ body.not-found-page.has-maris-footer {
   cursor: pointer;
 }
 
+.maris-footer__email-box input:disabled,
+.maris-footer__email-box button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* Empty until the form replies, so it must not reserve a row and push the
+   column layout around while the field is untouched. */
+.maris-footer__email-status:empty {
+  display: none;
+}
+
+.maris-footer__email-status {
+  margin: 8px 0 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+/* The footer sits on a dark ground, so the page palette's teal and red are not
+   readable here; weight carries the distinction instead. */
+.maris-footer__email-status[data-type="success"],
+.maris-footer__email-status[data-type="error"] {
+  color: var(--maris-white, #ffffff);
+}
+
+.maris-footer__email-status[data-type="error"] {
+  font-weight: 600;
+}
+
 .maris-footer__social {
   display: flex;
   align-items: center;

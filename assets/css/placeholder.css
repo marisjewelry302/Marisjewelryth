@@ -1241,6 +1241,20 @@ a {
   color: #9b3944;
 }
 
+.newsletter-panel {
+  margin-top: 28px;
+}
+
+.newsletter-form {
+  max-width: 420px;
+  margin-top: 18px;
+}
+
+.newsletter-form .inquiry-submit {
+  justify-self: start;
+  min-width: 200px;
+}
+
 .submission-result {
   display: grid;
   gap: 12px;

@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { isOptimizableImageSrc } from "../lib/image-source";
 
-export default function ContentPage({ page }) {
+export default function ContentPage({ page, children }) {
   const hasStepImages = page.steps?.some((step) => step.image);
   const heroImages = page.heroImages ?? (page.heroImage ? [page.heroImage] : []);
   const cardClassName = [
@@ -106,6 +106,9 @@ export default function ContentPage({ page }) {
             ))}
           </div>
         )}
+
+        {/* Slot for pages that need a real form alongside the editorial copy. */}
+        {children}
 
         {page.note && <p className="subpage-note">{page.note}</p>}
 

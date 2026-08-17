@@ -2,6 +2,7 @@ import Image from "next/image";
 import { formatProductPrice } from "../lib/collections";
 import { isOptimizableImageSrc } from "../lib/image-source";
 import { formatPublicProductCode, getPublicProductAltText, getPublicProductDisplayName } from "../lib/product-display";
+import { getProductCarat, getProductFacetTokens, getProductMetalValues } from "../lib/product-facets";
 import WishlistButton from "./WishlistButton";
 
 // Catalogue photography is square; the card frame fixes both axes in CSS, so
@@ -43,6 +44,7 @@ export default function ProductCard({ product, collectionLabel }) {
   const primaryImage = product.primaryImageUrl || product.image || FALLBACK_IMAGE;
   const hoverImage = getHoverImageSource(product, primaryImage);
   const hasHoverImage = Boolean(hoverImage);
+  const carat = getProductCarat(product);
   const wishlistItem = {
     id: `${product.collection || collectionLabel}:${productCode}`,
     title: productCode,
@@ -57,9 +59,9 @@ export default function ProductCard({ product, collectionLabel }) {
     <article
       className="product-card is-clickable"
       data-code={productCode}
-      data-carat={product.searchCarat || ""}
-      data-metal={product.searchText || ""}
-      data-filters={product.searchText || ""}
+      data-carat={carat || ""}
+      data-metal={getProductMetalValues(product).join(" ")}
+      data-filters={getProductFacetTokens(product).join(" ")}
     >
       <a className={`product-card-link${hasHoverImage ? " has-hover-image" : ""}`} href={href} aria-label={`View ${productCode} ${displayName}`}>
         <span className="product-card-image-frame">

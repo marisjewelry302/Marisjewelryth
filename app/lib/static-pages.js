@@ -247,7 +247,7 @@ export const staticPages = {
       { title: "Service updates", text: "Follow future OEM, wholesale, and appointment announcements as the brand expands." }
     ],
     actions: [
-      { href: "/contact-us?service=Newsletter", label: "Join via contact form" },
+      { href: "/contact-us", label: "Contact Maris directly" },
       { href: "/journal", label: "Read articles" }
     ]
   }

@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useId, useState } from "react";
 
+import NewsletterSignup from "./NewsletterSignup";
+
 const footerSections = [
   {
     title: "Maris Jewelry",
@@ -115,22 +117,10 @@ function FooterSection({ section, index }) {
               ))}
             </div>
           )}
-          {section.newsletter && <NewsletterForm />}
+          {section.newsletter && <NewsletterSignup source="footer" />}
         </div>
       </div>
     </section>
-  );
-}
-
-function NewsletterForm() {
-  const emailId = useId();
-
-  return (
-    <form className="maris-footer__email-box" action="/newsletter" method="get">
-      <label className="maris-footer__sr-only" htmlFor={emailId}>Email address</label>
-      <input id={emailId} name="email" type="email" placeholder="Email address" />
-      <button type="submit" aria-label="Join newsletter">Join</button>
-    </form>
   );
 }
 
@@ -163,7 +153,7 @@ export default function SiteFooter() {
                   ))}
                 </ul>
               )}
-              {section.newsletter && <NewsletterForm />}
+              {section.newsletter && <NewsletterSignup source="footer" />}
               {section.title === "Maris Jewelry" && (
                 <div className="maris-footer__social">
                   <SocialLinks />

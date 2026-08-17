@@ -5,6 +5,7 @@ const files = Object.fromEntries(await Promise.all(
   Object.entries({
     header: "../app/components/SiteHeader.jsx",
     footer: "../app/components/SiteFooter.jsx",
+    newsletter: "../app/components/NewsletterSignup.jsx",
     popup: "../app/HomeSignupPopup.jsx",
     account: "../app/account/AccountClient.jsx",
     gallery: "../app/product/[slug]/ProductGallery.jsx",
@@ -17,8 +18,9 @@ assert.match(files.header, /aria-controls="maris-primary-navigation"/);
 assert.match(files.header, /inert=\{isMobile && !isOpen\}/);
 assert.match(files.header, /event\.key === "Escape"/);
 assert.match(files.footer, /aria-expanded=\{isOpen\}/);
-assert.match(files.footer, /const emailId = useId\(\)/, "Repeated newsletter forms need unique label targets");
+assert.match(files.newsletter, /const emailId = useId\(\)/, "Repeated newsletter forms need unique label targets");
 assert.doesNotMatch(files.footer, /id="footer-email"/);
+assert.match(files.newsletter, /role="status" aria-live="polite"/, "Newsletter result must be announced without moving focus");
 assert.match(files.popup, /aria-labelledby=\{titleId\}/);
 assert.match(files.popup, /event\.key === "Tab"/, "Signup dialog must trap keyboard focus");
 assert.doesNotMatch(files.account, /role="tablist"/, "Plain account toggles must not claim an incomplete tab pattern");
