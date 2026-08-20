@@ -10,7 +10,6 @@ const sources = {
   siteHeader: await readSource("../assets/css/site-header.css"),
   engagementRing: await readSource("../assets/css/engagement-ring.css"),
   placeholder: await readSource("../assets/css/placeholder.css"),
-  adminAsset: await readSource("../assets/css/admin.css"),
   adminApp: await readSource("../app/admin/admin.css"),
   adminLogin: await readSource("../app/admin/login/login.module.css"),
   designYourRing: await readSource("../assets/css/design-your-ring.css"),
@@ -52,7 +51,6 @@ const prefersUrbanist = (token) =>
 // tokens. Admin ships its own sheet, so it declares them for itself.
 for (const [token, source] of [
   ...FONT_TOKENS.map((token) => [token, sources.global]),
-  ["--maris-font-thai", sources.adminAsset],
   ["--maris-font-thai", sources.adminApp]
 ]) {
   assert.match(source, prefersUrbanist(token), `${token} should prefer Urbanist before any fallback.`);

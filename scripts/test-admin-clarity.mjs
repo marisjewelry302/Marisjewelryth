@@ -13,7 +13,7 @@ const typographySource = (await Promise.all([
   "../assets/css/style.css",
   "../assets/css/engagement-ring.css",
   "../assets/css/placeholder.css",
-  "../assets/css/admin.css",
+  "../app/admin/admin.css",
   "../assets/css/product.css",
   "../assets/css/site-header.css",
   "../assets/css/footer.css",
@@ -122,4 +122,112 @@ assert.doesNotMatch(
   typographySource,
   /Cormorant|Georgia|Arial|letter-spacing:\s*-/i,
   "Maris typography should stay on the shared Urbanist/Anuphan stack without clashing legacy fonts or negative tracking"
+);
+
+const adminCss = await readFile(new URL("../app/admin/admin.css", import.meta.url), "utf8");
+
+assert.match(
+  adminHtml,
+  /<label data-ring-type-field>\s*\n\s*Ring Type/,
+  "The Ring Type field must be tagged so the product form can hide it for non-ring categories"
+);
+
+assert.match(
+  adminJs,
+  /function syncRingTypeFieldVisibility\(form\)[\s\S]*?field\.hidden = category !== "Rings";/,
+  "Admin JS should hide the Ring Type field whenever the chosen category is not Rings"
+);
+
+assert.match(
+  adminJs,
+  /namedItem\("category"\)\?\.addEventListener\("change", \(\) => \{\s*\n\s*syncRingTypeFieldVisibility\(elements\.productForm\);/,
+  "Changing the product category must re-evaluate Ring Type visibility"
+);
+
+assert.match(
+  adminCss,
+  /\.admin-form label\[hidden\]\s*\{\s*display:\s*none;/,
+  "Hidden product form fields must beat the .admin-form label grid display rule"
+);
+
+assert.match(
+  adminHtml,
+  /async function buildAdminScriptSrc\(src\)[\s\S]*?\?v=\$\{Math\.trunc\(fileStats\.mtimeMs\)\}/,
+  "Admin scripts need an mtime version stamp so the one hour /assets/js cache cannot serve stale admin logic"
+);
+
+assert.doesNotMatch(
+  adminHtml,
+  /<Script src="\/assets\/js\//,
+  "Admin script tags must use the version stamped src instead of a bare cacheable path"
+);
+
+const siteHeaderCss = await readFile(new URL("../assets/css/site-header.css", import.meta.url), "utf8");
+
+// --- Back office design contract -------------------------------------------
+
+assert.match(
+  adminCss,
+  /--maris-gold-text:\s*#856a22/,
+  "Small uppercase admin labels need the darkened gold that clears WCAG AA on paper"
+);
+
+assert.doesNotMatch(
+  adminCss,
+  /\n\s*color: var\(--maris-gold\);/,
+  "Nothing in the admin sheet should still paint text with the 2.8:1 brand gold"
+);
+
+assert.match(
+  adminCss,
+  /\.admin-page :is\(input, select, textarea, button, a, summary\):focus-visible/,
+  "Every admin control needs a visible focus ring, not just the custom request panel"
+);
+
+assert.match(
+  adminCss,
+  /\.admin-message \{[\s\S]*?position: fixed;/,
+  "The admin status line must be a pinned toast so saves are visible from any scroll position"
+);
+
+assert.match(
+  adminCss,
+  /\.admin-message\.is-error::before \{\s*content: "✕";/,
+  "Success and error toasts must differ by glyph, not colour alone"
+);
+
+assert.match(
+  adminJs,
+  /classList\.toggle\("is-error", isError\)[\s\S]*?classList\.toggle\("is-visible"/,
+  "setMessage should drive the toast through classes instead of writing inline colours"
+);
+
+assert.doesNotMatch(
+  adminJs,
+  /elements\.message\.style\.color/,
+  "The toast must not be styled with inline colour any more"
+);
+
+assert.match(
+  adminCss,
+  /\.stock-low::before \{\s*content: "⚠ ";/,
+  "Low stock must carry a glyph so it is not signalled by colour alone"
+);
+
+assert.match(
+  adminCss,
+  /@media \(prefers-reduced-motion: reduce\)/,
+  "Admin needs the same reduced motion guard the storefront already has"
+);
+
+assert.match(
+  adminCss,
+  /input\[type="file"\]::file-selector-button/,
+  "The file picker should match the form instead of showing raw browser chrome"
+);
+
+assert.match(
+  siteHeaderCss,
+  /\.mobile-menu-toggle \{[\s\S]*?width: 44px;\s*\n\s*height: 44px;/,
+  "The mobile menu button is the primary control on phones and must meet the 44px target"
 );

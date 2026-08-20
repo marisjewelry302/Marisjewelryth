@@ -345,13 +345,27 @@
     return { ...settingsState };
   }
 
+  let messageHideTimer = null;
+
   function setMessage(message, isError = false) {
     if (!elements.message) {
       return;
     }
 
+    window.clearTimeout(messageHideTimer);
     elements.message.textContent = message;
-    elements.message.style.color = isError ? "var(--maris-red)" : "var(--maris-teal)";
+    elements.message.classList.toggle("is-error", isError);
+    elements.message.classList.toggle("is-visible", Boolean(message));
+
+    if (!message) {
+      return;
+    }
+
+    // Errors stay put long enough to read and act on; confirmations get out of
+    // the way so the toast never covers the row an admin is working on.
+    messageHideTimer = window.setTimeout(() => {
+      elements.message.classList.remove("is-visible");
+    }, isError ? 8000 : 4000);
   }
 
   function ensureAdminDataReady() {
@@ -622,6 +636,17 @@
     }
   }
 
+  function syncRingTypeFieldVisibility(form) {
+    const field = form?.querySelector("[data-ring-type-field]");
+    const category = String(form?.elements?.namedItem("category")?.value || "").trim();
+
+    if (!field) {
+      return;
+    }
+
+    field.hidden = category !== "Rings";
+  }
+
   function updateImageGroupSummary(form, group) {
     const summary = form?.querySelector("[data-image-group-summary]");
 
@@ -662,6 +687,8 @@
     if (ringCollectionKeys.has(group.collectionKey)) {
       setFormValue(form, "ringType", group.collectionKey, { force: true });
     }
+
+    syncRingTypeFieldVisibility(form);
 
     return group;
   }
@@ -2613,6 +2640,14 @@
     applyImageGroupToProductForm(elements.productForm);
   });
 
+  elements.productForm?.elements?.namedItem("category")?.addEventListener("change", () => {
+    syncRingTypeFieldVisibility(elements.productForm);
+  });
+
+  if (elements.productForm) {
+    syncRingTypeFieldVisibility(elements.productForm);
+  }
+
   elements.productForm?.addEventListener("submit", async (event) => {
     event.preventDefault();
     const form = event.currentTarget;
@@ -2672,6 +2707,7 @@
       await loadAdminBackendData();
       form.reset();
       updateImageGroupSummary(form, null);
+      syncRingTypeFieldVisibility(form);
       renderAll();
       setMessage(imageUploadDraft.mainImageFile ? "Product and images saved in Supabase." : "Product saved in Supabase.");
     } catch (error) {

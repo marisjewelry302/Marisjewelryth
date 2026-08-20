@@ -320,12 +320,12 @@ body.is-page-scrolled .icons svg {
 
   .navbar {
     min-height: 72px;
-    padding: 10px 14px 10px 50px;
+    padding: 10px 14px 10px 64px;
   }
 
   body.is-page-scrolled .navbar {
     min-height: 64px;
-    padding: 8px 14px 8px 50px;
+    padding: 8px 14px 8px 64px;
   }
 
   .mobile-menu-toggle {
@@ -337,8 +337,8 @@ body.is-page-scrolled .icons svg {
     flex-direction: column;
     justify-content: center;
     gap: 5px;
-    width: 34px;
-    height: 34px;
+    width: 44px;
+    height: 44px;
     padding: 0;
     border: 0;
     background: transparent;
@@ -418,8 +418,10 @@ body.is-page-scrolled .icons svg {
   .navbar .nav .nav-dropdown-trigger,
   body.is-page-scrolled .navbar .nav a,
   body.is-page-scrolled .navbar .nav .nav-dropdown-trigger {
-    display: block;
+    display: flex;
+    align-items: center;
     width: 100%;
+    min-height: 44px;
     padding: 11px 0;
     font-size: 14px;
     letter-spacing: 0.08em;
@@ -452,6 +454,7 @@ body.is-page-scrolled .icons svg {
   }
 
   .navbar .nav .nav-dropdown a {
+    min-height: 44px;
     padding: 7px 0;
     color: rgba(16, 41, 35, 0.72);
     font-size: 12px;
@@ -496,18 +499,18 @@ body.is-page-scrolled .icons svg {
 
   .navbar {
     min-height: 66px;
-    padding: 10px 10px 10px 46px;
+    padding: 10px 10px 10px 60px;
   }
 
   body.is-page-scrolled .navbar {
     min-height: 60px;
-    padding: 8px 10px 8px 46px;
+    padding: 8px 10px 8px 60px;
   }
 
   .mobile-menu-toggle {
     left: 10px;
-    width: 30px;
-    height: 30px;
+    width: 44px;
+    height: 44px;
   }
 
   .navbar .logo img,
@@ -629,7 +632,7 @@ body.is-page-scrolled .navbar .logo img {
   .navbar,
   body.is-page-scrolled .navbar {
     min-height: 66px;
-    padding: 8px 10px 8px 46px;
+    padding: 8px 10px 8px 60px;
   }
 
   .navbar .logo a,
@@ -1364,7 +1367,7 @@ body.is-page-scrolled .site-header:not(.site-header--home) .icons svg {
   .site-header:not(.site-header--home) .navbar,
   body.is-page-scrolled .site-header:not(.site-header--home) .navbar {
     min-height: 72px;
-    padding: 8px 10px 8px 46px;
+    padding: 8px 10px 8px 60px;
   }
 
   .site-header:not(.site-header--home) .navbar .logo a,
@@ -1622,5 +1625,24 @@ body:has(.site-header--home) .hero-content h1,
 
   .top-socials {
     gap: 4px;
+  }
+}
+
+/* Touch target floor. The breakpoint stack above redefines the menu button and
+   the drawer links at several widths, so the smallest override kept winning and
+   dropping them under the 44px minimum. min-* clamps the computed box whatever
+   the cascade resolves to, which keeps the floor safe from future overrides. */
+@media (max-width: 920px) {
+  .mobile-menu-toggle {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .navbar .nav a,
+  .navbar .nav .nav-dropdown-trigger,
+  .navbar .nav .nav-dropdown a {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
   }
 }

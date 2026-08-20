@@ -1,3 +1,5 @@
+import { stat } from "node:fs/promises";
+import path from "node:path";
 import { cookies } from "next/headers";
 import Image from "next/image";
 import { redirect } from "next/navigation";
@@ -9,6 +11,17 @@ import "./admin.css";
 
 export const dynamic = "force-dynamic";
 
+// /assets/js/* is served with a one hour browser cache, so admin scripts need a
+// version stamp or managers keep running the previous build after a deploy.
+async function buildAdminScriptSrc(src) {
+  try {
+    const fileStats = await stat(path.join(process.cwd(), "assets", src.replace(/^\/assets\//, "")));
+    return `${src}?v=${Math.trunc(fileStats.mtimeMs)}`;
+  } catch {
+    return src;
+  }
+}
+
 export default async function AdminPage() {
   const cookieStore = await cookies();
   const session = cookieStore.get(SESSION_COOKIE_NAME)?.value;
@@ -18,6 +31,11 @@ export default async function AdminPage() {
   if (!authorization.ok) {
     redirect("/admin/login");
   }
+
+  const [imageGroupParserSrc, adminPageScriptSrc] = await Promise.all([
+    buildAdminScriptSrc("/assets/js/admin-image-group-parser.js"),
+    buildAdminScriptSrc("/assets/js/admin-page.js")
+  ]);
 
   return (
     <>
@@ -173,7 +191,7 @@ export default async function AdminPage() {
                     <option value="Necklaces & Pendants">Necklaces &amp; Pendants</option>
                   </select>
                 </label>
-                <label>
+                <label data-ring-type-field>
                   Ring Type
                   <select name="ringType">
                     <option value="engagement-ring">Engagement Rings</option>
@@ -670,8 +688,8 @@ export default async function AdminPage() {
           </section>
         </main>
 
-        <Script src="/assets/js/admin-image-group-parser.js" strategy="afterInteractive" />
-        <Script src="/assets/js/admin-page.js" strategy="afterInteractive" />
+        <Script src={imageGroupParserSrc} strategy="afterInteractive" />
+        <Script src={adminPageScriptSrc} strategy="afterInteractive" />
       </div>
     </>
   );
