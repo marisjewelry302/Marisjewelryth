@@ -156,6 +156,7 @@ export default function SiteHeader() {
   const [bagCount, setBagCount] = useState(0);
   const menuButtonRef = useRef(null);
   const navRef = useRef(null);
+  const headerRef = useRef(null);
 
   const normalizedPathname = useMemo(() => pathname.replace(/\/$/, "") || "/", [pathname]);
   const isHome = normalizedPathname === "/";
@@ -242,6 +243,15 @@ export default function SiteHeader() {
   useEffect(() => {
     document.body.classList.toggle("is-home-page", isHome);
 
+    // React does not repair a className that differs between the server HTML
+    // and the first client render, it only warns, and isHome never changes
+    // afterwards so nothing re-renders to correct it. The homepage has been
+    // served prerendered as a plain .site-header, which left it wearing the
+    // inline logo-left header instead of the centred brand one. Setting the
+    // class straight on the node makes the browser agree with the route no
+    // matter what the cached HTML said.
+    headerRef.current?.classList.toggle("site-header--home", isHome);
+
     return () => {
       document.body.classList.remove("is-home-page");
     };
@@ -289,7 +299,7 @@ export default function SiteHeader() {
   }
 
   return (
-    <header className={`site-header${isHome ? " site-header--home" : ""}`}>
+    <header ref={headerRef} className={`site-header${isHome ? " site-header--home" : ""}`}>
       <div className="top-bar">
         <p className="top-announcement">
           Private consultation for confirmed Maris pieces.

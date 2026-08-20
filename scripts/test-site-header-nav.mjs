@@ -101,3 +101,29 @@ assert.match(
   /body\.is-home-page\.is-home-header-compact \.site-header--home \.navbar \{\s*\n\s*background: rgba\(255, 250, 246/,
   "The pinned tablet bar needs its cream background back after the tablet block"
 );
+
+// --- Homepage header variant survives a bad prerender ------------------------
+
+const siteHeaderJsx = await readFile(new URL("../app/components/SiteHeader.jsx", import.meta.url), "utf8");
+
+assert.match(
+  siteHeaderJsx,
+  /<header ref=\{headerRef\} className=\{`site-header\$\{isHome \? " site-header--home" : ""\}`\}>/,
+  "The header needs a ref so the home modifier can be repaired after hydration"
+);
+
+assert.match(
+  siteHeaderJsx,
+  /headerRef\.current\?\.classList\.toggle\("site-header--home", isHome\);/,
+  "React does not repair a hydration className mismatch, so the home modifier must be set on the node directly"
+);
+
+const homeClassEffect = siteHeaderJsx.slice(
+  siteHeaderJsx.indexOf('document.body.classList.toggle("is-home-page", isHome)')
+);
+
+assert.match(
+  homeClassEffect.slice(0, 900),
+  /\}, \[isHome\]\);/,
+  "The repair must live in an effect keyed on isHome so it also runs on mount"
+);
