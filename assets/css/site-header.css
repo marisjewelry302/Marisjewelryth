@@ -1646,3 +1646,245 @@ body:has(.site-header--home) .hero-content h1,
     min-height: 44px;
   }
 }
+
+/* Homepage sticky header ----------------------------------------------------
+   The home header is absolutely positioned over the hero and scrolled away for
+   good, so past the first screen the page had no navigation at all. Once the
+   hero is behind the reader it pins itself and collapses into a short cream
+   bar, keeping the centred wordmark the brand leads with rather than falling
+   back to the inline layout the other pages use. */
+body.is-home-header-compact .site-header--home {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 999;
+  animation: maris-home-header-drop 0.28s ease;
+}
+
+/* The promo strip is the first thing to go: it is the least useful row once
+   someone is deep in the page, and dropping it keeps the pinned bar short. */
+body.is-home-header-compact .site-header--home .top-bar {
+  display: none;
+}
+
+body.is-home-header-compact .site-header--home .navbar {
+  min-height: 0;
+  padding: 10px clamp(34px, 5.2vw, 72px) 12px;
+  row-gap: 6px;
+  background: rgba(255, 250, 246, 0.96);
+  border-bottom: 1px solid rgba(16, 41, 35, 0.08);
+  box-shadow: 0 12px 34px rgba(0, 73, 58, 0.1);
+  backdrop-filter: blur(16px);
+}
+
+body.is-home-header-compact .site-header--home .navbar .logo a {
+  width: clamp(112px, 11vw, 152px);
+  height: clamp(46px, 4.6vw, 62px);
+}
+
+body.is-home-header-compact .site-header--home .navbar .logo img {
+  width: clamp(112px, 11vw, 152px);
+  filter: none;
+}
+
+/* Everything above was drawn light to sit on the hero photograph. On cream it
+   has to flip to ink, drop shadows included. */
+body.is-home-header-compact .site-header--home .navbar .nav a,
+body.is-home-header-compact .site-header--home .navbar .nav .nav-dropdown-trigger {
+  color: var(--maris-ink);
+  font-size: clamp(11px, 0.9vw, 14px);
+  text-shadow: none;
+}
+
+body.is-home-header-compact .site-header--home .nav-search,
+body.is-home-header-compact .site-header--home .icons a {
+  color: var(--maris-ink);
+  filter: none;
+}
+
+/* search and icons are absolute against the navbar, and their -10px offset
+   assumed the promo strip was still above them. */
+body.is-home-header-compact .site-header--home .nav-search,
+body.is-home-header-compact .site-header--home .icons {
+  top: 14px;
+}
+
+/* Deliberately a short offset rather than a full -100% slide: if the animation
+   never runs the bar is still on screen and usable, instead of parked out of
+   view above the fold. */
+@keyframes maris-home-header-drop {
+  from {
+    transform: translateY(-12px);
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.is-home-header-compact .site-header--home {
+    animation: none;
+  }
+}
+
+@media (max-width: 920px) {
+  /* The mobile home header is a single row already, so the compact state only
+     needs the opaque background and a tighter box. */
+  body.is-home-header-compact .site-header--home .nav-search,
+  body.is-home-header-compact .site-header--home .icons {
+    top: auto;
+  }
+
+  body.is-home-header-compact .site-header--home .navbar {
+    padding: 8px 14px;
+  }
+}
+
+/* Homepage brand header. The centred logo over a full width menu is the layout
+   that carries the brand, so it is kept down to tablet widths where the seven
+   top level links still fit once they are allowed to wrap. Phones fall back to
+   the drawer below, since seven wrapped links would fill the first screen. */
+@media (min-width: 700px) and (max-width: 920px) {
+  .site-header--home .navbar,
+  body.is-page-scrolled .site-header--home .navbar {
+    grid-template-columns: minmax(88px, 1fr) auto minmax(88px, 1fr);
+    grid-template-areas:
+      "search logo icons"
+      "nav nav nav";
+    row-gap: 14px;
+    min-height: auto;
+    padding: 18px clamp(20px, 3vw, 32px) 14px;
+  }
+
+  .site-header--home .mobile-menu-toggle {
+    display: none;
+  }
+
+  /* Drawer only extras: the header is a menu bar again at this width. */
+  .site-header--home .nav-mobile-actions {
+    display: none;
+  }
+
+  .site-header--home .nav-search {
+    display: inline-flex;
+    grid-area: search;
+    justify-self: start;
+  }
+
+  .site-header--home .icons {
+    position: static;
+    grid-area: icons;
+    justify-self: end;
+    gap: 14px;
+    transform: none;
+  }
+
+  .site-header--home .navbar .logo a,
+  body.is-page-scrolled .site-header--home .navbar .logo a {
+    width: clamp(150px, 24vw, 190px);
+    height: clamp(80px, 11vw, 104px);
+  }
+
+  .site-header--home .navbar .logo img,
+  body.is-page-scrolled .site-header--home .navbar .logo img {
+    width: clamp(190px, 30vw, 240px);
+  }
+
+  /* Back out of the off canvas drawer the phone rules set up. */
+  .site-header--home .navbar .nav,
+  .is-mobile-menu-open .site-header--home .navbar .nav {
+    position: static;
+    z-index: auto;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    grid-area: nav;
+    width: 100%;
+    height: auto;
+    padding: 0;
+    gap: 4px clamp(12px, 2vw, 22px);
+    background: transparent;
+    box-shadow: none;
+    transform: none;
+    overflow: visible;
+  }
+
+  .site-header--home .navbar .nav a,
+  .site-header--home .navbar .nav .nav-dropdown-trigger,
+  body.is-page-scrolled .site-header--home .navbar .nav a,
+  body.is-page-scrolled .site-header--home .navbar .nav .nav-dropdown-trigger {
+    width: auto;
+    color: rgba(255, 250, 246, 0.95);
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: none;
+    text-shadow: 0 8px 24px rgba(0, 34, 28, 0.28);
+  }
+
+  .site-header--home .navbar .nav .nav-item-dropdown {
+    display: flex;
+    width: auto;
+  }
+
+  /* Dropdowns float again instead of sitting inline in the drawer. */
+  .site-header--home .navbar .nav .nav-dropdown {
+    position: absolute;
+    top: calc(100% + 12px);
+    display: grid;
+    width: max-content;
+    min-width: 224px;
+    padding: 10px 0;
+    background: #fffaf2;
+    border: 1px solid rgba(16, 41, 35, 0.12);
+    box-shadow: 0 18px 38px rgba(16, 41, 35, 0.14);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .site-header--home .navbar .nav .nav-item-dropdown:hover .nav-dropdown,
+  .site-header--home .navbar .nav .nav-item-dropdown:focus-within .nav-dropdown {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .site-header--home .navbar .nav .nav-dropdown a {
+    width: 100%;
+    padding: 8px 18px;
+    color: var(--maris-ink);
+    font-size: 12px;
+    text-shadow: none;
+  }
+}
+
+/* Phones: the logo sits between a menu button and an icon cluster of different
+   widths, which pulled it visibly off centre. Equal outer tracks recentre it. */
+@media (max-width: 699px) {
+  .site-header--home .navbar,
+  body.is-page-scrolled .site-header--home .navbar {
+    grid-template-columns: minmax(44px, 1fr) auto minmax(44px, 1fr);
+  }
+
+  .site-header--home .mobile-menu-toggle {
+    justify-self: start;
+  }
+
+  .site-header--home .icons {
+    justify-self: end;
+  }
+}
+
+/* Inner pages at tablet width. A `padding-inline: 22px` rule scoped to
+   :not(.site-header--home) under max-width 1100 outranks the plain .navbar
+   padding, so the 44px menu button overlapped the logo wherever the button is
+   visible. Reserve the room at the same specificity, later in the file. */
+@media (max-width: 768px) {
+  .site-header:not(.site-header--home) .navbar,
+  body.is-page-scrolled .site-header:not(.site-header--home) .navbar {
+    padding-left: 60px;
+  }
+}

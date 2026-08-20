@@ -46,3 +46,31 @@ assert.match(
 assert.match(dropdownNav, /label:\s*"Gift"/, "Gift should be a top-level dropdown label");
 assert.match(dropdownNav, /label:\s*"Our Expertise"/, "Our Expertise should remain a top-level dropdown label");
 assert.match(dropdownNav, /label:\s*"About Us"/, "About Us should remain a top-level dropdown label");
+
+// --- Homepage brand header --------------------------------------------------
+
+const brandHeaderCss = await readFile(new URL("../assets/css/site-header.css", import.meta.url), "utf8");
+
+assert.match(
+  brandHeaderCss,
+  /@media \(min-width: 700px\) and \(max-width: 920px\)[\s\S]*?grid-template-areas:\s*\n\s*"search logo icons"\s*\n\s*"nav nav nav";/,
+  "The centred logo over a full width menu should survive down to tablet widths, not only desktop"
+);
+
+assert.match(
+  brandHeaderCss,
+  /@media \(min-width: 700px\) and \(max-width: 920px\)[\s\S]*?\.site-header--home \.mobile-menu-toggle \{\s*\n\s*display: none;/,
+  "Tablet keeps the real menu bar, so the homepage drawer button must be hidden there"
+);
+
+assert.match(
+  brandHeaderCss,
+  /@media \(max-width: 699px\)[\s\S]*?grid-template-columns: minmax\(44px, 1fr\) auto minmax\(44px, 1fr\);/,
+  "Equal outer tracks keep the phone logo centred between the menu button and the icons"
+);
+
+assert.match(
+  brandHeaderCss,
+  /@media \(max-width: 768px\) \{\s*\n\s*\.site-header:not\(\.site-header--home\) \.navbar,[\s\S]*?padding-left: 60px;/,
+  "Inner pages must reserve room for the 44px menu button, beating the padding-inline rule above"
+);

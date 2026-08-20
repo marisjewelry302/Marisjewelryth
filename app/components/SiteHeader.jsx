@@ -248,6 +248,35 @@ export default function SiteHeader() {
   }, [isHome]);
 
   useEffect(() => {
+    if (!isHome) {
+      document.body.classList.remove("is-home-header-compact");
+      return undefined;
+    }
+
+    // The homepage header is absolutely positioned over a full height hero and
+    // used to scroll away for good, leaving the rest of the page with no
+    // navigation. It now pins itself once the hero is actually behind the
+    // reader, so the full brand treatment survives for as long as it is the
+    // thing being looked at. The shared is-page-scrolled class fires after
+    // 12px, which is far too early for that.
+    function updateHomeHeaderClass() {
+      const hero = document.querySelector(".home-main .hero");
+      const threshold = hero ? Math.max(160, hero.offsetHeight - 160) : window.innerHeight * 0.7;
+      document.body.classList.toggle("is-home-header-compact", window.scrollY > threshold);
+    }
+
+    updateHomeHeaderClass();
+    window.addEventListener("scroll", updateHomeHeaderClass, { passive: true });
+    window.addEventListener("resize", updateHomeHeaderClass);
+
+    return () => {
+      window.removeEventListener("scroll", updateHomeHeaderClass);
+      window.removeEventListener("resize", updateHomeHeaderClass);
+      document.body.classList.remove("is-home-header-compact");
+    };
+  }, [isHome]);
+
+  useEffect(() => {
     setIsOpen(false);
   }, [pathname]);
 
