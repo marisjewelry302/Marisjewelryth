@@ -1888,3 +1888,30 @@ body.is-home-header-compact .site-header--home .icons {
     padding-left: 60px;
   }
 }
+
+/* Tablet, once the header pins itself past the hero. The block above repeats
+   the light on photograph treatment at the same specificity as the compact
+   rules, so it was winning on source order and leaving cream on cream. */
+@media (min-width: 700px) and (max-width: 920px) {
+  /* is-home-page is on the body throughout, and the extra class is what lifts
+     these past the light on photograph rules they tie with otherwise. */
+  body.is-home-page.is-home-header-compact .site-header--home .navbar {
+    background: rgba(255, 250, 246, 0.96);
+    border-bottom: 1px solid rgba(16, 41, 35, 0.08);
+    box-shadow: 0 12px 34px rgba(0, 73, 58, 0.1);
+    padding: 10px clamp(20px, 3vw, 32px) 12px;
+    row-gap: 8px;
+    backdrop-filter: blur(16px);
+  }
+
+  body.is-home-page.is-home-header-compact .site-header--home .navbar .nav a,
+  body.is-home-page.is-home-header-compact .site-header--home .navbar .nav .nav-dropdown-trigger {
+    color: var(--maris-ink);
+    text-shadow: none;
+  }
+
+  body.is-home-header-compact .site-header--home .icons a {
+    color: rgba(16, 41, 35, 0.96);
+    filter: none;
+  }
+}

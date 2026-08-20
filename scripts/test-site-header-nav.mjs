@@ -74,3 +74,30 @@ assert.match(
   /@media \(max-width: 768px\) \{\s*\n\s*\.site-header:not\(\.site-header--home\) \.navbar,[\s\S]*?padding-left: 60px;/,
   "Inner pages must reserve room for the 44px menu button, beating the padding-inline rule above"
 );
+
+// The tablet block above repeats the light on photograph treatment at the same
+// specificity as the pinned header rules, and sits later in the file, so it
+// would win on source order and leave cream text on a cream bar. The compact
+// override has to be both later and more specific than that block.
+const tabletBlockIndex = brandHeaderCss.indexOf("@media (min-width: 700px) and (max-width: 920px)");
+const compactOverrideIndex = brandHeaderCss.indexOf(
+  "body.is-home-page.is-home-header-compact .site-header--home .navbar .nav a"
+);
+
+assert.ok(tabletBlockIndex > -1, "The tablet brand header block should exist");
+assert.ok(
+  compactOverrideIndex > tabletBlockIndex,
+  "The pinned header colours must come after the tablet block that sets the light treatment"
+);
+
+assert.match(
+  brandHeaderCss.slice(compactOverrideIndex),
+  /^body\.is-home-page\.is-home-header-compact[\s\S]*?color: var\(--maris-ink\);/,
+  "Pinned tablet header text must flip to ink, since the bar turns cream behind it"
+);
+
+assert.match(
+  brandHeaderCss,
+  /body\.is-home-page\.is-home-header-compact \.site-header--home \.navbar \{\s*\n\s*background: rgba\(255, 250, 246/,
+  "The pinned tablet bar needs its cream background back after the tablet block"
+);
