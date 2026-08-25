@@ -6,6 +6,7 @@ async function readSource(path) {
 }
 
 const seo = await import("../app/lib/seo.js");
+const { getPublicProductPath } = await import("../app/lib/product-display.js");
 
 assert.equal(seo.SITE_URL, "https://marisjewelryth.vercel.app");
 assert.equal(seo.absoluteUrl("/category/engagement-ring"), "https://marisjewelryth.vercel.app/category/engagement-ring");
@@ -79,7 +80,12 @@ assert.match(robots, /\/admin\//);
 assert.match(robots, /\/api\//);
 
 assert.match(sitemap, /readPublicCatalogueProducts/);
-assert.match(sitemap, /\/product\/\$\{product\.slug \|\| product\.sku\}/);
+// One canonical product URL: the sitemap, the storefront links, and the product
+// page redirect all read the path from the same helper.
+assert.match(sitemap, /absoluteUrl\(getPublicProductPath\(product\)\)/);
+assert.match(productPage, /permanentRedirect\(`\/product\/\$\{canonicalSlug\}`\)/);
+assert.equal(getPublicProductPath({ sku: "SR 0015 ER", slug: "sr-0015" }), "/product/sr-0015-er");
+assert.equal(getPublicProductPath({ slug: "sr-0015" }), "/product/sr-0015");
 
 assert.equal(packageJson.scripts["test:seo-aeo-geo"], "node scripts/test-seo-aeo-geo.mjs");
 

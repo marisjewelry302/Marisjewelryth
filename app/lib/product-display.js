@@ -84,3 +84,36 @@ export function getPublicImageAltText(image = {}, productCode, productName, inde
 
   return `${productCode || "Maris"} ${productName || "Fine Jewelry Piece"} view ${index + 1}`;
 }
+
+// A catalogue row that was never filled in arrives as "-" rather than empty, so
+// a plain truthy check prints a stray dash where the copy should be. Facet
+// building already skipped those values; this keeps the rendered page in step.
+const BLANK_TEXT_VALUES = new Set(["-", "--", "---", "–", "—", "n/a", "na", "none", "tbd"]);
+
+export function getMeaningfulText(value) {
+  const text = String(value || "").trim();
+
+  return BLANK_TEXT_VALUES.has(text.toLowerCase()) ? "" : text;
+}
+
+// Slugs are derived from the SKU when a product is created, but a few legacy
+// rows store a shortened form ("sr-0015" for "SR 0015 ER"). The SKU is the one
+// value every record carries, so it decides the canonical path and the older
+// spellings redirect onto it instead of quietly serving a second URL.
+export function toPublicProductSlug(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+export function getPublicProductSlug(product = {}) {
+  return toPublicProductSlug(product.sku) || toPublicProductSlug(product.slug);
+}
+
+export function getPublicProductPath(product = {}) {
+  const slug = getPublicProductSlug(product);
+
+  return slug ? `/product/${slug}` : "/product";
+}

@@ -1,20 +1,23 @@
 import Image from "next/image";
 import { formatProductPrice } from "../lib/collections";
 import { isOptimizableImageSrc } from "../lib/image-source";
-import { formatPublicProductCode, getPublicProductAltText, getPublicProductDisplayName } from "../lib/product-display";
+import {
+  formatPublicProductCode,
+  getPublicProductAltText,
+  getPublicProductDisplayName,
+  getPublicProductPath
+} from "../lib/product-display";
 import { getProductCarat, getProductFacetTokens, getProductMetalValues } from "../lib/product-facets";
 import WishlistButton from "./WishlistButton";
 
 // Catalogue photography is square; the card frame fixes both axes in CSS, so
 // these values only reserve the right aspect ratio before the file arrives.
+// The grid opens on a full row of cards, so the ones that land in the first
+// viewport are the LCP candidates and must not wait for the lazy observer.
 const CARD_IMAGE_SIZE = 1024;
 const CARD_IMAGE_SIZES = "(max-width: 700px) 50vw, (max-width: 1100px) 33vw, 25vw";
 
 const FALLBACK_IMAGE = "/assets/images/logo.png";
-
-function getProductHref(product) {
-  return `/product/${product.slug || product.sku}`;
-}
 
 function getImageSource(image) {
   if (typeof image === "string") {
@@ -37,8 +40,8 @@ function getHoverImageSource(product, primaryImage) {
   return candidates.find((image) => image && image !== primaryImage) || "";
 }
 
-export default function ProductCard({ product, collectionLabel }) {
-  const href = getProductHref(product);
+export default function ProductCard({ product, collectionLabel, isAboveFold = false }) {
+  const href = getPublicProductPath(product);
   const displayName = getPublicProductDisplayName(product);
   const productCode = product.sku || displayName;
   const primaryImage = product.primaryImageUrl || product.image || FALLBACK_IMAGE;
@@ -72,6 +75,8 @@ export default function ProductCard({ product, collectionLabel }) {
             width={CARD_IMAGE_SIZE}
             height={CARD_IMAGE_SIZE}
             sizes={CARD_IMAGE_SIZES}
+            loading={isAboveFold ? "eager" : "lazy"}
+            fetchPriority={isAboveFold ? "high" : "auto"}
             unoptimized={!isOptimizableImageSrc(primaryImage)}
           />
           {hasHoverImage ? (

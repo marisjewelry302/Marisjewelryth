@@ -113,7 +113,7 @@ export default function ProductGallery({ images, productCode, productName }) {
           aria-label={`Open ${activeItem.label.toLowerCase()} preview for ${productCode}`}
         >
           {activeItem.src && (
-            <Image src={activeItem.src} alt={activeItem.alt} data-product-image width={1024} height={1024} sizes="(max-width: 900px) 100vw, 620px" priority unoptimized={!isOptimizableImageSrc(activeItem.src)} />
+            <Image src={activeItem.src} alt={activeItem.alt} data-product-image width={1024} height={1024} sizes="(max-width: 900px) 100vw, 620px" preload unoptimized={!isOptimizableImageSrc(activeItem.src)} />
           )}
         </button>
 

@@ -6,6 +6,8 @@
 // offers a filter option when at least one piece actually answers it, so a control
 // can never promise a narrowing the data cannot deliver.
 
+import { getMeaningfulText } from "./product-display.js";
+
 const METAL_FACETS = [
   { value: "white-gold", label: "White Gold", pattern: /\bwhite\s*gold\b/i },
   { value: "yellow-gold", label: "Yellow Gold", pattern: /\byellow\s*gold\b/i },
@@ -76,13 +78,13 @@ function matchPatternFacets(facets, text) {
 // "The Infinite Hold Collection", "The Infinite Hold", and "Infinite Hold" are the
 // same line entered three ways; "-" and "" mean the line was never filled in.
 function getCollectionLineFacets(product = {}) {
-  const name = toText(product.collectionName)
+  const name = getMeaningfulText(product.collectionName)
     .replace(/^the\s+/i, "")
     .replace(/\s+collection$/i, "")
     .replace(/\s+/g, " ")
     .trim();
 
-  if (!name || name === "-") {
+  if (!name) {
     return [];
   }
 

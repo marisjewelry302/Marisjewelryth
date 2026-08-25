@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getPublicProductDisplayName } from "../../lib/product-display";
+import { getPublicProductDisplayName, getPublicProductPath } from "../../lib/product-display";
 
 const BAG_KEY = "marisShoppingBag";
 
@@ -38,7 +38,7 @@ export default function AddToBagButton({ product, collectionLabel }) {
       title: product.sku,
       details: [displayName],
       image: product.primaryImageUrl,
-      href: `/product/${product.slug || product.sku}`,
+      href: getPublicProductPath(product),
       collection: collectionLabel,
       priceLabel: product.basePrice === null ? "Price on request" : `${Number(product.basePrice).toLocaleString()} THB`,
       quantity: 1,

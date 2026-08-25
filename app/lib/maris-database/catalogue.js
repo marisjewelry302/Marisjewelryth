@@ -2,6 +2,7 @@
 
 import { createSupabaseAdminClient, getSupabaseAdminConfig } from "./connection.js";
 import { cleanOptionalText, parseMoneyAmount } from "./shared.js";
+import { toPublicProductSlug } from "../product-display.js";
 
 const BEST_SELLER_SETTING_KEY = "home_best_sellers";
 
@@ -498,16 +499,42 @@ export async function readPublicProductBySlug(slugOrSku, { env = process.env, cl
   }
 
   const supabase = client || createSupabaseAdminClient(env);
-  const { data, error } = await supabase
-    .from("products")
-    .select(PUBLIC_CATALOGUE_SELECT)
-    .eq("status", "active")
-    .or(`slug.eq.${normalized},sku.eq.${normalized.toUpperCase()}`)
-    .limit(1)
-    .maybeSingle();
+  const slugCandidate = toPublicProductSlug(normalized);
+  // A request can arrive as the stored slug, the SKU itself, or the SKU written
+  // as a slug. Each spelling has to find the piece so no catalogue link 404s;
+  // the product page then redirects the non-canonical ones onto one URL.
+  const skuCandidates = [...new Set([
+    normalized.toUpperCase(),
+    slugCandidate.replace(/-/g, " ").toUpperCase()
+  ].filter(Boolean))];
 
-  if (error) {
-    throw new Error(error.message || "Supabase product could not be loaded.");
+  function selectActiveProducts() {
+    return supabase
+      .from("products")
+      .select(PUBLIC_CATALOGUE_SELECT)
+      .eq("status", "active");
+  }
+
+  let data = null;
+
+  if (slugCandidate) {
+    const bySlug = await selectActiveProducts().eq("slug", slugCandidate).limit(1).maybeSingle();
+
+    if (bySlug.error) {
+      throw new Error(bySlug.error.message || "Supabase product could not be loaded.");
+    }
+
+    data = bySlug.data;
+  }
+
+  if (!data && skuCandidates.length) {
+    const bySku = await selectActiveProducts().in("sku", skuCandidates).limit(1).maybeSingle();
+
+    if (bySku.error) {
+      throw new Error(bySku.error.message || "Supabase product could not be loaded.");
+    }
+
+    data = bySku.data;
   }
 
   return {

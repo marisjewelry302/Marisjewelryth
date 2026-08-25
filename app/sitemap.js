@@ -1,6 +1,7 @@
 import { COLLECTION_ORDER } from "./lib/collections";
 import { journalArticles } from "./lib/journal-data";
 import { readPublicCatalogueProducts } from "./lib/maris-database";
+import { getPublicProductPath } from "./lib/product-display.js";
 import { absoluteUrl } from "./lib/seo";
 
 async function getSitemapProducts() {
@@ -47,7 +48,7 @@ export default async function sitemap() {
       lastModified: new Date("2026-06-17")
     })),
     ...products.map((product) => ({
-      url: absoluteUrl(`/product/${product.slug || product.sku}`),
+      url: absoluteUrl(getPublicProductPath(product)),
       lastModified: product.updatedAt ? new Date(product.updatedAt) : new Date("2026-06-17")
     }))
   ];

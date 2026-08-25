@@ -1,3 +1,5 @@
+import { getPublicProductPath } from "./product-display.js";
+
 export const SITE_URL = "https://marisjewelryth.vercel.app";
 export const BRAND_NAME = "Maris Jewelry";
 export const DEFAULT_OG_IMAGE = "/assets/images/home/optimized/home-hero-optimized.webp";
@@ -185,7 +187,7 @@ export function buildCollectionPageJsonLd({ collection, products = [] }) {
   const itemListElement = products.slice(0, 24).map((product, index) => ({
     "@type": "ListItem",
     position: index + 1,
-    url: absoluteUrl(`/product/${product.slug || product.sku}`),
+    url: absoluteUrl(getPublicProductPath(product)),
     name: product.name || product.sku
   }));
 
@@ -208,7 +210,7 @@ export function buildCollectionPageJsonLd({ collection, products = [] }) {
 }
 
 export function buildProductJsonLd({ product, displayName, collectionLabel }) {
-  const productPath = `/product/${product.slug || product.sku}`;
+  const productPath = getPublicProductPath(product);
   const imageUrls = [
     product.primaryImageUrl,
     ...(Array.isArray(product.images) ? product.images.map((image) => image.imageUrl || image.url || image.src) : [])

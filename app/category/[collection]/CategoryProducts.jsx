@@ -8,6 +8,10 @@ import {
   productMatchesFacetToken
 } from "../../lib/product-facets";
 
+// The widest grid shows four cards per row, and only that first row can sit in
+// the opening viewport, so loading exactly those eagerly costs nothing further down.
+const ABOVE_FOLD_CARD_COUNT = 4;
+
 const BASE_SORT_OPTIONS = [
   { value: "featured", label: "Featured" },
   { value: "code-asc", label: "Product Code A-Z" }
@@ -97,8 +101,13 @@ export default function CategoryProducts({ products, collectionTitle }) {
       <section className="products" aria-label={`${collectionTitle} products`}>
         <h2 className="sr-only">Available {collectionTitle}</h2>
         {visibleProducts.length ? (
-          visibleProducts.map((product) => (
-            <ProductCard key={product.id || product.sku} product={product} collectionLabel={collectionTitle} />
+          visibleProducts.map((product, index) => (
+            <ProductCard
+              key={product.id || product.sku}
+              product={product}
+              collectionLabel={collectionTitle}
+              isAboveFold={index < ABOVE_FOLD_CARD_COUNT}
+            />
           ))
         ) : (
           <div className="catalogue-empty">

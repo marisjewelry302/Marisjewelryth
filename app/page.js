@@ -5,7 +5,7 @@ import HeroSlider from "./HeroSlider";
 import HomeSignupPopup from "./HomeSignupPopup";
 import JsonLd from "./components/JsonLd";
 import { readPublicBestSellerProducts, readPublicCatalogueProducts } from "./lib/maris-database.js";
-import { getPublicProductDisplayName } from "./lib/product-display.js";
+import { getPublicProductDisplayName, getPublicProductPath } from "./lib/product-display.js";
 import {
   HOME_FAQS,
   buildBreadcrumbJsonLd,
@@ -231,7 +231,7 @@ export default async function HomePage() {
                 <a
                   key={product.id}
                   className="atelier-product"
-                  href={`/product/${product.slug || product.sku}`}
+                  href={getPublicProductPath(product)}
                   style={{ "--atelier-delay": `${index * 90}ms` }}
                 >
                   {product.primaryImageUrl ? (
