@@ -14,16 +14,22 @@ export default function ProductGallery({ images, productCode, productName }) {
       }))
     : [{ src: "", alt: `${productCode} ${productName}`, label: "Primary View" }];
 
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [lightboxOpen, setLightboxOpen] = useState(false);
-  const thumbnailsRef = useRef(null);
-  const galleryButtonRef = useRef(null);
-  const lightboxRef = useRef(null);
+  // The mosaic shows every image at once, so the only "active" image is the one
+  // the lightbox is holding. -1 means the lightbox is closed.
+  const [lightboxIndex, setLightboxIndex] = useState(-1);
+  const lightboxOpen = lightboxIndex >= 0;
+  const activeIndex = lightboxOpen ? lightboxIndex : 0;
+  const activeItem = galleryItems[activeIndex] || galleryItems[0];
 
-  const activeItem = galleryItems[activeIndex];
+  const tileRefs = useRef([]);
+  const lightboxRef = useRef(null);
+  // Remembers which tile opened the lightbox so focus lands back on it - read
+  // after the dialog has actually unmounted, not while it is still on screen.
+  const returnFocusIndex = useRef(null);
 
   const stepGallery = useCallback((direction) => {
-    setActiveIndex((current) => {
+    setLightboxIndex((current) => {
+      if (current < 0) return current;
       const next = current + direction;
       if (next < 0) return galleryItems.length - 1;
       if (next >= galleryItems.length) return 0;
@@ -31,25 +37,41 @@ export default function ProductGallery({ images, productCode, productName }) {
     });
   }, [galleryItems.length]);
 
+  const closeLightbox = useCallback(() => setLightboxIndex(-1), []);
+
+  useEffect(() => {
+    if (lightboxOpen) {
+      returnFocusIndex.current = lightboxIndex;
+      return;
+    }
+
+    if (returnFocusIndex.current === null) return;
+
+    const returnTo = returnFocusIndex.current;
+    returnFocusIndex.current = null;
+    tileRefs.current[returnTo]?.focus();
+  }, [lightboxOpen, lightboxIndex]);
+
   useEffect(() => {
     function handleKeydown(event) {
-      if (event.key === "Escape" && lightboxOpen) {
-        setLightboxOpen(false);
-        window.requestAnimationFrame(() => galleryButtonRef.current?.focus());
+      if (!lightboxOpen) return;
+
+      if (event.key === "Escape") {
+        closeLightbox();
         return;
       }
 
-      if (event.key === "ArrowLeft" && lightboxOpen) {
+      if (event.key === "ArrowLeft") {
         stepGallery(-1);
         return;
       }
 
-      if (event.key === "ArrowRight" && lightboxOpen) {
+      if (event.key === "ArrowRight") {
         stepGallery(1);
         return;
       }
 
-      if (event.key === "Tab" && lightboxOpen && lightboxRef.current) {
+      if (event.key === "Tab" && lightboxRef.current) {
         const focusable = [...lightboxRef.current.querySelectorAll('button:not([disabled]), [tabindex]:not([tabindex="-1"])')];
         const first = focusable[0];
         const last = focusable[focusable.length - 1];
@@ -66,124 +88,48 @@ export default function ProductGallery({ images, productCode, productName }) {
 
     document.addEventListener("keydown", handleKeydown);
     return () => document.removeEventListener("keydown", handleKeydown);
-  }, [lightboxOpen, stepGallery]);
+  }, [lightboxOpen, stepGallery, closeLightbox]);
 
   useEffect(() => {
     document.body.classList.toggle("is-lightbox-open", lightboxOpen);
     return () => document.body.classList.remove("is-lightbox-open");
   }, [lightboxOpen]);
 
-  function handleGalleryKeydown(event) {
-    if (event.key === "ArrowLeft") {
-      event.preventDefault();
-      stepGallery(-1);
-      return;
-    }
-
-    if (event.key === "ArrowRight") {
-      event.preventDefault();
-      stepGallery(1);
-      return;
-    }
-
-  }
-
-  function closeLightbox() {
-    setLightboxOpen(false);
-    window.requestAnimationFrame(() => galleryButtonRef.current?.focus());
-  }
-
-  function scrollThumbnailRail(direction) {
-    if (!thumbnailsRef.current) return;
-    thumbnailsRef.current.scrollBy({
-      left: direction * Math.max(220, thumbnailsRef.current.clientWidth * 0.72),
-      behavior: "smooth"
-    });
-  }
-
   return (
     <>
-      <div className="product-gallery" data-product-gallery>
-        <button
-          type="button"
-          className="product-gallery-open"
-          ref={galleryButtonRef}
-          onClick={() => setLightboxOpen(true)}
-          onKeyDown={handleGalleryKeydown}
-          aria-label={`Open ${activeItem.label.toLowerCase()} preview for ${productCode}`}
-        >
-          {activeItem.src && (
-            <Image src={activeItem.src} alt={activeItem.alt} data-product-image width={1024} height={1024} sizes="(max-width: 900px) 100vw, 620px" preload unoptimized={!isOptimizableImageSrc(activeItem.src)} />
-          )}
-        </button>
-
-        {galleryItems.length > 1 && (
-          <>
+      {/* One scrolling mosaic instead of a single frame plus a thumbnail rail:
+          the hero leads at full column width and every other view follows in a
+          two-up grid, the way a house catalogue lays a piece out. */}
+      <div className="product-mosaic" data-product-gallery data-mosaic-count={galleryItems.length}>
+        {galleryItems.map((item, index) => (
+          <figure
+            key={item.src + index}
+            className={`product-mosaic-tile${index === 0 ? " is-hero" : ""}`}
+          >
             <button
               type="button"
-              className="product-gallery-nav is-prev"
-              onClick={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                stepGallery(-1);
-              }}
+              className="product-gallery-open"
+              ref={(node) => { tileRefs.current[index] = node; }}
+              onClick={() => setLightboxIndex(index)}
+              aria-label={`Open ${item.label.toLowerCase()} preview for ${productCode}`}
             >
-              <span className="product-gallery-nav-label">Previous image</span>
+              {item.src && (
+                <Image
+                  src={item.src}
+                  alt={item.alt}
+                  data-product-image={index === 0 ? "" : undefined}
+                  width={1024}
+                  height={1024}
+                  sizes={index === 0 ? "(max-width: 900px) 100vw, 640px" : "(max-width: 900px) 50vw, 320px"}
+                  preload={index === 0}
+                  unoptimized={!isOptimizableImageSrc(item.src)}
+                />
+              )}
+              <span className="product-mosaic-label">{item.label}</span>
             </button>
-            <button
-              type="button"
-              className="product-gallery-nav is-next"
-              onClick={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                stepGallery(1);
-              }}
-            >
-              <span className="product-gallery-nav-label">Next image</span>
-            </button>
-          </>
-        )}
-
-        <p className="product-gallery-copy" data-product-image-label>{activeItem.label}</p>
+          </figure>
+        ))}
       </div>
-
-      {galleryItems.length > 1 && (
-        <div className="product-thumbnails-shell">
-          <button
-            type="button"
-            className="product-thumbnails-nav is-prev"
-            onClick={() => scrollThumbnailRail(-1)}
-            aria-label="Scroll thumbnails backward"
-          >
-            <span aria-hidden="true">‹</span>
-          </button>
-
-          <div className="product-thumbnails" ref={thumbnailsRef} data-product-thumbnails>
-            {galleryItems.map((item, index) => (
-              <button
-                key={item.src + index}
-                type="button"
-                className={`product-thumbnail${index === activeIndex ? " is-active" : ""}`}
-                onClick={() => setActiveIndex(index)}
-                aria-label={`Show ${item.label}`}
-                aria-pressed={index === activeIndex}
-              >
-                <Image src={item.src} alt={item.alt} width={1024} height={1024} sizes="96px" unoptimized={!isOptimizableImageSrc(item.src)} />
-                <span className="product-thumbnail-label">{item.label}</span>
-              </button>
-            ))}
-          </div>
-
-          <button
-            type="button"
-            className="product-thumbnails-nav is-next"
-            onClick={() => scrollThumbnailRail(1)}
-            aria-label="Scroll thumbnails forward"
-          >
-            <span aria-hidden="true">›</span>
-          </button>
-        </div>
-      )}
 
       {lightboxOpen && (
         <div
@@ -202,6 +148,31 @@ export default function ProductGallery({ images, productCode, productName }) {
           {activeItem.src && (
             <Image src={activeItem.src} alt={`${activeItem.alt} large preview`} width={1024} height={1024} sizes="90vw" unoptimized={!isOptimizableImageSrc(activeItem.src)} />
           )}
+
+          {galleryItems.length > 1 && (
+            <>
+              <button
+                type="button"
+                className="product-lightbox-nav is-prev"
+                onClick={() => stepGallery(-1)}
+                aria-label="Show previous image"
+              >
+                <span aria-hidden="true">‹</span>
+              </button>
+              <button
+                type="button"
+                className="product-lightbox-nav is-next"
+                onClick={() => stepGallery(1)}
+                aria-label="Show next image"
+              >
+                <span aria-hidden="true">›</span>
+              </button>
+              <p className="product-lightbox-count" aria-live="polite">
+                {activeIndex + 1} / {galleryItems.length}
+              </p>
+            </>
+          )}
+
           <button
             type="button"
             className="product-lightbox-close"
