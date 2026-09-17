@@ -100,7 +100,7 @@ export default async function ProductPage({ params }) {
     permanentRedirect(`/product/${canonicalSlug}`);
   }
 
-  const { products: relatedProducts } = await readRelatedPublicProducts(product.collection, product.id);
+  const { products: relatedProducts } = await readRelatedPublicProducts(product.collection, product.id, { sku: product.sku });
   const collectionLabel = COLLECTION_LABELS[product.collection] || product.category || "Maris Jewelry";
   const displayName = getPublicProductDisplayName(product);
   const collectionLine = getMeaningfulText(product.collectionName);

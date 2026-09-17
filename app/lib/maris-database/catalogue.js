@@ -2,7 +2,12 @@
 
 import { createSupabaseAdminClient, getSupabaseAdminConfig } from "./connection.js";
 import { cleanOptionalText, parseMoneyAmount } from "./shared.js";
-import { toPublicProductSlug } from "../product-display.js";
+import {
+  compareSiblingProductCodes,
+  isSiblingProductCode,
+  parsePublicProductCode,
+  toPublicProductSlug
+} from "../product-display.js";
 
 const BEST_SELLER_SETTING_KEY = "home_best_sellers";
 
@@ -544,7 +549,7 @@ export async function readPublicProductBySlug(slugOrSku, { env = process.env, cl
   };
 }
 
-export async function readRelatedPublicProducts(collection, excludeId, { env = process.env, client, limit = 4 } = {}) {
+export async function readRelatedPublicProducts(collection, excludeId, { env = process.env, client, limit = 4, sku } = {}) {
   const config = getSupabaseAdminConfig(env);
 
   if (!config.isConfigured) {
@@ -552,24 +557,59 @@ export async function readRelatedPublicProducts(collection, excludeId, { env = p
   }
 
   const supabase = client || createSupabaseAdminClient(env);
-  let query = supabase
-    .from("products")
-    .select(PUBLIC_CATALOGUE_SELECT)
-    .eq("status", "active")
-    .limit(limit + 1);
+  // Siblings of the same design ("SR 0015 ER" next to "SR 0015 WB") come first,
+  // whatever collection they sit in; the rest of the row is filled from the
+  // piece's own collection. SKUs are hand-entered with or without spaces, so
+  // the database match is loose and the exact code comparison happens here.
+  const code = parsePublicProductCode(sku);
+  let siblings = [];
 
-  if (collection) {
-    query = query.eq("collection", collection);
+  if (code) {
+    const bySku = await supabase
+      .from("products")
+      .select(PUBLIC_CATALOGUE_SELECT)
+      .eq("status", "active")
+      .ilike("sku", `${code.prefix}%${code.digits}%`)
+      .limit(limit * 3);
+
+    if (bySku.error) {
+      throw new Error(bySku.error.message || "Supabase related products could not be loaded.");
+    }
+
+    siblings = (Array.isArray(bySku.data) ? bySku.data.map(normalizePublicProduct) : [])
+      .filter((item) => item.id !== excludeId && isSiblingProductCode(sku, item.sku))
+      .sort((left, right) => compareSiblingProductCodes(left.sku, right.sku));
   }
 
-  const { data, error } = await query;
+  let sameCollection = [];
 
-  if (error) {
-    throw new Error(error.message || "Supabase related products could not be loaded.");
+  if (siblings.length < limit) {
+    let query = supabase
+      .from("products")
+      .select(PUBLIC_CATALOGUE_SELECT)
+      .eq("status", "active")
+      .limit(limit + siblings.length + 1);
+
+    if (collection) {
+      query = query.eq("collection", collection);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      throw new Error(error.message || "Supabase related products could not be loaded.");
+    }
+
+    sameCollection = Array.isArray(data) ? data.map(normalizePublicProduct) : [];
   }
 
-  const products = (Array.isArray(data) ? data.map(normalizePublicProduct) : [])
-    .filter((item) => item.id !== excludeId)
+  const seen = new Set([excludeId]);
+  const products = [...siblings, ...sameCollection]
+    .filter((item) => {
+      if (seen.has(item.id)) return false;
+      seen.add(item.id);
+      return true;
+    })
     .slice(0, limit);
 
   return { source: "supabase", status: "ready", products };

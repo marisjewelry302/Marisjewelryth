@@ -28,6 +28,7 @@
     "test:product-wishlist": "node scripts/test-product-wishlist-button.mjs",
     "test:catalogue-filters": "node scripts/test-catalogue-filters.mjs",
     "test:product-canonical-url": "node scripts/test-product-canonical-url.mjs",
+    "test:related-products": "node scripts/test-related-products.mjs",
     "test:seo-aeo-geo": "node scripts/test-seo-aeo-geo.mjs",
     "test:site-header-nav": "node scripts/test-site-header-nav.mjs",
     "test:admin-clarity": "node scripts/test-admin-clarity.mjs",
