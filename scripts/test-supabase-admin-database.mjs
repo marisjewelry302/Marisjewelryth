@@ -229,7 +229,8 @@ assert.deepEqual(catalogue.products[0], {
       altText: "Diamond Ring main angle",
       sortOrder: 0,
       isPrimary: true,
-      source: "google_sheet"
+      source: "google_sheet",
+      role: ""
     },
     {
       id: "image-2",
@@ -237,7 +238,8 @@ assert.deepEqual(catalogue.products[0], {
       altText: "Diamond Ring side",
       sortOrder: 1,
       isPrimary: false,
-      source: "manual"
+      source: "manual",
+      role: ""
     }
   ]
 });
@@ -365,6 +367,24 @@ assert.ok(
   publicCatalogueCalls.some((call) => call[0] === "select" && /collection_name/.test(call[2])),
   "Public catalogue reader should request the named collection for the product page"
 );
+const publicImages = [
+  {
+    id: "image-1",
+    imageUrl: "https://example.com/ring-main.png",
+    altText: "Diamond Ring main",
+    sortOrder: 0,
+    isPrimary: true,
+    role: ""
+  },
+  {
+    id: "image-2",
+    imageUrl: "https://example.com/ring-side.png",
+    altText: "Diamond Ring side",
+    sortOrder: 1,
+    isPrimary: false,
+    role: ""
+  }
+];
 assert.deepEqual(publicCatalogue.products[0], {
   id: "product-1",
   sku: "ER1001",
@@ -376,22 +396,10 @@ assert.deepEqual(publicCatalogue.products[0], {
   status: "active",
   basePrice: 12900,
   primaryImageUrl: "https://example.com/ring-main.png",
-  images: [
-    {
-      id: "image-1",
-      imageUrl: "https://example.com/ring-main.png",
-      altText: "Diamond Ring main",
-      sortOrder: 0,
-      isPrimary: true
-    },
-    {
-      id: "image-2",
-      imageUrl: "https://example.com/ring-side.png",
-      altText: "Diamond Ring side",
-      sortOrder: 1,
-      isPrimary: false
-    }
-  ],
+  hoverImageUrl: "https://example.com/ring-side.png",
+  images: publicImages,
+  coverImages: publicImages,
+  infoImages: publicImages,
   variants: [
     {
       id: "variant-1",

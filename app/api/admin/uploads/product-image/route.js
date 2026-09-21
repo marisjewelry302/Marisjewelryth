@@ -53,7 +53,9 @@ export async function POST(request) {
       buffer,
       altText: formData.get("altText"),
       sortOrder: formData.get("sortOrder"),
-      isPrimary: formData.get("isPrimary") === "true"
+      isPrimary: formData.get("isPrimary") === "true",
+      role: formData.get("role"),
+      slot: formData.get("slot") ?? undefined
     });
 
     return json({ image }, 201);

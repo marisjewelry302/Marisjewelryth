@@ -49,6 +49,7 @@ export {
 } from "./maris-database/inquiries.js";
 export {
   AdminProductImageUploadError,
+  assignAdminProductImageRole,
   deleteAdminProductImage,
   reorderAdminProductImages,
   uploadAdminProductImage

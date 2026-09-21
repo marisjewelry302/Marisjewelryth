@@ -1,6 +1,8 @@
 import { notFound, permanentRedirect } from "next/navigation";
 import { cache } from "react";
 import { readPublicProductBySlug, readRelatedPublicProducts } from "../../lib/maris-database.js";
+import { resolveProductModel } from "../../lib/product-3d-models.js";
+import { resolveProductTurntable } from "../../lib/product-turntables.js";
 import {
   getMeaningfulText,
   getPublicProductAltText,
@@ -105,6 +107,12 @@ export default async function ProductPage({ params }) {
   const displayName = getPublicProductDisplayName(product);
   const collectionLine = getMeaningfulText(product.collectionName);
   const productPath = getPublicProductPath(product);
+  // Resolved on the server, the way Cartier decides on the server whether the
+  // 3D slide belongs in the gallery at all. No model, no viewer in the page.
+  const productModel = resolveProductModel(product.sku);
+  // A rendered turntable outranks the realtime model when a piece has one; see
+  // app/lib/product-turntables.js for why.
+  const productTurntable = resolveProductTurntable(product.sku);
   const wishlistItem = {
     id: `${product.collection || collectionLabel}:${product.sku}`,
     title: product.sku,
@@ -131,7 +139,13 @@ export default async function ProductPage({ params }) {
       <main className="product-page">
         <div className="product-detail">
           <div className="product-gallery-column">
-            <ProductGallery images={product.images} productCode={product.sku} productName={displayName} />
+            <ProductGallery
+              images={product.infoImages || product.images}
+              productCode={product.sku}
+              productName={displayName}
+              model={productModel}
+              turntable={productTurntable}
+            />
           </div>
 
           <div className="product-summary">

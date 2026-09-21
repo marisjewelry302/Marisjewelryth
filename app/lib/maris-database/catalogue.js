@@ -8,6 +8,7 @@ import {
   parsePublicProductCode,
   toPublicProductSlug
 } from "../product-display.js";
+import { normalizeProductImageRole, splitProductImages } from "../product-image-roles.js";
 
 const BEST_SELLER_SETTING_KEY = "home_best_sellers";
 
@@ -41,7 +42,8 @@ const ADMIN_CATALOGUE_SELECT = `
     alt_text,
     sort_order,
     is_primary,
-    source
+    source,
+    metadata
   )
 `;
 
@@ -68,9 +70,37 @@ const PUBLIC_CATALOGUE_SELECT = `
     image_url,
     alt_text,
     sort_order,
-    is_primary
+    is_primary,
+    metadata
   )
 `;
+
+// Image roles live in product_images.metadata, which migration 20260917000000
+// adds to databases created without it. Until that runs, any select naming the
+// column fails outright, so reads retry without it: images then read as
+// untagged and keep their original order. Writes never ask for it, so a retry
+// can never repeat an insert or update.
+function withoutImageMetadata(select) {
+  return select.replace(/,\s*metadata(?=\s*\))/, "");
+}
+
+const ADMIN_CATALOGUE_WRITE_SELECT = withoutImageMetadata(ADMIN_CATALOGUE_SELECT);
+
+function isMissingImageMetadataError(error) {
+  const message = String(error?.message || "");
+
+  return /metadata/i.test(message) && /does not exist/i.test(message);
+}
+
+async function selectWithImageMetadataFallback(select, runQuery) {
+  const result = await runQuery(select);
+
+  if (result.error && isMissingImageMetadataError(result.error)) {
+    return runQuery(withoutImageMetadata(select));
+  }
+
+  return result;
+}
 
 function normalizeVariant(row) {
   return {
@@ -91,7 +121,8 @@ function normalizeImage(row) {
     altText: row.alt_text || "",
     sortOrder: Number(row.sort_order) || 0,
     isPrimary: row.is_primary === true,
-    source: row.source || "manual"
+    source: row.source || "manual",
+    role: normalizeProductImageRole(row.metadata?.role)
   };
 }
 
@@ -221,7 +252,8 @@ function normalizeProduct(row) {
   const images = Array.isArray(row.product_images)
     ? row.product_images.map(normalizeImage).sort(sortImages)
     : [];
-  const primaryImage = images.find((image) => image.isPrimary) || images[0] || null;
+  const { coverImages } = splitProductImages(images);
+  const primaryImage = coverImages[0] || null;
   const collectionName = cleanOptionalText(row.collection_name) || "";
 
   return {
@@ -264,7 +296,8 @@ function normalizePublicImage(row) {
     imageUrl: row.image_url || "",
     altText: row.alt_text || "",
     sortOrder: Number(row.sort_order) || 0,
-    isPrimary: row.is_primary === true
+    isPrimary: row.is_primary === true,
+    role: normalizeProductImageRole(row.metadata?.role)
   };
 }
 
@@ -275,7 +308,8 @@ function normalizePublicProduct(row) {
   const images = Array.isArray(row.product_images)
     ? row.product_images.map(normalizePublicImage).sort(sortImages)
     : [];
-  const primaryImage = images.find((image) => image.isPrimary) || images[0] || null;
+  const { coverImages, infoImages } = splitProductImages(images);
+  const primaryImage = coverImages[0] || null;
 
   return {
     id: row.id,
@@ -288,7 +322,10 @@ function normalizePublicProduct(row) {
     status: row.status || "active",
     basePrice: row.base_price === null || row.base_price === undefined ? null : Number(row.base_price),
     primaryImageUrl: primaryImage?.imageUrl || "",
+    hoverImageUrl: coverImages[1]?.imageUrl || "",
     images,
+    coverImages,
+    infoImages,
     variants
   };
 }
@@ -307,11 +344,11 @@ export async function readAdminCatalogueProducts({ env = process.env, client, li
   }
 
   const supabase = client || createSupabaseAdminClient(env);
-  const { data, error } = await supabase
+  const { data, error } = await selectWithImageMetadataFallback(ADMIN_CATALOGUE_SELECT, (select) => supabase
     .from("products")
-    .select(ADMIN_CATALOGUE_SELECT)
+    .select(select)
     .order("updated_at", { ascending: false })
-    .limit(limit);
+    .limit(limit));
 
   if (error) {
     throw new Error(error.message || "Supabase catalogue products could not be loaded.");
@@ -341,12 +378,12 @@ export async function readPublicCatalogueProducts({ env = process.env, client, l
   }
 
   const supabase = client || createSupabaseAdminClient(env);
-  const { data, error } = await supabase
+  const { data, error } = await selectWithImageMetadataFallback(PUBLIC_CATALOGUE_SELECT, (select) => supabase
     .from("products")
-    .select(PUBLIC_CATALOGUE_SELECT)
+    .select(select)
     .eq("status", "active")
     .order("updated_at", { ascending: false })
-    .limit(limit);
+    .limit(limit));
 
   if (error) {
     throw new Error(error.message || "Supabase public catalogue products could not be loaded.");
@@ -463,12 +500,12 @@ export async function readPublicBestSellerProducts({ env = process.env, client, 
     };
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await selectWithImageMetadataFallback(PUBLIC_CATALOGUE_SELECT, (select) => supabase
     .from("products")
-    .select(PUBLIC_CATALOGUE_SELECT)
+    .select(select)
     .eq("status", "active")
     .in("id", productIds)
-    .limit(productIds.length);
+    .limit(productIds.length));
 
   if (error) {
     throw new Error(error.message || "Supabase best seller products could not be loaded.");
@@ -513,17 +550,17 @@ export async function readPublicProductBySlug(slugOrSku, { env = process.env, cl
     slugCandidate.replace(/-/g, " ").toUpperCase()
   ].filter(Boolean))];
 
-  function selectActiveProducts() {
-    return supabase
+  function selectActiveProducts(narrow) {
+    return selectWithImageMetadataFallback(PUBLIC_CATALOGUE_SELECT, (select) => narrow(supabase
       .from("products")
-      .select(PUBLIC_CATALOGUE_SELECT)
-      .eq("status", "active");
+      .select(select)
+      .eq("status", "active")));
   }
 
   let data = null;
 
   if (slugCandidate) {
-    const bySlug = await selectActiveProducts().eq("slug", slugCandidate).limit(1).maybeSingle();
+    const bySlug = await selectActiveProducts((query) => query.eq("slug", slugCandidate).limit(1).maybeSingle());
 
     if (bySlug.error) {
       throw new Error(bySlug.error.message || "Supabase product could not be loaded.");
@@ -533,7 +570,7 @@ export async function readPublicProductBySlug(slugOrSku, { env = process.env, cl
   }
 
   if (!data && skuCandidates.length) {
-    const bySku = await selectActiveProducts().in("sku", skuCandidates).limit(1).maybeSingle();
+    const bySku = await selectActiveProducts((query) => query.in("sku", skuCandidates).limit(1).maybeSingle());
 
     if (bySku.error) {
       throw new Error(bySku.error.message || "Supabase product could not be loaded.");
@@ -565,12 +602,12 @@ export async function readRelatedPublicProducts(collection, excludeId, { env = p
   let siblings = [];
 
   if (code) {
-    const bySku = await supabase
+    const bySku = await selectWithImageMetadataFallback(PUBLIC_CATALOGUE_SELECT, (select) => supabase
       .from("products")
-      .select(PUBLIC_CATALOGUE_SELECT)
+      .select(select)
       .eq("status", "active")
       .ilike("sku", `${code.prefix}%${code.digits}%`)
-      .limit(limit * 3);
+      .limit(limit * 3));
 
     if (bySku.error) {
       throw new Error(bySku.error.message || "Supabase related products could not be loaded.");
@@ -584,17 +621,15 @@ export async function readRelatedPublicProducts(collection, excludeId, { env = p
   let sameCollection = [];
 
   if (siblings.length < limit) {
-    let query = supabase
-      .from("products")
-      .select(PUBLIC_CATALOGUE_SELECT)
-      .eq("status", "active")
-      .limit(limit + siblings.length + 1);
+    const { data, error } = await selectWithImageMetadataFallback(PUBLIC_CATALOGUE_SELECT, (select) => {
+      const query = supabase
+        .from("products")
+        .select(select)
+        .eq("status", "active")
+        .limit(limit + siblings.length + 1);
 
-    if (collection) {
-      query = query.eq("collection", collection);
-    }
-
-    const { data, error } = await query;
+      return collection ? query.eq("collection", collection) : query;
+    });
 
     if (error) {
       throw new Error(error.message || "Supabase related products could not be loaded.");
@@ -642,7 +677,7 @@ export async function createAdminProduct(product, { env = process.env, client } 
   const { data, error } = await supabase
     .from("products")
     .insert(payload)
-    .select(ADMIN_CATALOGUE_SELECT)
+    .select(ADMIN_CATALOGUE_WRITE_SELECT)
     .single();
 
   if (error) {
@@ -715,7 +750,7 @@ export async function updateAdminProduct(productId, updates, { env = process.env
     .from("products")
     .update(cleanedPayload)
     .eq("id", productId)
-    .select(ADMIN_CATALOGUE_SELECT)
+    .select(ADMIN_CATALOGUE_WRITE_SELECT)
     .single();
 
   if (error) {

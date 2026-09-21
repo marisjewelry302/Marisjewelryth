@@ -28,6 +28,14 @@ function getImageSource(image) {
 }
 
 function getHoverImageSource(product, primaryImage) {
+  // Supabase products name their two cover images outright: the second one is
+  // the hover, and a piece with a single cover simply does not swap.
+  if (Array.isArray(product.coverImages)) {
+    const secondCover = getImageSource(product.coverImages[1]);
+
+    return secondCover && secondCover !== primaryImage ? secondCover : "";
+  }
+
   const galleryImages = Array.isArray(product.images)
     ? product.images.map(getImageSource)
     : [];

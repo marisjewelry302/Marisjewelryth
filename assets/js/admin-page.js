@@ -103,6 +103,11 @@
 
   const ADMIN_API_PREFIX = "/api/admin";
   const ADMIN_PRODUCT_IMAGES_PATH = "/product-images";
+  // Mirrors app/lib/product-image-roles.js: two cover images dress the catalogue
+  // card (the second on hover); the info set fills the product page.
+  const IMAGE_ROLE_COVER = "cover";
+  const IMAGE_ROLE_INFO = "info";
+  const COVER_IMAGE_LIMIT = 2;
   const BEST_SELLER_SLOT_COUNT = 7;
   const PRODUCT_LIST_PAGE_SIZE = 5;
   const adminCache = {
@@ -140,6 +145,7 @@
     Pd: "Palladium"
   };
   let modalGalleryImages = [];
+  let modalCoverImages = [null, null];
   let modalGalleryDragIndex = null;
 
   async function fetchAdminApi(path, options = {}) {
@@ -749,6 +755,7 @@
 
     return {
       product,
+      coverImageFiles: formData.getAll("coverImageFiles").filter(isSelectedFile).slice(0, COVER_IMAGE_LIMIT),
       mainImageFile: orderedFiles[0] || null,
       galleryImageFiles: orderedFiles.slice(1),
       smartGroup
@@ -763,6 +770,14 @@
     uploadFormData.set("sortOrder", String(options.sortOrder || 0));
     uploadFormData.set("isPrimary", options.isPrimary ? "true" : "false");
 
+    if (options.role) {
+      uploadFormData.set("role", options.role);
+    }
+
+    if (options.slot !== undefined) {
+      uploadFormData.set("slot", String(options.slot));
+    }
+
     return fetchAdminApi("/uploads/product-image", {
       method: "POST",
       body: uploadFormData
@@ -771,14 +786,23 @@
 
   async function uploadProductImages(product, result) {
     const productName = result.product.name || result.product.code;
+    const coverFiles = (result.coverImageFiles || []).filter(isSelectedFile);
     const files = [result.mainImageFile, ...result.galleryImageFiles].filter(isSelectedFile);
+
+    for (const [slot, file] of coverFiles.entries()) {
+      await uploadProductImage(product.id, file, {
+        altText: `${productName} cover image ${slot + 1}`,
+        role: IMAGE_ROLE_COVER,
+        slot
+      });
+    }
 
     for (const [index, file] of files.entries()) {
       const smartImage = findSmartImageMetadata(file, result.smartGroup);
       await uploadProductImage(product.id, file, {
-        altText: smartImage?.altText || `${productName} ${index === 0 ? "primary image" : `gallery image ${index}`}`,
+        altText: smartImage?.altText || `${productName} info image ${index + 1}`,
         sortOrder: index,
-        isPrimary: index === 0
+        role: IMAGE_ROLE_INFO
       });
     }
   }
@@ -789,36 +813,88 @@
 
   function getModalProductImages(product) {
     const images = Array.isArray(product?.images) ? product.images : [];
-
-    return images
+    const normalizedImages = images
       .filter((image) => image?.id && image?.imageUrl)
       .map((image, index) => ({
         id: String(image.id),
         imageUrl: image.imageUrl,
         altText: image.altText || `${getProductName(product)} image ${index + 1}`,
         sortOrder: Number(image.sortOrder) || index,
-        isPrimary: image.isPrimary === true
-      }))
+        isPrimary: image.isPrimary === true,
+        role: image.role === IMAGE_ROLE_COVER || image.role === IMAGE_ROLE_INFO ? image.role : ""
+      }));
+    const covers = [null, null];
+
+    normalizedImages
+      .filter((image) => image.role === IMAGE_ROLE_COVER)
+      .sort((left, right) => left.sortOrder - right.sortOrder)
+      .forEach((image) => {
+        const slot = image.sortOrder === 1 ? 1 : 0;
+
+        if (!covers[slot]) {
+          covers[slot] = image;
+        } else if (!covers[1 - slot]) {
+          covers[1 - slot] = image;
+        }
+      });
+
+    const coverIds = new Set(covers.filter(Boolean).map((image) => image.id));
+    // Images uploaded before roles existed carry none; they sit in the info set
+    // until an admin promotes one to a cover slot. Primary only leads the order
+    // while no cover is set, matching how the storefront reads the same rows.
+    const info = normalizedImages
+      .filter((image) => !coverIds.has(image.id))
       .sort((left, right) => {
-        if (left.isPrimary !== right.isPrimary) {
+        if (!coverIds.size && left.isPrimary !== right.isPrimary) {
           return left.isPrimary ? -1 : 1;
         }
 
         return left.sortOrder - right.sortOrder;
       });
+
+    return { covers, info };
   }
 
-  function updateModalMainImagePreview(product) {
-    const previewEl = document.getElementById("modal-main-image-preview");
-    if (!previewEl) return;
+  function hasModalCoverImages() {
+    return modalCoverImages.some(Boolean);
+  }
 
-    const primaryImageUrl = product?.primaryImageUrl || modalGalleryImages[0]?.imageUrl || "";
-    if (primaryImageUrl) {
-      previewEl.outerHTML = `<img id="modal-main-image-preview" class="modal-image-preview" src="${escapeHtml(primaryImageUrl)}" alt="Current main image">`;
-      return;
-    }
+  function renderModalCoverImages() {
+    const grid = document.getElementById("modal-cover-grid");
+    if (!grid) return;
 
-    previewEl.outerHTML = `<div id="modal-main-image-preview" class="modal-image-placeholder">No main image</div>`;
+    const fallbackNote = modalGalleryImages.length
+      ? "Not set - the card uses the info images instead"
+      : "Not set";
+
+    grid.innerHTML = modalCoverImages
+      .map((image, slot) => {
+        const label = slot === 0 ? "Cover 1 · Card image" : "Cover 2 · Hover image";
+        const otherSlot = 1 - slot;
+        const preview = image
+          ? `<img src="${escapeHtml(image.imageUrl)}" alt="${escapeHtml(image.altText || label)}">`
+          : `<div class="modal-image-placeholder">${escapeHtml(fallbackNote)}</div>`;
+        const actions = image
+          ? `
+            <button class="modal-chip-btn" type="button" data-image-assign="${escapeHtml(image.id)}" data-role="${IMAGE_ROLE_COVER}" data-slot="${otherSlot}">Swap</button>
+            <button class="modal-chip-btn" type="button" data-image-assign="${escapeHtml(image.id)}" data-role="${IMAGE_ROLE_INFO}">Move to info</button>
+            <button class="modal-chip-btn is-danger" type="button" data-gallery-delete="${escapeHtml(image.id)}">Delete</button>
+          `
+          : "";
+
+        return `
+          <div class="modal-cover-slot" data-cover-slot="${slot}">
+            <span class="modal-cover-label">${label}</span>
+            ${preview}
+            <div class="modal-chip-row">${actions}</div>
+            <label class="modal-label">
+              ${image ? "Replace" : "Upload"} cover ${slot + 1}
+              <input class="modal-file-input" id="modal-field-cover-${slot + 1}" type="file" accept="image/*">
+            </label>
+          </div>
+        `;
+      })
+      .join("");
   }
 
   function updateModalGalleryCount() {
@@ -827,7 +903,7 @@
 
     const galleryCount = modalGalleryImages.length;
     galleryCountEl.textContent =
-      galleryCount ? `${galleryCount} image${galleryCount > 1 ? "s" : ""} in gallery` : "No gallery images yet";
+      galleryCount ? `${galleryCount} image${galleryCount > 1 ? "s" : ""} in the info set` : "No info images yet";
   }
 
   function renderModalGalleryImages(images = modalGalleryImages) {
@@ -838,25 +914,31 @@
     updateModalGalleryCount();
 
     if (!modalGalleryImages.length) {
-      grid.innerHTML = `<p class="modal-gallery-empty">No existing gallery images to manage.</p>`;
+      grid.innerHTML = `<p class="modal-gallery-empty">No info images to manage.</p>`;
       return;
     }
 
     grid.innerHTML = modalGalleryImages
       .map((image, index) => `
         <div class="modal-gallery-item" draggable="true" data-gallery-index="${index}" data-image-id="${escapeHtml(image.id)}">
-          <img src="${escapeHtml(image.imageUrl)}" alt="${escapeHtml(image.altText || `Gallery image ${index + 1}`)}">
-          <span class="gallery-badge">${image.isPrimary ? "Main" : index + 1}</span>
+          <img src="${escapeHtml(image.imageUrl)}" alt="${escapeHtml(image.altText || `Info image ${index + 1}`)}">
+          <span class="gallery-badge">${index + 1}</span>
           <button class="modal-gallery-delete" type="button" data-gallery-delete="${escapeHtml(image.id)}" aria-label="Delete image">&times;</button>
+          <div class="modal-gallery-promote">
+            <button type="button" data-image-assign="${escapeHtml(image.id)}" data-role="${IMAGE_ROLE_COVER}" data-slot="0" title="Use as cover 1 (card image)">C1</button>
+            <button type="button" data-image-assign="${escapeHtml(image.id)}" data-role="${IMAGE_ROLE_COVER}" data-slot="1" title="Use as cover 2 (hover image)">C2</button>
+          </div>
         </div>
       `)
       .join("");
   }
 
   function renderModalProductImages(product) {
-    modalGalleryImages = getModalProductImages(product);
-    updateModalMainImagePreview(product);
+    const { covers, info } = getModalProductImages(product);
+    modalCoverImages = covers;
+    modalGalleryImages = info;
     renderModalGalleryImages(modalGalleryImages);
+    renderModalCoverImages();
   }
 
   async function reloadEditModalProduct(productId) {
@@ -872,10 +954,10 @@
 
   async function deleteModalGalleryImage(imageId) {
     const productId = getModalProductId();
-    const image = modalGalleryImages.find((item) => item.id === imageId);
+    const isCover = modalCoverImages.some((image) => image?.id === imageId);
     if (!productId || !imageId) return;
 
-    if (!confirm(`Delete this ${image?.isPrimary ? "main" : "gallery"} image?`)) {
+    if (!confirm(`Delete this ${isCover ? "cover" : "info"} image?`)) {
       return;
     }
 
@@ -892,20 +974,48 @@
     }
   }
 
+  async function assignModalImageRole(imageId, role, slot) {
+    const productId = getModalProductId();
+    if (!productId || !imageId) return;
+
+    setModalMessage(role === IMAGE_ROLE_COVER ? "Updating cover images..." : "Moving image to the info set...", false);
+
+    try {
+      await fetchAdminApi(ADMIN_PRODUCT_IMAGES_PATH, {
+        method: "PATCH",
+        body: JSON.stringify({
+          action: "assign-role",
+          productId,
+          imageId,
+          role,
+          slot: Number(slot) || 0
+        })
+      });
+      await reloadEditModalProduct(productId);
+      setModalMessage("Images updated.");
+    } catch (error) {
+      await reloadEditModalProduct(productId).catch(() => {});
+      setModalMessage(error instanceof Error ? error.message : "Could not update images.", true);
+    }
+  }
+
   async function reorderModalGalleryImages(fromIndex, toIndex) {
     const productId = getModalProductId();
     if (!productId || fromIndex === toIndex) return;
 
+    // A product with no cover set still leads its card with the first image,
+    // so its reorder keeps moving primary; once covers exist, info order is
+    // only the product page order.
+    const hasCovers = hasModalCoverImages();
     const nextImages = [...modalGalleryImages];
     const [movedImage] = nextImages.splice(fromIndex, 1);
     nextImages.splice(toIndex, 0, movedImage);
     modalGalleryImages = nextImages.map((image, index) => ({
       ...image,
       sortOrder: index,
-      isPrimary: index === 0
+      isPrimary: hasCovers ? false : index === 0
     }));
     renderModalGalleryImages(modalGalleryImages);
-    updateModalMainImagePreview({ primaryImageUrl: modalGalleryImages[0]?.imageUrl || "" });
     setModalMessage("Saving image order...", false);
 
     try {
@@ -913,7 +1023,8 @@
         method: "PATCH",
         body: JSON.stringify({
           productId,
-          imageIds: modalGalleryImages.map((image) => image.id)
+          imageIds: modalGalleryImages.map((image) => image.id),
+          ...(hasCovers ? { role: IMAGE_ROLE_INFO } : {})
         })
       });
       await reloadEditModalProduct(productId);
@@ -925,6 +1036,12 @@
   }
 
   function handleModalGalleryClick(event) {
+    const assignBtn = event.target.closest("[data-image-assign]");
+    if (assignBtn) {
+      assignModalImageRole(assignBtn.dataset.imageAssign, assignBtn.dataset.role, assignBtn.dataset.slot);
+      return;
+    }
+
     const deleteBtn = event.target.closest("[data-gallery-delete]");
     if (!deleteBtn) return;
 
@@ -1474,6 +1591,68 @@
         justify-content: center;
       }
       .modal-gallery-delete:hover { background: #d94a5a; }
+      /* ── Cover slots ── */
+      #modal-cover-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+        margin: 12px 0 8px;
+      }
+      .modal-cover-slot img,
+      .modal-cover-slot .modal-image-placeholder {
+        width: 100%;
+        aspect-ratio: 1;
+        object-fit: contain;
+        background: #ececec;
+        display: flex;
+        margin-bottom: 8px;
+        text-align: center;
+        padding: 8px;
+        box-sizing: border-box;
+      }
+      .modal-cover-label {
+        display: block;
+        color: #00493a;
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        margin-bottom: 6px;
+      }
+      .modal-chip-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-bottom: 8px;
+        min-height: 4px;
+      }
+      .modal-chip-btn {
+        border: 1px solid rgba(0,73,58,0.24);
+        background: #fff;
+        color: #00493a;
+        font: inherit;
+        font-size: 11px;
+        padding: 4px 8px;
+        cursor: pointer;
+      }
+      .modal-chip-btn:hover { background: rgba(0,73,58,0.06); }
+      .modal-chip-btn.is-danger { color: #d94a5a; border-color: rgba(217,74,90,0.4); }
+      .modal-gallery-promote {
+        position: absolute;
+        left: 4px;
+        bottom: 4px;
+        display: flex;
+        gap: 4px;
+      }
+      .modal-gallery-promote button {
+        border: none;
+        background: rgba(0,73,58,0.88);
+        color: #fff;
+        font-size: 10px;
+        letter-spacing: 0.06em;
+        padding: 3px 6px;
+        cursor: pointer;
+      }
+      .modal-gallery-promote button:hover { background: #00493a; }
       .modal-gallery-empty {
         color: #5c6d68;
         font-size: 13px;
@@ -1608,22 +1787,17 @@
         </div>
 
         <hr class="modal-divider">
-        <span class="modal-kicker">Main Image</span>
-        <div class="modal-main-img-wrap">
-          <div id="modal-main-image-preview" class="modal-image-placeholder">No main image</div>
-          <label class="modal-label" style="margin-top:4px">
-            Replace Main Image
-            <input class="modal-file-input" id="modal-field-main-image" type="file" accept="image/*">
-          </label>
-        </div>
+        <span class="modal-kicker">Cover Images (2)</span>
+        <p class="modal-gallery-hint" style="margin-top:6px">Cover 1 shows on the catalogue card · Cover 2 replaces it on hover</p>
+        <div id="modal-cover-grid"></div>
 
         <hr class="modal-divider">
-        <span class="modal-kicker">Gallery Images</span>
-        <p id="modal-gallery-count" class="modal-gallery-count">No gallery images yet</p>
-        <p class="modal-gallery-hint" style="margin-top:6px">Drag to reorder · Press ✕ to delete an image</p>
+        <span class="modal-kicker">Product Info Images</span>
+        <p id="modal-gallery-count" class="modal-gallery-count">No info images yet</p>
+        <p class="modal-gallery-hint" style="margin-top:6px">Shown on the product page · Drag to reorder · C1 / C2 uses an image as a cover · ✕ deletes</p>
         <div id="modal-gallery-grid"></div>
         <label class="modal-label" style="margin-top:4px">
-          Add More Images
+          Add Info Images
           <input class="modal-file-input" id="modal-field-gallery" type="file" accept="image/*" multiple>
         </label>
 
@@ -1641,6 +1815,7 @@
     modal.addEventListener("click", (e) => { if (e.target === modal) closeEditModal(); });
     document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeEditModal(); });
     document.getElementById("modal-save-btn").addEventListener("click", saveEditModal);
+    document.getElementById("modal-cover-grid").addEventListener("click", handleModalGalleryClick);
     const galleryGrid = document.getElementById("modal-gallery-grid");
     galleryGrid.addEventListener("click", handleModalGalleryClick);
     galleryGrid.addEventListener("dragstart", handleModalGalleryDragStart);
@@ -1677,8 +1852,7 @@
 
     renderModalProductImages(product);
 
-    // Reset file inputs & message
-    document.getElementById("modal-field-main-image").value = "";
+    // Reset file inputs & message (cover inputs are rebuilt by renderModalProductImages)
     document.getElementById("modal-field-gallery").value = "";
     setModalMessage("", false);
 
@@ -1746,25 +1920,30 @@
         })
       });
 
-      // 2. Upload new main image (if selected)
-      const mainImageFile = document.getElementById("modal-field-main-image").files[0];
-      if (mainImageFile) {
-        await uploadProductImage(productId, mainImageFile, {
-          altText: `${name} primary image`,
-          sortOrder: 0,
-          isPrimary: true
-        });
+      // 2. Upload new cover images (each replaces whatever holds its slot)
+      for (let slot = 0; slot < COVER_IMAGE_LIMIT; slot += 1) {
+        const coverFile = document.getElementById(`modal-field-cover-${slot + 1}`)?.files?.[0];
+        if (coverFile) {
+          await uploadProductImage(productId, coverFile, {
+            altText: `${name} cover image ${slot + 1}`,
+            role: IMAGE_ROLE_COVER,
+            slot
+          });
+        }
       }
 
-      // 3. Upload new gallery images (if selected)
+      // 3. Upload new info images (if selected)
       const galleryFiles = Array.from(document.getElementById("modal-field-gallery").files);
       if (galleryFiles.length) {
-        const nextSortOrder = modalGalleryImages.length;
+        const nextSortOrder = modalGalleryImages.reduce(
+          (highest, image) => Math.max(highest, image.sortOrder + 1),
+          0
+        );
         await Promise.all(galleryFiles.map((file, index) =>
           uploadProductImage(productId, file, {
-            altText: `${name} gallery image ${index + 1}`,
+            altText: `${name} info image ${index + 1}`,
             sortOrder: nextSortOrder + index,
-            isPrimary: false
+            role: IMAGE_ROLE_INFO
           })
         ));
       }
@@ -2709,7 +2888,11 @@
       updateImageGroupSummary(form, null);
       syncRingTypeFieldVisibility(form);
       renderAll();
-      setMessage(imageUploadDraft.mainImageFile ? "Product and images saved in Supabase." : "Product saved in Supabase.");
+      setMessage(
+        imageUploadDraft.mainImageFile || imageUploadDraft.coverImageFiles.length
+          ? "Product and images saved in Supabase."
+          : "Product saved in Supabase."
+      );
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Unable to save product and images in Supabase.", true);
     }

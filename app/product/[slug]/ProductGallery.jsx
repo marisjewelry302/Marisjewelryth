@@ -4,15 +4,32 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import Image from "next/image";
 import { isOptimizableImageSrc } from "../../lib/image-source";
 import { getPublicImageAltText } from "../../lib/product-display";
+import Product3DViewer from "./Product3DViewer";
+import ProductTurntable from "./ProductTurntable";
 
-export default function ProductGallery({ images, productCode, productName }) {
+export default function ProductGallery({ images, productCode, productName, model, turntable }) {
   const galleryItems = images && images.length > 0
     ? images.map((img, index) => ({
         src: img.imageUrl,
         alt: getPublicImageAltText(img, productCode, productName, index),
-        label: img.isPrimary ? "Primary View" : `View ${index + 1}`
+        label: index === 0 ? "Primary View" : `View ${index + 1}`
       }))
     : [{ src: "", alt: `${productCode} ${productName}`, label: "Primary View" }];
+
+  // A piece with a model leads the sheet with the 3D view instead of a
+  // photograph, and drops back to photography the moment the viewer reports it
+  // cannot run - no WebGL, or a model that will not load.
+  const [modelFailed, setModelFailed] = useState(false);
+  const [turntableFailed, setTurntableFailed] = useState(false);
+  const handleModelUnavailable = useCallback(() => setModelFailed(true), []);
+  const handleTurntableUnavailable = useCallback(() => setTurntableFailed(true), []);
+
+  // Three ways to lead the sheet, in order of how well they show a piece: a
+  // rendered turntable if one exists, the realtime model if not, and
+  // photography if neither. Each falls through to the next when it cannot run.
+  const showTurntable = Boolean(turntable) && !turntableFailed;
+  const show3d = !showTurntable && Boolean(model) && !modelFailed;
+  const showHeroMedia = showTurntable || show3d;
 
   // The mosaic shows every image at once, so the only "active" image is the one
   // the lightbox is holding. -1 means the lightbox is closed.
@@ -101,10 +118,32 @@ export default function ProductGallery({ images, productCode, productName }) {
           the hero leads at full column width and every other view follows in a
           two-up grid, the way a house catalogue lays a piece out. */}
       <div className="product-mosaic" data-product-gallery data-mosaic-count={galleryItems.length}>
+        {showTurntable && (
+          <ProductTurntable
+            turntable={turntable}
+            productCode={productCode}
+            productName={productName}
+            posterSrc={galleryItems[0].src}
+            posterAlt={galleryItems[0].alt}
+            onUnavailable={handleTurntableUnavailable}
+          />
+        )}
+
+        {show3d && (
+          <Product3DViewer
+            model={model}
+            productCode={productCode}
+            productName={productName}
+            posterSrc={galleryItems[0].src}
+            posterAlt={galleryItems[0].alt}
+            onUnavailable={handleModelUnavailable}
+          />
+        )}
+
         {galleryItems.map((item, index) => (
           <figure
             key={item.src + index}
-            className={`product-mosaic-tile${index === 0 ? " is-hero" : ""}`}
+            className={`product-mosaic-tile${index === 0 && !showHeroMedia ? " is-hero" : ""}`}
           >
             <button
               type="button"
