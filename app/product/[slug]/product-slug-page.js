@@ -133,6 +133,8 @@ export default async function ProductPage({ params }) {
           <div className="product-gallery-column">
             <ProductGallery
               images={product.images}
+              coverImageUrl={product.coverImageUrl}
+              video={product.videoUrl ? { src: product.videoUrl, poster: product.videoPosterUrl, position: product.videoPosition } : null}
               productCode={product.sku}
               productName={displayName}
             />

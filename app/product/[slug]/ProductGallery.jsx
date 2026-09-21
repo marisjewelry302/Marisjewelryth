@@ -4,26 +4,73 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import Image from "next/image";
 import { isOptimizableImageSrc } from "../../lib/image-source";
 import { getPublicImageAltText } from "../../lib/product-display";
+import { buildProductMediaSlides } from "../../lib/product-media";
+import ProductVideo from "./ProductVideo";
 
-export default function ProductGallery({ images, productCode, productName }) {
-  const galleryItems = images && images.length > 0
-    ? images.map((img, index) => ({
-        src: img.imageUrl,
-        alt: getPublicImageAltText(img, productCode, productName, index),
-        label: index === 0 ? "Primary View" : `View ${index + 1}`
-      }))
-    : [{ src: "", alt: `${productCode} ${productName}`, label: "Primary View" }];
+export default function ProductGallery({ images, coverImageUrl, video, productCode, productName }) {
+  const slides = buildProductMediaSlides({
+    images: (Array.isArray(images) ? images : []).map((image, index) => ({
+      src: image.imageUrl,
+      alt: getPublicImageAltText(image, productCode, productName, index)
+    })),
+    coverImageUrl,
+    video,
+    fallbackAlt: `${productCode} ${productName}`
+  });
+  const imageSlides = slides.filter((slide) => slide.type === "image" && slide.src);
+  // Whatever stands in for the cover when the video has no poster of its own.
+  const firstPhoto = imageSlides[0]?.src || "";
 
-  // The mosaic shows every image at once, so the only "active" image is the one
-  // the lightbox is holding. -1 means the lightbox is closed.
+  const trackRef = useRef(null);
+  const slideRefs = useRef([]);
+  const [activeSlide, setActiveSlide] = useState(0);
+
+  // The track is one horizontal scroller in both layouts - swiped on a phone,
+  // driven by the thumbnails on desktop - so whichever slide fills most of it
+  // is the active one.
+  useEffect(() => {
+    const track = trackRef.current;
+
+    if (!track || typeof IntersectionObserver === "undefined") return undefined;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting && entry.intersectionRatio >= 0.55) {
+            const index = slideRefs.current.indexOf(entry.target);
+
+            if (index >= 0) setActiveSlide(index);
+          }
+        }
+      },
+      { root: track, threshold: [0.55] }
+    );
+
+    slideRefs.current.forEach((slide) => slide && observer.observe(slide));
+    return () => observer.disconnect();
+  }, [slides.length]);
+
+  const goToSlide = useCallback((index) => {
+    const track = trackRef.current;
+    const slide = slideRefs.current[index];
+
+    if (!track || !slide) return;
+
+    const reduceMotion = typeof window.matchMedia === "function"
+      && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    // The observer above marks the slide active once it arrives.
+    track.scrollTo({ left: slide.offsetLeft - track.offsetLeft, behavior: reduceMotion ? "auto" : "smooth" });
+  }, []);
+
+  // The lightbox holds photographs only; -1 means it is closed.
   const [lightboxIndex, setLightboxIndex] = useState(-1);
   const lightboxOpen = lightboxIndex >= 0;
-  const activeIndex = lightboxOpen ? lightboxIndex : 0;
-  const activeItem = galleryItems[activeIndex] || galleryItems[0];
+  const activeItem = imageSlides[lightboxOpen ? lightboxIndex : 0] || imageSlides[0];
 
-  const tileRefs = useRef([]);
+  const openButtonRefs = useRef([]);
   const lightboxRef = useRef(null);
-  // Remembers which tile opened the lightbox so focus lands back on it - read
+  // Remembers which slide opened the lightbox so focus lands back on it - read
   // after the dialog has actually unmounted, not while it is still on screen.
   const returnFocusIndex = useRef(null);
 
@@ -31,11 +78,11 @@ export default function ProductGallery({ images, productCode, productName }) {
     setLightboxIndex((current) => {
       if (current < 0) return current;
       const next = current + direction;
-      if (next < 0) return galleryItems.length - 1;
-      if (next >= galleryItems.length) return 0;
+      if (next < 0) return imageSlides.length - 1;
+      if (next >= imageSlides.length) return 0;
       return next;
     });
-  }, [galleryItems.length]);
+  }, [imageSlides.length]);
 
   const closeLightbox = useCallback(() => setLightboxIndex(-1), []);
 
@@ -49,7 +96,7 @@ export default function ProductGallery({ images, productCode, productName }) {
 
     const returnTo = returnFocusIndex.current;
     returnFocusIndex.current = null;
-    tileRefs.current[returnTo]?.focus();
+    openButtonRefs.current[returnTo]?.focus({ preventScroll: true });
   }, [lightboxOpen, lightboxIndex]);
 
   useEffect(() => {
@@ -95,43 +142,118 @@ export default function ProductGallery({ images, productCode, productName }) {
     return () => document.body.classList.remove("is-lightbox-open");
   }, [lightboxOpen]);
 
+  let photoIndex = -1;
+
   return (
     <>
-      {/* One scrolling mosaic instead of a single frame plus a thumbnail rail:
-          the hero leads at full column width and every other view follows in a
-          two-up grid, the way a house catalogue lays a piece out. */}
-      <div className="product-mosaic" data-product-gallery data-mosaic-count={galleryItems.length}>
-        {galleryItems.map((item, index) => (
-          <figure
-            key={item.src + index}
-            className={`product-mosaic-tile${index === 0 ? " is-hero" : ""}`}
-          >
-            <button
-              type="button"
-              className="product-gallery-open"
-              ref={(node) => { tileRefs.current[index] = node; }}
-              onClick={() => setLightboxIndex(index)}
-              aria-label={`Open ${item.label.toLowerCase()} preview for ${productCode}`}
-            >
-              {item.src && (
-                <Image
-                  src={item.src}
-                  alt={item.alt}
-                  data-product-image={index === 0 ? "" : undefined}
-                  width={1024}
-                  height={1024}
-                  sizes={index === 0 ? "(max-width: 900px) 100vw, 640px" : "(max-width: 900px) 50vw, 320px"}
-                  preload={index === 0}
-                  unoptimized={!isOptimizableImageSrc(item.src)}
-                />
-              )}
-              <span className="product-mosaic-label">{item.label}</span>
-            </button>
-          </figure>
-        ))}
-      </div>
+      {/* One square frame for every slide, photograph or video, so nothing
+          jumps when the shopper moves between them. */}
+      <section
+        className="product-media"
+        data-product-gallery
+        aria-roledescription="carousel"
+        aria-label={`${productCode} images`}
+      >
+        <div className="product-media-track" ref={trackRef}>
+          {slides.map((slide, index) => {
+            const isPhoto = slide.type === "image";
+            const lightboxAt = isPhoto && slide.src ? (photoIndex += 1) : -1;
 
-      {lightboxOpen && (
+            return (
+              <div
+                key={slide.key}
+                className={`product-media-slide is-${slide.type}`}
+                ref={(node) => { slideRefs.current[index] = node; }}
+                role="group"
+                aria-roledescription="slide"
+                aria-label={`${index + 1} of ${slides.length}: ${slide.label}`}
+              >
+                {isPhoto ? (
+                  <button
+                    type="button"
+                    className="product-gallery-open"
+                    ref={(node) => { if (lightboxAt >= 0) openButtonRefs.current[lightboxAt] = node; }}
+                    onClick={() => lightboxAt >= 0 && setLightboxIndex(lightboxAt)}
+                    disabled={lightboxAt < 0}
+                    tabIndex={index === activeSlide ? 0 : -1}
+                    aria-label={`Open ${slide.label.toLowerCase()} preview for ${productCode}`}
+                  >
+                    {slide.src && (
+                      <Image
+                        src={slide.src}
+                        alt={slide.alt}
+                        data-product-image={lightboxAt === 0 ? "" : undefined}
+                        width={1024}
+                        height={1024}
+                        sizes="(max-width: 1023px) 100vw, 640px"
+                        preload={lightboxAt === 0}
+                        loading={lightboxAt === 0 ? undefined : "lazy"}
+                        unoptimized={!isOptimizableImageSrc(slide.src)}
+                      />
+                    )}
+                  </button>
+                ) : (
+                  <ProductVideo src={slide.src} poster={slide.poster} fallbackSrc={firstPhoto} label={slide.alt} />
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {slides.length > 1 && (
+          <>
+            <div className="product-media-thumbs" aria-label="Choose a view">
+              {slides.map((slide, index) => {
+                const thumbSrc = slide.type === "video" ? slide.poster || firstPhoto : slide.src;
+
+                return (
+                  <button
+                    key={slide.key}
+                    type="button"
+                    className={`product-media-thumb is-${slide.type}`}
+                    onClick={() => goToSlide(index)}
+                    aria-label={`Show ${slide.label.toLowerCase()}`}
+                    aria-current={index === activeSlide ? "true" : undefined}
+                  >
+                    {thumbSrc && (
+                      <Image
+                        src={thumbSrc}
+                        alt=""
+                        width={160}
+                        height={160}
+                        sizes="96px"
+                        loading="lazy"
+                        unoptimized={!isOptimizableImageSrc(thumbSrc)}
+                      />
+                    )}
+                    {slide.type === "video" && (
+                      <span className="product-media-thumb-badge" aria-hidden="true">
+                        <span className="product-media-thumb-play">▶</span>
+                        360°
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="product-media-dots">
+              {slides.map((slide, index) => (
+                <button
+                  key={slide.key}
+                  type="button"
+                  className="product-media-dot"
+                  onClick={() => goToSlide(index)}
+                  aria-label={`Go to slide ${index + 1}: ${slide.label}`}
+                  aria-current={index === activeSlide ? "true" : undefined}
+                />
+              ))}
+            </div>
+          </>
+        )}
+      </section>
+
+      {lightboxOpen && activeItem && (
         <div
           className="product-lightbox"
           data-product-lightbox
@@ -145,11 +267,9 @@ export default function ProductGallery({ images, productCode, productName }) {
             }
           }}
         >
-          {activeItem.src && (
-            <Image src={activeItem.src} alt={`${activeItem.alt} large preview`} width={1024} height={1024} sizes="90vw" unoptimized={!isOptimizableImageSrc(activeItem.src)} />
-          )}
+          <Image src={activeItem.src} alt={`${activeItem.alt} large preview`} width={1024} height={1024} sizes="90vw" unoptimized={!isOptimizableImageSrc(activeItem.src)} />
 
-          {galleryItems.length > 1 && (
+          {imageSlides.length > 1 && (
             <>
               <button
                 type="button"
@@ -168,7 +288,7 @@ export default function ProductGallery({ images, productCode, productName }) {
                 <span aria-hidden="true">›</span>
               </button>
               <p className="product-lightbox-count" aria-live="polite">
-                {activeIndex + 1} / {galleryItems.length}
+                {lightboxIndex + 1} / {imageSlides.length}
               </p>
             </>
           )}

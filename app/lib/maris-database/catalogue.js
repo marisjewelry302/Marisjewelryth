@@ -9,6 +9,7 @@ import {
   toPublicProductSlug
 } from "../product-display.js";
 import { normalizeProductImageRole } from "../product-image-roles.js";
+import { normalizeVideoPosition } from "../product-media.js";
 
 const BEST_SELLER_SETTING_KEY = "home_best_sellers";
 
@@ -259,13 +260,6 @@ function sortImages(left, right) {
 // row (migration 20260921000000). The gallery in product_images is the product
 // page's set of views; a product saved before it had a cover still shows its
 // first gallery image on the card.
-const VIDEO_POSITION_FIRST = 0;
-const VIDEO_POSITION_AFTER_COVER = 1;
-
-function normalizeVideoPosition(value) {
-  return Number(value) === VIDEO_POSITION_FIRST ? VIDEO_POSITION_FIRST : VIDEO_POSITION_AFTER_COVER;
-}
-
 function normalizeProductMedia(row, images) {
   const coverImageUrl = cleanOptionalText(row.cover_image_url) || "";
   const hoverImageUrl = cleanOptionalText(row.hover_image_url) || "";
