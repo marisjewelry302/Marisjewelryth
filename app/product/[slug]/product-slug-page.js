@@ -132,7 +132,7 @@ export default async function ProductPage({ params }) {
         <div className="product-detail">
           <div className="product-gallery-column">
             <ProductGallery
-              images={product.infoImages || product.images}
+              images={product.images}
               productCode={product.sku}
               productName={displayName}
             />

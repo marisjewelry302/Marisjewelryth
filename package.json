@@ -9,6 +9,7 @@
   },
   "scripts": {
     "check:sheet-images": "node scripts/check-sheet-images.mjs",
+    "media:orphans": "node scripts/cleanup-orphan-product-media.mjs",
     "test:static-routing": "node scripts/test-static-routing-contract.mjs",
     "test:admin-auth": "node scripts/test-admin-auth.mjs",
     "test:admin-database-auth": "node scripts/test-admin-database-auth.mjs",

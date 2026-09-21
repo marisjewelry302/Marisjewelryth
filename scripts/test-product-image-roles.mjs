@@ -173,12 +173,10 @@ await assert.rejects(
 );
 
 const productCard = await readFile(new URL("../app/components/ProductCard.jsx", import.meta.url), "utf8");
-const productPage = await readFile(new URL("../app/product/[slug]/product-slug-page.js", import.meta.url), "utf8");
 const adminPage = await readFile(new URL("../app/admin/page.js", import.meta.url), "utf8");
 const adminJs = await readFile(new URL("../assets/js/admin-page.js", import.meta.url), "utf8");
 
 assert.match(productCard, /product\.coverImages/, "Catalogue card hover should come from the second cover image");
-assert.match(productPage, /images=\{product\.infoImages \|\| product\.images\}/, "Product page gallery should show the info image set");
 assert.match(adminPage, /name="coverImageFiles"/, "Add Product should accept cover images separately");
 assert.match(adminJs, /id="modal-cover-grid"/, "Edit modal should manage the two cover slots");
 assert.match(adminJs, /action: "assign-role"/, "Edit modal should move images between cover and info");

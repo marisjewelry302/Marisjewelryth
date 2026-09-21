@@ -8,7 +8,7 @@ import {
   parsePublicProductCode,
   toPublicProductSlug
 } from "../product-display.js";
-import { normalizeProductImageRole, splitProductImages } from "../product-image-roles.js";
+import { normalizeProductImageRole } from "../product-image-roles.js";
 
 const BEST_SELLER_SETTING_KEY = "home_best_sellers";
 
@@ -24,6 +24,11 @@ const ADMIN_CATALOGUE_SELECT = `
   collection_name,
   status,
   base_price,
+  cover_image_url,
+  hover_image_url,
+  video_url,
+  video_poster_url,
+  video_position,
   stock_quantity,
   reserved_quantity,
   updated_at,
@@ -57,6 +62,11 @@ const PUBLIC_CATALOGUE_SELECT = `
   collection_name,
   status,
   base_price,
+  cover_image_url,
+  hover_image_url,
+  video_url,
+  video_poster_url,
+  video_position,
   product_variants (
     id,
     sku,
@@ -245,6 +255,32 @@ function sortImages(left, right) {
   return left.sortOrder - right.sortOrder;
 }
 
+// The card's cover and hover images and the turntable video live on the product
+// row (migration 20260921000000). The gallery in product_images is the product
+// page's set of views; a product saved before it had a cover still shows its
+// first gallery image on the card.
+const VIDEO_POSITION_FIRST = 0;
+const VIDEO_POSITION_AFTER_COVER = 1;
+
+function normalizeVideoPosition(value) {
+  return Number(value) === VIDEO_POSITION_FIRST ? VIDEO_POSITION_FIRST : VIDEO_POSITION_AFTER_COVER;
+}
+
+function normalizeProductMedia(row, images) {
+  const coverImageUrl = cleanOptionalText(row.cover_image_url) || "";
+  const hoverImageUrl = cleanOptionalText(row.hover_image_url) || "";
+  const videoUrl = cleanOptionalText(row.video_url) || "";
+
+  return {
+    coverImageUrl,
+    hoverImageUrl,
+    primaryImageUrl: coverImageUrl || images[0]?.imageUrl || "",
+    videoUrl,
+    videoPosterUrl: videoUrl ? cleanOptionalText(row.video_poster_url) || "" : "",
+    videoPosition: normalizeVideoPosition(row.video_position)
+  };
+}
+
 function normalizeProduct(row) {
   const variants = Array.isArray(row.product_variants)
     ? row.product_variants.map(normalizeVariant)
@@ -252,8 +288,7 @@ function normalizeProduct(row) {
   const images = Array.isArray(row.product_images)
     ? row.product_images.map(normalizeImage).sort(sortImages)
     : [];
-  const { coverImages } = splitProductImages(images);
-  const primaryImage = coverImages[0] || null;
+  const media = normalizeProductMedia(row, images);
   const collectionName = cleanOptionalText(row.collection_name) || "";
 
   return {
@@ -271,7 +306,7 @@ function normalizeProduct(row) {
     stockQty: Number(row.stock_quantity) || 0,
     reservedQty: Number(row.reserved_quantity) || 0,
     updatedAt: row.updated_at || null,
-    primaryImageUrl: primaryImage?.imageUrl || "",
+    ...media,
     imageCount: images.length,
     variantCount: variants.length,
     totalStock: variants.reduce((total, variant) => total + variant.stockQuantity, 0),
@@ -308,8 +343,7 @@ function normalizePublicProduct(row) {
   const images = Array.isArray(row.product_images)
     ? row.product_images.map(normalizePublicImage).sort(sortImages)
     : [];
-  const { coverImages, infoImages } = splitProductImages(images);
-  const primaryImage = coverImages[0] || null;
+  const media = normalizeProductMedia(row, images);
 
   return {
     id: row.id,
@@ -321,11 +355,8 @@ function normalizePublicProduct(row) {
     collectionName: cleanOptionalText(row.collection_name) || "",
     status: row.status || "active",
     basePrice: row.base_price === null || row.base_price === undefined ? null : Number(row.base_price),
-    primaryImageUrl: primaryImage?.imageUrl || "",
-    hoverImageUrl: coverImages[1]?.imageUrl || "",
+    ...media,
     images,
-    coverImages,
-    infoImages,
     variants
   };
 }
@@ -650,6 +681,31 @@ export async function readRelatedPublicProducts(collection, excludeId, { env = p
   return { source: "supabase", status: "ready", products };
 }
 
+// camelCase media fields in, snake_case columns out. A field left undefined is
+// not written; an empty string clears the column.
+const PRODUCT_MEDIA_URL_FIELDS = Object.freeze({
+  coverImageUrl: "cover_image_url",
+  hoverImageUrl: "hover_image_url",
+  videoUrl: "video_url",
+  videoPosterUrl: "video_poster_url"
+});
+
+function toProductMediaPayload(input = {}) {
+  const payload = {};
+
+  for (const [field, column] of Object.entries(PRODUCT_MEDIA_URL_FIELDS)) {
+    if (input[field] !== undefined) {
+      payload[column] = cleanOptionalText(input[field]) || null;
+    }
+  }
+
+  if (input.videoPosition !== undefined) {
+    payload.video_position = normalizeVideoPosition(input.videoPosition);
+  }
+
+  return payload;
+}
+
 export async function createAdminProduct(product, { env = process.env, client } = {}) {
   const config = getSupabaseAdminConfig(env);
   if (!config.isConfigured) {
@@ -661,6 +717,7 @@ export async function createAdminProduct(product, { env = process.env, client } 
   const sku = normalizeAdminProductSku(product.sku);
   const collection = normalizeAdminProductCollection(product.collection || product.ringType || product.category) || null;
   const collectionName = cleanOptionalText(product.collectionName) || null;
+  const imageUrl = cleanOptionalText(product.imageUrl || product.primaryImageUrl || product.image);
   const payload = Object.fromEntries(Object.entries({
     sku,
     slug: product.slug || sku.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
@@ -671,7 +728,10 @@ export async function createAdminProduct(product, { env = process.env, client } 
     base_price: parseMoneyAmount(product.price) ?? null,
     status,
     stock_quantity: Number(product.stockQty) || 0,
-    reserved_quantity: Number(product.reservedQty) || 0
+    reserved_quantity: Number(product.reservedQty) || 0,
+    // The first image a product is created with also dresses its card.
+    cover_image_url: imageUrl || undefined,
+    ...toProductMediaPayload(product)
   }).filter(([, value]) => value !== undefined));
 
   const { data, error } = await supabase
@@ -683,8 +743,6 @@ export async function createAdminProduct(product, { env = process.env, client } 
   if (error) {
     throw new Error(error.message || "Product could not be created.");
   }
-
-  const imageUrl = cleanOptionalText(product.imageUrl || product.primaryImageUrl || product.image);
 
   if (imageUrl) {
     const imagePayload = {
@@ -739,7 +797,8 @@ export async function updateAdminProduct(productId, updates, { env = process.env
     base_price: updates.price === undefined ? undefined : parseMoneyAmount(updates.price),
     status,
     stock_quantity: updates.stockQty !== undefined ? Number(updates.stockQty) : undefined,
-    reserved_quantity: updates.reservedQty !== undefined ? Number(updates.reservedQty) : undefined
+    reserved_quantity: updates.reservedQty !== undefined ? Number(updates.reservedQty) : undefined,
+    ...toProductMediaPayload(updates)
   };
 
   const cleanedPayload = Object.fromEntries(
