@@ -138,7 +138,7 @@ export default async function AdminPage() {
                   <h3>Add Product In 3 Steps</h3>
                   <ol className="admin-steps">
                     <li>Create the product in the Supabase entry form and choose its collection, price, status, and visibility.</li>
-                    <li>Upload the main product image and optional gallery images directly from this admin page.</li>
+                    <li>Upload two cover images for the catalogue card (the second shows on hover) and the product info image set for the product page.</li>
                     <li>Refresh the catalogue page and the new item appears in its collection automatically.</li>
                   </ol>
                   <p className="admin-mini-label">Supabase catalogue fields</p>
@@ -149,8 +149,8 @@ export default async function AdminPage() {
                     <span>price</span>
                     <span>description</span>
                     <span>details</span>
-                    <span>main image</span>
-                    <span>gallery images</span>
+                    <span>cover images (2)</span>
+                    <span>info images</span>
                     <span>status</span>
                     <span>visible</span>
                   </div>
@@ -222,7 +222,11 @@ export default async function AdminPage() {
                   </select>
                 </label>
                 <label className="admin-span-2">
-                  Product Images
+                  Card images (up to 2 - the first is the cover, the second shows on hover)
+                  <input name="coverImageFiles" type="file" accept="image/jpeg,image/png,image/webp" multiple data-cover-image-files />
+                </label>
+                <label className="admin-span-2">
+                  Gallery images (the views on the product page)
                   <input name="imageGroupFiles" type="file" accept="image/*" multiple data-image-group-files />
                 </label>
                 <div className="admin-image-group-summary admin-span-2" data-image-group-summary>

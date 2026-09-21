@@ -207,7 +207,12 @@ assert.deepEqual(catalogue.products[0], {
   stockQty: 0,
   reservedQty: 0,
   updatedAt: "2026-05-27T00:00:00.000Z",
+  coverImageUrl: "",
+  hoverImageUrl: "",
   primaryImageUrl: "https://example.com/ring-main.png",
+  videoUrl: "",
+  videoPosterUrl: "",
+  videoPosition: 1,
   imageCount: 2,
   variantCount: 1,
   totalStock: 2,
@@ -295,6 +300,11 @@ const publicCatalogueClient = {
                   stock_quantity: 5,
                   reserved_quantity: 2,
                   updated_at: "2026-05-27T00:00:00.000Z",
+                  cover_image_url: "https://example.com/ring-cover.png",
+                  hover_image_url: "https://example.com/ring-hover.png",
+                  video_url: "https://example.com/turntable.mp4",
+                  video_poster_url: "https://example.com/turntable-poster.jpg",
+                  video_position: 0,
                   metadata: {
                     title: "Featured Diamond Ring",
                     details: ["14K White Gold", "Round diamond"],
@@ -365,6 +375,22 @@ assert.ok(
   publicCatalogueCalls.some((call) => call[0] === "select" && /collection_name/.test(call[2])),
   "Public catalogue reader should request the named collection for the product page"
 );
+const publicImages = [
+  {
+    id: "image-1",
+    imageUrl: "https://example.com/ring-main.png",
+    altText: "Diamond Ring main",
+    sortOrder: 0,
+    isPrimary: true
+  },
+  {
+    id: "image-2",
+    imageUrl: "https://example.com/ring-side.png",
+    altText: "Diamond Ring side",
+    sortOrder: 1,
+    isPrimary: false
+  }
+];
 assert.deepEqual(publicCatalogue.products[0], {
   id: "product-1",
   sku: "ER1001",
@@ -375,23 +401,13 @@ assert.deepEqual(publicCatalogue.products[0], {
   collectionName: "",
   status: "active",
   basePrice: 12900,
-  primaryImageUrl: "https://example.com/ring-main.png",
-  images: [
-    {
-      id: "image-1",
-      imageUrl: "https://example.com/ring-main.png",
-      altText: "Diamond Ring main",
-      sortOrder: 0,
-      isPrimary: true
-    },
-    {
-      id: "image-2",
-      imageUrl: "https://example.com/ring-side.png",
-      altText: "Diamond Ring side",
-      sortOrder: 1,
-      isPrimary: false
-    }
-  ],
+  coverImageUrl: "https://example.com/ring-cover.png",
+  hoverImageUrl: "https://example.com/ring-hover.png",
+  primaryImageUrl: "https://example.com/ring-cover.png",
+  videoUrl: "https://example.com/turntable.mp4",
+  videoPosterUrl: "https://example.com/turntable-poster.jpg",
+  videoPosition: 0,
+  images: publicImages,
   variants: [
     {
       id: "variant-1",
@@ -615,6 +631,26 @@ function createProductImageUploadClient() {
       }
     },
     from(tableName) {
+      if (tableName === "products") {
+        return {
+          select(columns) {
+            assert.equal(columns, "sku");
+
+            return {
+              eq(column, value) {
+                assert.deepEqual([column, value], ["id", "product-1"]);
+
+                return {
+                  async maybeSingle() {
+                    return { data: { sku: "ER 1001" }, error: null };
+                  }
+                };
+              }
+            };
+          }
+        };
+      }
+
       assert.equal(tableName, "product_images");
 
       return {
@@ -663,7 +699,7 @@ const uploadedImage = await uploadAdminProductImage({
 });
 
 const uploadedPath = uploadClient.state.uploads[0].path;
-assert.match(uploadedPath, /^product-1\/\d+-[a-z0-9]+\.png$/);
+assert.match(uploadedPath, /^products\/er-1001\/gallery\/\d+-[a-z0-9]+\.png$/, "Gallery uploads file under the product code");
 assert.equal(uploadClient.state.uploads[0].options.contentType, "image/png");
 assert.equal(uploadClient.state.uploads[0].options.upsert, false);
 assert.equal(uploadClient.state.insertedImages[0].product_id, "product-1");
@@ -710,10 +746,15 @@ await assert.rejects(
   (error) => error.statusCode === 413 && /5 MB/i.test(error.message)
 );
 
-function createProductImageActionClient() {
+const galleryUrl = (name) => `https://example.supabase.co/storage/v1/object/public/product-images/products/er-1001/gallery/${name}`;
+
+// `coverUrl` is what the product's cover still points at, so deleting that
+// gallery row must leave its file alone.
+function createProductImageActionClient({ coverUrl = "" } = {}) {
   const state = {
     deletes: [],
-    updates: []
+    updates: [],
+    removed: []
   };
 
   function makeQuery(action, payload) {
@@ -724,10 +765,17 @@ function createProductImageActionClient() {
         if (this.filters.length === 2) {
           if (action === "delete") {
             state.deletes.push({ filters: [...this.filters] });
-          } else {
-            state.updates.push({ payload, filters: [...this.filters] });
+            const imageId = this.filters[0][1];
+
+            return {
+              async select(columns) {
+                assert.equal(columns, "image_url");
+                return { data: [{ image_url: galleryUrl(`${imageId}.jpg`) }], error: null };
+              }
+            };
           }
 
+          state.updates.push({ payload, filters: [...this.filters] });
           return Promise.resolve({ error: null });
         }
 
@@ -740,7 +788,25 @@ function createProductImageActionClient() {
 
   return {
     state,
+    storage: {
+      from(bucketName) {
+        return {
+          async remove(paths) {
+            state.removed.push(...paths.map((path) => `${bucketName}/${path}`));
+            return { data: paths, error: null };
+          }
+        };
+      }
+    },
     from(tableName) {
+      if (tableName === "products") {
+        return {
+          async select() {
+            return { data: [{ cover_image_url: coverUrl, hover_image_url: null, video_url: null, video_poster_url: null }], error: null };
+          }
+        };
+      }
+
       assert.equal(tableName, "product_images");
 
       return {
@@ -749,6 +815,10 @@ function createProductImageActionClient() {
         },
         update(payload) {
           return makeQuery("update", payload);
+        },
+        async select() {
+          // The deleted row is already gone.
+          return { data: [], error: null };
         }
       };
     }
@@ -770,8 +840,25 @@ const deletedImage = await deleteAdminProductImage({
 assert.deepEqual(deletedImage, {
   id: "image-2",
   productId: "product-1",
-  deleted: true
+  deleted: true,
+  fileRemoved: true
 });
+assert.deepEqual(imageActionClient.state.removed, ["product-images/products/er-1001/gallery/image-2.jpg"]);
+
+const coverKeptClient = createProductImageActionClient({ coverUrl: galleryUrl("image-5.jpg") });
+const deletedCoverImage = await deleteAdminProductImage({
+  productId: "product-1",
+  imageId: "image-5"
+}, {
+  env: {
+    SUPABASE_URL: "https://maris-test.supabase.co",
+    SUPABASE_SERVICE_ROLE_KEY: "service-role-secret"
+  },
+  client: coverKeptClient
+});
+
+assert.equal(deletedCoverImage.fileRemoved, false);
+assert.deepEqual(coverKeptClient.state.removed, [], "A gallery file the cover still shows is not removed");
 assert.deepEqual(imageActionClient.state.deletes[0].filters, [
   ["id", "image-2"],
   ["product_id", "product-1"]

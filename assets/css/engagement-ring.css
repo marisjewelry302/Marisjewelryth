@@ -335,21 +335,34 @@ body.is-page-scrolled .icons i {
   height: 100%;
 }
 
+/* The hover swap is for a pointer that can hover. Touch screens never show the
+   second image, and display:none keeps a lazy image from downloading at all. */
 .product-card-image-hover {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  pointer-events: none;
+  display: none;
 }
 
-.product-card-link.has-hover-image:hover .product-card-image-primary,
-.product-card-link.has-hover-image:focus-visible .product-card-image-primary {
-  opacity: 0;
-}
+@media (hover: hover) and (pointer: fine) {
+  .product-card-image-hover {
+    display: block;
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    pointer-events: none;
+  }
 
-.product-card-link.has-hover-image:hover .product-card-image-hover,
-.product-card-link.has-hover-image:focus-visible .product-card-image-hover {
-  opacity: 1;
+  .product-card-link.has-hover-image .product-card-image {
+    transition: opacity 0.3s ease, filter 0.24s ease, transform 0.24s ease;
+  }
+
+  .product-card-link.has-hover-image:hover .product-card-image-primary,
+  .product-card-link.has-hover-image:focus-visible .product-card-image-primary {
+    opacity: 0;
+  }
+
+  .product-card-link.has-hover-image:hover .product-card-image-hover,
+  .product-card-link.has-hover-image:focus-visible .product-card-image-hover {
+    opacity: 1;
+  }
 }
 
 .product-card:hover .product-card-image-frame {

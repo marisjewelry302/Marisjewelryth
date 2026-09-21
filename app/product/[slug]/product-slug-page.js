@@ -100,7 +100,7 @@ export default async function ProductPage({ params }) {
     permanentRedirect(`/product/${canonicalSlug}`);
   }
 
-  const { products: relatedProducts } = await readRelatedPublicProducts(product.collection, product.id);
+  const { products: relatedProducts } = await readRelatedPublicProducts(product.collection, product.id, { sku: product.sku });
   const collectionLabel = COLLECTION_LABELS[product.collection] || product.category || "Maris Jewelry";
   const displayName = getPublicProductDisplayName(product);
   const collectionLine = getMeaningfulText(product.collectionName);
@@ -131,7 +131,13 @@ export default async function ProductPage({ params }) {
       <main className="product-page">
         <div className="product-detail">
           <div className="product-gallery-column">
-            <ProductGallery images={product.images} productCode={product.sku} productName={displayName} />
+            <ProductGallery
+              images={product.images}
+              coverImageUrl={product.coverImageUrl}
+              video={product.videoUrl ? { src: product.videoUrl, poster: product.videoPosterUrl, position: product.videoPosition } : null}
+              productCode={product.sku}
+              productName={displayName}
+            />
           </div>
 
           <div className="product-summary">

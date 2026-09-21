@@ -1,6 +1,14 @@
-// Product image upload, removal, and ordering against Supabase Storage.
+// Product gallery images: upload, removal, and ordering against Supabase
+// Storage. These are the product page's views; the catalogue card's cover and
+// hover images live on the product row (see ./product-media.js).
 
 import { createSupabaseAdminClient, getSupabaseAdminConfig } from "./connection.js";
+import {
+  PRODUCT_IMAGE_BUCKET,
+  getProductMediaFolder,
+  parseStorageObjectUrl,
+  removeUnreferencedMediaFiles
+} from "./product-media.js";
 
 const MAX_PRODUCT_IMAGE_BYTES = 5 * 1024 * 1024;
 
@@ -10,6 +18,24 @@ export class AdminProductImageUploadError extends Error {
     this.name = "AdminProductImageUploadError";
     this.statusCode = statusCode;
   }
+}
+
+async function readProductSku(supabase, productId) {
+  const { data, error } = await supabase
+    .from("products")
+    .select("sku")
+    .eq("id", productId)
+    .maybeSingle();
+
+  if (error) {
+    throw new AdminProductImageUploadError(error.message || "Product could not be loaded.", 500);
+  }
+
+  if (!data) {
+    throw new AdminProductImageUploadError("Product not found.", 404);
+  }
+
+  return data.sku || "";
 }
 
 export async function uploadAdminProductImage(
@@ -39,11 +65,12 @@ export async function uploadAdminProductImage(
     throw new AdminProductImageUploadError("Product image upload must be an image file.", 400);
   }
 
-  const ext = fileName.split(".").pop()?.toLowerCase() || "jpg";
-  const uniqueName = `${productId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+  const sku = await readProductSku(supabase, productId);
+  const ext = fileName.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
+  const uniqueName = `${getProductMediaFolder(sku, productId)}/gallery/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
 
   const { data: uploadData, error: uploadError } = await supabase.storage
-    .from("product-images")
+    .from(PRODUCT_IMAGE_BUCKET)
     .upload(uniqueName, buffer, {
       contentType: contentType || "image/jpeg",
       upsert: false
@@ -54,16 +81,14 @@ export async function uploadAdminProductImage(
   }
 
   const { data: publicUrlData } = supabase.storage
-    .from("product-images")
+    .from(PRODUCT_IMAGE_BUCKET)
     .getPublicUrl(uploadData.path);
-
-  const imageUrl = publicUrlData?.publicUrl || "";
 
   const { data, error } = await supabase
     .from("product_images")
     .insert({
       product_id: productId,
-      image_url: imageUrl,
+      image_url: publicUrlData?.publicUrl || "",
       alt_text: altText || "",
       sort_order: Number(sortOrder) || 0,
       is_primary: isPrimary === true,
@@ -73,6 +98,8 @@ export async function uploadAdminProductImage(
     .single();
 
   if (error) {
+    // The row never landed, so the file it was for has nothing pointing at it.
+    await supabase.storage.from(PRODUCT_IMAGE_BUCKET).remove([uploadData.path]);
     throw new AdminProductImageUploadError(error.message || "Image record could not be saved.", 500);
   }
 
@@ -100,20 +127,29 @@ export async function deleteAdminProductImage(
   }
 
   const supabase = client || createSupabaseAdminClient(env);
-  const { error } = await supabase
+  const { data: rows, error } = await supabase
     .from("product_images")
     .delete()
     .eq("id", imageId)
-    .eq("product_id", productId);
+    .eq("product_id", productId)
+    .select("image_url");
 
   if (error) {
     throw new AdminProductImageUploadError(error.message || "Product image could not be deleted.", 500);
   }
 
+  // The file goes too, unless the cover, the hover image or another row still
+  // shows it - after the backfill most covers are a gallery photo.
+  const cleanup = await removeUnreferencedMediaFiles(
+    supabase,
+    (Array.isArray(rows) ? rows : []).map((row) => parseStorageObjectUrl(row.image_url))
+  );
+
   return {
     id: imageId,
     productId,
-    deleted: true
+    deleted: true,
+    fileRemoved: cleanup.removed > 0
   };
 }
 
@@ -137,13 +173,12 @@ export async function reorderAdminProductImages(
   }
 
   const supabase = client || createSupabaseAdminClient(env);
+  // The first gallery image stays primary: it stands in for the cover wherever
+  // a product has none yet.
   const results = await Promise.all(orderedImageIds.map((imageId, index) => (
     supabase
       .from("product_images")
-      .update({
-        sort_order: index,
-        is_primary: index === 0
-      })
+      .update({ sort_order: index, is_primary: index === 0 })
       .eq("id", imageId)
       .eq("product_id", productId)
   )));
