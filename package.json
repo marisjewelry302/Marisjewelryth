@@ -30,16 +30,6 @@
     "test:product-canonical-url": "node scripts/test-product-canonical-url.mjs",
     "test:related-products": "node scripts/test-related-products.mjs",
     "test:product-image-roles": "node scripts/test-product-image-roles.mjs",
-    "test:product-3d-viewer": "node scripts/test-product-3d-viewer.mjs",
-    "test:cad-to-glb": "node scripts/test-cad-to-glb.mjs",
-    "test:vertex-ao": "node scripts/test-vertex-ao.mjs",
-    "cad:glb": "node scripts/cad-to-glb.mjs",
-    "cad:materials": "node scripts/import-matrix-materials.mjs",
-    "cad:surfaces": "node scripts/make-jewellery-materials.mjs",
-    "check:turntable": "node scripts/check-turntable.mjs",
-    "test:product-turntable": "node scripts/test-product-turntable.mjs",
-    "env:hdr": "node scripts/exr-to-hdr.mjs",
-    "env:studio": "node scripts/make-studio-hdr.mjs",
     "test:seo-aeo-geo": "node scripts/test-seo-aeo-geo.mjs",
     "test:site-header-nav": "node scripts/test-site-header-nav.mjs",
     "test:admin-clarity": "node scripts/test-admin-clarity.mjs",
@@ -61,8 +51,5 @@
   },
   "overrides": {
     "postcss": "^8.5.26"
-  },
-  "devDependencies": {
-    "rhino3dm": "^8.32.2"
   }
 }

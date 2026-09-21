@@ -15,7 +15,6 @@ const MIME_TYPES = {
   ".gif": "image/gif",
   ".ico": "image/x-icon",
   ".glb": "model/gltf-binary",
-  ".hdr": "image/vnd.radiance",
   ".woff": "font/woff",
   ".woff2": "font/woff2",
   ".txt": "text/plain; charset=utf-8"
@@ -35,13 +34,13 @@ function getCacheControl(filePath) {
     return "public, max-age=604800, stale-while-revalidate=2592000";
   }
 
-  // A model or an environment map is rebuilt whenever the piece is re-baked,
+  // A model is rebuilt whenever the piece is re-baked,
   // and it keeps its filename when it is. Held for an hour behind a fixed URL,
   // a new bake simply does not reach anyone who has already looked - which is
   // exactly what happened the first time a re-baked .glb was published. These
   // are revalidated every time instead: the ETag below turns that into a 304
   // for the unchanged case, which costs a round trip rather than 2.5 MB.
-  if (normalized.includes("/models/") || normalized.includes("/env/")) {
+  if (normalized.includes("/models/")) {
     return "public, no-cache";
   }
 

@@ -15,7 +15,7 @@ This folder is for project documentation and archived references only.
 - `guides/LOCAL_ARTIFACTS.md`: local artifact storage, preview helpers, and browser test workflow
 - `google-sheet-catalogue.md`: historical Google Sheet mapping and manual checker reference
 - `supabase-admin-database.md`: protected admin database schema, migration, env setup, and live table-status checks
-- `2026-08-27-product-3d-viewer-worklog.md`: the product 3D viewer, the Rhino-to-glTF pipeline, the MatrixGold material import, and the open decision on how far to push stone realism
+- `3D-RESTORE.md`: how to bring back the product 3D viewer and turntable that were archived on `archive/3d-configurator`
 
 ## Keep this folder light
 
