@@ -1,10 +1,6 @@
 import { NextResponse } from "next/server";
 import { ADMIN_PERMISSIONS, requireAdminPermission } from "../../../lib/admin-api-auth";
-import {
-  assignAdminProductImageRole,
-  deleteAdminProductImage,
-  reorderAdminProductImages
-} from "../../../lib/maris-database";
+import { deleteAdminProductImage, reorderAdminProductImages } from "../../../lib/maris-database";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -43,20 +39,10 @@ export async function PATCH(request) {
   }
 
   try {
-    // One PATCH covers both edits the admin gallery makes: moving an image into a
-    // cover slot or the info set, and reordering the images within one role.
-    const result = body.action === "assign-role"
-      ? await assignAdminProductImageRole({
-          productId: body.productId,
-          imageId: body.imageId,
-          role: body.role,
-          slot: body.slot
-        })
-      : await reorderAdminProductImages({
-          productId: body.productId,
-          imageIds: body.imageIds,
-          role: body.role
-        });
+    const result = await reorderAdminProductImages({
+      productId: body.productId,
+      imageIds: body.imageIds
+    });
 
     return json(result, 200);
   } catch (error) {

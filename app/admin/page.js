@@ -222,11 +222,11 @@ export default async function AdminPage() {
                   </select>
                 </label>
                 <label className="admin-span-2">
-                  Cover Images (up to 2 - first on the card, second on hover)
-                  <input name="coverImageFiles" type="file" accept="image/*" multiple data-cover-image-files />
+                  Card images (up to 2 - the first is the cover, the second shows on hover)
+                  <input name="coverImageFiles" type="file" accept="image/jpeg,image/png,image/webp" multiple data-cover-image-files />
                 </label>
                 <label className="admin-span-2">
-                  Product Images (info set for the product page)
+                  Gallery images (the views on the product page)
                   <input name="imageGroupFiles" type="file" accept="image/*" multiple data-image-group-files />
                 </label>
                 <div className="admin-image-group-summary admin-span-2" data-image-group-summary>

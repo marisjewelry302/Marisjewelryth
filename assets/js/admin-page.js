@@ -103,11 +103,18 @@
 
   const ADMIN_API_PREFIX = "/api/admin";
   const ADMIN_PRODUCT_IMAGES_PATH = "/product-images";
-  // Mirrors app/lib/product-image-roles.js: two cover images dress the catalogue
-  // card (the second on hover); the info set fills the product page.
-  const IMAGE_ROLE_COVER = "cover";
-  const IMAGE_ROLE_INFO = "info";
-  const COVER_IMAGE_LIMIT = 2;
+  // The catalogue card's two images, and the limits the media routes enforce
+  // (app/lib/maris-database/product-media.js). Checked here first so a wrong
+  // file is turned away before it uploads.
+  const CARD_IMAGE_SLOTS = ["cover", "hover"];
+  const CARD_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+  const MEGABYTE = 1024 * 1024;
+  const CARD_IMAGE_MAX_BYTES = 10 * MEGABYTE;
+  const VIDEO_MAX_BYTES = 20 * MEGABYTE;
+  const SQUARE_TOLERANCE = 0.02;
+  const POSTER_MAX_EDGE = 1080;
+  const VIDEO_POSITION_FIRST = 0;
+  const VIDEO_POSITION_AFTER_COVER = 1;
   const BEST_SELLER_SLOT_COUNT = 7;
   const PRODUCT_LIST_PAGE_SIZE = 5;
   const adminCache = {
@@ -145,7 +152,17 @@
     Pd: "Palladium"
   };
   let modalGalleryImages = [];
-  let modalCoverImages = [null, null];
+  let modalMedia = {
+    coverImageUrl: "",
+    hoverImageUrl: "",
+    videoUrl: "",
+    videoPosterUrl: "",
+    videoPosition: VIDEO_POSITION_AFTER_COVER
+  };
+  // A picked turntable waiting for its Upload click: the file, what was read
+  // from it, and the poster drawn from its first frame.
+  let modalVideoDraft = null;
+  let modalVideoUploading = false;
   let modalGalleryDragIndex = null;
 
   async function fetchAdminApi(path, options = {}) {
@@ -755,7 +772,7 @@
 
     return {
       product,
-      coverImageFiles: formData.getAll("coverImageFiles").filter(isSelectedFile).slice(0, COVER_IMAGE_LIMIT),
+      coverImageFiles: formData.getAll("coverImageFiles").filter(isSelectedFile).slice(0, CARD_IMAGE_SLOTS.length),
       mainImageFile: orderedFiles[0] || null,
       galleryImageFiles: orderedFiles.slice(1),
       smartGroup
@@ -770,14 +787,6 @@
     uploadFormData.set("sortOrder", String(options.sortOrder || 0));
     uploadFormData.set("isPrimary", options.isPrimary ? "true" : "false");
 
-    if (options.role) {
-      uploadFormData.set("role", options.role);
-    }
-
-    if (options.slot !== undefined) {
-      uploadFormData.set("slot", String(options.slot));
-    }
-
     return fetchAdminApi("/uploads/product-image", {
       method: "POST",
       body: uploadFormData
@@ -786,23 +795,35 @@
 
   async function uploadProductImages(product, result) {
     const productName = result.product.name || result.product.code;
-    const coverFiles = (result.coverImageFiles || []).filter(isSelectedFile);
+    const cardFiles = (result.coverImageFiles || []).filter(isSelectedFile);
     const files = [result.mainImageFile, ...result.galleryImageFiles].filter(isSelectedFile);
 
-    for (const [slot, file] of coverFiles.entries()) {
-      await uploadProductImage(product.id, file, {
-        altText: `${productName} cover image ${slot + 1}`,
-        role: IMAGE_ROLE_COVER,
-        slot
-      });
+    for (const file of cardFiles) {
+      const problem = validateCardImageFile(file);
+
+      if (problem) {
+        throw new Error(problem);
+      }
+    }
+
+    // Cover first, hover second - each straight to storage, then onto the row.
+    const cardChanges = {};
+
+    for (const [index, file] of cardFiles.entries()) {
+      const slot = CARD_IMAGE_SLOTS[index];
+      cardChanges[slot] = { path: await uploadProductMediaFile(product.id, slot, file) };
+    }
+
+    if (Object.keys(cardChanges).length) {
+      await saveProductMedia(product.id, cardChanges);
     }
 
     for (const [index, file] of files.entries()) {
       const smartImage = findSmartImageMetadata(file, result.smartGroup);
       await uploadProductImage(product.id, file, {
-        altText: smartImage?.altText || `${productName} info image ${index + 1}`,
+        altText: smartImage?.altText || `${productName} gallery image ${index + 1}`,
         sortOrder: index,
-        role: IMAGE_ROLE_INFO
+        isPrimary: index === 0
       });
     }
   }
@@ -813,88 +834,567 @@
 
   function getModalProductImages(product) {
     const images = Array.isArray(product?.images) ? product.images : [];
-    const normalizedImages = images
+
+    // The gallery is the product page's set of views, in the order the
+    // storefront shows them.
+    return images
       .filter((image) => image?.id && image?.imageUrl)
       .map((image, index) => ({
         id: String(image.id),
         imageUrl: image.imageUrl,
         altText: image.altText || `${getProductName(product)} image ${index + 1}`,
         sortOrder: Number(image.sortOrder) || index,
-        isPrimary: image.isPrimary === true,
-        role: image.role === IMAGE_ROLE_COVER || image.role === IMAGE_ROLE_INFO ? image.role : ""
-      }));
-    const covers = [null, null];
-
-    normalizedImages
-      .filter((image) => image.role === IMAGE_ROLE_COVER)
-      .sort((left, right) => left.sortOrder - right.sortOrder)
-      .forEach((image) => {
-        const slot = image.sortOrder === 1 ? 1 : 0;
-
-        if (!covers[slot]) {
-          covers[slot] = image;
-        } else if (!covers[1 - slot]) {
-          covers[1 - slot] = image;
-        }
-      });
-
-    const coverIds = new Set(covers.filter(Boolean).map((image) => image.id));
-    // Images uploaded before roles existed carry none; they sit in the info set
-    // until an admin promotes one to a cover slot. Primary only leads the order
-    // while no cover is set, matching how the storefront reads the same rows.
-    const info = normalizedImages
-      .filter((image) => !coverIds.has(image.id))
+        isPrimary: image.isPrimary === true
+      }))
       .sort((left, right) => {
-        if (!coverIds.size && left.isPrimary !== right.isPrimary) {
+        if (left.isPrimary !== right.isPrimary) {
           return left.isPrimary ? -1 : 1;
         }
 
         return left.sortOrder - right.sortOrder;
       });
-
-    return { covers, info };
   }
 
-  function hasModalCoverImages() {
-    return modalCoverImages.some(Boolean);
+  function getModalProductMedia(product) {
+    const videoUrl = product?.videoUrl || "";
+
+    return {
+      coverImageUrl: product?.coverImageUrl || "",
+      hoverImageUrl: product?.hoverImageUrl || "",
+      videoUrl,
+      videoPosterUrl: videoUrl ? product?.videoPosterUrl || "" : "",
+      videoPosition: Number(product?.videoPosition) === VIDEO_POSITION_FIRST ? VIDEO_POSITION_FIRST : VIDEO_POSITION_AFTER_COVER
+    };
   }
 
-  function renderModalCoverImages() {
-    const grid = document.getElementById("modal-cover-grid");
-    if (!grid) return;
+  // ── MEDIA UPLOADS ───────────────────────────────────────────────────────────
+  // Card images and the turntable go straight from the browser to Supabase
+  // Storage on a signed URL, then a PATCH points the product at them. Nothing
+  // large passes through a Next.js route, so Vercel's ~4.5 MB body cap never
+  // applies.
 
-    const fallbackNote = modalGalleryImages.length
-      ? "Not set - the card uses the info images instead"
-      : "Not set";
+  function uploadToSignedUrl(signedUrl, file, onProgress) {
+    return new Promise((resolve, reject) => {
+      const request = new XMLHttpRequest();
+      const body = new FormData();
 
-    grid.innerHTML = modalCoverImages
-      .map((image, slot) => {
-        const label = slot === 0 ? "Cover 1 · Card image" : "Cover 2 · Hover image";
-        const otherSlot = 1 - slot;
-        const preview = image
-          ? `<img src="${escapeHtml(image.imageUrl)}" alt="${escapeHtml(image.altText || label)}">`
-          : `<div class="modal-image-placeholder">${escapeHtml(fallbackNote)}</div>`;
-        const actions = image
-          ? `
-            <button class="modal-chip-btn" type="button" data-image-assign="${escapeHtml(image.id)}" data-role="${IMAGE_ROLE_COVER}" data-slot="${otherSlot}">Swap</button>
-            <button class="modal-chip-btn" type="button" data-image-assign="${escapeHtml(image.id)}" data-role="${IMAGE_ROLE_INFO}">Move to info</button>
-            <button class="modal-chip-btn is-danger" type="button" data-gallery-delete="${escapeHtml(image.id)}">Delete</button>
-          `
-          : "";
+      body.append("cacheControl", "3600");
+      body.append("", file);
+      request.open("PUT", signedUrl);
+      request.setRequestHeader("x-upsert", "true");
+      request.upload.addEventListener("progress", (event) => {
+        if (event.lengthComputable) {
+          onProgress?.(event.loaded / event.total);
+        }
+      });
+      request.addEventListener("load", () => {
+        if (request.status >= 200 && request.status < 300) {
+          onProgress?.(1);
+          resolve();
+          return;
+        }
 
-        return `
-          <div class="modal-cover-slot" data-cover-slot="${slot}">
-            <span class="modal-cover-label">${label}</span>
-            ${preview}
-            <div class="modal-chip-row">${actions}</div>
-            <label class="modal-label">
-              ${image ? "Replace" : "Upload"} cover ${slot + 1}
-              <input class="modal-file-input" id="modal-field-cover-${slot + 1}" type="file" accept="image/*">
+        let message = "";
+
+        try {
+          message = JSON.parse(request.responseText)?.message || "";
+        } catch {
+          message = "";
+        }
+
+        reject(new Error(message || `Upload failed (${request.status}).`));
+      });
+      request.addEventListener("error", () => reject(new Error("Upload failed. Check the connection and try again.")));
+      request.send(body);
+    });
+  }
+
+  // Asks for a signed URL, uploads, and returns the storage path to commit.
+  async function uploadProductMediaFile(productId, kind, file, onProgress) {
+    const route = kind === "video" || kind === "poster" ? "video-upload-url" : "card-image-upload-url";
+    const upload = await fetchAdminApi(`/products/${encodeURIComponent(productId)}/${route}`, {
+      method: "POST",
+      body: JSON.stringify({ kind, contentType: file.type, size: file.size })
+    });
+
+    await uploadToSignedUrl(upload.signedUrl, file, onProgress);
+    return upload.path;
+  }
+
+  function saveProductMedia(productId, changes) {
+    return fetchAdminApi(`/products/${encodeURIComponent(productId)}/media`, {
+      method: "PATCH",
+      body: JSON.stringify(changes)
+    });
+  }
+
+  function validateCardImageFile(file) {
+    if (!CARD_IMAGE_TYPES.includes(file.type)) {
+      return "Card images must be JPG, PNG or WebP.";
+    }
+
+    if (file.size > CARD_IMAGE_MAX_BYTES) {
+      return `Card images must be ${CARD_IMAGE_MAX_BYTES / MEGABYTE} MB or smaller.`;
+    }
+
+    return "";
+  }
+
+  function waitForMediaEvent(media, eventName, timeoutMs = 15000) {
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        cleanup();
+        reject(new Error("The video took too long to read."));
+      }, timeoutMs);
+      const handleEvent = () => {
+        cleanup();
+        resolve();
+      };
+      const handleError = () => {
+        cleanup();
+        reject(new Error("This browser cannot read the video. Export it as MP4 (H.264)."));
+      };
+      function cleanup() {
+        clearTimeout(timer);
+        media.removeEventListener(eventName, handleEvent);
+        media.removeEventListener("error", handleError);
+      }
+
+      media.addEventListener(eventName, handleEvent, { once: true });
+      media.addEventListener("error", handleError, { once: true });
+    });
+  }
+
+  // Reads the picked file's size and length and draws its first frame to a
+  // JPEG to use as the poster.
+  async function readTurntableVideo(file) {
+    const objectUrl = URL.createObjectURL(file);
+    const video = document.createElement("video");
+
+    video.muted = true;
+    video.playsInline = true;
+    video.preload = "auto";
+    video.src = objectUrl;
+
+    try {
+      await waitForMediaEvent(video, "loadeddata");
+
+      const width = video.videoWidth;
+      const height = video.videoHeight;
+      const duration = Number.isFinite(video.duration) ? video.duration : 0;
+
+      if (!width || !height) {
+        throw new Error("This file has no video picture. Export it as MP4 (H.264).");
+      }
+
+      if (duration > 0.2) {
+        video.currentTime = 0.05;
+        await waitForMediaEvent(video, "seeked");
+      }
+
+      const scale = Math.min(1, POSTER_MAX_EDGE / Math.max(width, height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(width * scale);
+      canvas.height = Math.round(height * scale);
+      canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
+      const posterBlob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.86));
+
+      return {
+        width,
+        height,
+        duration,
+        poster: posterBlob ? new File([posterBlob], "turntable-poster.jpg", { type: "image/jpeg" }) : null
+      };
+    } finally {
+      video.removeAttribute("src");
+      video.load();
+      URL.revokeObjectURL(objectUrl);
+    }
+  }
+
+  // Checks run before anything uploads. Only a wrong type or an oversized file
+  // stops it; a non-square video is uploaded with a warning.
+  async function inspectTurntableFile(file) {
+    if (file.type !== "video/mp4") {
+      return { error: "The turntable must be an MP4 file (H.264)." };
+    }
+
+    if (file.size > VIDEO_MAX_BYTES) {
+      return { error: `The turntable must be ${VIDEO_MAX_BYTES / MEGABYTE} MB or smaller (this one is ${(file.size / MEGABYTE).toFixed(1)} MB).` };
+    }
+
+    try {
+      const details = await readTurntableVideo(file);
+      const ratio = details.width / details.height;
+      const warnings = [];
+
+      if (Math.abs(ratio - 1) > SQUARE_TOLERANCE) {
+        warnings.push(`It is ${details.width}×${details.height}, not square (1:1). It will be cropped to fill the square frame.`);
+      }
+
+      return { ...details, warnings };
+    } catch (error) {
+      return { error: error instanceof Error ? error.message : "The video could not be read." };
+    }
+  }
+
+  function revokeModalVideoDraftUrls() {
+    if (modalVideoDraft?.posterPreviewUrl) {
+      URL.revokeObjectURL(modalVideoDraft.posterPreviewUrl);
+    }
+  }
+
+  function setModalVideoProgress(fraction, label = "") {
+    const progress = document.getElementById("modal-video-progress");
+    const text = document.getElementById("modal-video-progress-text");
+
+    if (!progress || !text) return;
+
+    progress.hidden = fraction === null;
+    text.hidden = fraction === null;
+
+    if (fraction !== null) {
+      progress.value = Math.round(fraction * 100);
+      text.textContent = label || `${Math.round(fraction * 100)}%`;
+    }
+  }
+
+  // ── CARD IMAGES (COVER & HOVER) ─────────────────────────────────────────────
+
+  function renderModalCardImages() {
+    const grid = document.getElementById("modal-card-grid");
+    const preview = document.getElementById("modal-card-preview");
+    if (!grid || !preview) return;
+
+    grid.innerHTML = CARD_IMAGE_SLOTS.map((slot) => {
+      const url = slot === "cover" ? modalMedia.coverImageUrl : modalMedia.hoverImageUrl;
+      const label = slot === "cover" ? "Cover" : "Hover";
+      const note = slot === "cover" ? "Shown on the catalogue card" : "Replaces the cover when a desktop pointer hovers";
+      const image = url
+        ? `<img src="${escapeHtml(url)}" alt="${label} image">`
+        : `<div class="modal-image-placeholder">${slot === "cover" && modalGalleryImages.length ? "Not set - the card uses the first gallery image" : "Not set"}</div>`;
+
+      return `
+        <div class="modal-card-slot" data-card-slot="${slot}">
+          <span class="modal-cover-label">${label}</span>
+          ${image}
+          <p class="modal-slot-note">${note}</p>
+          <div class="modal-chip-row">
+            <label class="modal-chip-btn">
+              ${url ? "Replace" : "Upload"}
+              <input class="modal-hidden-input" type="file" accept="${CARD_IMAGE_TYPES.join(",")}" data-card-upload="${slot}">
             </label>
+            <button class="modal-chip-btn" type="button" data-card-pick="${slot}" ${modalGalleryImages.length ? "" : "disabled"}>Choose from gallery</button>
+            ${url ? `<button class="modal-chip-btn is-danger" type="button" data-card-remove="${slot}">Remove</button>` : ""}
           </div>
-        `;
-      })
-      .join("");
+          <div class="modal-card-picker" data-card-picker="${slot}" hidden>
+            ${modalGalleryImages.map((galleryImage) => `
+              <button type="button" data-card-choose="${slot}" data-image-id="${escapeHtml(galleryImage.id)}" aria-label="Use this gallery image as the ${label.toLowerCase()} image">
+                <img src="${escapeHtml(galleryImage.imageUrl)}" alt="">
+              </button>
+            `).join("")}
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    const cardCover = modalMedia.coverImageUrl || modalGalleryImages[0]?.imageUrl || "";
+    const cardHover = modalMedia.hoverImageUrl && modalMedia.hoverImageUrl !== cardCover ? modalMedia.hoverImageUrl : "";
+
+    preview.innerHTML = cardCover
+      ? `
+        <span class="modal-card-preview-frame${cardHover ? " has-hover" : ""}">
+          <img class="is-cover" src="${escapeHtml(cardCover)}" alt="Card preview">
+          ${cardHover ? `<img class="is-hover" src="${escapeHtml(cardHover)}" alt="">` : ""}
+        </span>
+        <span class="modal-card-preview-code">${escapeHtml(document.getElementById("maris-edit-modal")?.dataset.productCode || "")}</span>
+        <span class="modal-slot-note">${cardHover ? "Point at the card to see the hover image" : "No hover image - the card does not swap"}</span>
+      `
+      : `<span class="modal-slot-note">The card preview appears once there is a cover or a gallery image.</span>`;
+  }
+
+  async function commitModalMedia(changes, pendingText, doneText) {
+    const productId = getModalProductId();
+    if (!productId) return false;
+
+    setModalMessage(pendingText, false);
+
+    try {
+      const result = await saveProductMedia(productId, changes);
+      modalMedia = getModalProductMedia(result.media);
+      await reloadEditModalProduct(productId);
+      setModalMessage(doneText);
+      return true;
+    } catch (error) {
+      await reloadEditModalProduct(productId).catch(() => {});
+      setModalMessage(error instanceof Error ? error.message : "Could not save the media.", true);
+      return false;
+    }
+  }
+
+  async function uploadModalCardImage(slot, file) {
+    const productId = getModalProductId();
+    const problem = validateCardImageFile(file);
+    const label = slot === "cover" ? "cover" : "hover image";
+
+    if (!productId) return;
+
+    if (problem) {
+      setModalMessage(problem, true);
+      return;
+    }
+
+    try {
+      const path = await uploadProductMediaFile(productId, slot, file, (fraction) => {
+        setModalMessage(`Uploading the ${label}... ${Math.round(fraction * 100)}%`, false);
+      });
+      await commitModalMedia({ [slot]: { path } }, `Saving the ${label}...`, `The ${label} is updated.`);
+    } catch (error) {
+      setModalMessage(error instanceof Error ? error.message : `Could not upload the ${label}.`, true);
+    }
+  }
+
+  function handleModalCardClick(event) {
+    const pickBtn = event.target.closest("[data-card-pick]");
+    if (pickBtn) {
+      const picker = document.querySelector(`[data-card-picker="${pickBtn.dataset.cardPick}"]`);
+      if (picker) picker.hidden = !picker.hidden;
+      return;
+    }
+
+    const chooseBtn = event.target.closest("[data-card-choose]");
+    if (chooseBtn) {
+      const slot = chooseBtn.dataset.cardChoose;
+      commitModalMedia(
+        { [slot]: { imageId: chooseBtn.dataset.imageId } },
+        `Using the gallery image as the ${slot} image...`,
+        `The ${slot} image is updated.`
+      );
+      return;
+    }
+
+    const removeBtn = event.target.closest("[data-card-remove]");
+    if (removeBtn) {
+      const slot = removeBtn.dataset.cardRemove;
+
+      if (confirm(`Remove the ${slot} image from the card? Gallery images are not affected.`)) {
+        commitModalMedia({ [slot]: null }, `Removing the ${slot} image...`, `The ${slot} image is removed.`);
+      }
+    }
+  }
+
+  function handleModalCardChange(event) {
+    const input = event.target.closest("[data-card-upload]");
+    const file = input?.files?.[0];
+
+    if (file) {
+      uploadModalCardImage(input.dataset.cardUpload, file);
+    }
+  }
+
+  // ── TURNTABLE VIDEO ─────────────────────────────────────────────────────────
+
+  function renderModalVideo() {
+    const block = document.getElementById("modal-video-block");
+    if (!block) return;
+
+    const draft = modalVideoDraft;
+    const current = modalMedia.videoUrl
+      ? `
+        <div class="modal-video-current">
+          <video src="${escapeHtml(modalMedia.videoUrl)}" ${modalMedia.videoPosterUrl ? `poster="${escapeHtml(modalMedia.videoPosterUrl)}"` : ""} muted loop playsinline preload="metadata" controls></video>
+          <div class="modal-chip-row">
+            <label class="modal-chip-btn">
+              ${modalMedia.videoPosterUrl ? "Replace poster" : "Upload poster"}
+              <input class="modal-hidden-input" type="file" accept="${CARD_IMAGE_TYPES.join(",")}" data-video-poster-upload>
+            </label>
+            <button class="modal-chip-btn is-danger" type="button" data-video-remove>Remove video</button>
+          </div>
+        </div>
+      `
+      : `<p class="modal-slot-note">No turntable yet. The product page shows photographs only.</p>`;
+    const pending = draft
+      ? `
+        <div class="modal-video-draft">
+          ${draft.posterPreviewUrl ? `<img src="${draft.posterPreviewUrl}" alt="Poster from the first frame">` : ""}
+          <div>
+            <p class="modal-slot-note"><strong>${escapeHtml(draft.file.name)}</strong> · ${(draft.file.size / MEGABYTE).toFixed(1)} MB · ${draft.width}×${draft.height}${draft.duration ? ` · ${draft.duration.toFixed(1)} s` : ""}</p>
+            ${draft.warnings.map((warning) => `<p class="modal-video-warning">⚠ ${escapeHtml(warning)}</p>`).join("")}
+            <label class="modal-chip-btn">
+              ${draft.customPoster ? "Change poster" : "Use my own poster"}
+              <input class="modal-hidden-input" type="file" accept="${CARD_IMAGE_TYPES.join(",")}" data-video-draft-poster>
+            </label>
+            <p class="modal-slot-note">${draft.customPoster ? `Poster: ${escapeHtml(draft.customPoster.name)}` : "Poster: the first frame, made automatically"}</p>
+            <div class="modal-chip-row">
+              <button class="admin-primary" type="button" data-video-upload ${modalVideoUploading ? "disabled" : ""}>${modalMedia.videoUrl ? "Upload and replace" : "Upload video"}</button>
+              <button class="admin-secondary" type="button" data-video-cancel ${modalVideoUploading ? "disabled" : ""}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      `
+      : "";
+
+    block.innerHTML = `
+      ${current}
+      <label class="modal-label">
+        ${modalMedia.videoUrl ? "Replace video" : "Add video"} (MP4 · H.264 · square 1:1 · up to ${VIDEO_MAX_BYTES / MEGABYTE} MB)
+        <input class="modal-file-input" type="file" accept="video/mp4" data-video-file ${modalVideoUploading ? "disabled" : ""}>
+      </label>
+      ${pending}
+      <progress id="modal-video-progress" max="100" value="0" hidden></progress>
+      <p id="modal-video-progress-text" class="modal-slot-note" hidden></p>
+      <fieldset class="modal-video-position">
+        <legend class="modal-cover-label">Position in the product page gallery</legend>
+        <label><input type="radio" name="modal-video-position" value="${VIDEO_POSITION_FIRST}" ${modalMedia.videoPosition === VIDEO_POSITION_FIRST ? "checked" : ""}> First slot</label>
+        <label><input type="radio" name="modal-video-position" value="${VIDEO_POSITION_AFTER_COVER}" ${modalMedia.videoPosition !== VIDEO_POSITION_FIRST ? "checked" : ""}> After the cover (default)</label>
+      </fieldset>
+    `;
+  }
+
+  async function prepareModalVideo(file) {
+    revokeModalVideoDraftUrls();
+    modalVideoDraft = null;
+    setModalMessage("Checking the video...", false);
+
+    const inspection = await inspectTurntableFile(file);
+
+    if (inspection.error) {
+      renderModalVideo();
+      setModalMessage(inspection.error, true);
+      return;
+    }
+
+    modalVideoDraft = {
+      file,
+      width: inspection.width,
+      height: inspection.height,
+      duration: inspection.duration,
+      warnings: inspection.warnings,
+      autoPoster: inspection.poster,
+      customPoster: null,
+      posterPreviewUrl: inspection.poster ? URL.createObjectURL(inspection.poster) : ""
+    };
+    renderModalVideo();
+    setModalMessage(inspection.warnings.length ? "Check the warning, then upload." : "Ready to upload.", false);
+  }
+
+  async function uploadModalVideo() {
+    const productId = getModalProductId();
+    const draft = modalVideoDraft;
+    if (!productId || !draft || modalVideoUploading) return;
+
+    const poster = draft.customPoster || draft.autoPoster;
+    modalVideoUploading = true;
+    renderModalVideo();
+
+    try {
+      setModalVideoProgress(0);
+      const videoPath = await uploadProductMediaFile(productId, "video", draft.file, (fraction) => {
+        setModalVideoProgress(fraction, `Uploading video... ${Math.round(fraction * 100)}%`);
+      });
+      let posterPath = "";
+
+      if (poster) {
+        setModalVideoProgress(1, "Uploading poster...");
+        posterPath = await uploadProductMediaFile(productId, "poster", poster);
+      }
+
+      setModalVideoProgress(1, "Saving...");
+      revokeModalVideoDraftUrls();
+      modalVideoDraft = null;
+      modalVideoUploading = false;
+      await commitModalMedia(
+        {
+          video: { path: videoPath },
+          poster: posterPath ? { path: posterPath } : null,
+          videoPosition: modalMedia.videoPosition
+        },
+        "Saving the turntable...",
+        "Turntable video saved."
+      );
+    } catch (error) {
+      modalVideoUploading = false;
+      renderModalVideo();
+      setModalMessage(error instanceof Error ? error.message : "Could not upload the video.", true);
+    } finally {
+      modalVideoUploading = false;
+      setModalVideoProgress(null);
+    }
+  }
+
+  async function uploadModalVideoPoster(file) {
+    const productId = getModalProductId();
+    const problem = validateCardImageFile(file);
+    if (!productId) return;
+
+    if (problem) {
+      setModalMessage(problem.replace("Card images", "The poster"), true);
+      return;
+    }
+
+    try {
+      const path = await uploadProductMediaFile(productId, "poster", file, (fraction) => {
+        setModalMessage(`Uploading the poster... ${Math.round(fraction * 100)}%`, false);
+      });
+      await commitModalMedia({ poster: { path } }, "Saving the poster...", "Poster updated.");
+    } catch (error) {
+      setModalMessage(error instanceof Error ? error.message : "Could not upload the poster.", true);
+    }
+  }
+
+  function handleModalVideoClick(event) {
+    if (event.target.closest("[data-video-upload]")) {
+      uploadModalVideo();
+      return;
+    }
+
+    if (event.target.closest("[data-video-cancel]")) {
+      revokeModalVideoDraftUrls();
+      modalVideoDraft = null;
+      renderModalVideo();
+      setModalMessage("", false);
+      return;
+    }
+
+    if (event.target.closest("[data-video-remove]")) {
+      if (confirm("Remove the turntable video and its poster? The files are deleted from storage.")) {
+        commitModalMedia({ video: null }, "Removing the turntable...", "Turntable video removed.");
+      }
+    }
+  }
+
+  function handleModalVideoChange(event) {
+    const input = event.target;
+
+    if (input.matches("[data-video-file]") && input.files?.[0]) {
+      prepareModalVideo(input.files[0]);
+      return;
+    }
+
+    if (input.matches("[data-video-draft-poster]") && input.files?.[0] && modalVideoDraft) {
+      const problem = validateCardImageFile(input.files[0]);
+
+      if (problem) {
+        setModalMessage(problem.replace("Card images", "The poster"), true);
+        return;
+      }
+
+      revokeModalVideoDraftUrls();
+      modalVideoDraft.customPoster = input.files[0];
+      modalVideoDraft.posterPreviewUrl = URL.createObjectURL(input.files[0]);
+      renderModalVideo();
+      return;
+    }
+
+    if (input.matches("[data-video-poster-upload]") && input.files?.[0]) {
+      uploadModalVideoPoster(input.files[0]);
+      return;
+    }
+
+    if (input.name === "modal-video-position") {
+      const videoPosition = Number(input.value) === VIDEO_POSITION_FIRST ? VIDEO_POSITION_FIRST : VIDEO_POSITION_AFTER_COVER;
+      commitModalMedia({ videoPosition }, "Saving the video position...", "Video position saved.");
+    }
   }
 
   function updateModalGalleryCount() {
@@ -903,7 +1403,7 @@
 
     const galleryCount = modalGalleryImages.length;
     galleryCountEl.textContent =
-      galleryCount ? `${galleryCount} image${galleryCount > 1 ? "s" : ""} in the info set` : "No info images yet";
+      galleryCount ? `${galleryCount} image${galleryCount > 1 ? "s" : ""} in the gallery` : "No gallery images yet";
   }
 
   function renderModalGalleryImages(images = modalGalleryImages) {
@@ -914,31 +1414,27 @@
     updateModalGalleryCount();
 
     if (!modalGalleryImages.length) {
-      grid.innerHTML = `<p class="modal-gallery-empty">No info images to manage.</p>`;
+      grid.innerHTML = `<p class="modal-gallery-empty">No gallery images to manage.</p>`;
       return;
     }
 
     grid.innerHTML = modalGalleryImages
       .map((image, index) => `
         <div class="modal-gallery-item" draggable="true" data-gallery-index="${index}" data-image-id="${escapeHtml(image.id)}">
-          <img src="${escapeHtml(image.imageUrl)}" alt="${escapeHtml(image.altText || `Info image ${index + 1}`)}">
+          <img src="${escapeHtml(image.imageUrl)}" alt="${escapeHtml(image.altText || `Gallery image ${index + 1}`)}">
           <span class="gallery-badge">${index + 1}</span>
           <button class="modal-gallery-delete" type="button" data-gallery-delete="${escapeHtml(image.id)}" aria-label="Delete image">&times;</button>
-          <div class="modal-gallery-promote">
-            <button type="button" data-image-assign="${escapeHtml(image.id)}" data-role="${IMAGE_ROLE_COVER}" data-slot="0" title="Use as cover 1 (card image)">C1</button>
-            <button type="button" data-image-assign="${escapeHtml(image.id)}" data-role="${IMAGE_ROLE_COVER}" data-slot="1" title="Use as cover 2 (hover image)">C2</button>
-          </div>
         </div>
       `)
       .join("");
   }
 
   function renderModalProductImages(product) {
-    const { covers, info } = getModalProductImages(product);
-    modalCoverImages = covers;
-    modalGalleryImages = info;
+    modalGalleryImages = getModalProductImages(product);
+    modalMedia = getModalProductMedia(product);
     renderModalGalleryImages(modalGalleryImages);
-    renderModalCoverImages();
+    renderModalCardImages();
+    renderModalVideo();
   }
 
   async function reloadEditModalProduct(productId) {
@@ -954,10 +1450,9 @@
 
   async function deleteModalGalleryImage(imageId) {
     const productId = getModalProductId();
-    const isCover = modalCoverImages.some((image) => image?.id === imageId);
     if (!productId || !imageId) return;
 
-    if (!confirm(`Delete this ${isCover ? "cover" : "info"} image?`)) {
+    if (!confirm("Delete this gallery image? Its file is removed too, unless the card still uses it.")) {
       return;
     }
 
@@ -974,46 +1469,17 @@
     }
   }
 
-  async function assignModalImageRole(imageId, role, slot) {
-    const productId = getModalProductId();
-    if (!productId || !imageId) return;
-
-    setModalMessage(role === IMAGE_ROLE_COVER ? "Updating cover images..." : "Moving image to the info set...", false);
-
-    try {
-      await fetchAdminApi(ADMIN_PRODUCT_IMAGES_PATH, {
-        method: "PATCH",
-        body: JSON.stringify({
-          action: "assign-role",
-          productId,
-          imageId,
-          role,
-          slot: Number(slot) || 0
-        })
-      });
-      await reloadEditModalProduct(productId);
-      setModalMessage("Images updated.");
-    } catch (error) {
-      await reloadEditModalProduct(productId).catch(() => {});
-      setModalMessage(error instanceof Error ? error.message : "Could not update images.", true);
-    }
-  }
-
   async function reorderModalGalleryImages(fromIndex, toIndex) {
     const productId = getModalProductId();
     if (!productId || fromIndex === toIndex) return;
 
-    // A product with no cover set still leads its card with the first image,
-    // so its reorder keeps moving primary; once covers exist, info order is
-    // only the product page order.
-    const hasCovers = hasModalCoverImages();
     const nextImages = [...modalGalleryImages];
     const [movedImage] = nextImages.splice(fromIndex, 1);
     nextImages.splice(toIndex, 0, movedImage);
     modalGalleryImages = nextImages.map((image, index) => ({
       ...image,
       sortOrder: index,
-      isPrimary: hasCovers ? false : index === 0
+      isPrimary: index === 0
     }));
     renderModalGalleryImages(modalGalleryImages);
     setModalMessage("Saving image order...", false);
@@ -1023,8 +1489,7 @@
         method: "PATCH",
         body: JSON.stringify({
           productId,
-          imageIds: modalGalleryImages.map((image) => image.id),
-          ...(hasCovers ? { role: IMAGE_ROLE_INFO } : {})
+          imageIds: modalGalleryImages.map((image) => image.id)
         })
       });
       await reloadEditModalProduct(productId);
@@ -1036,12 +1501,6 @@
   }
 
   function handleModalGalleryClick(event) {
-    const assignBtn = event.target.closest("[data-image-assign]");
-    if (assignBtn) {
-      assignModalImageRole(assignBtn.dataset.imageAssign, assignBtn.dataset.role, assignBtn.dataset.slot);
-      return;
-    }
-
     const deleteBtn = event.target.closest("[data-gallery-delete]");
     if (!deleteBtn) return;
 
@@ -1591,21 +2050,27 @@
         justify-content: center;
       }
       .modal-gallery-delete:hover { background: #d94a5a; }
-      /* ── Cover slots ── */
-      #modal-cover-grid {
+      /* ── Card images (cover & hover) ── */
+      .modal-card-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 150px;
+        gap: 16px;
+        align-items: start;
+        margin: 12px 0 8px;
+      }
+      #modal-card-grid {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 14px;
-        margin: 12px 0 8px;
       }
-      .modal-cover-slot img,
-      .modal-cover-slot .modal-image-placeholder {
+      .modal-card-slot img,
+      .modal-card-slot .modal-image-placeholder {
         width: 100%;
         aspect-ratio: 1;
         object-fit: contain;
         background: #ececec;
         display: flex;
-        margin-bottom: 8px;
+        margin-bottom: 6px;
         text-align: center;
         padding: 8px;
         box-sizing: border-box;
@@ -1618,6 +2083,12 @@
         text-transform: uppercase;
         margin-bottom: 6px;
       }
+      .modal-slot-note {
+        color: #5c6d68;
+        font-size: 11px;
+        line-height: 1.5;
+        margin: 0 0 8px;
+      }
       .modal-chip-row {
         display: flex;
         flex-wrap: wrap;
@@ -1626,6 +2097,9 @@
         min-height: 4px;
       }
       .modal-chip-btn {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
         border: 1px solid rgba(0,73,58,0.24);
         background: #fff;
         color: #00493a;
@@ -1635,24 +2109,117 @@
         cursor: pointer;
       }
       .modal-chip-btn:hover { background: rgba(0,73,58,0.06); }
+      .modal-chip-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+      .modal-chip-btn:focus-within { outline: 2px solid rgba(185,147,58,0.9); outline-offset: 1px; }
       .modal-chip-btn.is-danger { color: #d94a5a; border-color: rgba(217,74,90,0.4); }
-      .modal-gallery-promote {
+      .modal-hidden-input {
         position: absolute;
-        left: 4px;
-        bottom: 4px;
-        display: flex;
-        gap: 4px;
-      }
-      .modal-gallery-promote button {
-        border: none;
-        background: rgba(0,73,58,0.88);
-        color: #fff;
-        font-size: 10px;
-        letter-spacing: 0.06em;
-        padding: 3px 6px;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
         cursor: pointer;
       }
-      .modal-gallery-promote button:hover { background: #00493a; }
+      .modal-card-picker {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 4px;
+        max-height: 180px;
+        overflow-y: auto;
+        padding: 4px;
+        border: 1px solid rgba(0,73,58,0.14);
+      }
+      .modal-card-picker[hidden] { display: none; }
+      .modal-card-picker button {
+        padding: 0;
+        border: 1px solid transparent;
+        background: #ececec;
+        cursor: pointer;
+      }
+      .modal-card-picker button:hover,
+      .modal-card-picker button:focus-visible { border-color: #00493a; }
+      .modal-card-picker img {
+        display: block;
+        width: 100%;
+        aspect-ratio: 1;
+        object-fit: contain;
+      }
+      /* A stand-in for the storefront card, so the swap can be checked here. */
+      .modal-card-preview {
+        display: grid;
+        gap: 6px;
+      }
+      .modal-card-preview-frame {
+        position: relative;
+        display: block;
+        aspect-ratio: 1;
+        background: #f5f4f2;
+        overflow: hidden;
+      }
+      .modal-card-preview-frame img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        padding: 10px;
+        box-sizing: border-box;
+        transition: opacity 0.3s ease;
+      }
+      .modal-card-preview-frame .is-hover { opacity: 0; }
+      .modal-card-preview-frame.has-hover:hover .is-cover { opacity: 0; }
+      .modal-card-preview-frame.has-hover:hover .is-hover { opacity: 1; }
+      .modal-card-preview-code {
+        color: #102923;
+        font-size: 12px;
+        letter-spacing: 0.06em;
+      }
+      /* ── Turntable video ── */
+      .modal-video-current video,
+      .modal-video-draft img {
+        display: block;
+        width: 180px;
+        aspect-ratio: 1;
+        object-fit: cover;
+        background: #ececec;
+        margin-bottom: 8px;
+      }
+      .modal-video-draft {
+        display: flex;
+        gap: 14px;
+        align-items: flex-start;
+        padding: 12px;
+        margin: 8px 0;
+        background: rgba(0,73,58,0.04);
+      }
+      .modal-video-warning {
+        color: #9a5b00;
+        font-size: 12px;
+        margin: 0 0 8px;
+      }
+      #modal-video-progress {
+        width: 100%;
+        height: 8px;
+        margin-top: 8px;
+        accent-color: #00493a;
+      }
+      .modal-video-position {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 18px;
+        margin: 10px 0 0;
+        padding: 0;
+        border: 0;
+        font-size: 13px;
+        color: #102923;
+      }
+      .modal-video-position legend { padding: 0; width: 100%; }
+      .modal-video-position label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+      @media (max-width: 640px) {
+        .modal-card-layout { grid-template-columns: 1fr; }
+        .modal-card-preview { max-width: 180px; }
+        .modal-video-draft { flex-direction: column; }
+      }
       .modal-gallery-empty {
         color: #5c6d68;
         font-size: 13px;
@@ -1787,17 +2354,25 @@
         </div>
 
         <hr class="modal-divider">
-        <span class="modal-kicker">Cover Images (2)</span>
-        <p class="modal-gallery-hint" style="margin-top:6px">Cover 1 shows on the catalogue card · Cover 2 replaces it on hover</p>
-        <div id="modal-cover-grid"></div>
+        <span class="modal-kicker">1 · Card images (Cover &amp; Hover)</span>
+        <p class="modal-gallery-hint" style="margin-top:6px">The catalogue card only · Saved as soon as you upload, choose or remove · Not part of the product page gallery</p>
+        <div class="modal-card-layout">
+          <div id="modal-card-grid"></div>
+          <div id="modal-card-preview" class="modal-card-preview" aria-label="Catalogue card preview"></div>
+        </div>
 
         <hr class="modal-divider">
-        <span class="modal-kicker">Product Info Images</span>
-        <p id="modal-gallery-count" class="modal-gallery-count">No info images yet</p>
-        <p class="modal-gallery-hint" style="margin-top:6px">Shown on the product page · Drag to reorder · C1 / C2 uses an image as a cover · ✕ deletes</p>
+        <span class="modal-kicker">2 · Turntable video (360°)</span>
+        <p class="modal-gallery-hint" style="margin-top:6px">Plays in the product page gallery · Uploads straight to storage, so large files are fine · Saved as soon as it uploads</p>
+        <div id="modal-video-block"></div>
+
+        <hr class="modal-divider">
+        <span class="modal-kicker">3 · Product page gallery</span>
+        <p id="modal-gallery-count" class="modal-gallery-count">No gallery images yet</p>
+        <p class="modal-gallery-hint" style="margin-top:6px">These views appear on the product page, after the cover and the video · Drag to reorder · ✕ deletes</p>
         <div id="modal-gallery-grid"></div>
         <label class="modal-label" style="margin-top:4px">
-          Add Info Images
+          Add gallery images (uploaded when you press Save Changes)
           <input class="modal-file-input" id="modal-field-gallery" type="file" accept="image/*" multiple>
         </label>
 
@@ -1815,7 +2390,12 @@
     modal.addEventListener("click", (e) => { if (e.target === modal) closeEditModal(); });
     document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeEditModal(); });
     document.getElementById("modal-save-btn").addEventListener("click", saveEditModal);
-    document.getElementById("modal-cover-grid").addEventListener("click", handleModalGalleryClick);
+    const cardGrid = document.getElementById("modal-card-grid");
+    cardGrid.addEventListener("click", handleModalCardClick);
+    cardGrid.addEventListener("change", handleModalCardChange);
+    const videoBlock = document.getElementById("modal-video-block");
+    videoBlock.addEventListener("click", handleModalVideoClick);
+    videoBlock.addEventListener("change", handleModalVideoChange);
     const galleryGrid = document.getElementById("modal-gallery-grid");
     galleryGrid.addEventListener("click", handleModalGalleryClick);
     galleryGrid.addEventListener("dragstart", handleModalGalleryDragStart);
@@ -1850,9 +2430,12 @@
     // Title
     title.textContent = `Edit — ${getProductSku(product)}`;
 
+    revokeModalVideoDraftUrls();
+    modalVideoDraft = null;
+    modalVideoUploading = false;
     renderModalProductImages(product);
 
-    // Reset file inputs & message (cover inputs are rebuilt by renderModalProductImages)
+    // Reset file inputs & message (media inputs are rebuilt by renderModalProductImages)
     document.getElementById("modal-field-gallery").value = "";
     setModalMessage("", false);
 
@@ -1863,6 +2446,13 @@
   function closeEditModal() {
     const modal = document.getElementById("maris-edit-modal");
     if (!modal) return;
+
+    if (modalVideoUploading && !confirm("The video is still uploading. Close anyway?")) {
+      return;
+    }
+
+    revokeModalVideoDraftUrls();
+    modalVideoDraft = null;
     modal.classList.remove("is-open");
     document.body.style.overflow = "";
   }
@@ -1920,19 +2510,7 @@
         })
       });
 
-      // 2. Upload new cover images (each replaces whatever holds its slot)
-      for (let slot = 0; slot < COVER_IMAGE_LIMIT; slot += 1) {
-        const coverFile = document.getElementById(`modal-field-cover-${slot + 1}`)?.files?.[0];
-        if (coverFile) {
-          await uploadProductImage(productId, coverFile, {
-            altText: `${name} cover image ${slot + 1}`,
-            role: IMAGE_ROLE_COVER,
-            slot
-          });
-        }
-      }
-
-      // 3. Upload new info images (if selected)
+      // 2. Upload new gallery images (if selected)
       const galleryFiles = Array.from(document.getElementById("modal-field-gallery").files);
       if (galleryFiles.length) {
         const nextSortOrder = modalGalleryImages.reduce(
@@ -1941,9 +2519,8 @@
         );
         await Promise.all(galleryFiles.map((file, index) =>
           uploadProductImage(productId, file, {
-            altText: `${name} info image ${index + 1}`,
-            sortOrder: nextSortOrder + index,
-            role: IMAGE_ROLE_INFO
+            altText: `${name} gallery image ${index + 1}`,
+            sortOrder: nextSortOrder + index
           })
         ));
       }

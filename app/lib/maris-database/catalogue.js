@@ -8,8 +8,8 @@ import {
   parsePublicProductCode,
   toPublicProductSlug
 } from "../product-display.js";
-import { normalizeProductImageRole } from "../product-image-roles.js";
 import { normalizeVideoPosition } from "../product-media.js";
+import { removeDeletedProductMedia } from "./product-media.js";
 
 const BEST_SELLER_SETTING_KEY = "home_best_sellers";
 
@@ -48,8 +48,7 @@ const ADMIN_CATALOGUE_SELECT = `
     alt_text,
     sort_order,
     is_primary,
-    source,
-    metadata
+    source
   )
 `;
 
@@ -81,37 +80,9 @@ const PUBLIC_CATALOGUE_SELECT = `
     image_url,
     alt_text,
     sort_order,
-    is_primary,
-    metadata
+    is_primary
   )
 `;
-
-// Image roles live in product_images.metadata, which migration 20260917000000
-// adds to databases created without it. Until that runs, any select naming the
-// column fails outright, so reads retry without it: images then read as
-// untagged and keep their original order. Writes never ask for it, so a retry
-// can never repeat an insert or update.
-function withoutImageMetadata(select) {
-  return select.replace(/,\s*metadata(?=\s*\))/, "");
-}
-
-const ADMIN_CATALOGUE_WRITE_SELECT = withoutImageMetadata(ADMIN_CATALOGUE_SELECT);
-
-function isMissingImageMetadataError(error) {
-  const message = String(error?.message || "");
-
-  return /metadata/i.test(message) && /does not exist/i.test(message);
-}
-
-async function selectWithImageMetadataFallback(select, runQuery) {
-  const result = await runQuery(select);
-
-  if (result.error && isMissingImageMetadataError(result.error)) {
-    return runQuery(withoutImageMetadata(select));
-  }
-
-  return result;
-}
 
 function normalizeVariant(row) {
   return {
@@ -132,8 +103,7 @@ function normalizeImage(row) {
     altText: row.alt_text || "",
     sortOrder: Number(row.sort_order) || 0,
     isPrimary: row.is_primary === true,
-    source: row.source || "manual",
-    role: normalizeProductImageRole(row.metadata?.role)
+    source: row.source || "manual"
   };
 }
 
@@ -325,8 +295,7 @@ function normalizePublicImage(row) {
     imageUrl: row.image_url || "",
     altText: row.alt_text || "",
     sortOrder: Number(row.sort_order) || 0,
-    isPrimary: row.is_primary === true,
-    role: normalizeProductImageRole(row.metadata?.role)
+    isPrimary: row.is_primary === true
   };
 }
 
@@ -369,11 +338,11 @@ export async function readAdminCatalogueProducts({ env = process.env, client, li
   }
 
   const supabase = client || createSupabaseAdminClient(env);
-  const { data, error } = await selectWithImageMetadataFallback(ADMIN_CATALOGUE_SELECT, (select) => supabase
+  const { data, error } = await supabase
     .from("products")
-    .select(select)
+    .select(ADMIN_CATALOGUE_SELECT)
     .order("updated_at", { ascending: false })
-    .limit(limit));
+    .limit(limit);
 
   if (error) {
     throw new Error(error.message || "Supabase catalogue products could not be loaded.");
@@ -403,12 +372,12 @@ export async function readPublicCatalogueProducts({ env = process.env, client, l
   }
 
   const supabase = client || createSupabaseAdminClient(env);
-  const { data, error } = await selectWithImageMetadataFallback(PUBLIC_CATALOGUE_SELECT, (select) => supabase
+  const { data, error } = await supabase
     .from("products")
-    .select(select)
+    .select(PUBLIC_CATALOGUE_SELECT)
     .eq("status", "active")
     .order("updated_at", { ascending: false })
-    .limit(limit));
+    .limit(limit);
 
   if (error) {
     throw new Error(error.message || "Supabase public catalogue products could not be loaded.");
@@ -525,12 +494,12 @@ export async function readPublicBestSellerProducts({ env = process.env, client, 
     };
   }
 
-  const { data, error } = await selectWithImageMetadataFallback(PUBLIC_CATALOGUE_SELECT, (select) => supabase
+  const { data, error } = await supabase
     .from("products")
-    .select(select)
+    .select(PUBLIC_CATALOGUE_SELECT)
     .eq("status", "active")
     .in("id", productIds)
-    .limit(productIds.length));
+    .limit(productIds.length);
 
   if (error) {
     throw new Error(error.message || "Supabase best seller products could not be loaded.");
@@ -576,10 +545,10 @@ export async function readPublicProductBySlug(slugOrSku, { env = process.env, cl
   ].filter(Boolean))];
 
   function selectActiveProducts(narrow) {
-    return selectWithImageMetadataFallback(PUBLIC_CATALOGUE_SELECT, (select) => narrow(supabase
+    return narrow(supabase
       .from("products")
-      .select(select)
-      .eq("status", "active")));
+      .select(PUBLIC_CATALOGUE_SELECT)
+      .eq("status", "active"));
   }
 
   let data = null;
@@ -627,12 +596,12 @@ export async function readRelatedPublicProducts(collection, excludeId, { env = p
   let siblings = [];
 
   if (code) {
-    const bySku = await selectWithImageMetadataFallback(PUBLIC_CATALOGUE_SELECT, (select) => supabase
+    const bySku = await supabase
       .from("products")
-      .select(select)
+      .select(PUBLIC_CATALOGUE_SELECT)
       .eq("status", "active")
       .ilike("sku", `${code.prefix}%${code.digits}%`)
-      .limit(limit * 3));
+      .limit(limit * 3);
 
     if (bySku.error) {
       throw new Error(bySku.error.message || "Supabase related products could not be loaded.");
@@ -646,15 +615,12 @@ export async function readRelatedPublicProducts(collection, excludeId, { env = p
   let sameCollection = [];
 
   if (siblings.length < limit) {
-    const { data, error } = await selectWithImageMetadataFallback(PUBLIC_CATALOGUE_SELECT, (select) => {
-      const query = supabase
-        .from("products")
-        .select(select)
-        .eq("status", "active")
-        .limit(limit + siblings.length + 1);
-
-      return collection ? query.eq("collection", collection) : query;
-    });
+    const query = supabase
+      .from("products")
+      .select(PUBLIC_CATALOGUE_SELECT)
+      .eq("status", "active")
+      .limit(limit + siblings.length + 1);
+    const { data, error } = await (collection ? query.eq("collection", collection) : query);
 
     if (error) {
       throw new Error(error.message || "Supabase related products could not be loaded.");
@@ -731,7 +697,7 @@ export async function createAdminProduct(product, { env = process.env, client } 
   const { data, error } = await supabase
     .from("products")
     .insert(payload)
-    .select(ADMIN_CATALOGUE_WRITE_SELECT)
+    .select(ADMIN_CATALOGUE_SELECT)
     .single();
 
   if (error) {
@@ -803,7 +769,7 @@ export async function updateAdminProduct(productId, updates, { env = process.env
     .from("products")
     .update(cleanedPayload)
     .eq("id", productId)
-    .select(ADMIN_CATALOGUE_WRITE_SELECT)
+    .select(ADMIN_CATALOGUE_SELECT)
     .single();
 
   if (error) {
@@ -827,7 +793,7 @@ export async function deleteAdminProduct(productId, { env = process.env, client 
 
   const existingResult = await supabase
     .from("products")
-    .select("id")
+    .select("id, sku, cover_image_url, hover_image_url, video_url, video_poster_url, product_images ( image_url )")
     .eq("id", productId)
     .limit(1)
     .maybeSingle();
@@ -839,6 +805,15 @@ export async function deleteAdminProduct(productId, { env = process.env, client 
   if (!existingResult.data) {
     throw new Error("Product not found.");
   }
+
+  const existing = existingResult.data;
+  const mediaUrls = [
+    existing.cover_image_url,
+    existing.hover_image_url,
+    existing.video_url,
+    existing.video_poster_url,
+    ...(Array.isArray(existing.product_images) ? existing.product_images.map((image) => image.image_url) : [])
+  ].filter(Boolean);
 
   const imagesResult = await supabase
     .from("product_images")
@@ -867,5 +842,13 @@ export async function deleteAdminProduct(productId, { env = process.env, client 
     throw new Error(productResult.error.message || "Product could not be deleted.");
   }
 
-  return { id: productId, deleted: true };
+  // Files go only once the rows are gone, so a failed delete never leaves a
+  // product pointing at nothing. A file another product still shows stays.
+  const cleanup = await removeDeletedProductMedia(supabase, {
+    productId,
+    sku: existing.sku,
+    urls: mediaUrls
+  });
+
+  return { id: productId, deleted: true, filesRemoved: cleanup.removed, filesFailed: cleanup.failed.length };
 }

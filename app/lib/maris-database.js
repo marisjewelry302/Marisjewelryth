@@ -49,8 +49,15 @@ export {
 } from "./maris-database/inquiries.js";
 export {
   AdminProductImageUploadError,
-  assignAdminProductImageRole,
   deleteAdminProductImage,
   reorderAdminProductImages,
   uploadAdminProductImage
 } from "./maris-database/product-images.js";
+export {
+  AdminProductMediaError,
+  CARD_IMAGE_KINDS,
+  PRODUCT_MEDIA_KINDS,
+  TURNTABLE_KINDS,
+  createAdminProductMediaUploadUrl,
+  updateAdminProductMedia
+} from "./maris-database/product-media.js";

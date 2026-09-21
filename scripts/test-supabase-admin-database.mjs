@@ -234,8 +234,7 @@ assert.deepEqual(catalogue.products[0], {
       altText: "Diamond Ring main angle",
       sortOrder: 0,
       isPrimary: true,
-      source: "google_sheet",
-      role: ""
+      source: "google_sheet"
     },
     {
       id: "image-2",
@@ -243,8 +242,7 @@ assert.deepEqual(catalogue.products[0], {
       altText: "Diamond Ring side",
       sortOrder: 1,
       isPrimary: false,
-      source: "manual",
-      role: ""
+      source: "manual"
     }
   ]
 });
@@ -383,16 +381,14 @@ const publicImages = [
     imageUrl: "https://example.com/ring-main.png",
     altText: "Diamond Ring main",
     sortOrder: 0,
-    isPrimary: true,
-    role: ""
+    isPrimary: true
   },
   {
     id: "image-2",
     imageUrl: "https://example.com/ring-side.png",
     altText: "Diamond Ring side",
     sortOrder: 1,
-    isPrimary: false,
-    role: ""
+    isPrimary: false
   }
 ];
 assert.deepEqual(publicCatalogue.products[0], {
@@ -635,6 +631,26 @@ function createProductImageUploadClient() {
       }
     },
     from(tableName) {
+      if (tableName === "products") {
+        return {
+          select(columns) {
+            assert.equal(columns, "sku");
+
+            return {
+              eq(column, value) {
+                assert.deepEqual([column, value], ["id", "product-1"]);
+
+                return {
+                  async maybeSingle() {
+                    return { data: { sku: "ER 1001" }, error: null };
+                  }
+                };
+              }
+            };
+          }
+        };
+      }
+
       assert.equal(tableName, "product_images");
 
       return {
@@ -683,7 +699,7 @@ const uploadedImage = await uploadAdminProductImage({
 });
 
 const uploadedPath = uploadClient.state.uploads[0].path;
-assert.match(uploadedPath, /^product-1\/\d+-[a-z0-9]+\.png$/);
+assert.match(uploadedPath, /^products\/er-1001\/gallery\/\d+-[a-z0-9]+\.png$/, "Gallery uploads file under the product code");
 assert.equal(uploadClient.state.uploads[0].options.contentType, "image/png");
 assert.equal(uploadClient.state.uploads[0].options.upsert, false);
 assert.equal(uploadClient.state.insertedImages[0].product_id, "product-1");
@@ -730,10 +746,15 @@ await assert.rejects(
   (error) => error.statusCode === 413 && /5 MB/i.test(error.message)
 );
 
-function createProductImageActionClient() {
+const galleryUrl = (name) => `https://example.supabase.co/storage/v1/object/public/product-images/products/er-1001/gallery/${name}`;
+
+// `coverUrl` is what the product's cover still points at, so deleting that
+// gallery row must leave its file alone.
+function createProductImageActionClient({ coverUrl = "" } = {}) {
   const state = {
     deletes: [],
-    updates: []
+    updates: [],
+    removed: []
   };
 
   function makeQuery(action, payload) {
@@ -744,10 +765,17 @@ function createProductImageActionClient() {
         if (this.filters.length === 2) {
           if (action === "delete") {
             state.deletes.push({ filters: [...this.filters] });
-          } else {
-            state.updates.push({ payload, filters: [...this.filters] });
+            const imageId = this.filters[0][1];
+
+            return {
+              async select(columns) {
+                assert.equal(columns, "image_url");
+                return { data: [{ image_url: galleryUrl(`${imageId}.jpg`) }], error: null };
+              }
+            };
           }
 
+          state.updates.push({ payload, filters: [...this.filters] });
           return Promise.resolve({ error: null });
         }
 
@@ -760,7 +788,25 @@ function createProductImageActionClient() {
 
   return {
     state,
+    storage: {
+      from(bucketName) {
+        return {
+          async remove(paths) {
+            state.removed.push(...paths.map((path) => `${bucketName}/${path}`));
+            return { data: paths, error: null };
+          }
+        };
+      }
+    },
     from(tableName) {
+      if (tableName === "products") {
+        return {
+          async select() {
+            return { data: [{ cover_image_url: coverUrl, hover_image_url: null, video_url: null, video_poster_url: null }], error: null };
+          }
+        };
+      }
+
       assert.equal(tableName, "product_images");
 
       return {
@@ -769,6 +815,10 @@ function createProductImageActionClient() {
         },
         update(payload) {
           return makeQuery("update", payload);
+        },
+        async select() {
+          // The deleted row is already gone.
+          return { data: [], error: null };
         }
       };
     }
@@ -790,8 +840,25 @@ const deletedImage = await deleteAdminProductImage({
 assert.deepEqual(deletedImage, {
   id: "image-2",
   productId: "product-1",
-  deleted: true
+  deleted: true,
+  fileRemoved: true
 });
+assert.deepEqual(imageActionClient.state.removed, ["product-images/products/er-1001/gallery/image-2.jpg"]);
+
+const coverKeptClient = createProductImageActionClient({ coverUrl: galleryUrl("image-5.jpg") });
+const deletedCoverImage = await deleteAdminProductImage({
+  productId: "product-1",
+  imageId: "image-5"
+}, {
+  env: {
+    SUPABASE_URL: "https://maris-test.supabase.co",
+    SUPABASE_SERVICE_ROLE_KEY: "service-role-secret"
+  },
+  client: coverKeptClient
+});
+
+assert.equal(deletedCoverImage.fileRemoved, false);
+assert.deepEqual(coverKeptClient.state.removed, [], "A gallery file the cover still shows is not removed");
 assert.deepEqual(imageActionClient.state.deletes[0].filters, [
   ["id", "image-2"],
   ["product_id", "product-1"]
