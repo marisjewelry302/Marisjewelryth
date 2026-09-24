@@ -162,3 +162,51 @@ export async function reorderAdminProductImages(
     updated: true
   };
 }
+
+const IMAGE_ALT_TEXT_MAX_LENGTH = 300;
+
+// The storefront reads each image's metal and view from its alt text, so
+// retagging an image in the admin is an alt-text update.
+export async function updateAdminProductImageAltText(
+  { productId, imageId, altText },
+  { env = process.env, client } = {}
+) {
+  const config = getSupabaseAdminConfig(env);
+  if (!config.isConfigured) {
+    throw new Error("Supabase admin database is not configured");
+  }
+
+  const cleanAltText = String(altText || "").replace(/\s+/g, " ").trim();
+
+  if (!productId || !imageId) {
+    throw new AdminProductImageUploadError("Product ID and image ID are required.", 400);
+  }
+
+  if (!cleanAltText || cleanAltText.length > IMAGE_ALT_TEXT_MAX_LENGTH) {
+    throw new AdminProductImageUploadError(`Alt text must be 1-${IMAGE_ALT_TEXT_MAX_LENGTH} characters.`, 400);
+  }
+
+  const supabase = client || createSupabaseAdminClient(env);
+  const { data, error } = await supabase
+    .from("product_images")
+    .update({ alt_text: cleanAltText })
+    .eq("id", imageId)
+    .eq("product_id", productId)
+    .select("id")
+    .maybeSingle();
+
+  if (error) {
+    throw new AdminProductImageUploadError(error.message || "Product image could not be updated.", 500);
+  }
+
+  if (!data) {
+    throw new AdminProductImageUploadError("Product image not found.", 404);
+  }
+
+  return {
+    id: imageId,
+    productId,
+    altText: cleanAltText,
+    updated: true
+  };
+}

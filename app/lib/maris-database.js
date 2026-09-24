@@ -51,5 +51,6 @@ export {
   AdminProductImageUploadError,
   deleteAdminProductImage,
   reorderAdminProductImages,
+  updateAdminProductImageAltText,
   uploadAdminProductImage
 } from "./maris-database/product-images.js";

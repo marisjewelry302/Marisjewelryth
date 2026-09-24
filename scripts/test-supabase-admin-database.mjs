@@ -12,6 +12,7 @@ const {
   readPublicCatalogueProducts,
   reorderAdminProductImages,
   updateAdminProduct,
+  updateAdminProductImageAltText,
   uploadAdminProductImage
 } = await import("../app/lib/maris-database.js");
 
@@ -200,6 +201,8 @@ assert.deepEqual(catalogue.products[0], {
   category: "Engagement Rings",
   collection: "engagement-ring",
   collectionName: "The One Aura Collection",
+  description: "",
+  specs: { metalType: "", metalWeight: "", stoneType: "", caratWeight: "" },
   status: "active",
   basePrice: 12900,
   stockQuantity: 0,
@@ -302,6 +305,8 @@ const publicCatalogueClient = {
                     imagePresentation: "contain",
                     internalCost: "never-public"
                   },
+                  metal_type: "18K White Gold",
+                  carat_weight: " 0.50 ct ",
                   product_variants: [
                     {
                       id: "variant-1",
@@ -373,6 +378,8 @@ assert.deepEqual(publicCatalogue.products[0], {
   category: "Engagement Rings",
   collection: "engagement-ring",
   collectionName: "",
+  description: "Round diamond ring.",
+  specs: { metalType: "18K White Gold", metalWeight: "", stoneType: "", caratWeight: "0.50 ct" },
   status: "active",
   basePrice: 12900,
   primaryImageUrl: "https://example.com/ring-main.png",
@@ -994,3 +1001,31 @@ assert.match(additiveSchema, /from public\.orders[\s\S]*?for update/i, "Order an
 const liveSchemaTest = await readFile(new URL("../scripts/test-supabase-admin-database-live.mjs", import.meta.url), "utf8");
 assert.match(liveSchemaTest, /readAdminDatabaseStatus/, "Live database script should use the same status helper as the admin API");
 assert.match(liveSchemaTest, /unreachableTables/, "Live database script should fail when any expected table is unreachable");
+
+const retagCalls = [];
+const retagClient = {
+  from(tableName) {
+    const query = {
+      update(payload) { retagCalls.push(["update", tableName, payload]); return query; },
+      eq(column, value) { retagCalls.push(["eq", column, value]); return query; },
+      select() { return query; },
+      async maybeSingle() { return { data: { id: "image-1" }, error: null }; }
+    };
+    return query;
+  }
+};
+const retagEnv = { SUPABASE_URL: "https://maris-test.supabase.co", SUPABASE_SERVICE_ROLE_KEY: "service-role-secret" };
+const retaggedImage = await updateAdminProductImageAltText(
+  { productId: "product-1", imageId: "image-1", altText: "  SR 0058  Rose Gold Top view " },
+  { env: retagEnv, client: retagClient }
+);
+assert.deepEqual(retaggedImage, { id: "image-1", productId: "product-1", altText: "SR 0058 Rose Gold Top view", updated: true });
+assert.deepEqual(retagCalls, [
+  ["update", "product_images", { alt_text: "SR 0058 Rose Gold Top view" }],
+  ["eq", "id", "image-1"],
+  ["eq", "product_id", "product-1"]
+]);
+await assert.rejects(
+  updateAdminProductImageAltText({ productId: "product-1", imageId: "image-1", altText: " " }, { env: retagEnv, client: retagClient }),
+  /Alt text must be/
+);

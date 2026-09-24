@@ -147,8 +147,11 @@ export default async function AdminPage() {
                     <span>code</span>
                     <span>name</span>
                     <span>price</span>
+                    <span>metal type</span>
+                    <span>metal weight</span>
+                    <span>stone type</span>
+                    <span>carat weight</span>
                     <span>description</span>
-                    <span>details</span>
                     <span>main image</span>
                     <span>gallery images</span>
                     <span>status</span>
@@ -220,6 +223,26 @@ export default async function AdminPage() {
                     <option value="Preorder">Preorder</option>
                     <option value="Hidden">Hidden</option>
                   </select>
+                </label>
+                <label>
+                  Metal Type
+                  <input name="metalType" type="text" placeholder="18K White Gold" />
+                </label>
+                <label>
+                  Metal Weight
+                  <input name="metalWeight" type="text" placeholder="3.20 g" />
+                </label>
+                <label>
+                  Stone Type
+                  <input name="stoneType" type="text" placeholder="Natural Diamond" />
+                </label>
+                <label>
+                  Carat Weight
+                  <input name="caratWeight" type="text" placeholder="0.50 ct" />
+                </label>
+                <label className="admin-span-2">
+                  Description
+                  <textarea name="description" rows="4" placeholder="Describe the piece for the product page." />
                 </label>
                 <label className="admin-span-2">
                   Product Images

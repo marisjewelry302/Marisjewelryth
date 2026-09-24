@@ -117,3 +117,68 @@ export function getPublicProductPath(product = {}) {
 
   return slug ? `/product/${slug}` : "/product";
 }
+
+// Uploads name each image "<product> <metal> <view>" (the admin reads both from
+// the file name), so the alt text is what splits a gallery into metal sets.
+export const PRODUCT_IMAGE_METALS = [
+  { key: "white-gold", label: "White Gold", pattern: /\bwhite\s*gold\b/i },
+  { key: "rose-gold", label: "Rose Gold", pattern: /\brose\s*gold\b/i },
+  { key: "yellow-gold", label: "Yellow Gold", pattern: /\byellow\s*gold\b/i }
+];
+
+const PRODUCT_IMAGE_VIEWS = [
+  { key: "hero", label: "Main View", pattern: /\b(hero|main|primary)\b/i },
+  { key: "top", label: "Top View", pattern: /\btop\b/i },
+  { key: "front", label: "Front View", pattern: /\bfront\b/i },
+  { key: "side", label: "Side View", pattern: /\bside\b/i },
+  { key: "back", label: "Back View", pattern: /\bback\b/i }
+];
+
+export function getProductImageMetal(image = {}) {
+  return PRODUCT_IMAGE_METALS.find((metal) => metal.pattern.test(image.altText || "")) || null;
+}
+
+export function getProductImageView(image = {}) {
+  return PRODUCT_IMAGE_VIEWS.find((view) => view.pattern.test(image.altText || "")) || null;
+}
+
+// Main view first, then top, front, side, back. A metal-specific shot with no
+// named view (most are tagged "Detail") is that metal's own photo, so it leads
+// straight after the main view rather than trailing the shared angles.
+function getViewOrder(image) {
+  const view = getProductImageView(image);
+
+  if (view) {
+    return PRODUCT_IMAGE_VIEWS.indexOf(view);
+  }
+
+  return getProductImageMetal(image) ? 0.5 : PRODUCT_IMAGE_VIEWS.length;
+}
+
+// Returns one set per metal that has images, each ordered by getViewOrder.
+// Images that name no metal belong to every set. A piece shot in a single
+// metal (or none) comes back as one set, which the gallery shows without a
+// metal switch.
+export function groupProductImagesByMetal(images = []) {
+  const sharedImages = images.filter((image) => !getProductImageMetal(image));
+  const sets = PRODUCT_IMAGE_METALS
+    .map((metal) => ({
+      key: metal.key,
+      label: metal.label,
+      images: [
+        ...images.filter((image) => getProductImageMetal(image)?.key === metal.key),
+        ...sharedImages
+      ].sort((left, right) => getViewOrder(left) - getViewOrder(right) || left.sortOrder - right.sortOrder)
+    }))
+    .filter((set) => set.images.length > sharedImages.length);
+
+  if (sets.length < 2) {
+    return [{ key: sets[0]?.key || "", label: sets[0]?.label || "", images }];
+  }
+
+  // Lead with the metal of the image the admin marked as primary.
+  const primaryMetal = getProductImageMetal(images.find((image) => image.isPrimary) || images[0]);
+  const leadIndex = Math.max(0, sets.findIndex((set) => set.key === primaryMetal?.key));
+
+  return [sets[leadIndex], ...sets.filter((_, index) => index !== leadIndex)];
+}

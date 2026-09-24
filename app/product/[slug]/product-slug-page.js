@@ -7,11 +7,13 @@ import {
   getPublicProductDisplayName,
   getPublicProductPath,
   getPublicProductSlug,
-  getPublicVariantDisplayName
+  getPublicVariantDisplayName,
+  groupProductImagesByMetal
 } from "../../lib/product-display.js";
 import JsonLd from "../../components/JsonLd";
 import WishlistButton from "../../components/WishlistButton";
 import ProductGallery from "./ProductGallery";
+import { ProductMetalProvider, ProductMetalSelector } from "./ProductMetalContext";
 import AddToBagButton from "./AddToBagButton";
 import {
   buildBreadcrumbJsonLd,
@@ -23,6 +25,13 @@ import Image from "next/image";
 import { isOptimizableImageSrc } from "../../lib/image-source";
 export const revalidate = 60;
 const getProductBySlug = cache((slug) => readPublicProductBySlug(slug));
+
+const PRODUCT_SPEC_LABELS = [
+  ["metalType", "Metal Type"],
+  ["metalWeight", "Metal Weight"],
+  ["stoneType", "Stone Type"],
+  ["caratWeight", "Carat Weight"]
+];
 
 const COLLECTION_LABELS = {
   "engagement-ring": "Engagement Rings",
@@ -105,6 +114,12 @@ export default async function ProductPage({ params }) {
   const displayName = getPublicProductDisplayName(product);
   const collectionLine = getMeaningfulText(product.collectionName);
   const productPath = getPublicProductPath(product);
+  const productSpecs = PRODUCT_SPEC_LABELS
+    .map(([key, label]) => ({ key, label, value: getMeaningfulText(product.specs?.[key]) }))
+    .filter((spec) => spec.value);
+  const productDescription = getMeaningfulText(product.description);
+  const imageSets = groupProductImagesByMetal(product.images);
+  const metalOptions = imageSets.length > 1 ? imageSets.map(({ key, label }) => ({ key, label })) : [];
   const wishlistItem = {
     id: `${product.collection || collectionLabel}:${product.sku}`,
     title: product.sku,
@@ -129,50 +144,69 @@ export default async function ProductPage({ params }) {
     <>
       <JsonLd data={productJsonLd} />
       <main className="product-page">
-        <div className="product-detail">
-          <div className="product-gallery-column">
-            <ProductGallery images={product.images} productCode={product.sku} productName={displayName} />
-          </div>
-
-          <div className="product-summary">
-            <p className="product-kicker" data-product-collection>{collectionLabel}</p>
-            <h1 data-product-title>{product.sku}</h1>
-            <h2 data-product-name>{displayName}</h2>
-            {/* The catalogue carries no per-product copy yet, so show the named
-                collection when the record has one instead of repeating the title.
-                Rows left blank store "-", which is not copy worth printing. */}
-            {collectionLine && (
-              <p className="product-description" data-product-description>
-                {collectionLine}
-              </p>
-            )}
-
-            {product.variants.length > 0 && (
-              <ul className="product-details-list" data-product-details>
-                {product.variants.map((variant) => (
-                  <li key={variant.id}>
-                    {getPublicVariantDisplayName(variant)}
-                  </li>
-                ))}
-              </ul>
-            )}
-
-            <p className="product-price" data-product-price>{formatPrice(product.basePrice)}</p>
-
-            <div className="product-actions">
-              <AddToBagButton product={product} collectionLabel={collectionLabel} />
-              <WishlistButton item={wishlistItem} variant="action" />
-              <a
-                className="product-action is-primary is-contact"
-                href={`/contact-order/${encodeURIComponent(product.sku)}`}
-              >
-                Contact Maris to Order
-              </a>
+        <ProductMetalProvider initialKey={imageSets[0].key}>
+          <div className="product-detail">
+            <div className="product-gallery-column">
+              <ProductGallery imageSets={imageSets} productCode={product.sku} productName={displayName} />
             </div>
 
-            <p className="product-note">Enquire with our atelier for current availability and bespoke sizing.</p>
+            <div className="product-summary">
+              <p className="product-kicker" data-product-collection>{collectionLabel}</p>
+              <h1 data-product-title>{product.sku}</h1>
+              <h2 data-product-name>{displayName}</h2>
+              {/* Rows left blank store "-", which is not copy worth printing. */}
+              {collectionLine && (
+                <p className="product-collection-line" data-product-collection-name>
+                  {collectionLine}
+                </p>
+              )}
+
+              <ProductMetalSelector metals={metalOptions} />
+
+              {productSpecs.length > 0 && (
+                <dl className="product-specs" data-product-specs>
+                  {productSpecs.map((spec) => (
+                    <div key={spec.key}>
+                      <dt>{spec.label}</dt>
+                      <dd>{spec.value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              )}
+
+              {productDescription && (
+                <p className="product-description" data-product-description>
+                  {productDescription}
+                </p>
+              )}
+
+              {product.variants.length > 0 && (
+                <ul className="product-details-list" data-product-details>
+                  {product.variants.map((variant) => (
+                    <li key={variant.id}>
+                      {getPublicVariantDisplayName(variant)}
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              <p className="product-price" data-product-price>{formatPrice(product.basePrice)}</p>
+
+              <div className="product-actions">
+                <AddToBagButton product={product} collectionLabel={collectionLabel} />
+                <WishlistButton item={wishlistItem} variant="action" />
+                <a
+                  className="product-action is-primary is-contact"
+                  href={`/contact-order/${encodeURIComponent(product.sku)}`}
+                >
+                  Contact Maris to Order
+                </a>
+              </div>
+
+              <p className="product-note">Enquire with our atelier for current availability and bespoke sizing.</p>
+            </div>
           </div>
-        </div>
+        </ProductMetalProvider>
 
         {relatedProducts.length > 0 && (
           <section className="also-like" data-also-like-section>

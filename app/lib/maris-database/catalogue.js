@@ -16,6 +16,11 @@ const ADMIN_CATALOGUE_SELECT = `
   category,
   collection,
   collection_name,
+  description,
+  metal_type,
+  metal_weight,
+  stone_type,
+  carat_weight,
   status,
   base_price,
   stock_quantity,
@@ -48,6 +53,11 @@ const PUBLIC_CATALOGUE_SELECT = `
   category,
   collection,
   collection_name,
+  description,
+  metal_type,
+  metal_weight,
+  stone_type,
+  carat_weight,
   status,
   base_price,
   product_variants (
@@ -66,6 +76,32 @@ const PUBLIC_CATALOGUE_SELECT = `
     is_primary
   )
 `;
+
+// Metal and stone specs shown on the product page, keyed by the name the
+// admin form sends and mapped to their products columns.
+const PRODUCT_SPEC_COLUMNS = {
+  metalType: "metal_type",
+  metalWeight: "metal_weight",
+  stoneType: "stone_type",
+  caratWeight: "carat_weight"
+};
+
+function normalizeProductSpecs(row) {
+  return Object.fromEntries(Object.entries(PRODUCT_SPEC_COLUMNS).map(([key, column]) => [
+    key,
+    cleanOptionalText(row[column]) || ""
+  ]));
+}
+
+// Only the spec keys the caller sent become columns, so a partial update
+// leaves the others untouched.
+function buildProductSpecsPayload(input = {}) {
+  const specs = input.specs && typeof input.specs === "object" ? input.specs : {};
+
+  return Object.fromEntries(Object.entries(PRODUCT_SPEC_COLUMNS)
+    .filter(([key]) => specs[key] !== undefined)
+    .map(([key, column]) => [column, cleanOptionalText(specs[key])]));
+}
 
 function normalizeVariant(row) {
   return {
@@ -227,6 +263,8 @@ function normalizeProduct(row) {
     category: row.category || "",
     collection: row.collection || "",
     collectionName,
+    description: cleanOptionalText(row.description) || "",
+    specs: normalizeProductSpecs(row),
     status: row.status || "draft",
     basePrice: row.base_price === null || row.base_price === undefined ? null : Number(row.base_price),
     stockQuantity: Number(row.stock_quantity) || 0,
@@ -280,6 +318,8 @@ function normalizePublicProduct(row) {
     category: row.category || "",
     collection: row.collection || "",
     collectionName: cleanOptionalText(row.collection_name) || "",
+    description: cleanOptionalText(row.description) || "",
+    specs: normalizeProductSpecs(row),
     status: row.status || "active",
     basePrice: row.base_price === null || row.base_price === undefined ? null : Number(row.base_price),
     primaryImageUrl: primaryImage?.imageUrl || "",
@@ -593,6 +633,8 @@ export async function createAdminProduct(product, { env = process.env, client } 
     category: normalizeAdminProductCategory({ category: product.category, collection }),
     collection,
     collection_name: collectionName,
+    description: cleanOptionalText(product.description),
+    ...buildProductSpecsPayload(product),
     base_price: parseMoneyAmount(product.price) ?? null,
     status,
     stock_quantity: Number(product.stockQty) || 0,
@@ -661,6 +703,8 @@ export async function updateAdminProduct(productId, updates, { env = process.env
     category,
     collection,
     collection_name: collectionName,
+    description: updates.description === undefined ? undefined : cleanOptionalText(updates.description),
+    ...buildProductSpecsPayload(updates),
     base_price: updates.price === undefined ? undefined : parseMoneyAmount(updates.price),
     status,
     stock_quantity: updates.stockQty !== undefined ? Number(updates.stockQty) : undefined,

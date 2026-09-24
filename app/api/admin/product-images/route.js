@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { ADMIN_PERMISSIONS, requireAdminPermission } from "../../../lib/admin-api-auth";
-import { deleteAdminProductImage, reorderAdminProductImages } from "../../../lib/maris-database";
+import { deleteAdminProductImage, reorderAdminProductImages, updateAdminProductImageAltText } from "../../../lib/maris-database";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -39,6 +39,17 @@ export async function PATCH(request) {
   }
 
   try {
+    // A body naming one image retags it; otherwise it is a reorder.
+    if (body.imageId) {
+      const result = await updateAdminProductImageAltText({
+        productId: body.productId,
+        imageId: body.imageId,
+        altText: body.altText
+      });
+
+      return json(result, 200);
+    }
+
     const result = await reorderAdminProductImages({
       productId: body.productId,
       imageIds: body.imageIds

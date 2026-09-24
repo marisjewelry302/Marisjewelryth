@@ -3,14 +3,18 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import Image from "next/image";
 import { isOptimizableImageSrc } from "../../lib/image-source";
-import { getPublicImageAltText } from "../../lib/product-display";
+import { getProductImageView, getPublicImageAltText } from "../../lib/product-display";
+import { useProductMetal } from "./ProductMetalContext";
 
-export default function ProductGallery({ images, productCode, productName }) {
-  const galleryItems = images && images.length > 0
+export default function ProductGallery({ imageSets, productCode, productName }) {
+  const { selectedKey } = useProductMetal();
+  const activeSet = imageSets.find((set) => set.key === selectedKey) || imageSets[0];
+  const images = activeSet?.images || [];
+  const galleryItems = images.length > 0
     ? images.map((img, index) => ({
         src: img.imageUrl,
         alt: getPublicImageAltText(img, productCode, productName, index),
-        label: img.isPrimary ? "Primary View" : `View ${index + 1}`
+        label: getProductImageView(img)?.label || (index === 0 ? "Primary View" : `View ${index + 1}`)
       }))
     : [{ src: "", alt: `${productCode} ${productName}`, label: "Primary View" }];
 
@@ -38,6 +42,13 @@ export default function ProductGallery({ images, productCode, productName }) {
   }, [galleryItems.length]);
 
   const closeLightbox = useCallback(() => setLightboxIndex(-1), []);
+
+  // A lightbox index from one metal set means nothing in another.
+  const [shownSetKey, setShownSetKey] = useState(activeSet?.key);
+  if (shownSetKey !== activeSet?.key) {
+    setShownSetKey(activeSet?.key);
+    setLightboxIndex(-1);
+  }
 
   useEffect(() => {
     if (lightboxOpen) {
@@ -100,7 +111,7 @@ export default function ProductGallery({ images, productCode, productName }) {
       {/* One scrolling mosaic instead of a single frame plus a thumbnail rail:
           the hero leads at full column width and every other view follows in a
           two-up grid, the way a house catalogue lays a piece out. */}
-      <div className="product-mosaic" data-product-gallery data-mosaic-count={galleryItems.length}>
+      <div className="product-mosaic" data-product-gallery data-product-metal={activeSet?.key || undefined} data-mosaic-count={galleryItems.length}>
         {galleryItems.map((item, index) => (
           <figure
             key={item.src + index}

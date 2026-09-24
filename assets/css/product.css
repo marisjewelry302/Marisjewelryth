@@ -234,10 +234,126 @@
   line-height: 1.25;
 }
 
+.product-collection-line,
 .product-description {
   font-size: 15px;
   line-height: 1.8;
   color: var(--maris-muted);
+}
+
+.product-description {
+  white-space: pre-line;
+}
+
+.product-metal-selector {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.product-metal-selector legend {
+  padding: 0;
+  margin-bottom: 12px;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--maris-muted);
+}
+
+.product-metal-selector legend span {
+  margin-left: 8px;
+  letter-spacing: 0.06em;
+  text-transform: none;
+  font-size: 14px;
+  color: var(--maris-ink);
+}
+
+.product-metal-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.product-metal-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 16px 0 10px;
+  border: 1px solid rgba(221, 164, 165, 0.45);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--maris-ink);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.product-metal-option:hover {
+  border-color: var(--maris-teal);
+}
+
+.product-metal-option[aria-pressed="true"] {
+  border-color: var(--maris-teal);
+  background: rgba(0, 73, 58, 0.06);
+}
+
+.product-metal-option:focus-visible {
+  outline: 2px solid var(--maris-teal);
+  outline-offset: 2px;
+}
+
+.product-metal-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+}
+
+.is-white-gold .product-metal-swatch {
+  background: linear-gradient(135deg, #f4f4f2, #c9cbcc);
+}
+
+.is-rose-gold .product-metal-swatch {
+  background: linear-gradient(135deg, #f3cfc3, #c98b7a);
+}
+
+.is-yellow-gold .product-metal-swatch {
+  background: linear-gradient(135deg, #f6e3a6, #d0a547);
+}
+
+.product-specs {
+  display: grid;
+  margin: 0;
+  border-top: 1px solid rgba(221, 164, 165, 0.32);
+}
+
+.product-specs > div {
+  display: grid;
+  grid-template-columns: minmax(110px, 0.8fr) minmax(0, 1.2fr);
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(221, 164, 165, 0.32);
+}
+
+.product-specs dt {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  line-height: 1.8;
+  color: var(--maris-muted);
+}
+
+.product-specs dd {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--maris-ink);
+  overflow-wrap: anywhere;
 }
 
 .product-details-list {
@@ -429,6 +545,7 @@
     font-size: 18px;
   }
 
+  .product-collection-line,
   .product-description {
     font-size: 14px;
     line-height: 1.7;

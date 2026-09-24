@@ -494,6 +494,63 @@
     return product.category || getCollectionLabel(product.collection) || "Fine Jewelry";
   }
 
+  // Metal and stone specs shown on the product page; the key doubles as the
+  // create-form field name.
+  const PRODUCT_SPEC_FIELDS = [
+    { key: "metalType", modalId: "modal-field-metal-type" },
+    { key: "metalWeight", modalId: "modal-field-metal-weight" },
+    { key: "stoneType", modalId: "modal-field-stone-type" },
+    { key: "caratWeight", modalId: "modal-field-carat-weight" }
+  ];
+
+  // The storefront splits a gallery into metal sets by reading the metal and
+  // view from each image's alt text, so uploads write both into it.
+  const IMAGE_METAL_LABELS = ["White Gold", "Rose Gold", "Yellow Gold"];
+  const IMAGE_VIEW_LABELS = [
+    ["Hero view", /\b(hero|main|primary)\b/i],
+    ["Top view", /\btop\b/i],
+    ["Front view", /\bfront\b/i],
+    ["Side view", /\bside\b/i],
+    ["Back view", /\bback\b/i]
+  ];
+
+  function readImageTag(altText) {
+    const text = String(altText || "");
+    const metal = IMAGE_METAL_LABELS.find((label) => new RegExp(`\\b${label.replace(" ", "\\s*")}\\b`, "i").test(text)) || "";
+    const view = IMAGE_VIEW_LABELS.find(([, pattern]) => pattern.test(text))?.[0] || "";
+    return { metal, view };
+  }
+
+  // An explicit choice in the modal wins; otherwise fall back to what the
+  // file name says, the same way the create form groups its uploads.
+  function buildModalImageAltText(name, file, fallbackView) {
+    const parsed = getAdminImageGroupParser()?.parseImageFile(file);
+    const chosenMetal = document.getElementById("modal-field-image-metal")?.value || "";
+    const chosenView = document.getElementById("modal-field-image-view")?.value || "";
+    const metal = chosenMetal || (IMAGE_METAL_LABELS.includes(parsed?.metalLabel) ? parsed.metalLabel : "");
+    const view = chosenView || (parsed?.viewKey && parsed.viewKey !== "detail" ? parsed.viewLabel : fallbackView);
+    return [name, metal, view].filter(Boolean).join(" ");
+  }
+
+  // Swaps the metal and view words in an existing alt text and keeps the rest,
+  // so the product wording the upload wrote survives a retag.
+  function retagImageAltText(altText, metal, view, fallbackName) {
+    const base = String(altText || "")
+      .replace(/\b(white|rose|yellow)\s*gold\b/gi, " ")
+      .replace(/\b(hero|main|primary|top|front|side|back|detail)\s+view\b/gi, " ")
+      .replace(/\b(primary|gallery)\s+image(\s+\d+)?\b/gi, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    return [base || fallbackName, metal, view].filter(Boolean).join(" ");
+  }
+
+  function renderImageTagOptions(labels, selected, emptyLabel) {
+    return [["", emptyLabel], ...labels.map((label) => [label, label.replace(" view", "")])]
+      .map(([value, label]) => `<option value="${escapeHtml(value)}"${value === selected ? " selected" : ""}>${escapeHtml(label)}</option>`)
+      .join("");
+  }
+
   function getProductMetadata(product) {
     const metadata = product?.metadata;
     return metadata && typeof metadata === "object" && !Array.isArray(metadata) ? metadata : {};
@@ -847,6 +904,14 @@
         <div class="modal-gallery-item" draggable="true" data-gallery-index="${index}" data-image-id="${escapeHtml(image.id)}">
           <img src="${escapeHtml(image.imageUrl)}" alt="${escapeHtml(image.altText || `Gallery image ${index + 1}`)}">
           <span class="gallery-badge">${image.isPrimary ? "Main" : index + 1}</span>
+          <div class="gallery-tag">
+            <select aria-label="Metal for image ${index + 1}" data-gallery-metal="${escapeHtml(image.id)}">
+              ${renderImageTagOptions(IMAGE_METAL_LABELS, readImageTag(image.altText).metal, "All metals")}
+            </select>
+            <select aria-label="View for image ${index + 1}" data-gallery-view="${escapeHtml(image.id)}">
+              ${renderImageTagOptions(IMAGE_VIEW_LABELS.map(([label]) => label), readImageTag(image.altText).view, "Other view")}
+            </select>
+          </div>
           <button class="modal-gallery-delete" type="button" data-gallery-delete="${escapeHtml(image.id)}" aria-label="Delete image">&times;</button>
         </div>
       `)
@@ -892,6 +957,39 @@
     }
   }
 
+  async function retagModalGalleryImage(imageId) {
+    const productId = getModalProductId();
+    const image = modalGalleryImages.find((item) => item.id === imageId);
+    const grid = document.getElementById("modal-gallery-grid");
+    if (!productId || !image || !grid) return;
+
+    const metal = grid.querySelector(`[data-gallery-metal="${CSS.escape(imageId)}"]`)?.value || "";
+    const view = grid.querySelector(`[data-gallery-view="${CSS.escape(imageId)}"]`)?.value || "";
+    const productName = document.getElementById("modal-field-name")?.value.trim() || "Product";
+    const altText = retagImageAltText(image.altText, metal, view, productName);
+
+    setModalMessage("Saving image tag...", false);
+
+    try {
+      await fetchAdminApi(ADMIN_PRODUCT_IMAGES_PATH, {
+        method: "PATCH",
+        body: JSON.stringify({ productId, imageId, altText })
+      });
+      await reloadEditModalProduct(productId);
+      setModalMessage(`Image tagged ${metal || "All metals"} · ${view.replace(" view", "") || "Other view"}.`);
+    } catch (error) {
+      await reloadEditModalProduct(productId).catch(() => {});
+      setModalMessage(error instanceof Error ? error.message : "Could not update image tag.", true);
+    }
+  }
+
+  function handleModalGalleryTagChange(event) {
+    const select = event.target.closest("[data-gallery-metal], [data-gallery-view]");
+    if (!select) return;
+
+    retagModalGalleryImage(select.dataset.galleryMetal || select.dataset.galleryView);
+  }
+
   async function reorderModalGalleryImages(fromIndex, toIndex) {
     const productId = getModalProductId();
     if (!productId || fromIndex === toIndex) return;
@@ -933,7 +1031,7 @@
 
   function handleModalGalleryDragStart(event) {
     const item = event.target.closest(".modal-gallery-item");
-    if (!item) return;
+    if (!item || event.target.closest("select")) return;
 
     modalGalleryDragIndex = Number(item.dataset.galleryIndex);
     item.classList.add("is-dragging");
@@ -1383,6 +1481,11 @@
         width: 100%;
         outline: none;
       }
+      textarea.modal-input {
+        padding: 10px 12px;
+        line-height: 1.6;
+        resize: vertical;
+      }
       .modal-input:focus, .modal-select:focus {
         border-color: #00493a;
         box-shadow: 0 0 0 3px rgba(0,73,58,0.1);
@@ -1456,6 +1559,22 @@
         letter-spacing: 0.1em;
         padding: 2px 5px;
         text-transform: uppercase;
+      }
+      .modal-gallery-item .gallery-tag {
+        display: grid;
+        gap: 3px;
+        padding: 4px;
+        background: #fff;
+      }
+      .modal-gallery-item .gallery-tag select {
+        width: 100%;
+        min-height: 28px;
+        border: 1px solid rgba(0,73,58,0.2);
+        background: #fff;
+        color: #102923;
+        font: inherit;
+        font-size: 11px;
+        cursor: pointer;
       }
       .modal-gallery-delete {
         position: absolute;
@@ -1600,10 +1719,58 @@
           </label>
         </div>
 
+        <div class="modal-grid">
+          <label class="modal-label">
+            Metal Type
+            <input class="modal-input" id="modal-field-metal-type" type="text" placeholder="18K White Gold">
+          </label>
+          <label class="modal-label">
+            Metal Weight
+            <input class="modal-input" id="modal-field-metal-weight" type="text" placeholder="3.20 g">
+          </label>
+        </div>
+
+        <div class="modal-grid">
+          <label class="modal-label">
+            Stone Type
+            <input class="modal-input" id="modal-field-stone-type" type="text" placeholder="Natural Diamond">
+          </label>
+          <label class="modal-label">
+            Carat Weight
+            <input class="modal-input" id="modal-field-carat-weight" type="text" placeholder="0.50 ct">
+          </label>
+        </div>
+
         <div class="modal-grid modal-full">
           <label class="modal-label">
             Description
-            <input class="modal-input" id="modal-field-description" type="text" placeholder="Short description">
+            <textarea class="modal-input" id="modal-field-description" rows="4" placeholder="Describe the piece for the product page."></textarea>
+          </label>
+        </div>
+
+        <hr class="modal-divider">
+        <span class="modal-kicker">Metal Set For New Images</span>
+        <p class="modal-gallery-hint">The product page shows one gallery per metal. Leave on Auto to read the metal and view from each file name (e.g. "SR 0058 white gold top.png").</p>
+        <div class="modal-grid">
+          <label class="modal-label">
+            Metal
+            <select class="modal-select" id="modal-field-image-metal">
+              <option value="">Auto from file name</option>
+              <option value="White Gold">White Gold</option>
+              <option value="Rose Gold">Rose Gold</option>
+              <option value="Yellow Gold">Yellow Gold</option>
+            </select>
+          </label>
+          <label class="modal-label">
+            View
+            <select class="modal-select" id="modal-field-image-view">
+              <option value="">Auto from file name</option>
+              <option value="Hero view">Main</option>
+              <option value="Top view">Top</option>
+              <option value="Front view">Front</option>
+              <option value="Side view">Side</option>
+              <option value="Back view">Back</option>
+            </select>
           </label>
         </div>
 
@@ -1643,6 +1810,7 @@
     document.getElementById("modal-save-btn").addEventListener("click", saveEditModal);
     const galleryGrid = document.getElementById("modal-gallery-grid");
     galleryGrid.addEventListener("click", handleModalGalleryClick);
+    galleryGrid.addEventListener("change", handleModalGalleryTagChange);
     galleryGrid.addEventListener("dragstart", handleModalGalleryDragStart);
     galleryGrid.addEventListener("dragover", handleModalGalleryDragOver);
     galleryGrid.addEventListener("dragleave", handleModalGalleryDragLeave);
@@ -1671,6 +1839,9 @@
     document.getElementById("modal-field-status").value = product.status || "Ready";
     document.getElementById("modal-field-stock").value = String(product.stockQty ?? product.totalStock ?? 0);
     document.getElementById("modal-field-description").value = product.description || "";
+    PRODUCT_SPEC_FIELDS.forEach(({ key, modalId }) => {
+      document.getElementById(modalId).value = product.specs?.[key] || "";
+    });
 
     // Title
     title.textContent = `Edit — ${getProductSku(product)}`;
@@ -1680,6 +1851,8 @@
     // Reset file inputs & message
     document.getElementById("modal-field-main-image").value = "";
     document.getElementById("modal-field-gallery").value = "";
+    document.getElementById("modal-field-image-metal").value = "";
+    document.getElementById("modal-field-image-view").value = "";
     setModalMessage("", false);
 
     modal.classList.add("is-open");
@@ -1720,6 +1893,10 @@
       const status = document.getElementById("modal-field-status").value;
       const stockQty = Math.max(0, Number(document.getElementById("modal-field-stock").value) || 0);
       const description = document.getElementById("modal-field-description").value.trim();
+      const specs = Object.fromEntries(PRODUCT_SPEC_FIELDS.map(({ key, modalId }) => [
+        key,
+        document.getElementById(modalId).value.trim()
+      ]));
       const metadata = buildProductMetadata(
         { metadata: parseModalMetadata(modal.dataset.productMetadata) },
         collectionName
@@ -1742,6 +1919,7 @@
           status,
           stockQty,
           description,
+          specs,
           metadata
         })
       });
@@ -1750,7 +1928,7 @@
       const mainImageFile = document.getElementById("modal-field-main-image").files[0];
       if (mainImageFile) {
         await uploadProductImage(productId, mainImageFile, {
-          altText: `${name} primary image`,
+          altText: buildModalImageAltText(name, mainImageFile, "Hero view"),
           sortOrder: 0,
           isPrimary: true
         });
@@ -1762,7 +1940,7 @@
         const nextSortOrder = modalGalleryImages.length;
         await Promise.all(galleryFiles.map((file, index) =>
           uploadProductImage(productId, file, {
-            altText: `${name} gallery image ${index + 1}`,
+            altText: buildModalImageAltText(name, file, `gallery image ${index + 1}`),
             sortOrder: nextSortOrder + index,
             isPrimary: false
           })
@@ -2694,6 +2872,11 @@
       stockQty,
       reservedQty,
       status: String(formData.get("status")),
+      description: String(formData.get("description") || "").trim(),
+      specs: Object.fromEntries(PRODUCT_SPEC_FIELDS.map(({ key }) => [
+        key,
+        String(formData.get(key) || "").trim()
+      ])),
       metadata: buildProductMetadata(null, collectionName),
       createdAt: new Date().toISOString()
     };
