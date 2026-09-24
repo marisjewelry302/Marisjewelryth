@@ -109,7 +109,7 @@ export default async function ProductPage({ params }) {
     permanentRedirect(`/product/${canonicalSlug}`);
   }
 
-  const { products: relatedProducts } = await readRelatedPublicProducts(product.collection, product.id);
+  const { products: relatedProducts } = await readRelatedPublicProducts(product.collection, product.id, { sku: product.sku });
   const collectionLabel = COLLECTION_LABELS[product.collection] || product.category || "Maris Jewelry";
   const displayName = getPublicProductDisplayName(product);
   const collectionLine = getMeaningfulText(product.collectionName);
@@ -118,7 +118,7 @@ export default async function ProductPage({ params }) {
     .map(([key, label]) => ({ key, label, value: getMeaningfulText(product.specs?.[key]) }))
     .filter((spec) => spec.value);
   const productDescription = getMeaningfulText(product.description);
-  const imageSets = groupProductImagesByMetal(product.images);
+  const imageSets = groupProductImagesByMetal(product.images, product.coverImageUrl);
   const metalOptions = imageSets.length > 1 ? imageSets.map(({ key, label }) => ({ key, label })) : [];
   const wishlistItem = {
     id: `${product.collection || collectionLabel}:${product.sku}`,
@@ -147,7 +147,13 @@ export default async function ProductPage({ params }) {
         <ProductMetalProvider initialKey={imageSets[0].key}>
           <div className="product-detail">
             <div className="product-gallery-column">
-              <ProductGallery imageSets={imageSets} productCode={product.sku} productName={displayName} />
+              <ProductGallery
+                imageSets={imageSets}
+                coverImageUrl={product.coverImageUrl}
+                video={product.videoUrl ? { src: product.videoUrl, poster: product.videoPosterUrl, position: product.videoPosition } : null}
+                productCode={product.sku}
+                productName={displayName}
+              />
             </div>
 
             <div className="product-summary">

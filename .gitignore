@@ -27,3 +27,9 @@ Thumbs.db
 
 # Hosting state
 .vercel/
+
+# Source CAD for the product viewer. Kept out of assets/ so the public
+# /assets/* route can never serve a manufacturing file, and out of git so a
+# 40 MB .3dm never lands in a commit.
+cad-source/
+.captures/

@@ -11,7 +11,9 @@ const contentSecurityPolicy = [
   "font-src 'self' data:",
   "img-src 'self' data: blob: https://*.supabase.co",
   "connect-src 'self' https://*.supabase.co",
-  "media-src 'self'",
+  // Turntable videos stream from Supabase Storage; admin previews a picked
+  // file from a blob: URL before it uploads.
+  "media-src 'self' blob: https://*.supabase.co",
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",

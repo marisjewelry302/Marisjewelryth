@@ -19,33 +19,22 @@ const CARD_IMAGE_SIZES = "(max-width: 700px) 50vw, (max-width: 1100px) 33vw, 25v
 
 const FALLBACK_IMAGE = "/assets/images/logo.png";
 
-function getImageSource(image) {
-  if (typeof image === "string") {
-    return image.trim();
-  }
+// The card shows the product's cover and, on hover, its hover image - both set
+// in admin and independent of the product page gallery. A piece without a
+// hover image simply does not swap. `image` / `hover` are the static
+// catalogue's names for the same two pictures.
+function getCardImages(product) {
+  const primaryImage = String(product.coverImageUrl || product.primaryImageUrl || product.image || "").trim() || FALLBACK_IMAGE;
+  const hoverImage = String(product.hoverImageUrl || product.hover || "").trim();
 
-  return String(image?.imageUrl || image?.src || image?.url || "").trim();
-}
-
-function getHoverImageSource(product, primaryImage) {
-  const galleryImages = Array.isArray(product.images)
-    ? product.images.map(getImageSource)
-    : [];
-  const candidates = [
-    product.hover,
-    product.hoverImageUrl,
-    ...galleryImages
-  ].map((image) => String(image || "").trim());
-
-  return candidates.find((image) => image && image !== primaryImage) || "";
+  return { primaryImage, hoverImage: hoverImage !== primaryImage ? hoverImage : "" };
 }
 
 export default function ProductCard({ product, collectionLabel, isAboveFold = false }) {
   const href = getPublicProductPath(product);
   const displayName = getPublicProductDisplayName(product);
   const productCode = product.sku || displayName;
-  const primaryImage = product.primaryImageUrl || product.image || FALLBACK_IMAGE;
-  const hoverImage = getHoverImageSource(product, primaryImage);
+  const { primaryImage, hoverImage } = getCardImages(product);
   const hasHoverImage = Boolean(hoverImage);
   const carat = getProductCarat(product);
   const wishlistItem = {
@@ -85,6 +74,7 @@ export default function ProductCard({ product, collectionLabel, isAboveFold = fa
               src={hoverImage}
               alt=""
               aria-hidden={true}
+              loading="lazy"
               width={CARD_IMAGE_SIZE}
               height={CARD_IMAGE_SIZE}
               sizes={CARD_IMAGE_SIZES}

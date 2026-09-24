@@ -48,16 +48,52 @@ export function getPublicProductDisplayName(product = {}) {
 // grid from looking untidy without rewriting the stored SKU.
 const PRODUCT_CODE_PATTERN = /^([A-Z]{2,3})\s*(\d{3,4})\s*([A-Z]{0,3})$/;
 
-export function formatPublicProductCode(sku) {
-  const value = String(sku || "").trim().toUpperCase();
-  const match = value.match(PRODUCT_CODE_PATTERN);
+export function parsePublicProductCode(sku) {
+  const match = String(sku || "").trim().toUpperCase().match(PRODUCT_CODE_PATTERN);
 
   if (!match) {
-    return value;
+    return null;
   }
 
   const [, prefix, digits, suffix] = match;
-  return [prefix, digits, suffix].filter(Boolean).join(" ");
+  return { prefix, digits, suffix };
+}
+
+export function formatPublicProductCode(sku) {
+  const code = parsePublicProductCode(sku);
+
+  if (!code) {
+    return String(sku || "").trim().toUpperCase();
+  }
+
+  return [code.prefix, code.digits, code.suffix].filter(Boolean).join(" ");
+}
+
+// One design is catalogued once per form: "SR 0015 ER" the engagement ring,
+// "SR 0015 WB" and "SR 0015 WS" its matching bands. Those siblings are the
+// pieces a customer looking at one of them most plausibly wants next.
+const SIBLING_SUFFIX_ORDER = ["ER", "WB", "WS"];
+
+export function isSiblingProductCode(sku, otherSku) {
+  const code = parsePublicProductCode(sku);
+  const other = parsePublicProductCode(otherSku);
+
+  return Boolean(
+    code
+    && other
+    && code.prefix === other.prefix
+    && code.digits === other.digits
+    && code.suffix !== other.suffix
+  );
+}
+
+export function compareSiblingProductCodes(leftSku, rightSku) {
+  const rank = (sku) => {
+    const index = SIBLING_SUFFIX_ORDER.indexOf(parsePublicProductCode(sku)?.suffix);
+    return index === -1 ? SIBLING_SUFFIX_ORDER.length : index;
+  };
+
+  return rank(leftSku) - rank(rightSku);
 }
 
 export function getPublicProductAltText(product = {}) {
@@ -159,7 +195,7 @@ function getViewOrder(image) {
 // Images that name no metal belong to every set. A piece shot in a single
 // metal (or none) comes back as one set, which the gallery shows without a
 // metal switch.
-export function groupProductImagesByMetal(images = []) {
+export function groupProductImagesByMetal(images = [], coverImageUrl = "") {
   const sharedImages = images.filter((image) => !getProductImageMetal(image));
   const sets = PRODUCT_IMAGE_METALS
     .map((metal) => ({
@@ -176,8 +212,11 @@ export function groupProductImagesByMetal(images = []) {
     return [{ key: sets[0]?.key || "", label: sets[0]?.label || "", images }];
   }
 
-  // Lead with the metal of the image the admin marked as primary.
-  const primaryMetal = getProductImageMetal(images.find((image) => image.isPrimary) || images[0]);
+  // Lead with the metal of the card cover, else of the primary image.
+  const leadImage = images.find((image) => coverImageUrl && image.imageUrl === coverImageUrl)
+    || images.find((image) => image.isPrimary)
+    || images[0];
+  const primaryMetal = getProductImageMetal(leadImage);
   const leadIndex = Math.max(0, sets.findIndex((set) => set.key === primaryMetal?.key));
 
   return [sets[leadIndex], ...sets.filter((_, index) => index !== leadIndex)];

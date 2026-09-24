@@ -15,6 +15,7 @@ This folder is for project documentation and archived references only.
 - `guides/LOCAL_ARTIFACTS.md`: local artifact storage, preview helpers, and browser test workflow
 - `google-sheet-catalogue.md`: historical Google Sheet mapping and manual checker reference
 - `supabase-admin-database.md`: protected admin database schema, migration, env setup, and live table-status checks
+- `3D-RESTORE.md`: how to bring back the product 3D viewer and turntable that were archived on `archive/3d-configurator`
 
 ## Keep this folder light
 

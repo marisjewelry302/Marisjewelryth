@@ -2,7 +2,14 @@
 
 import { createSupabaseAdminClient, getSupabaseAdminConfig } from "./connection.js";
 import { cleanOptionalText, parseMoneyAmount } from "./shared.js";
-import { toPublicProductSlug } from "../product-display.js";
+import {
+  compareSiblingProductCodes,
+  isSiblingProductCode,
+  parsePublicProductCode,
+  toPublicProductSlug
+} from "../product-display.js";
+import { normalizeVideoPosition } from "../product-media.js";
+import { removeDeletedProductMedia } from "./product-media.js";
 
 const BEST_SELLER_SETTING_KEY = "home_best_sellers";
 
@@ -23,6 +30,11 @@ const ADMIN_CATALOGUE_SELECT = `
   carat_weight,
   status,
   base_price,
+  cover_image_url,
+  hover_image_url,
+  video_url,
+  video_poster_url,
+  video_position,
   stock_quantity,
   reserved_quantity,
   updated_at,
@@ -60,6 +72,11 @@ const PUBLIC_CATALOGUE_SELECT = `
   carat_weight,
   status,
   base_price,
+  cover_image_url,
+  hover_image_url,
+  video_url,
+  video_poster_url,
+  video_position,
   product_variants (
     id,
     sku,
@@ -245,6 +262,25 @@ function sortImages(left, right) {
   return left.sortOrder - right.sortOrder;
 }
 
+// The card's cover and hover images and the turntable video live on the product
+// row (migration 20260921000000). The gallery in product_images is the product
+// page's set of views; a product saved before it had a cover still shows its
+// first gallery image on the card.
+function normalizeProductMedia(row, images) {
+  const coverImageUrl = cleanOptionalText(row.cover_image_url) || "";
+  const hoverImageUrl = cleanOptionalText(row.hover_image_url) || "";
+  const videoUrl = cleanOptionalText(row.video_url) || "";
+
+  return {
+    coverImageUrl,
+    hoverImageUrl,
+    primaryImageUrl: coverImageUrl || images[0]?.imageUrl || "",
+    videoUrl,
+    videoPosterUrl: videoUrl ? cleanOptionalText(row.video_poster_url) || "" : "",
+    videoPosition: normalizeVideoPosition(row.video_position)
+  };
+}
+
 function normalizeProduct(row) {
   const variants = Array.isArray(row.product_variants)
     ? row.product_variants.map(normalizeVariant)
@@ -252,7 +288,7 @@ function normalizeProduct(row) {
   const images = Array.isArray(row.product_images)
     ? row.product_images.map(normalizeImage).sort(sortImages)
     : [];
-  const primaryImage = images.find((image) => image.isPrimary) || images[0] || null;
+  const media = normalizeProductMedia(row, images);
   const collectionName = cleanOptionalText(row.collection_name) || "";
 
   return {
@@ -272,7 +308,7 @@ function normalizeProduct(row) {
     stockQty: Number(row.stock_quantity) || 0,
     reservedQty: Number(row.reserved_quantity) || 0,
     updatedAt: row.updated_at || null,
-    primaryImageUrl: primaryImage?.imageUrl || "",
+    ...media,
     imageCount: images.length,
     variantCount: variants.length,
     totalStock: variants.reduce((total, variant) => total + variant.stockQuantity, 0),
@@ -308,7 +344,7 @@ function normalizePublicProduct(row) {
   const images = Array.isArray(row.product_images)
     ? row.product_images.map(normalizePublicImage).sort(sortImages)
     : [];
-  const primaryImage = images.find((image) => image.isPrimary) || images[0] || null;
+  const media = normalizeProductMedia(row, images);
 
   return {
     id: row.id,
@@ -322,7 +358,7 @@ function normalizePublicProduct(row) {
     specs: normalizeProductSpecs(row),
     status: row.status || "active",
     basePrice: row.base_price === null || row.base_price === undefined ? null : Number(row.base_price),
-    primaryImageUrl: primaryImage?.imageUrl || "",
+    ...media,
     images,
     variants
   };
@@ -548,17 +584,17 @@ export async function readPublicProductBySlug(slugOrSku, { env = process.env, cl
     slugCandidate.replace(/-/g, " ").toUpperCase()
   ].filter(Boolean))];
 
-  function selectActiveProducts() {
-    return supabase
+  function selectActiveProducts(narrow) {
+    return narrow(supabase
       .from("products")
       .select(PUBLIC_CATALOGUE_SELECT)
-      .eq("status", "active");
+      .eq("status", "active"));
   }
 
   let data = null;
 
   if (slugCandidate) {
-    const bySlug = await selectActiveProducts().eq("slug", slugCandidate).limit(1).maybeSingle();
+    const bySlug = await selectActiveProducts((query) => query.eq("slug", slugCandidate).limit(1).maybeSingle());
 
     if (bySlug.error) {
       throw new Error(bySlug.error.message || "Supabase product could not be loaded.");
@@ -568,7 +604,7 @@ export async function readPublicProductBySlug(slugOrSku, { env = process.env, cl
   }
 
   if (!data && skuCandidates.length) {
-    const bySku = await selectActiveProducts().in("sku", skuCandidates).limit(1).maybeSingle();
+    const bySku = await selectActiveProducts((query) => query.in("sku", skuCandidates).limit(1).maybeSingle());
 
     if (bySku.error) {
       throw new Error(bySku.error.message || "Supabase product could not be loaded.");
@@ -584,7 +620,7 @@ export async function readPublicProductBySlug(slugOrSku, { env = process.env, cl
   };
 }
 
-export async function readRelatedPublicProducts(collection, excludeId, { env = process.env, client, limit = 4 } = {}) {
+export async function readRelatedPublicProducts(collection, excludeId, { env = process.env, client, limit = 4, sku } = {}) {
   const config = getSupabaseAdminConfig(env);
 
   if (!config.isConfigured) {
@@ -592,27 +628,82 @@ export async function readRelatedPublicProducts(collection, excludeId, { env = p
   }
 
   const supabase = client || createSupabaseAdminClient(env);
-  let query = supabase
-    .from("products")
-    .select(PUBLIC_CATALOGUE_SELECT)
-    .eq("status", "active")
-    .limit(limit + 1);
+  // Siblings of the same design ("SR 0015 ER" next to "SR 0015 WB") come first,
+  // whatever collection they sit in; the rest of the row is filled from the
+  // piece's own collection. SKUs are hand-entered with or without spaces, so
+  // the database match is loose and the exact code comparison happens here.
+  const code = parsePublicProductCode(sku);
+  let siblings = [];
 
-  if (collection) {
-    query = query.eq("collection", collection);
+  if (code) {
+    const bySku = await supabase
+      .from("products")
+      .select(PUBLIC_CATALOGUE_SELECT)
+      .eq("status", "active")
+      .ilike("sku", `${code.prefix}%${code.digits}%`)
+      .limit(limit * 3);
+
+    if (bySku.error) {
+      throw new Error(bySku.error.message || "Supabase related products could not be loaded.");
+    }
+
+    siblings = (Array.isArray(bySku.data) ? bySku.data.map(normalizePublicProduct) : [])
+      .filter((item) => item.id !== excludeId && isSiblingProductCode(sku, item.sku))
+      .sort((left, right) => compareSiblingProductCodes(left.sku, right.sku));
   }
 
-  const { data, error } = await query;
+  let sameCollection = [];
 
-  if (error) {
-    throw new Error(error.message || "Supabase related products could not be loaded.");
+  if (siblings.length < limit) {
+    const query = supabase
+      .from("products")
+      .select(PUBLIC_CATALOGUE_SELECT)
+      .eq("status", "active")
+      .limit(limit + siblings.length + 1);
+    const { data, error } = await (collection ? query.eq("collection", collection) : query);
+
+    if (error) {
+      throw new Error(error.message || "Supabase related products could not be loaded.");
+    }
+
+    sameCollection = Array.isArray(data) ? data.map(normalizePublicProduct) : [];
   }
 
-  const products = (Array.isArray(data) ? data.map(normalizePublicProduct) : [])
-    .filter((item) => item.id !== excludeId)
+  const seen = new Set([excludeId]);
+  const products = [...siblings, ...sameCollection]
+    .filter((item) => {
+      if (seen.has(item.id)) return false;
+      seen.add(item.id);
+      return true;
+    })
     .slice(0, limit);
 
   return { source: "supabase", status: "ready", products };
+}
+
+// camelCase media fields in, snake_case columns out. A field left undefined is
+// not written; an empty string clears the column.
+const PRODUCT_MEDIA_URL_FIELDS = Object.freeze({
+  coverImageUrl: "cover_image_url",
+  hoverImageUrl: "hover_image_url",
+  videoUrl: "video_url",
+  videoPosterUrl: "video_poster_url"
+});
+
+function toProductMediaPayload(input = {}) {
+  const payload = {};
+
+  for (const [field, column] of Object.entries(PRODUCT_MEDIA_URL_FIELDS)) {
+    if (input[field] !== undefined) {
+      payload[column] = cleanOptionalText(input[field]) || null;
+    }
+  }
+
+  if (input.videoPosition !== undefined) {
+    payload.video_position = normalizeVideoPosition(input.videoPosition);
+  }
+
+  return payload;
 }
 
 export async function createAdminProduct(product, { env = process.env, client } = {}) {
@@ -626,6 +717,7 @@ export async function createAdminProduct(product, { env = process.env, client } 
   const sku = normalizeAdminProductSku(product.sku);
   const collection = normalizeAdminProductCollection(product.collection || product.ringType || product.category) || null;
   const collectionName = cleanOptionalText(product.collectionName) || null;
+  const imageUrl = cleanOptionalText(product.imageUrl || product.primaryImageUrl || product.image);
   const payload = Object.fromEntries(Object.entries({
     sku,
     slug: product.slug || sku.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
@@ -638,7 +730,10 @@ export async function createAdminProduct(product, { env = process.env, client } 
     base_price: parseMoneyAmount(product.price) ?? null,
     status,
     stock_quantity: Number(product.stockQty) || 0,
-    reserved_quantity: Number(product.reservedQty) || 0
+    reserved_quantity: Number(product.reservedQty) || 0,
+    // The first image a product is created with also dresses its card.
+    cover_image_url: imageUrl || undefined,
+    ...toProductMediaPayload(product)
   }).filter(([, value]) => value !== undefined));
 
   const { data, error } = await supabase
@@ -650,8 +745,6 @@ export async function createAdminProduct(product, { env = process.env, client } 
   if (error) {
     throw new Error(error.message || "Product could not be created.");
   }
-
-  const imageUrl = cleanOptionalText(product.imageUrl || product.primaryImageUrl || product.image);
 
   if (imageUrl) {
     const imagePayload = {
@@ -708,7 +801,8 @@ export async function updateAdminProduct(productId, updates, { env = process.env
     base_price: updates.price === undefined ? undefined : parseMoneyAmount(updates.price),
     status,
     stock_quantity: updates.stockQty !== undefined ? Number(updates.stockQty) : undefined,
-    reserved_quantity: updates.reservedQty !== undefined ? Number(updates.reservedQty) : undefined
+    reserved_quantity: updates.reservedQty !== undefined ? Number(updates.reservedQty) : undefined,
+    ...toProductMediaPayload(updates)
   };
 
   const cleanedPayload = Object.fromEntries(
@@ -743,7 +837,7 @@ export async function deleteAdminProduct(productId, { env = process.env, client 
 
   const existingResult = await supabase
     .from("products")
-    .select("id")
+    .select("id, sku, cover_image_url, hover_image_url, video_url, video_poster_url, product_images ( image_url )")
     .eq("id", productId)
     .limit(1)
     .maybeSingle();
@@ -755,6 +849,15 @@ export async function deleteAdminProduct(productId, { env = process.env, client 
   if (!existingResult.data) {
     throw new Error("Product not found.");
   }
+
+  const existing = existingResult.data;
+  const mediaUrls = [
+    existing.cover_image_url,
+    existing.hover_image_url,
+    existing.video_url,
+    existing.video_poster_url,
+    ...(Array.isArray(existing.product_images) ? existing.product_images.map((image) => image.image_url) : [])
+  ].filter(Boolean);
 
   const imagesResult = await supabase
     .from("product_images")
@@ -783,5 +886,13 @@ export async function deleteAdminProduct(productId, { env = process.env, client 
     throw new Error(productResult.error.message || "Product could not be deleted.");
   }
 
-  return { id: productId, deleted: true };
+  // Files go only once the rows are gone, so a failed delete never leaves a
+  // product pointing at nothing. A file another product still shows stays.
+  const cleanup = await removeDeletedProductMedia(supabase, {
+    productId,
+    sku: existing.sku,
+    urls: mediaUrls
+  });
+
+  return { id: productId, deleted: true, filesRemoved: cleanup.removed, filesFailed: cleanup.failed.length };
 }

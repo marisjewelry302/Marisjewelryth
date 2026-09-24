@@ -16,3 +16,7 @@ assets/images/home/archive/
 .env.*
 Thumbs.db
 .DS_Store
+
+# Source CAD and the Maverick material library (kept outside git)
+cad-source/
+.captures/
