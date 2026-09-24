@@ -53,7 +53,7 @@ assert.equal(mensWeddingBandGroup.code, "MWB 1001");
 assert.equal(mensWeddingBandGroup.collectionKey, "mens-wedding-bands");
 
 assert.match(adminHtml, /data-product-form/, "Admin Products tab should keep image upload inside the existing Add Product form");
-assert.match(adminHtml, /Product Images[\s\S]*name="imageGroupFiles"/, "Add Product form should accept product images directly");
+assert.match(adminHtml, /Gallery images[\s\S]*name="imageGroupFiles"/, "Add Product form should accept product images directly");
 assert.match(adminHtml, /data-image-group-summary/, "Add Product form should show parsed image group feedback inline");
 assert.match(adminHtml, /Collection Name[\s\S]*name="collectionName"/, "Add Product form should let admins enter a display collection name");
 assert.match(adminHtml, /name="ringType"[\s\S]*value="engagement-ring"[\s\S]*value="wedding-bands"[\s\S]*value="mens-wedding-bands"[\s\S]*value="rings"/, "Add Product should let admins choose a ring type for ring products");

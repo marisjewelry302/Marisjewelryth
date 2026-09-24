@@ -9,8 +9,9 @@ function assertIncludes(pattern, message) {
   }
 }
 
+// className is a template literal once the font variables join it.
 assertIncludes(
-  /<html\s+[^>]*lang="en"[^>]*translate="no"[^>]*className="notranslate"[^>]*>/,
+  /<html\s+[^>]*lang="en"[^>]*translate="no"[^>]*className=(?:"|\{`)notranslate\b[^>]*>/,
   "Root html must opt out of browser translation before hydration."
 );
 

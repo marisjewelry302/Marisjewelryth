@@ -48,8 +48,8 @@ assert.doesNotMatch(
 
 assert.match(
   files.productCard,
-  /product\.images/,
-  "ProductCard should read catalogue gallery images for hover previews"
+  /product\.hoverImageUrl/,
+  "ProductCard should read the product's hover image for hover previews"
 );
 
 assert.match(
