@@ -3126,6 +3126,8 @@ body {
   filter: blur(0) saturate(1);
 }
 
+/* Product shots are transparent PNGs, so the frame stays bare and each piece
+   sits straight on the section background; focus comes from scale and blur. */
 .best-seller-image-frame {
   position: relative;
   display: grid;
@@ -3133,24 +3135,17 @@ body {
   aspect-ratio: 1 / 1;
   width: 100%;
   overflow: hidden;
-  border: 1px solid rgba(16, 41, 35, 0.12);
+  border: 0;
   border-radius: 0;
-  background:
-    linear-gradient(135deg, rgba(255, 250, 246, 0.82), rgba(232, 232, 235, 0.9)),
-    rgb(237, 237, 240);
-  box-shadow: 0 16px 34px rgba(16, 41, 35, 0.055);
-}
-
-.best-seller-card[data-focus="center"] .best-seller-image-frame {
-  border-color: rgba(0, 73, 58, 0.22);
-  box-shadow: 0 28px 68px rgba(16, 41, 35, 0.12);
+  background: transparent;
+  box-shadow: none;
 }
 
 .best-seller-image-frame img {
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
 }
 
 .best-seller-empty-label {
