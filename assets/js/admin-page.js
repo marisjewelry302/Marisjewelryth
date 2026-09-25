@@ -517,13 +517,12 @@
     return product.category || getCollectionLabel(product.collection) || "Fine Jewelry";
   }
 
-  // Metal and stone specs shown on the product page; the key doubles as the
-  // create-form field name.
+  // Sample-piece specs shown on the product page; the key doubles as the
+  // create-form field name and the modal renders one input per entry.
   const PRODUCT_SPEC_FIELDS = [
-    { key: "metalType", modalId: "modal-field-metal-type" },
-    { key: "metalWeight", modalId: "modal-field-metal-weight" },
-    { key: "stoneType", modalId: "modal-field-stone-type" },
-    { key: "caratWeight", modalId: "modal-field-carat-weight" }
+    { key: "caratWeight", modalId: "modal-field-carat-weight", label: "Carat Weight", placeholder: "0.50 ct" },
+    { key: "stoneType", modalId: "modal-field-stone-type", label: "Stone Type", placeholder: "Natural Diamond" },
+    { key: "stoneShape", modalId: "modal-field-stone-shape", label: "Shape", placeholder: "Round Brilliant" }
   ];
 
   // The storefront splits a gallery into metal sets by reading the metal and
@@ -2465,26 +2464,13 @@
           </label>
         </div>
 
+        <p class="modal-gallery-hint">Sample piece specs · Fill in only what you know; blank fields stay hidden on the product page</p>
         <div class="modal-grid">
+          ${PRODUCT_SPEC_FIELDS.map(({ modalId, label, placeholder }) => `
           <label class="modal-label">
-            Metal Type
-            <input class="modal-input" id="modal-field-metal-type" type="text" placeholder="18K White Gold">
-          </label>
-          <label class="modal-label">
-            Metal Weight
-            <input class="modal-input" id="modal-field-metal-weight" type="text" placeholder="3.20 g">
-          </label>
-        </div>
-
-        <div class="modal-grid">
-          <label class="modal-label">
-            Stone Type
-            <input class="modal-input" id="modal-field-stone-type" type="text" placeholder="Natural Diamond">
-          </label>
-          <label class="modal-label">
-            Carat Weight
-            <input class="modal-input" id="modal-field-carat-weight" type="text" placeholder="0.50 ct">
-          </label>
+            ${label}
+            <input class="modal-input" id="${modalId}" type="text" placeholder="${placeholder}">
+          </label>`).join("")}
         </div>
 
         <div class="modal-grid modal-full">

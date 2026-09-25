@@ -147,10 +147,8 @@ export default async function AdminPage() {
                     <span>code</span>
                     <span>name</span>
                     <span>price</span>
-                    <span>metal type</span>
-                    <span>metal weight</span>
-                    <span>stone type</span>
                     <span>carat weight</span>
+                    <span>stone details</span>
                     <span>description</span>
                     <span>cover images (2)</span>
                     <span>info images</span>
@@ -224,21 +222,18 @@ export default async function AdminPage() {
                     <option value="Hidden">Hidden</option>
                   </select>
                 </label>
+                <p className="admin-note admin-span-2">Sample piece specs. Fill in only what you know; blank fields stay hidden on the product page.</p>
                 <label>
-                  Metal Type
-                  <input name="metalType" type="text" placeholder="18K White Gold" />
-                </label>
-                <label>
-                  Metal Weight
-                  <input name="metalWeight" type="text" placeholder="3.20 g" />
+                  Carat Weight
+                  <input name="caratWeight" type="text" placeholder="0.50 ct" />
                 </label>
                 <label>
                   Stone Type
                   <input name="stoneType" type="text" placeholder="Natural Diamond" />
                 </label>
                 <label>
-                  Carat Weight
-                  <input name="caratWeight" type="text" placeholder="0.50 ct" />
+                  Shape
+                  <input name="stoneShape" type="text" placeholder="Round Brilliant" />
                 </label>
                 <label className="admin-span-2">
                   Description

@@ -24,10 +24,9 @@ const ADMIN_CATALOGUE_SELECT = `
   collection,
   collection_name,
   description,
-  metal_type,
-  metal_weight,
   stone_type,
   carat_weight,
+  stone_shape,
   status,
   base_price,
   cover_image_url,
@@ -66,10 +65,9 @@ const PUBLIC_CATALOGUE_SELECT = `
   collection,
   collection_name,
   description,
-  metal_type,
-  metal_weight,
   stone_type,
   carat_weight,
+  stone_shape,
   status,
   base_price,
   cover_image_url,
@@ -94,13 +92,13 @@ const PUBLIC_CATALOGUE_SELECT = `
   )
 `;
 
-// Metal and stone specs shown on the product page, keyed by the name the
-// admin form sends and mapped to their products columns.
+// Sample-piece specs shown on the product page, keyed by the name the admin
+// form sends and mapped to their products columns. The metal is not a spec:
+// customers pick it from the gallery's metal sets.
 const PRODUCT_SPEC_COLUMNS = {
-  metalType: "metal_type",
-  metalWeight: "metal_weight",
+  caratWeight: "carat_weight",
   stoneType: "stone_type",
-  caratWeight: "carat_weight"
+  stoneShape: "stone_shape"
 };
 
 function normalizeProductSpecs(row) {

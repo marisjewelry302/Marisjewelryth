@@ -487,6 +487,15 @@
   background: linear-gradient(135deg, #f6e3a6, #d0a547);
 }
 
+.product-spec-block {
+  display: grid;
+  gap: 12px;
+}
+
+.product-spec-note {
+  margin: 0;
+}
+
 .product-specs {
   display: grid;
   margin: 0;

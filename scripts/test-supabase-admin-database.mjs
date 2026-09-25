@@ -202,7 +202,7 @@ assert.deepEqual(catalogue.products[0], {
   collection: "engagement-ring",
   collectionName: "The One Aura Collection",
   description: "",
-  specs: { metalType: "", metalWeight: "", stoneType: "", caratWeight: "" },
+  specs: { caratWeight: "", stoneType: "", stoneShape: "" },
   status: "active",
   basePrice: 12900,
   stockQuantity: 0,
@@ -316,6 +316,7 @@ const publicCatalogueClient = {
                     internalCost: "never-public"
                   },
                   metal_type: "18K White Gold",
+                  stone_shape: "Round Brilliant",
                   carat_weight: " 0.50 ct ",
                   product_variants: [
                     {
@@ -405,7 +406,7 @@ assert.deepEqual(publicCatalogue.products[0], {
   collection: "engagement-ring",
   collectionName: "",
   description: "Round diamond ring.",
-  specs: { metalType: "18K White Gold", metalWeight: "", stoneType: "", caratWeight: "0.50 ct" },
+  specs: { caratWeight: "0.50 ct", stoneType: "", stoneShape: "Round Brilliant" },
   status: "active",
   basePrice: 12900,
   coverImageUrl: "https://example.com/ring-cover.png",

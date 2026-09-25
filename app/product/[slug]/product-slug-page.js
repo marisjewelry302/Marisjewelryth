@@ -26,11 +26,12 @@ import { isOptimizableImageSrc } from "../../lib/image-source";
 export const revalidate = 60;
 const getProductBySlug = cache((slug) => readPublicProductBySlug(slug));
 
+// Details of the piece as photographed. The metal is picked with the selector
+// above, so it has no row; carat weight leads because buyers compare it first.
 const PRODUCT_SPEC_LABELS = [
-  ["metalType", "Metal Type"],
-  ["metalWeight", "Metal Weight"],
-  ["stoneType", "Stone Type"],
-  ["caratWeight", "Carat Weight"]
+  ["caratWeight", "Carat Weight"],
+  ["stoneType", "Stone"],
+  ["stoneShape", "Shape"]
 ];
 
 const COLLECTION_LABELS = {
@@ -169,15 +170,24 @@ export default async function ProductPage({ params }) {
 
               <ProductMetalSelector metals={metalOptions} />
 
+              {/* Every piece is made to order, so the specs describe the sample
+                  and say plainly that each one can be changed. */}
               {productSpecs.length > 0 && (
-                <dl className="product-specs" data-product-specs>
-                  {productSpecs.map((spec) => (
-                    <div key={spec.key}>
-                      <dt>{spec.label}</dt>
-                      <dd>{spec.value}</dd>
-                    </div>
-                  ))}
-                </dl>
+                <section className="product-spec-block" aria-labelledby="product-specs-heading">
+                  <p className="product-kicker" id="product-specs-heading">Sample Piece Details</p>
+                  <dl className="product-specs" data-product-specs>
+                    {productSpecs.map((spec) => (
+                      <div key={spec.key}>
+                        <dt>{spec.label}</dt>
+                        <dd>{spec.value}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                  <p className="product-note product-spec-note" data-product-spec-note>
+                    These details describe the sample piece shown. Carat weight, stone, metal and size
+                    can all be tailored to you &mdash; contact Maris to adjust the specification.
+                  </p>
+                </section>
               )}
 
               {productDescription && (
