@@ -63,8 +63,12 @@
     sheetFeedLinks: Array.from(document.querySelectorAll("[data-sheet-feed-link], [data-sheet-feed-link-inline]")),
     sheetCatalogueTable: document.querySelector("[data-sheet-catalogue-table]"),
     bestSellerSlots: document.querySelector("[data-best-seller-slots]"),
-    bestSellerPreview: document.querySelector("[data-best-seller-preview]"),
     bestSellerCount: document.querySelector("[data-best-seller-count]"),
+    bestSellerDirty: document.querySelector("[data-best-seller-dirty]"),
+    bestSellerSearch: document.querySelector("[data-best-seller-search]"),
+    bestSellerCollection: document.querySelector("[data-best-seller-collection]"),
+    bestSellerResults: document.querySelector("[data-best-seller-results]"),
+    bestSellerResultsSummary: document.querySelector("[data-best-seller-results-summary]"),
     databaseStatus: document.querySelector("[data-database-status]"),
     databaseProject: document.querySelector("[data-database-project]"),
     databaseChecked: document.querySelector("[data-database-checked]"),
@@ -131,6 +135,13 @@
   const productListState = {
     searchTerm: "",
     page: 1
+  };
+  // draftIds stays null until the manager edits the slots, so a reload or a
+  // save falls back to the saved Supabase order.
+  const bestSellerState = {
+    draftIds: null,
+    searchTerm: "",
+    collection: ""
   };
   const customRequestListState = {
     searchTerm: "",
@@ -214,6 +225,7 @@
 
       adminCache.products = Array.isArray(productsPayload.products) ? productsPayload.products : [];
       adminCache.bestSellerProductIds = Array.isArray(bestSellersPayload.productIds) ? bestSellersPayload.productIds : [];
+      bestSellerState.draftIds = null;
       adminCache.orders = Array.isArray(ordersPayload.orders) ? ordersPayload.orders : [];
       adminCache.logs = Array.isArray(logsPayload.logs) ? logsPayload.logs : [];
       adminCache.customRequests = Array.isArray(customRequestsPayload.requests) ? customRequestsPayload.requests : [];
@@ -1893,12 +1905,133 @@
     return readProducts().filter((product) => product.status === "active");
   }
 
-  function getBestSellerProductsByIds(productIds) {
-    const products = getActiveProducts();
+  function getBestSellerDraftIds() {
+    return Array.isArray(bestSellerState.draftIds) ? bestSellerState.draftIds : getBestSellerProductIds();
+  }
 
-    return productIds
-      .map((productId) => products.find((product) => product.id === productId))
-      .filter(Boolean);
+  function setBestSellerDraftIds(productIds) {
+    bestSellerState.draftIds = productIds.slice(0, BEST_SELLER_SLOT_COUNT);
+    renderBestSellerSlots();
+    renderBestSellerResults();
+  }
+
+  function buildBestSellerThumb(product) {
+    return product?.primaryImageUrl
+      ? `<img src="${escapeHtml(product.primaryImageUrl)}" alt="" loading="lazy">`
+      : `<span class="best-seller-admin-image-fallback">No image</span>`;
+  }
+
+  function renderBestSellerSlots() {
+    const activeProducts = getActiveProducts();
+    const draftIds = getBestSellerDraftIds();
+    const savedIds = getBestSellerProductIds();
+
+    if (elements.bestSellerCount) {
+      elements.bestSellerCount.textContent = String(draftIds.length);
+    }
+
+    if (elements.bestSellerDirty) {
+      elements.bestSellerDirty.hidden = draftIds.join("|") === savedIds.join("|");
+    }
+
+    elements.bestSellerSlots.innerHTML = Array.from({ length: BEST_SELLER_SLOT_COUNT }, (_, index) => {
+      const number = String(index + 1).padStart(2, "0");
+      const productId = draftIds[index];
+
+      if (!productId) {
+        return `
+          <li class="best-seller-admin-slot is-empty" data-best-seller-slot="${index}">
+            <span class="best-seller-admin-slot-number">${number}</span>
+            <span class="best-seller-admin-slot-empty">Empty slot</span>
+          </li>
+        `;
+      }
+
+      const product = activeProducts.find((item) => item.id === productId);
+      const sku = product ? getProductSku(product) : "Unavailable";
+      const name = product ? getProductName(product) : "Inactive or deleted product - hidden on the storefront";
+
+      return `
+        <li class="best-seller-admin-slot${product ? "" : " is-unavailable"}" data-best-seller-slot="${index}">
+          <span class="best-seller-admin-slot-number">${number}</span>
+          ${buildBestSellerThumb(product)}
+          <div class="best-seller-admin-slot-body">
+            <span>${escapeHtml(sku)}</span>
+            <strong>${escapeHtml(name)}</strong>
+          </div>
+          <div class="best-seller-admin-slot-actions">
+            <button type="button" data-best-seller-move="-1" data-index="${index}" aria-label="Move ${escapeHtml(sku)} up"${index === 0 ? " disabled" : ""}>&uarr;</button>
+            <button type="button" data-best-seller-move="1" data-index="${index}" aria-label="Move ${escapeHtml(sku)} down"${index === draftIds.length - 1 ? " disabled" : ""}>&darr;</button>
+            <button type="button" data-best-seller-remove="${index}" aria-label="Remove ${escapeHtml(sku)}">&times;</button>
+          </div>
+        </li>
+      `;
+    }).join("");
+  }
+
+  function renderBestSellerCollectionOptions(activeProducts) {
+    if (!elements.bestSellerCollection) {
+      return;
+    }
+
+    const collections = new Map();
+    activeProducts.forEach((product) => {
+      if (product.collection && !collections.has(product.collection)) {
+        collections.set(product.collection, getCollectionLabel(product.collection));
+      }
+    });
+
+    if (bestSellerState.collection && !collections.has(bestSellerState.collection)) {
+      bestSellerState.collection = "";
+    }
+
+    elements.bestSellerCollection.innerHTML = `
+      <option value="">All collections</option>
+      ${Array.from(collections).map(([key, label]) => {
+        const selected = key === bestSellerState.collection ? " selected" : "";
+        return `<option value="${escapeHtml(key)}"${selected}>${escapeHtml(label)}</option>`;
+      }).join("")}
+    `;
+  }
+
+  function renderBestSellerResults() {
+    if (!elements.bestSellerResults) {
+      return;
+    }
+
+    const activeProducts = getActiveProducts();
+    const draftIds = getBestSellerDraftIds();
+    const query = bestSellerState.searchTerm.trim().toLowerCase();
+    const matches = activeProducts.filter((product) => (
+      (!bestSellerState.collection || product.collection === bestSellerState.collection)
+      && (!query || getProductSearchText(product).includes(query))
+    ));
+
+    if (elements.bestSellerResultsSummary) {
+      elements.bestSellerResultsSummary.textContent = matches.length === activeProducts.length
+        ? `${activeProducts.length} active products`
+        : `${matches.length} of ${activeProducts.length} active products`;
+    }
+
+    elements.bestSellerResults.innerHTML = matches.length
+      ? matches.map((product) => {
+        const slotIndex = draftIds.indexOf(product.id);
+        const isSelected = slotIndex !== -1;
+        const badge = isSelected ? `Slot ${slotIndex + 1}` : "+ Add";
+
+        return `
+          <button class="best-seller-picker-card${isSelected ? " is-selected" : ""}" type="button" data-best-seller-pick="${escapeHtml(product.id)}" aria-pressed="${isSelected}">
+            ${buildBestSellerThumb(product)}
+            <span class="best-seller-picker-badge">${badge}</span>
+            <span class="best-seller-picker-body">
+              <span>${escapeHtml(getProductSku(product))}</span>
+              <strong>${escapeHtml(getProductName(product))}</strong>
+              <small>${escapeHtml(getProductCollectionName(product) || getCollectionLabel(product.collection))}</small>
+            </span>
+          </button>
+        `;
+      }).join("")
+      : `<p class="admin-note">No active products match this search.</p>`;
   }
 
   function renderBestSellerSettings() {
@@ -1906,19 +2039,13 @@
       return;
     }
 
-    if (adminCache.isLoading) {
-      elements.bestSellerSlots.innerHTML = `<p class="admin-note">Loading Best Seller slots...</p>`;
-      if (elements.bestSellerPreview) {
-        elements.bestSellerPreview.innerHTML = `<p class="admin-note">Loading Best Seller preview...</p>`;
-      }
-      return;
-    }
-
-    if (!adminCache.isReady) {
-      const message = escapeHtml(adminCache.error || "Connect Supabase before managing Best Seller products.");
-      elements.bestSellerSlots.innerHTML = `<p class="admin-note">${message}</p>`;
-      if (elements.bestSellerPreview) {
-        elements.bestSellerPreview.innerHTML = `<p class="admin-note">${message}</p>`;
+    if (adminCache.isLoading || !adminCache.isReady) {
+      const message = adminCache.isLoading
+        ? "Loading Best Seller products..."
+        : escapeHtml(adminCache.error || "Connect Supabase before managing Best Seller products.");
+      elements.bestSellerSlots.innerHTML = `<li class="admin-note">${message}</li>`;
+      if (elements.bestSellerResults) {
+        elements.bestSellerResults.innerHTML = `<p class="admin-note">${message}</p>`;
       }
       if (elements.bestSellerCount) {
         elements.bestSellerCount.textContent = "0";
@@ -1926,67 +2053,9 @@
       return;
     }
 
-    const activeProducts = getActiveProducts();
-    const selectedIds = getBestSellerProductIds();
-    const selectedProducts = getBestSellerProductsByIds(selectedIds);
-
-    if (elements.bestSellerCount) {
-      elements.bestSellerCount.textContent = String(selectedProducts.length);
-    }
-
-    const buildOptions = (selectedId) => {
-      const hasSelectedProduct = activeProducts.some((product) => product.id === selectedId);
-      const unavailableOption = selectedId && !hasSelectedProduct
-        ? `<option value="${escapeHtml(selectedId)}" selected disabled>Unavailable selected product</option>`
-        : "";
-
-      return `
-        <option value="">Empty slot</option>
-        ${unavailableOption}
-        ${activeProducts.map((product) => {
-          const productId = product.id || "";
-          const label = `${getProductSku(product)} - ${getProductName(product)}`;
-          const selected = productId === selectedId ? " selected" : "";
-
-          return `<option value="${escapeHtml(productId)}"${selected}>${escapeHtml(label)}</option>`;
-        }).join("")}
-      `;
-    };
-
-    elements.bestSellerSlots.innerHTML = Array.from({ length: BEST_SELLER_SLOT_COUNT }, (_, index) => {
-      const selectedId = selectedIds[index] || "";
-
-      return `
-        <label class="best-seller-admin-slot">
-          <span>Slot ${index + 1}</span>
-          <select name="slot-${index + 1}" data-best-seller-slot="${index}">
-            ${buildOptions(selectedId)}
-          </select>
-        </label>
-      `;
-    }).join("");
-
-    if (!elements.bestSellerPreview) {
-      return;
-    }
-
-    elements.bestSellerPreview.innerHTML = selectedProducts.length
-      ? selectedProducts.map((product, index) => {
-        const image = product.primaryImageUrl
-          ? `<img src="${escapeHtml(product.primaryImageUrl)}" alt="${escapeHtml(getProductName(product))}">`
-          : `<span class="best-seller-admin-image-fallback">Image coming soon</span>`;
-
-        return `
-          <article class="best-seller-admin-card">
-            ${image}
-            <div class="best-seller-admin-card-body">
-              <span>${String(index + 1).padStart(2, "0")} · ${escapeHtml(getProductSku(product))}</span>
-              <strong>${escapeHtml(getProductName(product))}</strong>
-            </div>
-          </article>
-        `;
-      }).join("")
-      : `<p class="admin-note">No Best Seller products selected yet.</p>`;
+    renderBestSellerCollectionOptions(getActiveProducts());
+    renderBestSellerSlots();
+    renderBestSellerResults();
   }
 
   // ── EDIT MODAL ──────────────────────────────────────────────────────────────
@@ -3648,9 +3717,8 @@
       return;
     }
 
-    const slotSelects = Array.from(elements.bestSellerSlots?.querySelectorAll("[data-best-seller-slot]") || []);
-    const productIds = slotSelects
-      .map((select) => String(select.value || "").trim())
+    const productIds = getBestSellerDraftIds()
+      .map((productId) => String(productId || "").trim())
       .filter(Boolean);
     const uniqueProductIds = Array.from(new Set(productIds));
 
@@ -3667,11 +3735,67 @@
         body: JSON.stringify({ productIds: uniqueProductIds })
       });
       adminCache.bestSellerProductIds = Array.isArray(payload.productIds) ? payload.productIds : [];
+      bestSellerState.draftIds = null;
       renderAll();
       setMessage("Best Seller carousel updated.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Unable to save Best Seller products.", true);
     }
+  });
+
+  elements.bestSellerResults?.addEventListener("click", (event) => {
+    const card = event.target.closest("[data-best-seller-pick]");
+    if (!card) {
+      return;
+    }
+
+    const productId = card.dataset.bestSellerPick;
+    const draftIds = getBestSellerDraftIds();
+
+    if (draftIds.includes(productId)) {
+      setBestSellerDraftIds(draftIds.filter((id) => id !== productId));
+      return;
+    }
+
+    if (draftIds.length >= BEST_SELLER_SLOT_COUNT) {
+      setMessage(`All ${BEST_SELLER_SLOT_COUNT} Best Seller slots are full. Remove one before adding another.`, true);
+      return;
+    }
+
+    setBestSellerDraftIds([...draftIds, productId]);
+  });
+
+  elements.bestSellerSlots?.addEventListener("click", (event) => {
+    const moveButton = event.target.closest("[data-best-seller-move]");
+    const removeButton = event.target.closest("[data-best-seller-remove]");
+    const draftIds = [...getBestSellerDraftIds()];
+
+    if (moveButton && !moveButton.disabled) {
+      const from = Number(moveButton.dataset.index);
+      const to = from + Number(moveButton.dataset.bestSellerMove);
+      if (to < 0 || to >= draftIds.length) {
+        return;
+      }
+      [draftIds[from], draftIds[to]] = [draftIds[to], draftIds[from]];
+      setBestSellerDraftIds(draftIds);
+      elements.bestSellerSlots.querySelector(`[data-best-seller-move="${moveButton.dataset.bestSellerMove}"][data-index="${to}"]:not(:disabled)`)?.focus();
+      return;
+    }
+
+    if (removeButton) {
+      draftIds.splice(Number(removeButton.dataset.bestSellerRemove), 1);
+      setBestSellerDraftIds(draftIds);
+    }
+  });
+
+  elements.bestSellerSearch?.addEventListener("input", (event) => {
+    bestSellerState.searchTerm = String(event.currentTarget.value || "");
+    renderBestSellerResults();
+  });
+
+  elements.bestSellerCollection?.addEventListener("change", (event) => {
+    bestSellerState.collection = String(event.currentTarget.value || "");
+    renderBestSellerResults();
   });
 
   elements.inventoryForm?.addEventListener("submit", async (event) => {

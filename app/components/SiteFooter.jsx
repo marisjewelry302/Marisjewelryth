@@ -21,8 +21,10 @@ const footerSections = [
     links: [
       { href: "/category/engagement-ring", label: "Engagement Rings" },
       { href: "/category/wedding-bands", label: "Wedding Bands" },
+      { href: "/category/rings", label: "Rings" },
+      { href: "/category/earrings", label: "Earrings" },
       { href: "/category/necklaces-pendants", label: "Necklaces & Pendants" },
-      { href: "/category/rings", label: "Rings" }
+      { href: "/category/bracelets", label: "Bracelets" }
     ]
   },
   {
@@ -73,8 +75,8 @@ function SocialIcon({ label }) {
 
 function SocialLinks() {
   const links = [
-    { href: "https://www.instagram.com/maris_jewelry_th?igsh=MXNoeHpxN2VkaTU0NA==", label: "Instagram" },
     { href: "https://www.facebook.com/share/1JH2idcjPM/", label: "Facebook" },
+    { href: "https://www.instagram.com/maris_jewelry_th?igsh=MXNoeHpxN2VkaTU0NA==", label: "Instagram" },
     { href: "https://pin.it/5pKmV7MKf", label: "Pinterest" }
   ];
 

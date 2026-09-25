@@ -17,7 +17,7 @@ assert.ok(
 assert.match(pageSource, /<h2 id="shop-category-heading">Shop By Category<\/h2>/);
 assert.match(
   pageSource,
-  /From classic earstuds to chandeliers, from timeless bracelet to chic bangles\./
+  /From classic ear studs to chandeliers, from timeless bracelets to chic bangles\. Shop our wide selection of jewelry\./
 );
 assert.match(pageSource, /className="shop-category-grid"/);
 

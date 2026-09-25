@@ -43,14 +43,11 @@ export default async function AdminPage() {
       <div className="admin-page-shell">
         <header className="admin-topbar">
           <a className="admin-logo" href="/" aria-label="Go to storefront">
-            {/* .admin-logo img sets width only, so height must stay auto. */}
-            <Image src="/assets/images/logo.png" alt="Maris Jewelry Logo" width={118} height={118} priority style={{ height: "auto" }} />
+            {/* .admin-logo img sets both dimensions and crops the square PNG's empty band. */}
+            <Image src="/assets/images/logo.png" alt="Maris Jewelry Logo" width={118} height={118} priority />
           </a>
 
-          <div>
-            <p className="admin-kicker">Protected Back Office Gate</p>
-            <h1>Maris Admin</h1>
-          </div>
+          <h1>Maris Admin</h1>
 
           <div className="admin-actions">
             <a href="/">View Storefront</a>
@@ -318,32 +315,53 @@ export default async function AdminPage() {
                   <p className="admin-kicker">Homepage carousel</p>
                   <h2>Best Seller</h2>
                 </div>
-                <p className="admin-note">Select the products shown in the Best Seller carousel on the homepage.</p>
+                <p className="admin-note">Search for a product below and click it to add it to the carousel. Use the arrows to change the homepage order.</p>
               </div>
 
               <form className="admin-form best-seller-form" data-best-seller-form>
-                <div className="best-seller-admin-slots" data-best-seller-slots>
-                  <p className="admin-note">Loading Best Seller slots...</p>
-                </div>
+                <p className="admin-kicker">Homepage order</p>
+                <ol className="best-seller-admin-slots" data-best-seller-slots>
+                  <li className="admin-note">Loading Best Seller slots...</li>
+                </ol>
                 <div className="admin-form-actions best-seller-admin-actions">
                   <button className="admin-primary" type="submit">Save Best Seller</button>
                   <span className="admin-inline-note">
                     <strong data-best-seller-count>0</strong>
-                    selected
+                    / 7 selected
                   </span>
+                  <span className="best-seller-admin-dirty" data-best-seller-dirty hidden>Unsaved changes</span>
                 </div>
               </form>
 
               <div className="admin-subsection">
                 <div className="admin-subsection-head">
                   <div>
-                    <p className="admin-kicker">Preview</p>
-                    <h3>Homepage Order</h3>
+                    <p className="admin-kicker">Pick products</p>
+                    <h3>Find a Product</h3>
                   </div>
-                  <p className="admin-note">Only active products appear publicly.</p>
+                  <p className="admin-note">Only active products are listed. Click a product to add it to the next empty slot; click it again to remove it.</p>
                 </div>
-                <div className="best-seller-admin-preview" data-best-seller-preview>
-                  <p className="admin-note">No Best Seller products selected yet.</p>
+                <div className="admin-list-tools best-seller-picker-tools" aria-label="Best Seller product search">
+                  <label className="admin-search-field" htmlFor="admin-best-seller-search">
+                    Search products
+                    <input
+                      id="admin-best-seller-search"
+                      type="search"
+                      placeholder="Search SKU, name, collection..."
+                      autoComplete="off"
+                      data-best-seller-search
+                    />
+                  </label>
+                  <label className="admin-search-field" htmlFor="admin-best-seller-collection">
+                    Collection
+                    <select id="admin-best-seller-collection" data-best-seller-collection>
+                      <option value="">All collections</option>
+                    </select>
+                  </label>
+                  <p className="admin-page-summary" aria-live="polite" data-best-seller-results-summary></p>
+                </div>
+                <div className="best-seller-picker-grid" data-best-seller-results>
+                  <p className="admin-note">Loading products...</p>
                 </div>
               </div>
             </section>

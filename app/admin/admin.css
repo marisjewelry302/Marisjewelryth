@@ -51,8 +51,8 @@ a {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 24px;
-  padding: 18px clamp(20px, 4vw, 54px);
+  gap: 16px;
+  padding: 8px clamp(16px, 3vw, 32px);
   background: rgba(255, 250, 246, 0.92);
   border-bottom: 1px solid rgba(221, 164, 165, 0.32);
   position: sticky;
@@ -66,8 +66,13 @@ a {
   align-items: center;
 }
 
+/* The topbar is sticky over every panel, so it stays one slim row. The logo
+   PNG is square with the mark in its middle third, so crop the empty band. */
 .admin-logo img {
-  width: 118px;
+  width: 88px;
+  height: 36px;
+  object-fit: cover;
+  object-position: 50% 42%;
   display: block;
 }
 
@@ -87,22 +92,39 @@ a {
 }
 
 .admin-topbar h1 {
-  font-size: clamp(32px, 4vw, 52px);
+  font-size: 20px;
+  font-weight: 400;
+  letter-spacing: 0.02em;
 }
 
 .admin-actions {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 8px;
+  font-size: 13px;
 }
 
 .admin-actions form {
   margin: 0;
 }
 
+.admin-actions a,
 .admin-logout {
-  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid rgba(0, 73, 58, 0.22);
+  background: transparent;
+  color: var(--maris-teal);
   font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.admin-actions a:hover,
+.admin-logout:hover {
+  background: rgba(0, 73, 58, 0.06);
 }
 
 .admin-shell {
@@ -116,7 +138,7 @@ a {
 
 .admin-sidebar {
   position: sticky;
-  top: 112px;
+  top: 72px;
   display: grid;
   gap: 8px;
   padding: 14px;
@@ -546,56 +568,181 @@ a {
 
 .best-seller-admin-slots {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-  margin-bottom: 18px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 10px;
+  margin: 10px 0 18px;
+  list-style: none;
 }
 
 .best-seller-admin-slot {
   display: grid;
-  gap: 8px;
+  grid-template-columns: auto 52px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
   min-width: 0;
-  padding: 14px;
-  border: 1px solid rgba(221, 164, 165, 0.32);
-  background: rgba(255, 250, 246, 0.76);
+  min-height: 72px;
+  padding: 10px;
+  border: 1px solid rgba(0, 73, 58, 0.2);
+  background: rgba(255, 255, 255, 0.82);
 }
 
-.best-seller-admin-slot span {
+.best-seller-admin-slot.is-empty {
+  grid-template-columns: auto minmax(0, 1fr);
+  border-style: dashed;
+  border-color: rgba(221, 164, 165, 0.6);
+  background: rgba(255, 250, 246, 0.6);
+}
+
+.best-seller-admin-slot.is-unavailable {
+  border-color: rgba(197, 51, 71, 0.4);
+}
+
+.best-seller-admin-slot-number {
+  color: var(--maris-gold-text);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.08em;
+}
+
+.best-seller-admin-slot-empty {
+  color: var(--maris-muted);
+  font-size: 13px;
+}
+
+.best-seller-admin-slot img,
+.best-seller-admin-slot .best-seller-admin-image-fallback {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  aspect-ratio: 1 / 1;
+  background: var(--maris-silver);
+  color: var(--maris-muted);
+  object-fit: cover;
+  font-size: 10px;
+  text-align: center;
+}
+
+.best-seller-admin-slot-body,
+.best-seller-picker-body {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.best-seller-admin-slot-body span,
+.best-seller-picker-body span {
   color: var(--maris-gold-text);
   font-size: 11px;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
+  overflow-wrap: anywhere;
 }
 
-.best-seller-admin-slot select {
-  min-height: 44px;
-  width: 100%;
-  border: 1px solid rgba(0, 73, 58, 0.18);
-  background: rgba(255, 255, 255, 0.72);
+.best-seller-admin-slot-body strong,
+.best-seller-picker-body strong {
   color: var(--maris-ink);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.best-seller-admin-slot.is-unavailable .best-seller-admin-slot-body strong {
+  color: var(--maris-red-text);
+  font-size: 12px;
+}
+
+.best-seller-admin-slot-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.best-seller-admin-slot-actions button {
+  width: 32px;
+  height: 32px;
+  border: 1px solid rgba(0, 73, 58, 0.2);
+  background: transparent;
+  color: var(--maris-teal);
   font: inherit;
-  padding: 0 12px;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.best-seller-admin-slot-actions button:hover:not(:disabled) {
+  background: rgba(0, 73, 58, 0.08);
+}
+
+.best-seller-admin-slot-actions button:disabled {
+  opacity: 0.3;
+  cursor: default;
 }
 
 .best-seller-admin-actions {
   margin-top: 6px;
 }
 
-.best-seller-admin-preview {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 14px;
+.best-seller-admin-dirty {
+  color: var(--maris-red-text);
+  font-size: 13px;
 }
 
-.best-seller-admin-card {
+.best-seller-admin-dirty[hidden] {
+  display: none;
+}
+
+.best-seller-picker-tools {
+  grid-template-columns: minmax(220px, 1fr) minmax(160px, 240px) auto;
+  margin-top: 0;
+}
+
+.best-seller-picker-tools select {
+  min-height: 44px;
+  width: 100%;
+  border: 1px solid rgba(0, 73, 58, 0.18);
+  background: rgba(255, 255, 255, 0.76);
+  color: var(--maris-ink);
+  font: inherit;
+  letter-spacing: 0;
+  padding: 0 12px;
+  text-transform: none;
+}
+
+.best-seller-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+  max-height: 640px;
+  overflow-y: auto;
+  padding: 2px;
+}
+
+.best-seller-picker-card {
+  position: relative;
+  display: grid;
+  align-content: start;
   min-width: 0;
+  padding: 0;
   overflow: hidden;
   border: 1px solid rgba(221, 164, 165, 0.34);
-  background: rgba(255, 255, 255, 0.68);
+  background: rgba(255, 255, 255, 0.72);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.best-seller-admin-card img,
-.best-seller-admin-card .best-seller-admin-image-fallback {
+.best-seller-picker-card:hover {
+  border-color: var(--maris-teal);
+}
+
+.best-seller-picker-card.is-selected {
+  border-color: var(--maris-teal);
+  box-shadow: inset 0 0 0 2px var(--maris-teal);
+}
+
+.best-seller-picker-card img,
+.best-seller-picker-card .best-seller-admin-image-fallback {
   display: grid;
   place-items: center;
   width: 100%;
@@ -606,24 +753,29 @@ a {
   font-size: 12px;
 }
 
-.best-seller-admin-card-body {
-  display: grid;
-  gap: 5px;
-  padding: 12px;
-}
-
-.best-seller-admin-card-body span {
-  color: var(--maris-gold-text);
+.best-seller-picker-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 3px 8px;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--maris-teal);
   font-size: 11px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
-.best-seller-admin-card-body strong {
-  color: var(--maris-ink);
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 1.35;
+.best-seller-picker-card.is-selected .best-seller-picker-badge {
+  background: var(--maris-teal);
+  color: var(--maris-white);
+}
+
+.best-seller-picker-body {
+  padding: 10px 12px 12px;
+}
+
+.best-seller-picker-body small {
+  color: var(--maris-muted);
+  font-size: 12px;
 }
 
 .admin-guide-grid {
@@ -985,7 +1137,7 @@ td strong {
 }
 
 .custom-request-detail {
-  scroll-margin-top: 118px;
+  scroll-margin-top: 72px;
   margin-top: 20px;
   padding: clamp(20px, 3vw, 30px);
   border: 1px solid rgba(0, 73, 58, 0.22);
@@ -1142,7 +1294,6 @@ td strong {
 }
 
 @media (max-width: 980px) {
-  .admin-topbar,
   .admin-shell {
     grid-template-columns: 1fr;
   }
@@ -1200,13 +1351,21 @@ td strong {
 
 @media (max-width: 560px) {
   .admin-topbar {
-    justify-items: center;
-    text-align: center;
+    gap: 10px;
   }
 
-  .admin-actions {
-    flex-wrap: wrap;
-    justify-content: center;
+  .admin-logo img {
+    width: 72px;
+    height: 30px;
+  }
+
+  .admin-topbar h1 {
+    font-size: 17px;
+  }
+
+  .admin-actions a,
+  .admin-logout {
+    padding: 0 9px;
   }
 
   .admin-shell {
