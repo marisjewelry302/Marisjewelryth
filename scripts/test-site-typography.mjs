@@ -12,7 +12,6 @@ const sources = {
   placeholder: await readSource("../assets/css/placeholder.css"),
   adminApp: await readSource("../app/admin/admin.css"),
   adminLogin: await readSource("../app/admin/login/login.module.css"),
-  designYourRing: await readSource("../assets/css/design-your-ring.css"),
   customerEmail: await readSource("../app/lib/customer-email.js"),
   customOrderEmail: await readSource("../app/lib/custom-order-email.js"),
   layout: await readSource("../app/layout.js"),
@@ -82,11 +81,6 @@ assert.match(
   sources.adminLogin,
   /font-family:\s*var\(--maris-font-sans/,
   "Admin login should use the shared Maris font token."
-);
-assert.match(
-  sources.designYourRing,
-  /font-family:\s*var\(--maris-font-(sans|display)/,
-  "Design Your Ring should use shared Maris font tokens."
 );
 
 const legacySerifPattern = /font-family:\s*(?:Georgia|Arial|["']Times New Roman["'])/;

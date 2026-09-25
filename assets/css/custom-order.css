@@ -27,7 +27,28 @@
   position: relative;
 }
 
+/* The piece being ordered replaces the atelier photograph. Catalogue shots are
+   square on a pale ground, so the photo is contained on a matching ground and
+   a gradient keeps the caption readable over it. */
+.custom-order-visual.has-product-image {
+  background: #f3f3f1;
+}
+
+.custom-order-visual__image {
+  object-fit: contain;
+}
+
+.custom-order-visual.has-product-image::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 40%;
+  background: linear-gradient(180deg, rgba(16, 41, 35, 0), rgba(16, 41, 35, 0.62));
+  pointer-events: none;
+}
+
 .custom-order-visual__caption {
+  z-index: 1;
   position: absolute;
   left: 22px;
   right: 22px;
@@ -364,6 +385,11 @@
 
   .custom-order-visual {
     min-height: 210px;
+  }
+
+  .custom-order-visual.has-product-image {
+    min-height: 0;
+    aspect-ratio: 1;
   }
 
   .custom-order-workspace {

@@ -15,11 +15,14 @@ with. That work was not removed and continues on `product-media-update`.
 
 ## What stays on `main`
 
-Design Your Ring keeps its own three.js ring builder
-(`app/design-your-ring/DesignYourRingClient.jsx`), its stone model
-(`assets/models/design-your-ring/stones/diamond.glb`) and the SVG preview
-layers. `three` therefore stays in `package.json`, and the `/assets/*` route
-still serves `.glb` with `no-cache` for anything under `/models/`.
+The `/assets/*` route still serves `.glb` with `no-cache` for anything under
+`/models/`.
+
+Design Your Ring (`/design-your-ring`), which had its own three.js ring
+builder, was removed later, and `three` went out of `package.json` with it.
+The URL now redirects to `/our-service`. Restoring the 3D viewer means
+running `npm install three` again; the builder itself is in git history
+before its removal commit.
 
 ## What was removed
 

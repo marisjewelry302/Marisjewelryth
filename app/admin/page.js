@@ -454,7 +454,7 @@ export default async function AdminPage() {
             <section className="admin-panel" data-admin-panel="custom-requests">
               <div className="admin-panel-head">
                 <div>
-                  <p className="admin-kicker">Design Your Ring</p>
+                  <p className="admin-kicker">Contact order requests</p>
                   <h2>Custom Requests</h2>
                 </div>
                 <p className="admin-note">Track every atelier enquiry from first contact to completion, with notes and a visible action history.</p>

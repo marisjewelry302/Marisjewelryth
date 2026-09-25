@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
+import { isOptimizableImageSrc } from "../../lib/image-source";
 
 const METALS = ["WG", "YG", "RG", "PN", "Pd"];
 const METAL_LABELS = {
@@ -76,8 +78,10 @@ function buildSelectedOptionSummary(options) {
   ].filter(Boolean).join(" · ");
 }
 
-export default function CustomOrderForm({ productCode }) {
-  const [options, setOptions] = useState(INITIAL_OPTIONS);
+export default function CustomOrderForm({ productCode, productImage = null, initialMetal = "" }) {
+  const [options, setOptions] = useState(() => (
+    initialMetal ? { ...INITIAL_OPTIONS, metal: initialMetal } : INITIAL_OPTIONS
+  ));
   const [isOptionsOpen, setIsOptionsOpen] = useState(false);
   const [pending, setPending] = useState(false);
   const [statusTone, setStatusTone] = useState("idle");
@@ -199,7 +203,21 @@ export default function CustomOrderForm({ productCode }) {
   return (
     <main className="custom-order-page">
       <section className="custom-order-shell" aria-labelledby="custom-order-title">
-        <div className="custom-order-visual" aria-hidden="true">
+        <div
+          className={`custom-order-visual${productImage ? " has-product-image" : ""}`}
+          aria-hidden={productImage ? undefined : "true"}
+        >
+          {productImage && (
+            <Image
+              className="custom-order-visual__image"
+              src={productImage.src}
+              alt={productImage.alt}
+              fill
+              sizes="(max-width: 768px) 100vw, 480px"
+              preload
+              unoptimized={!isOptimizableImageSrc(productImage.src)}
+            />
+          )}
           <div className="custom-order-visual__caption">
             <span>Maris atelier</span>
             <strong>{productCode}</strong>

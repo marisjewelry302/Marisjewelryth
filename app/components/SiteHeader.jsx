@@ -32,7 +32,6 @@ const dropdownNav = [
   {
     label: "Our Expertise",
     items: [
-      { href: "/design-your-ring", label: "Design Your Ring" },
       { href: "/our-service", label: "Our Service" },
       { href: "/oem-jewelry", label: "OEM Jewelry Service" },
       { href: "/wholesale-retail", label: "Wholesale & Retail" }
@@ -339,12 +338,15 @@ export default function SiteHeader() {
         <div className="logo">
           <Link href="/" aria-label="Go to homepage">
             {/* CSS drives the width across scroll and breakpoints, so height must
-                stay auto or the intrinsic height attribute would squash it. */}
+                stay auto or the intrinsic height attribute would squash it.
+                `sizes` must match the widest CSS width (home hero: 342px) or
+                next/image only serves a 128/256px file and the logo blurs. */}
             <Image
               src="/assets/images/logo.png"
               alt="Maris Jewelry Logo"
               width={122}
               height={122}
+              sizes="(max-width: 767px) 250px, 342px"
               priority
               style={{ height: "auto" }}
             />

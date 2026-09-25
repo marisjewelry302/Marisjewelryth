@@ -51,3 +51,16 @@ export function ProductMetalSelector({ metals }) {
     </fieldset>
   );
 }
+
+// Carries the metal being viewed to the order form, which shows that metal's
+// photo and pre-selects it. A piece with one metal needs no parameter.
+export function ProductContactLink({ productCode, hasMetalChoice, className, children }) {
+  const { selectedKey } = useProductMetal();
+  const metalQuery = hasMetalChoice && selectedKey ? `?metal=${encodeURIComponent(selectedKey)}` : "";
+
+  return (
+    <a className={className} href={`/contact-order/${encodeURIComponent(productCode)}${metalQuery}`}>
+      {children}
+    </a>
+  );
+}

@@ -58,7 +58,7 @@ assert.match(adminPage, /function getProductPreviewHref\(code\)/, "admin Preview
 
 assert.match(
   productPage,
-  /href=\{`\/contact-order\/\$\{encodeURIComponent\(product\.sku\)\}`\}/,
+  /<ProductContactLink[\s\S]*?productCode=\{product\.sku\}/,
   "product page custom order links must point to /contact-order/{sku}"
 );
 assert.match(

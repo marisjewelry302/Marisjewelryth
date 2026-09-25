@@ -3075,6 +3075,17 @@ body {
   padding-right: var(--best-seller-side);
   padding-top: 1.7rem;
   padding-bottom: 1.7rem;
+  cursor: grab;
+  touch-action: pan-y;
+  user-select: none;
+}
+
+.best-seller-carousel.is-dragging {
+  cursor: grabbing;
+}
+
+.best-seller-carousel.is-dragging a {
+  cursor: grabbing;
 }
 
 .best-seller-track {
@@ -3150,51 +3161,6 @@ body {
   text-transform: uppercase;
 }
 
-.best-seller-controls {
-  pointer-events: none;
-  position: absolute;
-  top: 56%;
-  left: 0;
-  right: 0;
-  z-index: 8;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 clamp(0.75rem, 1.4vw, 1.5rem);
-  transform: translateY(-50%);
-}
-
-.best-seller-arrow {
-  pointer-events: auto;
-  display: inline-grid;
-  place-items: center;
-  width: clamp(2.85rem, 4vw, 3.4rem);
-  height: clamp(2.85rem, 4vw, 3.4rem);
-  border: 1px solid rgba(16, 41, 35, 0.2);
-  border-radius: 50%;
-  background: rgba(255, 250, 246, 0.82);
-  color: var(--maris-teal);
-  font: inherit;
-  font-size: 1.12rem;
-  line-height: 1;
-  cursor: pointer;
-  box-shadow: 0 16px 34px rgba(16, 41, 35, 0.1);
-  transition: transform 180ms ease, border-color 180ms ease, background-color 180ms ease, color 180ms ease;
-}
-
-.best-seller-arrow:hover,
-.best-seller-arrow:focus-visible {
-  border-color: rgba(0, 73, 58, 0.44);
-  background: var(--maris-teal);
-  color: var(--maris-white);
-  transform: scale(1.04);
-}
-
-.best-seller-arrow:focus-visible {
-  outline: 2px solid rgba(185, 147, 58, 0.7);
-  outline-offset: 3px;
-}
-
 @media (max-width: 1024px) {
   .best-seller-section {
     --best-seller-side: clamp(2.5rem, 6vw, 3.5rem);
@@ -3215,11 +3181,6 @@ body {
 
   .best-seller-head {
     padding-bottom: 1.75rem;
-  }
-
-  .best-seller-controls {
-    top: 58%;
-    padding: 0 0.75rem;
   }
 
   .best-seller-head h2 {

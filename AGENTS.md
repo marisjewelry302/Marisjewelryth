@@ -13,7 +13,7 @@
 - `app/layout.js` owns the only document `<body>`; admin body state uses `AdminBodyClass` and `.admin-page-shell`.
 - `app/lib/maris-database.js` is the Supabase contract boundary; inspect it before thin route wrappers. It is a re-export barrel — the implementation lives in `app/lib/maris-database/` split by domain (`connection`, `catalogue`, `commerce`, `customers`, `custom-orders`, `product-images`, `shared`). Import from the barrel, not the submodules, and keep its export surface stable.
 - Storefront palette and type tokens are declared once, in `assets/css/style.css`. No other global sheet may re-declare `:root`; they all load after it at equal specificity, so a duplicate silently wins.
-- Images go through `next/image`. `app/lib/image-source.js` decides what is safe to optimize; the four SVG preview layers in `design-your-ring` stay raw `<img>` so `dangerouslyAllowSVG` can remain off.
+- Images go through `next/image`. `app/lib/image-source.js` decides what is safe to optimize; `dangerouslyAllowSVG` stays off.
 - Admin auth remains `admin_users` plus the signed `maris_admin_session` cookie unless the user requests otherwise.
 - Keep service-role credentials server-only. Missing or placeholder environment variables are blockers; never invent secrets.
 - Run the narrowest relevant check first. Run live database checks only with real environment values, and inspect rendered routes for visible UI work.

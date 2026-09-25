@@ -1021,7 +1021,11 @@ const productRouteSource = await readRequiredSource("../app/product/[slug]/page.
 assert.match(productRouteSource, /assets\/css\/product\.css/, "Product should load its route CSS");
 
 const productPageSource = await readRequiredSource("../app/product/[slug]/product-slug-page.js");
-assert.match(productPageSource, /href=\{`\/contact-order\/\$\{encodeURIComponent\(product\.sku\)\}`\}/);
+// The contact link lives in a client component so it can carry the metal the
+// shopper is viewing.
+assert.match(productPageSource, /<ProductContactLink[\s\S]*?productCode=\{product\.sku\}/);
+const productMetalContextSource = await readRequiredSource("../app/product/[slug]/ProductMetalContext.jsx");
+assert.match(productMetalContextSource, /href=\{`\/contact-order\/\$\{encodeURIComponent\(productCode\)\}\$\{metalQuery\}`\}/);
 assert.match(productPageSource, /Contact Maris to Order/);
 assert.doesNotMatch(productPageSource, /\/request-quote\?collection=/);
 assert.doesNotMatch(productPageSource, /Confirm Availability/);

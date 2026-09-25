@@ -13,7 +13,7 @@ import {
 import JsonLd from "../../components/JsonLd";
 import WishlistButton from "../../components/WishlistButton";
 import ProductGallery from "./ProductGallery";
-import { ProductMetalProvider, ProductMetalSelector } from "./ProductMetalContext";
+import { ProductContactLink, ProductMetalProvider, ProductMetalSelector } from "./ProductMetalContext";
 import AddToBagButton from "./AddToBagButton";
 import {
   buildBreadcrumbJsonLd,
@@ -201,12 +201,13 @@ export default async function ProductPage({ params }) {
               <div className="product-actions">
                 <AddToBagButton product={product} collectionLabel={collectionLabel} />
                 <WishlistButton item={wishlistItem} variant="action" />
-                <a
+                <ProductContactLink
                   className="product-action is-primary is-contact"
-                  href={`/contact-order/${encodeURIComponent(product.sku)}`}
+                  productCode={product.sku}
+                  hasMetalChoice={metalOptions.length > 1}
                 >
                   Contact Maris to Order
-                </a>
+                </ProductContactLink>
               </div>
 
               <p className="product-note">Enquire with our atelier for current availability and bespoke sizing.</p>

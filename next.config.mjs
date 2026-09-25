@@ -113,6 +113,12 @@ const nextConfig = {
         destination: "/category/engagement-ring",
         permanent: false
       },
+      // The ring builder was retired; bespoke rings are handled by the atelier.
+      {
+        source: "/design-your-ring",
+        destination: "/our-service",
+        permanent: true
+      },
       ...[
         ["wedding-set", "/category/wedding-set"],
         ["engagement-ring", "/category/engagement-ring"],

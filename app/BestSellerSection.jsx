@@ -14,6 +14,11 @@ const FALLBACK_BEST_SELLER_ITEMS = Array.from({ length: BEST_SELLER_SLOT_COUNT }
 }));
 
 const LOOP_SET_COUNT = 3;
+const AUTOPLAY_DELAY_MS = 3200;
+// Pointer travel before a press counts as a drag and swallows the link click.
+const DRAG_CLICK_THRESHOLD_PX = 8;
+// Fraction of a card the pointer must travel to commit to the next card.
+const DRAG_COMMIT_RATIO = 0.18;
 
 function normalizeBestSellerItems(items) {
   const normalizedItems = (Array.isArray(items) ? items : [])
@@ -47,6 +52,13 @@ export default function BestSellerSection({ items = [] }) {
   const [slideStep, setSlideStep] = useState(0);
   const [centerOffset, setCenterOffset] = useState(0);
   const [withTransition, setWithTransition] = useState(false);
+  const [dragOffset, setDragOffset] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [isPageHidden, setIsPageHidden] = useState(false);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const dragRef = useRef(null);
+  const suppressClickRef = useRef(false);
   const loopItems = useMemo(() => {
     return Array.from({ length: LOOP_SET_COUNT }, () => bestSellerItems).flat();
   }, [bestSellerItems]);
@@ -91,26 +103,166 @@ export default function BestSellerSection({ items = [] }) {
     };
   }, [measureCarousel]);
 
-  function showPrevious() {
-    setWithTransition(true);
-    setSlideIndex((currentIndex) => currentIndex - 1);
-  }
+  useEffect(() => {
+    const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const syncMotion = () => setPrefersReducedMotion(motionQuery.matches);
+    const syncVisibility = () => setIsPageHidden(document.hidden);
 
-  function showNext() {
-    setWithTransition(true);
-    setSlideIndex((currentIndex) => currentIndex + 1);
-  }
+    syncMotion();
+    syncVisibility();
+    motionQuery.addEventListener("change", syncMotion);
+    document.addEventListener("visibilitychange", syncVisibility);
 
-  function handleTrackTransitionEnd() {
-    if (slideIndex >= bestSellerItems.length * 2) {
-      setWithTransition(false);
-      setSlideIndex(realSetStart);
+    return () => {
+      motionQuery.removeEventListener("change", syncMotion);
+      document.removeEventListener("visibilitychange", syncVisibility);
+    };
+  }, []);
+
+  // Advance right-to-left one card at a time. Keyed on slideIndex so a manual
+  // drag restarts the full delay instead of jumping again right after release.
+  const canAutoplay = bestSellerItems.length > 1
+    && !isPaused
+    && !isDragging
+    && !isPageHidden
+    && !prefersReducedMotion;
+
+  useEffect(() => {
+    if (!canAutoplay) {
       return;
     }
 
-    if (slideIndex < bestSellerItems.length) {
+    const timer = window.setTimeout(() => {
+      // A hidden tab can skip transitionend, leaving the index on a clone set;
+      // snap back silently first so autoplay never runs off the rendered cards.
+      const wrappedIndex = wrapIntoMiddleSet(slideIndex);
+
+      if (wrappedIndex !== slideIndex) {
+        setWithTransition(false);
+        setSlideIndex(wrappedIndex);
+        return;
+      }
+
+      setWithTransition(true);
+      setSlideIndex(slideIndex + 1);
+    }, AUTOPLAY_DELAY_MS);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [canAutoplay, slideIndex]);
+
+  // Keep the index inside the middle copy so a drag of up to one full set
+  // either way still lands on rendered cards.
+  function wrapIntoMiddleSet(index) {
+    const setLength = bestSellerItems.length;
+
+    if (index >= setLength * 2) {
+      return index - setLength;
+    }
+
+    if (index < setLength) {
+      return index + setLength;
+    }
+
+    return index;
+  }
+
+  function handleTrackTransitionEnd(event) {
+    // Card scale/opacity transitions bubble up here too; only the track move counts.
+    if (event.target !== event.currentTarget) {
+      return;
+    }
+
+    const wrappedIndex = wrapIntoMiddleSet(slideIndex);
+
+    if (wrappedIndex !== slideIndex) {
       setWithTransition(false);
-      setSlideIndex((bestSellerItems.length * 2) - 1);
+      setSlideIndex(wrappedIndex);
+    }
+  }
+
+  function handlePointerDown(event) {
+    if (bestSellerItems.length < 2 || (event.pointerType === "mouse" && event.button !== 0)) {
+      return;
+    }
+
+    dragRef.current = { pointerId: event.pointerId, startX: event.clientX, moved: false };
+    suppressClickRef.current = false;
+    setSlideIndex((currentIndex) => wrapIntoMiddleSet(currentIndex));
+    setDragOffset(0);
+    setIsDragging(true);
+  }
+
+  useEffect(() => {
+    if (!isDragging) {
+      return;
+    }
+
+    function handlePointerMove(event) {
+      const drag = dragRef.current;
+
+      if (!drag || event.pointerId !== drag.pointerId) {
+        return;
+      }
+
+      const deltaX = event.clientX - drag.startX;
+
+      if (Math.abs(deltaX) > DRAG_CLICK_THRESHOLD_PX) {
+        drag.moved = true;
+      }
+
+      setDragOffset(deltaX);
+    }
+
+    function handlePointerEnd(event) {
+      const drag = dragRef.current;
+
+      if (!drag || event.pointerId !== drag.pointerId) {
+        return;
+      }
+
+      const deltaX = event.type === "pointercancel" ? 0 : event.clientX - drag.startX;
+      const step = slideStep || 1;
+      let cardShift = Math.round(-deltaX / step);
+
+      if (cardShift === 0 && Math.abs(deltaX) > step * DRAG_COMMIT_RATIO) {
+        cardShift = deltaX < 0 ? 1 : -1;
+      }
+
+      const maxShift = bestSellerItems.length - 1;
+      cardShift = Math.max(-maxShift, Math.min(maxShift, cardShift));
+
+      suppressClickRef.current = drag.moved;
+      dragRef.current = null;
+      setWithTransition(true);
+      setSlideIndex((currentIndex) => currentIndex + cardShift);
+      setDragOffset(0);
+      setIsDragging(false);
+    }
+
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", handlePointerEnd);
+    window.addEventListener("pointercancel", handlePointerEnd);
+
+    return () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerEnd);
+      window.removeEventListener("pointercancel", handlePointerEnd);
+    };
+  }, [isDragging, slideStep, bestSellerItems.length]);
+
+  function handleClickCapture(event) {
+    if (suppressClickRef.current) {
+      event.preventDefault();
+      event.stopPropagation();
+      suppressClickRef.current = false;
+    }
+  }
+
+  function handleBlur(event) {
+    if (!event.currentTarget.contains(event.relatedTarget)) {
+      setIsPaused(false);
     }
   }
 
@@ -131,7 +283,7 @@ export default function BestSellerSection({ items = [] }) {
   }, [withTransition, slideIndex]);
 
   const trackStyle = {
-    "--best-seller-translate": `${(slideIndex * slideStep) - centerOffset}px`
+    "--best-seller-translate": `${(slideIndex * slideStep) - centerOffset - dragOffset}px`
   };
 
   return (
@@ -142,12 +294,19 @@ export default function BestSellerSection({ items = [] }) {
       </div>
 
       <div
-        className="best-seller-carousel"
+        className={`best-seller-carousel${isDragging ? " is-dragging" : ""}`}
         aria-label="Best seller products"
         ref={carouselRef}
+        onPointerDown={handlePointerDown}
+        onClickCapture={handleClickCapture}
+        onDragStart={(event) => event.preventDefault()}
+        onMouseEnter={() => setIsPaused(true)}
+        onMouseLeave={() => setIsPaused(false)}
+        onFocus={() => setIsPaused(true)}
+        onBlur={handleBlur}
       >
         <div
-          className={`best-seller-track${withTransition ? "" : " is-jump-reset"}`}
+          className={`best-seller-track${withTransition && !isDragging ? "" : " is-jump-reset"}`}
           onTransitionEnd={handleTrackTransitionEnd}
           ref={trackRef}
           style={trackStyle}
@@ -180,6 +339,7 @@ export default function BestSellerSection({ items = [] }) {
                         height={814}
                         sizes="(max-width: 900px) 100vw, 33vw"
                         unoptimized={!isOptimizableImageSrc(item.imageSrc)}
+                        draggable={false}
                       />
                     ) : (
                       <span className="best-seller-empty-label">{item.label}</span>
@@ -195,6 +355,7 @@ export default function BestSellerSection({ items = [] }) {
                         height={814}
                         sizes="(max-width: 900px) 100vw, 33vw"
                         unoptimized={!isOptimizableImageSrc(item.imageSrc)}
+                        draggable={false}
                       />
                     ) : (
                       <span className="best-seller-empty-label">{item.label}</span>
@@ -205,25 +366,6 @@ export default function BestSellerSection({ items = [] }) {
             );
           })}
         </div>
-      </div>
-
-      <div className="best-seller-controls" aria-label="Best seller carousel controls">
-        <button
-          type="button"
-          className="best-seller-arrow best-seller-arrow--previous"
-          aria-label="Previous best seller"
-          onClick={showPrevious}
-        >
-          <span aria-hidden="true">&larr;</span>
-        </button>
-        <button
-          type="button"
-          className="best-seller-arrow best-seller-arrow--next"
-          aria-label="Next best seller"
-          onClick={showNext}
-        >
-          <span aria-hidden="true">&rarr;</span>
-        </button>
       </div>
     </section>
   );
