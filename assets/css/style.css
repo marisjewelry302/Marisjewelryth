@@ -239,12 +239,11 @@ body {
   gap: 10px;
   border: 0;
   background: transparent;
-  color: rgba(255, 250, 246, 0.9);
+  color: rgba(255, 250, 246, 0.68);
   font-family: var(--maris-font-sans);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.14em;
-  text-shadow: 0 1px 8px rgba(18, 15, 13, 0.45);
   cursor: pointer;
   transition: color 0.24s ease;
 }
@@ -254,7 +253,6 @@ body {
   display: block;
   height: 1px;
   background: currentColor;
-  box-shadow: 0 1px 6px rgba(18, 15, 13, 0.35);
   transform: scaleX(0.42);
   transform-origin: left center;
   transition: transform 0.42s cubic-bezier(0.22, 1, 0.36, 1), background 0.24s ease;
@@ -635,6 +633,30 @@ body {
   inset: clamp(18px, 3vw, 36px);
   border: 1px solid rgba(0, 73, 58, 0.18);
   pointer-events: none;
+}
+
+.atelier-reveal__stage {
+  position: absolute;
+  top: clamp(24px, 4vw, 58px);
+  right: clamp(24px, 6vw, 90px);
+  display: inline-grid;
+  grid-template-columns: 74px 18px 74px;
+  align-items: center;
+  gap: 12px;
+  opacity: 0.78;
+}
+
+.atelier-reveal__line {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0, 73, 58, 0.42), transparent);
+}
+
+.atelier-reveal__stone {
+  width: 18px;
+  aspect-ratio: 1;
+  border: 1px solid rgba(0, 73, 58, 0.5);
+  background: rgba(255, 250, 246, 0.58);
+  transform: rotate(45deg);
 }
 
 .atelier-reveal__copy {
@@ -1610,6 +1632,10 @@ body {
     inset: 12px;
   }
 
+  .atelier-reveal__stage {
+    display: none;
+  }
+
   .atelier-reveal__copy {
     gap: 11px;
     max-width: 100%;
@@ -2377,6 +2403,13 @@ body {
   border-color: rgba(0, 73, 58, 0.1);
 }
 
+.atelier-reveal__stage {
+  top: clamp(28px, 4vw, 60px);
+  right: clamp(32px, 6vw, 112px);
+  grid-template-columns: 92px 15px 92px;
+  opacity: 0.42;
+}
+
 .atelier-reveal__copy {
   align-content: start;
   gap: clamp(13px, 1.4vw, 18px);
@@ -2502,11 +2535,9 @@ body {
 }
 
 .atelier-product__meta > span {
-  color: oklch(88% 0.07 86);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-shadow: 0 1px 6px rgba(18, 15, 13, 0.4);
+  color: oklch(73% 0.09 86);
+  font-size: 9px;
+  letter-spacing: 0.18em;
 }
 
 .atelier-product strong {
@@ -3459,16 +3490,16 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: min(172px, 70%);
-  min-height: 42px;
-  padding: 11px 28px 12px;
-  border: 1px solid rgba(255, 250, 246, 0.2);
+  min-width: min(150px, 70%);
+  min-height: 32px;
+  padding: 7px 22px 8px;
+  border: 1px solid rgba(255, 250, 246, 0.12);
   border-radius: 999px;
-  background: rgb(0, 73, 58);
-  color: var(--maris-white);
-  font-size: clamp(13px, 1vw, 14px);
-  font-weight: 500;
-  letter-spacing: 0.04em;
+  background: rgba(0, 73, 58, 0.84);
+  color: rgba(255, 250, 246, 0.9);
+  font-size: clamp(11px, 0.9vw, 13px);
+  font-weight: 300;
+  letter-spacing: 0;
   line-height: 1;
   text-align: center;
   box-shadow: 0 14px 30px rgba(0, 42, 34, 0.2);
@@ -3569,9 +3600,9 @@ body {
   }
 
   .home-collection-card__action {
-    min-height: 40px;
-    min-width: 160px;
-    font-size: 13px;
+    min-height: 34px;
+    min-width: 148px;
+    font-size: 12px;
   }
 }
 
@@ -3738,14 +3769,4 @@ body:has(.site-header--home) .hero-utility-bar__divider,
    touching the horizontal padding, which is deliberately different per band. */
 .home-main > section:not(.hero) {
   padding-block: var(--section-rhythm);
-}
-
-/* Shop by Category and the collection covers are one browsing band, so the
-   seam between them is tighter than the step between unrelated sections. */
-.home-main > section.shop-category-section {
-  padding-bottom: calc(var(--section-rhythm) * 0.5);
-}
-
-.home-main > section.home-collection-showcase {
-  padding-top: calc(var(--section-rhythm) * 0.35);
 }

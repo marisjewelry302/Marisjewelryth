@@ -8,13 +8,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 const BAG_KEY = "marisShoppingBag";
 
 const primaryNav = [
-  { href: "/category/wedding-set", label: "Wedding Set" },
-  { href: "/category/engagement-ring", label: "Engagement Ring" }
+  { href: "/category/wedding-set", label: "Wedding set" },
+  { href: "/category/engagement-ring", label: "Engagement ring" }
 ];
 
 const dropdownNav = [
   {
-    label: "Wedding Band",
+    label: "Wedding band",
     items: [
       { href: "/category/wedding-bands", label: "Wedding Bands" },
       { href: "/category/mens-wedding-bands", label: "Men's Wedding Bands" }

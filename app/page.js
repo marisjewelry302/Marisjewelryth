@@ -165,7 +165,7 @@ export default async function HomePage() {
         <div className="shop-category-head">
           <h2 id="shop-category-heading">Shop By Category</h2>
           <span aria-hidden="true" />
-          <p>From classic ear studs to chandeliers, from timeless bracelets to chic bangles. Shop our wide selection of jewelry.</p>
+          <p>From classic earstuds to chandeliers, from timeless bracelet to chic bangles. Shop our wide selection of jewelry</p>
         </div>
 
         <div className="shop-category-grid">
@@ -209,6 +209,12 @@ export default async function HomePage() {
       </section>
 
       <section className="atelier-reveal" aria-label="New arrival catalogue">
+        <div className="atelier-reveal__stage" aria-hidden="true">
+          <span className="atelier-reveal__line" />
+          <span className="atelier-reveal__stone" />
+          <span className="atelier-reveal__line" />
+        </div>
+
         <div className="atelier-reveal__panel">
           <div className="atelier-reveal__focus">
             <h2>{featuredProducts.length ? "New arrival" : "Maris catalogue preview"}</h2>

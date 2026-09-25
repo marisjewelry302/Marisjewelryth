@@ -14,14 +14,14 @@ const dropdownNav = extractArray("dropdownNav");
 
 assert.match(
   primaryNav,
-  /href:\s*"\/category\/wedding-set",\s*label:\s*"Wedding Set"/,
-  "Wedding Set should be a top-level navigation item"
+  /href:\s*"\/category\/wedding-set",\s*label:\s*"Wedding set"/,
+  "Wedding set should be a top-level navigation item"
 );
 
 assert.match(
   primaryNav,
-  /href:\s*"\/category\/engagement-ring",\s*label:\s*"Engagement Ring"/,
-  "Engagement Ring should be a top-level navigation item"
+  /href:\s*"\/category\/engagement-ring",\s*label:\s*"Engagement ring"/,
+  "Engagement ring should be a top-level navigation item"
 );
 
 assert.doesNotMatch(
@@ -30,17 +30,17 @@ assert.doesNotMatch(
   "Men's Wedding Bands should not be a top-level navigation item"
 );
 
-const weddingBandGroup = dropdownNav.match(/label:\s*"Wedding Band",\s*items:\s*\[([\s\S]*?)\]\s*\}/);
-assert.ok(weddingBandGroup, "Wedding Band should be a dropdown navigation group");
+const weddingBandGroup = dropdownNav.match(/label:\s*"Wedding band",\s*items:\s*\[([\s\S]*?)\]\s*\}/);
+assert.ok(weddingBandGroup, "Wedding band should be a dropdown navigation group");
 assert.match(
   weddingBandGroup[1],
   /href:\s*"\/category\/wedding-bands",\s*label:\s*"Wedding Bands"/,
-  "Wedding Band dropdown should link to Wedding Bands"
+  "Wedding band dropdown should link to Wedding Bands"
 );
 assert.match(
   weddingBandGroup[1],
   /href:\s*"\/category\/mens-wedding-bands",\s*label:\s*"Men's Wedding Bands"/,
-  "Wedding Band dropdown should include Men's Wedding Bands"
+  "Wedding band dropdown should include Men's Wedding Bands"
 );
 
 assert.match(dropdownNav, /label:\s*"Gift"/, "Gift should be a top-level dropdown label");
