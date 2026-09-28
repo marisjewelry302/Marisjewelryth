@@ -32,6 +32,36 @@ create table if not exists public.customer_bags (
   updated_at timestamptz not null default now()
 );
 
+-- The deployed database had both tables created by hand before this migration
+-- ran, keyed on item_key rather than item_id, so the create statements above
+-- were skipped, the index below failed, and every migration after this one was
+-- held back. The app reads and writes item_id, so wishlist and bag sync failed
+-- there too. The column is renamed in place; on a database built from this
+-- folder the block does nothing.
+do $$
+declare
+  v_table text;
+begin
+  foreach v_table in array array['customer_wishlists', 'customer_bags'] loop
+    if exists (
+      select 1
+        from information_schema.columns
+       where table_schema = 'public'
+         and table_name = v_table
+         and column_name = 'item_key'
+    ) and not exists (
+      select 1
+        from information_schema.columns
+       where table_schema = 'public'
+         and table_name = v_table
+         and column_name = 'item_id'
+    ) then
+      execute format('alter table public.%I rename column item_key to item_id', v_table);
+    end if;
+  end loop;
+end;
+$$;
+
 create unique index if not exists idx_customer_wishlists_customer_item
 on public.customer_wishlists(customer_id, item_id);
 
