@@ -1,4 +1,4 @@
-import { Anuphan, Urbanist } from "next/font/google";
+import localFont from "next/font/local";
 import "../assets/css/style.css";
 import "../assets/css/engagement-ring.css";
 import "../assets/css/placeholder.css";
@@ -15,19 +15,23 @@ import {
   buildWebsiteJsonLd
 } from "./lib/seo";
 
-// Self-hosted at build time, so the storefront makes no request to Google and the
-// CSP needs no font exceptions. Urbanist carries Latin; Anuphan covers Thai glyphs.
-// Both expose a CSS variable that the --maris-font-* tokens resolve through.
-const urbanist = Urbanist({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
+// Self-hosted from app/fonts, so neither the build nor the storefront makes a
+// request to Google and the CSP needs no font exceptions. next/font/google fetched
+// the CSS at build time, and when Google answered with /l/font?kit=... URLs the
+// Turbopack build failed outright (vercel/next.js#99114). Urbanist carries Latin;
+// Anuphan covers Thai glyphs. Both are the upstream variable fonts cut to 300-700
+// and to the Google Fonts subsets the site used, and both expose a CSS variable
+// that the --maris-font-* tokens resolve through.
+const urbanist = localFont({
+  src: "./fonts/Urbanist-Variable.woff2",
+  weight: "300 700",
   display: "swap",
   variable: "--font-urbanist"
 });
 
-const anuphan = Anuphan({
-  subsets: ["latin", "thai"],
-  weight: ["300", "400", "500", "600", "700"],
+const anuphan = localFont({
+  src: "./fonts/Anuphan-Variable.woff2",
+  weight: "300 700",
   display: "swap",
   variable: "--font-anuphan"
 });

@@ -21,9 +21,22 @@ const sources = {
 
 assert.match(
   sources.layout,
-  /import \{ Anuphan, Urbanist \} from "next\/font\/google"/,
-  "Root layout should self-host Urbanist with Anuphan fallback glyph coverage through next/font."
+  /import localFont from "next\/font\/local"/,
+  "Root layout should self-host Urbanist with Anuphan fallback glyph coverage through next/font/local."
 );
+assert.doesNotMatch(
+  sources.layout,
+  /from "next\/font\/google"/,
+  "next/font/google fetches from Google at build time, and a bad response fails the deploy."
+);
+for (const file of ["Urbanist-Variable.woff2", "Anuphan-Variable.woff2"]) {
+  assert.match(
+    sources.layout,
+    new RegExp(`src:\\s*"\\./fonts/${file.replace(".", "\\.")}"`),
+    `Root layout should load ${file} from app/fonts.`
+  );
+  await readFile(new URL(`../app/fonts/${file}`, import.meta.url));
+}
 assert.doesNotMatch(
   sources.layout,
   /fonts\.googleapis\.com|fonts\.gstatic\.com/,
