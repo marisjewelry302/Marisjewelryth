@@ -108,6 +108,25 @@ body:has(.site-header--home) .home-main .hero-content,
   line-height: 1.55;
 }
 
+/* A phone card is barely 170px wide, and at that size a 15px code in full ink
+   arrived before the piece did. The caption keeps its weight and colour so a
+   code is still easy to find - it just stops announcing itself. */
+@media (max-width: 520px) {
+  .product-info {
+    padding-top: 10px;
+  }
+
+  .product-info h3 {
+    font-size: 13px;
+    letter-spacing: 0.06em;
+    margin-bottom: 2px;
+  }
+
+  .product-info p {
+    margin-top: 2px;
+  }
+}
+
 .wishlist-toggle {
   font-family: inherit;
 }

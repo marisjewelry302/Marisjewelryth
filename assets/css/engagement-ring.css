@@ -286,11 +286,11 @@ body.is-page-scrolled .icons i {
 .products {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  /* Photography sits on a near-white tile, so a tight gutter let neighbouring
-     pieces read as one block. Column gap carries most of the separation; the
-     row gap also has to clear each card's caption. */
-  column-gap: clamp(18px, 2vw, 30px);
-  row-gap: clamp(30px, 3vw, 48px);
+  /* The pieces are cut out on transparent ground and sit straight on the page,
+     so the gutters are all that separate them. They stay close to equal - the
+     row gap only carries the extra needed to clear each card's caption. */
+  column-gap: clamp(20px, 2.2vw, 34px);
+  row-gap: clamp(24px, 2.6vw, 38px);
   width: min(calc(100% - 40px), 1400px);
   margin: 0 auto;
   padding: 24px 0 72px;
@@ -315,7 +315,6 @@ body.is-page-scrolled .icons i {
   display: block;
   border-radius: 0;
   border-bottom: none;
-  background: #f5f4f2;
   padding: 16px;
   cursor: pointer;
   transition: opacity 0.24s ease, filter 0.24s ease, transform 0.24s ease;
@@ -327,7 +326,6 @@ body.is-page-scrolled .icons i {
   width: 100%;
   aspect-ratio: 1 / 1;
   overflow: hidden;
-  background: #f5f4f2;
   transition: transform 0.24s ease;
 }
 
@@ -817,16 +815,11 @@ body.is-page-scrolled .icons i {
     padding: 18px 0 40px;
   }
 
-  .product-card img {
-    height: clamp(190px, 58vw, 330px);
-  }
-
   .product-info {
     padding: 12px 28px 18px 0;
   }
 
   .product-info h3 {
-    font-size: 16px;
     margin-bottom: 6px;
   }
 
@@ -885,23 +878,18 @@ body.is-page-scrolled .icons i {
     gap: 8px;
   }
 
+  /* One piece per row read as a feed rather than a catalogue, and the square
+     frames are legible at half a phone's width. */
   .products {
-    grid-template-columns: 1fr;
-    gap: 22px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 10px;
+    row-gap: 18px;
     width: calc(100% - 24px);
     padding: 16px 0 34px;
   }
 
-  .product-card img {
-    height: clamp(300px, 92vw, 420px);
-  }
-
   .product-info {
     padding: 12px 32px 0 0;
-  }
-
-  .product-info h3 {
-    font-size: 17px;
   }
 
   .product-info p {
@@ -912,11 +900,8 @@ body.is-page-scrolled .icons i {
 
 @media (max-width: 360px) {
   .products {
-    grid-template-columns: 1fr;
-  }
-
-  .product-card img {
-    height: clamp(260px, 92vw, 380px);
+    column-gap: 8px;
+    row-gap: 14px;
   }
 }
 
