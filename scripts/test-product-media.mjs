@@ -70,6 +70,11 @@ assert.match(videoPlayer, /prefers-reduced-motion: reduce/, "Reduced motion turn
 assert.match(videoPlayer, /onError=\{\(\) => setFailed\(true\)\}/, "A failed video falls back to its poster");
 assert.doesNotMatch(videoPlayer, /\bcontrols\b/, "No full browser controls, only the play/pause button");
 assert.match(productGallery, /preload=\{lightboxAt === 0\}/, "The first photograph stays the preloaded LCP image");
+assert.match(
+  productGallery,
+  /slide\.src && isReached &&/,
+  "Slides past the one in hand must not download with the LCP image - lazy loading does not apply inside the track's scroller"
+);
 assert.match(productCard, /product\.coverImageUrl/, "Card leads with the cover image");
 assert.match(productCard, /product\.hoverImageUrl/, "Card swaps to the hover image");
 assert.match(cardCss, /@media \(hover: hover\) and \(pointer: fine\)/, "Hover swap is desktop only");

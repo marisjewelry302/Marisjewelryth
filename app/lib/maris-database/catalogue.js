@@ -631,41 +631,51 @@ export async function readRelatedPublicProducts(collection, excludeId, { env = p
   // piece's own collection. SKUs are hand-entered with or without spaces, so
   // the database match is loose and the exact code comparison happens here.
   const code = parsePublicProductCode(sku);
-  let siblings = [];
 
-  if (code) {
-    const bySku = await supabase
-      .from("products")
-      .select(PUBLIC_CATALOGUE_SELECT)
-      .eq("status", "active")
-      .ilike("sku", `${code.prefix}%${code.digits}%`)
-      .limit(limit * 3);
-
-    if (bySku.error) {
-      throw new Error(bySku.error.message || "Supabase related products could not be loaded.");
-    }
-
-    siblings = (Array.isArray(bySku.data) ? bySku.data.map(normalizePublicProduct) : [])
-      .filter((item) => item.id !== excludeId && isSiblingProductCode(sku, item.sku))
-      .sort((left, right) => compareSiblingProductCodes(left.sku, right.sku));
-  }
-
-  let sameCollection = [];
-
-  if (siblings.length < limit) {
+  function selectCollection() {
+    // The sibling count is no longer known when this query is built, so it asks
+    // for enough rows to fill the row even if every sibling also belongs to this
+    // collection and is dropped as a duplicate below.
     const query = supabase
       .from("products")
       .select(PUBLIC_CATALOGUE_SELECT)
       .eq("status", "active")
-      .limit(limit + siblings.length + 1);
-    const { data, error } = await (collection ? query.eq("collection", collection) : query);
+      .limit(limit * 2 + 1);
 
-    if (error) {
-      throw new Error(error.message || "Supabase related products could not be loaded.");
-    }
-
-    sameCollection = Array.isArray(data) ? data.map(normalizePublicProduct) : [];
+    return collection ? query.eq("collection", collection) : query;
   }
+
+  // Both lookups leave together. Waiting for the siblings before asking for the
+  // collection put a second Supabase round trip in front of the page's TTFB,
+  // and the collection rows are cheap enough to fetch even in the uncommon case
+  // where the siblings fill the row on their own.
+  const [bySku, byCollection] = await Promise.all([
+    code
+      ? supabase
+        .from("products")
+        .select(PUBLIC_CATALOGUE_SELECT)
+        .eq("status", "active")
+        .ilike("sku", `${code.prefix}%${code.digits}%`)
+        .limit(limit * 3)
+      : null,
+    selectCollection()
+  ]);
+
+  if (bySku?.error) {
+    throw new Error(bySku.error.message || "Supabase related products could not be loaded.");
+  }
+
+  if (byCollection.error) {
+    throw new Error(byCollection.error.message || "Supabase related products could not be loaded.");
+  }
+
+  const siblings = (Array.isArray(bySku?.data) ? bySku.data.map(normalizePublicProduct) : [])
+    .filter((item) => item.id !== excludeId && isSiblingProductCode(sku, item.sku))
+    .sort((left, right) => compareSiblingProductCodes(left.sku, right.sku));
+
+  const sameCollection = siblings.length < limit && Array.isArray(byCollection.data)
+    ? byCollection.data.map(normalizePublicProduct)
+    : [];
 
   const seen = new Set([excludeId]);
   const products = [...siblings, ...sameCollection]

@@ -36,6 +36,21 @@ export default function ProductGallery({ imageSets, coverImageUrl, video, produc
   const trackRef = useRef(null);
   const slideRefs = useRef([]);
   const [activeSlide, setActiveSlide] = useState(0);
+  // Slides past this index hold an empty frame until the shopper reaches the
+  // one before them. loading="lazy" cannot do this job here: every slide sits
+  // inside the track's own horizontal scroller, so the browser counts them all
+  // as visible and pulls the whole set at full width alongside the LCP image.
+  const [loadedThrough, setLoadedThrough] = useState(1);
+
+  useEffect(() => {
+    setLoadedThrough((current) => Math.max(current, activeSlide + 1));
+  }, [activeSlide]);
+
+  // Nothing advances the active slide without an observer, so a browser that
+  // has none gets the whole set rather than a track of empty frames.
+  useEffect(() => {
+    if (typeof IntersectionObserver === "undefined") setLoadedThrough(slides.length);
+  }, [slides.length]);
 
   // The track is one horizontal scroller in both layouts - swiped on a phone,
   // driven by the thumbnails on desktop - so whichever slide fills most of it
@@ -105,6 +120,7 @@ export default function ProductGallery({ imageSets, coverImageUrl, video, produc
     setShownSetKey(activeSet?.key);
     setLightboxIndex(-1);
     setActiveSlide(0);
+    setLoadedThrough(1);
   }
 
   useEffect(() => {
@@ -184,6 +200,7 @@ export default function ProductGallery({ imageSets, coverImageUrl, video, produc
           {slides.map((slide, index) => {
             const isPhoto = slide.type === "image";
             const lightboxAt = isPhoto && slide.src ? (photoIndex += 1) : -1;
+            const isReached = index <= loadedThrough;
 
             return (
               <div
@@ -204,7 +221,7 @@ export default function ProductGallery({ imageSets, coverImageUrl, video, produc
                     tabIndex={index === activeSlide ? 0 : -1}
                     aria-label={`Open ${slide.label.toLowerCase()} preview for ${productCode}`}
                   >
-                    {slide.src && (
+                    {slide.src && isReached && (
                       <Image
                         src={slide.src}
                         alt={slide.alt}
