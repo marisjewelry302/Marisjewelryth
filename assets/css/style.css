@@ -2604,13 +2604,20 @@ body {
   border: 0;
 }
 
+/* The popup has to show everything at once on any screen, so its vertical rhythm
+   follows the viewport height instead of fixed rems: padding, gaps, the logo and
+   the offer all shrink with dvh, and the image column only fills whatever height
+   the content sets. The content column still scrolls as a last resort (400% zoom,
+   a very short landscape phone) so nothing can ever become unreachable. */
 .home-signup-popup {
+  --popup-gutter: clamp(0.6rem, 2.4vmin, 1.5rem);
   position: fixed;
   inset: 0;
   z-index: 2000;
   display: grid;
+  grid-template: minmax(0, 1fr) / minmax(0, 1fr);
   place-items: center;
-  padding: clamp(0.85rem, 2.4vw, 1.5rem);
+  padding: var(--popup-gutter);
 }
 
 .home-signup-popup__backdrop {
@@ -2626,13 +2633,10 @@ body {
 .home-signup-popup__dialog {
   position: relative;
   z-index: 1;
-  display: grid;
-  grid-template-columns: minmax(210px, 0.42fr) minmax(330px, 0.58fr);
-  width: min(760px, 92vw);
-  max-height: min(560px, 88vh);
-  overflow-x: hidden;
-  overflow-y: auto;
-  scrollbar-gutter: stable;
+  display: flex;
+  width: min(760px, 100%);
+  max-height: 100%;
+  overflow: hidden;
   border: 1px solid rgba(0, 73, 58, 0.12);
   border-radius: 8px;
   background: rgb(255, 250, 246);
@@ -2641,9 +2645,12 @@ body {
   outline: none;
 }
 
+/* The photo is portrait, so left in flow it made the dialog at least as tall as
+   the image and pushed the form out of view. Taken out of flow it just covers
+   the column the content already sized. */
 .home-signup-popup__image-panel {
   position: relative;
-  min-height: 470px;
+  flex: 0 0 42%;
   overflow: hidden;
 }
 
@@ -2657,6 +2664,8 @@ body {
 }
 
 .home-signup-popup__image-panel img {
+  position: absolute;
+  inset: 0;
   display: block;
   width: 100%;
   height: 100%;
@@ -2666,7 +2675,7 @@ body {
 .home-signup-popup__image-brand {
   position: absolute;
   left: 50%;
-  bottom: 1.45rem;
+  bottom: clamp(0.9rem, 3dvh, 1.45rem);
   transform: translateX(-50%);
   display: grid;
   gap: 0.22rem;
@@ -2686,15 +2695,25 @@ body {
   letter-spacing: 0.42em;
 }
 
+/* Not positioned on purpose: the close button then anchors to the dialog and
+   stays put if this column ever has to scroll. */
 .home-signup-popup__content {
-  position: relative;
   display: flex;
+  flex: 1 1 0;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  padding: clamp(1.35rem, 2.7vw, 2.35rem);
+  min-width: 0;
+  padding: clamp(1rem, 4.2dvh, 2.25rem) clamp(1rem, 2.7vw, 2.35rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
   color: var(--maris-ink);
   text-align: center;
+}
+
+.home-signup-popup__content > * {
+  flex-shrink: 0;
 }
 
 /* The dialog covers about 80% of a phone screen, so its only dismissal control
@@ -2704,6 +2723,7 @@ body {
   position: absolute;
   top: 0.4rem;
   right: 0.5rem;
+  z-index: 2;
   display: inline-grid;
   place-items: center;
   width: 44px;
@@ -2717,7 +2737,7 @@ body {
 }
 
 .home-signup-popup__eyebrow {
-  margin: 0 0 0.55rem;
+  margin: 0 0 clamp(0.3rem, 1dvh, 0.55rem);
   color: var(--maris-teal);
   font-size: 0.66rem;
   font-weight: 700;
@@ -2726,15 +2746,15 @@ body {
 }
 
 .home-signup-popup__logo {
-  width: min(220px, 70%);
+  width: min(70%, clamp(5.5rem, 24dvh, 13.75rem));
   height: auto;
-  margin-bottom: 0.7rem;
+  margin-bottom: clamp(0.3rem, 1.2dvh, 0.7rem);
 }
 
 .home-signup-popup__rule {
   width: 42px;
   height: 1px;
-  margin-bottom: 1rem;
+  margin-bottom: clamp(0.5rem, 1.8dvh, 1rem);
   background: rgba(0, 73, 58, 0.38);
 }
 
@@ -2754,7 +2774,7 @@ body {
   margin: 0.28rem 0 0.05rem;
   color: var(--maris-teal);
   font-family: var(--maris-font-display);
-  font-size: clamp(2.35rem, 3.7vw, 3.25rem);
+  font-size: clamp(1.9rem, min(6dvh, 12vw), 3.25rem);
   line-height: 0.95;
 }
 
@@ -2768,8 +2788,8 @@ body {
   grid-template-columns: repeat(3, 1fr);
   gap: 0.65rem;
   width: 100%;
-  margin: 1.15rem 0 0.95rem;
-  padding-bottom: 0.85rem;
+  margin: clamp(0.6rem, 2dvh, 1.15rem) 0 clamp(0.5rem, 1.6dvh, 0.95rem);
+  padding-bottom: clamp(0.5rem, 1.4dvh, 0.85rem);
   border-bottom: 1px solid rgba(0, 73, 58, 0.12);
 }
 
@@ -2811,7 +2831,7 @@ body {
 
 .home-signup-popup__form input {
   min-width: 0;
-  height: 2.75rem;
+  height: clamp(2.5rem, 5.5dvh, 2.75rem);
   border: 0;
   padding: 0 0.9rem;
   background: transparent;
@@ -2840,7 +2860,7 @@ body {
 
 .home-signup-popup__privacy {
   max-width: 420px;
-  margin-top: 0.75rem;
+  margin-top: clamp(0.45rem, 1.3dvh, 0.75rem);
   color: rgba(16, 41, 35, 0.62);
   font-size: 0.68rem;
   line-height: 1.45;
@@ -2855,7 +2875,7 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
-  margin-top: 0.7rem;
+  margin-top: clamp(0.4rem, 1.2dvh, 0.7rem);
   color: rgba(16, 41, 35, 0.68);
   font-size: 0.68rem;
   line-height: 1.2;
@@ -2870,7 +2890,7 @@ body {
 }
 
 .home-signup-popup__decline {
-  margin-top: 0.65rem;
+  margin-top: clamp(0.35rem, 1.1dvh, 0.65rem);
   border: 0;
   border-bottom: 1px solid rgba(0, 73, 58, 0.42);
   background: transparent;
@@ -2895,16 +2915,12 @@ body {
   }
 }
 
-@media (max-width: 760px) {
-  .home-signup-popup {
-    padding: 0.75rem;
-  }
-
+/* Below this width the two columns stop fitting side by side; the photo goes and
+   the content takes a single narrow column. Landscape phones stay above it and
+   keep the photo, since their content column is no narrower either way. */
+@media (max-width: 640px) {
   .home-signup-popup__dialog {
-    grid-template-columns: 1fr;
-    width: min(360px, 94vw);
-    max-height: 88vh;
-    overflow-y: auto;
+    width: min(380px, 100%);
   }
 
   .home-signup-popup__image-panel {
@@ -2912,107 +2928,37 @@ body {
   }
 
   .home-signup-popup__content {
-    padding: 2.7rem 1rem 1.25rem;
+    padding-inline: 1rem;
   }
+}
 
-  .home-signup-popup__perks {
-    grid-template-columns: 1fr;
-    gap: 0.65rem;
-  }
-
+@media (max-width: 359px) {
   .home-signup-popup__form {
     grid-template-columns: 1fr;
   }
 
   .home-signup-popup__form button {
-    height: 2.85rem;
+    height: 2.75rem;
   }
 }
 
-@media (min-width: 761px) and (max-height: 720px) {
-  .home-signup-popup {
-    padding: 0.7rem;
-  }
-
-  .home-signup-popup__dialog {
-    max-height: calc(100dvh - 1.4rem);
-    grid-template-columns: minmax(200px, 0.4fr) minmax(330px, 0.6fr);
-  }
-
-  .home-signup-popup__image-panel {
-    min-height: 0;
-  }
-
-  .home-signup-popup__content {
-    padding: 1.15rem 1.35rem;
-  }
-
-  .home-signup-popup__close {
-    top: 0.55rem;
-    right: 0.65rem;
-  }
-
-  .home-signup-popup__eyebrow {
-    margin-bottom: 0.35rem;
-    font-size: 0.6rem;
-  }
-
-  .home-signup-popup__logo {
-    width: min(180px, 62%);
-    margin-bottom: 0.45rem;
-  }
-
-  .home-signup-popup__rule {
-    margin-bottom: 0.65rem;
-  }
-
-  .home-signup-popup__offer {
-    margin-top: 0.18rem;
-    font-size: clamp(2rem, 3.1vw, 2.65rem);
-  }
-
+/* On short screens the perk row is the first thing to step aside: its first perk
+   repeats the offer right above it, and the form must stay in view. The narrow
+   single column wraps more, so it gives the row up sooner. */
+@media (max-height: 440px), (max-width: 640px) and (max-height: 520px) {
   .home-signup-popup__perks {
-    gap: 0.5rem;
-    margin: 0.75rem 0 0.65rem;
-    padding-bottom: 0.6rem;
+    display: none;
   }
 
-  .home-signup-popup__perks img {
-    width: 1.15rem;
-    height: 1.15rem;
+  .home-signup-popup__suboffer {
+    margin-bottom: clamp(0.6rem, 2dvh, 1rem);
   }
+}
 
-  .home-signup-popup__perks strong {
-    font-size: 0.66rem;
-  }
-
-  .home-signup-popup__perks small {
-    font-size: 0.6rem;
-  }
-
-  .home-signup-popup__form input {
-    height: 2.45rem;
-  }
-
-  .home-signup-popup__form button {
-    padding: 0 0.95rem;
-    font-size: 0.68rem;
-  }
-
-  .home-signup-popup__privacy {
-    margin-top: 0.55rem;
-    font-size: 0.63rem;
-    line-height: 1.35;
-  }
-
-  .home-signup-popup__remember {
-    margin-top: 0.5rem;
-    font-size: 0.64rem;
-  }
-
-  .home-signup-popup__decline {
-    margin-top: 0.45rem;
-    font-size: 0.68rem;
+@media (max-height: 380px) {
+  .home-signup-popup__eyebrow,
+  .home-signup-popup__rule {
+    display: none;
   }
 }
 
