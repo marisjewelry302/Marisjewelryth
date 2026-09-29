@@ -32,8 +32,9 @@ export default async function AdminPage() {
     redirect("/admin/login");
   }
 
-  const [imageGroupParserSrc, adminPageScriptSrc] = await Promise.all([
+  const [imageGroupParserSrc, gemReportParserSrc, adminPageScriptSrc] = await Promise.all([
     buildAdminScriptSrc("/assets/js/admin-image-group-parser.js"),
+    buildAdminScriptSrc("/assets/js/admin-gem-report-parser.js"),
     buildAdminScriptSrc("/assets/js/admin-page.js")
   ]);
 
@@ -146,6 +147,7 @@ export default async function AdminPage() {
                     <span>price</span>
                     <span>carat weight</span>
                     <span>stone details</span>
+                    <span>gem report (CSV)</span>
                     <span>description</span>
                     <span>cover images (2)</span>
                     <span>info images</span>
@@ -220,6 +222,24 @@ export default async function AdminPage() {
                   </select>
                 </label>
                 <p className="admin-note admin-span-2">Sample piece specs. Fill in only what you know; blank fields stay hidden on the product page.</p>
+                <label className="admin-span-2">
+                  Gem report (CSV from CAD)
+                  <input
+                    name="gemReportFile"
+                    type="file"
+                    accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain"
+                    aria-describedby="product-gem-report-preview"
+                    data-gem-report-file
+                  />
+                </label>
+                <div
+                  className="admin-gem-report admin-span-2"
+                  id="product-gem-report-preview"
+                  aria-live="polite"
+                  data-gem-report-preview
+                >
+                  Optional. Fills Carat Weight, Stone Type and Shape, and lists every stone on the product page.
+                </div>
                 <label>
                   Carat Weight
                   <input name="caratWeight" type="text" placeholder="0.50 ct" />
@@ -729,6 +749,7 @@ export default async function AdminPage() {
         </main>
 
         <Script src={imageGroupParserSrc} strategy="afterInteractive" />
+        <Script src={gemReportParserSrc} strategy="afterInteractive" />
         <Script src={adminPageScriptSrc} strategy="afterInteractive" />
       </div>
     </>

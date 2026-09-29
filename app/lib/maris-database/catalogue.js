@@ -8,6 +8,7 @@ import {
   parsePublicProductCode,
   toPublicProductSlug
 } from "../product-display.js";
+import { normalizeGemReport, toPublicGemReport } from "../gem-report.js";
 import { normalizeVideoPosition } from "../product-media.js";
 import { removeDeletedProductMedia } from "./product-media.js";
 
@@ -27,6 +28,7 @@ const ADMIN_CATALOGUE_SELECT = `
   stone_type,
   carat_weight,
   stone_shape,
+  gem_report,
   status,
   base_price,
   cover_image_url,
@@ -92,6 +94,13 @@ const PUBLIC_CATALOGUE_SELECT = `
   )
 `;
 
+// The stone list is only drawn on the product page, so catalogue listings and
+// the public catalogue API leave it out.
+const PUBLIC_PRODUCT_DETAIL_SELECT = `
+  gem_report,
+  ${PUBLIC_CATALOGUE_SELECT}
+`;
+
 // Sample-piece specs shown on the product page, keyed by the name the admin
 // form sends and mapped to their products columns. The metal is not a spec:
 // customers pick it from the gallery's metal sets.
@@ -116,6 +125,20 @@ function buildProductSpecsPayload(input = {}) {
   return Object.fromEntries(Object.entries(PRODUCT_SPEC_COLUMNS)
     .filter(([key]) => specs[key] !== undefined)
     .map(([key, column]) => [column, cleanOptionalText(specs[key])]));
+}
+
+// gemReport left undefined keeps the stored report; null or a report with no
+// stone lines clears it.
+function buildGemReportPayload(input = {}) {
+  if (input.gemReport === undefined) {
+    return {};
+  }
+
+  const report = normalizeGemReport(input.gemReport);
+
+  return {
+    gem_report: report && { ...report, importedAt: report.importedAt || new Date().toISOString() }
+  };
 }
 
 function normalizeVariant(row) {
@@ -299,6 +322,7 @@ function normalizeProduct(row) {
     collectionName,
     description: cleanOptionalText(row.description) || "",
     specs: normalizeProductSpecs(row),
+    gemReport: normalizeGemReport(row.gem_report),
     status: row.status || "draft",
     basePrice: row.base_price === null || row.base_price === undefined ? null : Number(row.base_price),
     stockQuantity: Number(row.stock_quantity) || 0,
@@ -354,6 +378,7 @@ function normalizePublicProduct(row) {
     collectionName: cleanOptionalText(row.collection_name) || "",
     description: cleanOptionalText(row.description) || "",
     specs: normalizeProductSpecs(row),
+    gemReport: toPublicGemReport(row.gem_report),
     status: row.status || "active",
     basePrice: row.base_price === null || row.base_price === undefined ? null : Number(row.base_price),
     ...media,
@@ -585,7 +610,7 @@ export async function readPublicProductBySlug(slugOrSku, { env = process.env, cl
   function selectActiveProducts(narrow) {
     return narrow(supabase
       .from("products")
-      .select(PUBLIC_CATALOGUE_SELECT)
+      .select(PUBLIC_PRODUCT_DETAIL_SELECT)
       .eq("status", "active"));
   }
 
@@ -735,6 +760,7 @@ export async function createAdminProduct(product, { env = process.env, client } 
     collection_name: collectionName,
     description: cleanOptionalText(product.description),
     ...buildProductSpecsPayload(product),
+    ...buildGemReportPayload(product),
     base_price: parseMoneyAmount(product.price) ?? null,
     status,
     stock_quantity: Number(product.stockQty) || 0,
@@ -806,6 +832,7 @@ export async function updateAdminProduct(productId, updates, { env = process.env
     collection_name: collectionName,
     description: updates.description === undefined ? undefined : cleanOptionalText(updates.description),
     ...buildProductSpecsPayload(updates),
+    ...buildGemReportPayload(updates),
     base_price: updates.price === undefined ? undefined : parseMoneyAmount(updates.price),
     status,
     stock_quantity: updates.stockQty !== undefined ? Number(updates.stockQty) : undefined,

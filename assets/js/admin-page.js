@@ -174,6 +174,7 @@
   // from it, and the poster drawn from its first frame.
   let modalVideoDraft = null;
   let modalVideoUploading = false;
+  let modalGemReport = null;
   let modalGalleryDragIndex = null;
 
   async function fetchAdminApi(path, options = {}) {
@@ -736,6 +737,220 @@
     }
 
     field.hidden = category !== "Rings";
+  }
+
+  // ── GEM REPORT ──────────────────────────────────────────────────────────────
+  // A CAD gem report CSV fills the three spec fields and is saved whole with
+  // the product, whose page then lists every stone. The add form and the edit
+  // modal each get one control. It keeps the file's text, so the carat reading
+  // can be switched without choosing the file again, and it only hands a
+  // report to the save once one was imported or removed.
+
+  const GEM_REPORT_MAX_BYTES = 2 * 1024 * 1024;
+  const GEM_REPORT_FILE_ACCEPT = ".csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain";
+
+  function getGemReportParser() {
+    return window.MARIS_ADMIN_GEM_REPORT && typeof window.MARIS_ADMIN_GEM_REPORT.parseGemReportCsv === "function"
+      ? window.MARIS_ADMIN_GEM_REPORT
+      : null;
+  }
+
+  function formatGemReportCarat(value) {
+    return getGemReportParser()?.formatCarat(value) || "";
+  }
+
+  async function readGemReportFile(file) {
+    const parser = getGemReportParser();
+
+    if (!parser) {
+      throw new Error("The gem report reader did not load. Refresh the page and try again.");
+    }
+
+    if (/\.(xlsx?|xlsm|numbers|pdf)$/i.test(file.name)) {
+      throw new Error("Save the gem report as CSV first (File > Save As > CSV), then choose that file.");
+    }
+
+    if (file.size > GEM_REPORT_MAX_BYTES) {
+      throw new Error("This file is larger than a gem report should be (2 MB).");
+    }
+
+    return parser.decodeGemReportBytes(await file.arrayBuffer());
+  }
+
+  function renderGemReportTable(report) {
+    const stones = Array.isArray(report?.stones) ? report.stones : [];
+    const rows = stones.map((stone) => `
+      <tr>
+        <td>${escapeHtml(stone.stone || "")}</td>
+        <td>${escapeHtml(stone.shape || "")}</td>
+        <td>${escapeHtml(stone.size || "")}</td>
+        <td class="is-number">${escapeHtml(stone.quantity)}</td>
+        <td class="is-number">${escapeHtml(formatGemReportCarat(stone.caratEach))}</td>
+        <td class="is-number">${escapeHtml(formatGemReportCarat(stone.caratTotal))}</td>
+      </tr>`).join("");
+
+    return `
+      <div class="admin-gem-report-table">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Stone</th>
+              <th scope="col">Shape</th>
+              <th scope="col">Size</th>
+              <th scope="col" class="is-number">Qty</th>
+              <th scope="col" class="is-number">Ct each</th>
+              <th scope="col" class="is-number">Ct total</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+          <tfoot>
+            <tr>
+              <td colspan="3">Total</td>
+              <td class="is-number">${escapeHtml(report.totalQuantity)}</td>
+              <td></td>
+              <td class="is-number">${escapeHtml(formatGemReportCarat(report.totalCarat))}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>`;
+  }
+
+  function createGemReportControl({ input, preview, emptyText, removedText, setSpecField }) {
+    let state = { report: null, draft: null, changed: false };
+
+    function render(error = "") {
+      const { report, draft, changed } = state;
+      const result = draft?.result;
+      const parts = [];
+
+      if (error) {
+        parts.push(`<p class="admin-gem-report-error" role="alert">${escapeHtml(error)}</p>`);
+      }
+
+      if (!report) {
+        parts.push(`<p>${escapeHtml(changed ? removedText : emptyText)}</p>`);
+        preview.innerHTML = parts.join("");
+        return;
+      }
+
+      const lineCount = report.stones.length;
+      const source = [
+        report.fileName,
+        result
+          ? "not saved yet"
+          : report.importedAt ? `imported ${new Date(report.importedAt).toLocaleDateString()}` : ""
+      ].filter(Boolean).join(" · ");
+
+      parts.push(`
+        <p class="admin-gem-report-summary">
+          <strong>${report.totalQuantity} stone${report.totalQuantity === 1 ? "" : "s"}${report.totalCarat === null ? "" : ` · ${escapeHtml(formatGemReportCarat(report.totalCarat))} ct total`}</strong>
+          <span>${lineCount} line${lineCount === 1 ? "" : "s"}${source ? ` · ${escapeHtml(source)}` : ""}</span>
+        </p>`);
+
+      if (result?.needsCaratMode) {
+        parts.push(`
+          <label class="admin-gem-report-mode">
+            <span>The one carat column, “${escapeHtml(result.columns.carat || "Carat")}”, holds</span>
+            <select data-gem-report-carat-mode>
+              <option value="total"${result.caratMode === "total" ? " selected" : ""}>the weight of the whole line</option>
+              <option value="each"${result.caratMode === "each" ? " selected" : ""}>the weight of each stone</option>
+            </select>
+          </label>`);
+      }
+
+      parts.push(renderGemReportTable(report));
+
+      const notes = [];
+      if (result) {
+        const filled = PRODUCT_SPEC_FIELDS.filter(({ key }) => result.specs?.[key]).map(({ label }) => label);
+        if (filled.length) notes.push(`Filled ${filled.join(", ")} from the report; edit them if needed.`);
+        if (result.needsCaratMode && result.caratModeSource === "default") {
+          notes.push("The sizes could not tell whether the carat column is per stone or per line. Check the totals above.");
+        }
+        if (result.skippedRows) {
+          notes.push(`${result.skippedRows} total or note line${result.skippedRows === 1 ? " was" : "s were"} left out.`);
+        }
+        if (result.truncated) notes.push("Only the first 200 stone lines are kept.");
+      }
+      if (notes.length) {
+        parts.push(`<p class="admin-gem-report-note">${notes.map(escapeHtml).join(" ")}</p>`);
+      }
+
+      parts.push(`<button class="admin-secondary" type="button" data-gem-report-remove>Remove gem report</button>`);
+      preview.innerHTML = parts.join("");
+    }
+
+    function applyResult(result, keys) {
+      Object.entries(result.specs || {})
+        .filter(([key, value]) => value && (!keys || keys.includes(key)))
+        .forEach(([key, value]) => setSpecField(key, value));
+    }
+
+    input.addEventListener("change", async () => {
+      const file = input.files?.[0];
+
+      if (!file) {
+        return;
+      }
+
+      try {
+        const text = await readGemReportFile(file);
+        const result = getGemReportParser().parseGemReportCsv(text, { fileName: file.name });
+
+        if (!result.ok) {
+          throw new Error(result.error);
+        }
+
+        state = { report: result.report, draft: { text, fileName: file.name, result }, changed: true };
+        applyResult(result);
+        render();
+      } catch (error) {
+        input.value = "";
+        render(`${file.name}: ${error instanceof Error ? error.message : "The gem report could not be read."}`);
+      }
+    });
+
+    preview.addEventListener("change", (event) => {
+      const select = event.target.closest("[data-gem-report-carat-mode]");
+
+      if (!select || !state.draft) {
+        return;
+      }
+
+      const result = getGemReportParser().parseGemReportCsv(state.draft.text, {
+        fileName: state.draft.fileName,
+        caratMode: select.value
+      });
+
+      if (result.ok) {
+        state = { ...state, report: result.report, draft: { ...state.draft, result } };
+        applyResult(result, ["caratWeight"]);
+        render();
+      }
+    });
+
+    preview.addEventListener("click", (event) => {
+      if (!event.target.closest("[data-gem-report-remove]")) {
+        return;
+      }
+
+      state = { report: null, draft: null, changed: true };
+      input.value = "";
+      render();
+    });
+
+    return {
+      // Loads what is saved on the product (or nothing, for the add form).
+      reset(storedReport = null) {
+        state = { report: storedReport, draft: null, changed: false };
+        input.value = "";
+        render();
+      },
+      // undefined leaves the saved report alone; null removes it.
+      getPayload() {
+        return state.changed ? state.report : undefined;
+      }
+    };
   }
 
   function updateImageGroupSummary(form, group) {
@@ -2541,6 +2756,13 @@
             <input class="modal-input" id="${modalId}" type="text" placeholder="${placeholder}">
           </label>`).join("")}
         </div>
+        <div class="modal-grid modal-full">
+          <label class="modal-label">
+            Gem report (CSV from CAD)
+            <input class="modal-file-input" id="modal-field-gem-report" type="file" accept="${GEM_REPORT_FILE_ACCEPT}" aria-describedby="modal-gem-report-preview">
+          </label>
+          <div class="admin-gem-report" id="modal-gem-report-preview" aria-live="polite"></div>
+        </div>
 
         <div class="modal-grid modal-full">
           <label class="modal-label">
@@ -2609,6 +2831,16 @@
     modal.addEventListener("click", (e) => { if (e.target === modal) closeEditModal(); });
     document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeEditModal(); });
     document.getElementById("modal-save-btn").addEventListener("click", saveEditModal);
+    modalGemReport = createGemReportControl({
+      input: document.getElementById("modal-field-gem-report"),
+      preview: document.getElementById("modal-gem-report-preview"),
+      emptyText: "No gem report yet. Choose the CSV to fill the specs above and list every stone on the product page.",
+      removedText: "The gem report will be removed when you press Save Changes.",
+      setSpecField: (key, value) => {
+        const field = PRODUCT_SPEC_FIELDS.find((spec) => spec.key === key);
+        if (field) document.getElementById(field.modalId).value = value;
+      }
+    });
     const cardGrid = document.getElementById("modal-card-grid");
     cardGrid.addEventListener("click", handleModalCardClick);
     cardGrid.addEventListener("change", handleModalCardChange);
@@ -2649,6 +2881,7 @@
     PRODUCT_SPEC_FIELDS.forEach(({ key, modalId }) => {
       document.getElementById(modalId).value = product.specs?.[key] || "";
     });
+    modalGemReport.reset(product.gemReport || null);
 
     // Title
     title.textContent = `Edit — ${getProductSku(product)}`;
@@ -2736,6 +2969,7 @@
           stockQty,
           description,
           specs,
+          gemReport: modalGemReport.getPayload(),
           metadata
         })
       });
@@ -3634,6 +3868,18 @@
     syncRingTypeFieldVisibility(elements.productForm);
   }
 
+  const productFormGemReportInput = elements.productForm?.querySelector("[data-gem-report-file]");
+  const productFormGemReportPreview = elements.productForm?.querySelector("[data-gem-report-preview]");
+  const productFormGemReport = productFormGemReportInput && productFormGemReportPreview
+    ? createGemReportControl({
+      input: productFormGemReportInput,
+      preview: productFormGemReportPreview,
+      emptyText: productFormGemReportPreview.textContent.trim(),
+      removedText: productFormGemReportPreview.textContent.trim(),
+      setSpecField: (key, value) => setFormValue(elements.productForm, key, value, { force: true })
+    })
+    : null;
+
   elements.productForm?.addEventListener("submit", async (event) => {
     event.preventDefault();
     const form = event.currentTarget;
@@ -3685,6 +3931,7 @@
         key,
         String(formData.get(key) || "").trim()
       ])),
+      gemReport: productFormGemReport?.getPayload(),
       metadata: buildProductMetadata(null, collectionName),
       createdAt: new Date().toISOString()
     };
@@ -3698,6 +3945,7 @@
       await loadAdminBackendData();
       form.reset();
       updateImageGroupSummary(form, null);
+      productFormGemReport?.reset();
       syncRingTypeFieldVisibility(form);
       renderAll();
       setMessage(

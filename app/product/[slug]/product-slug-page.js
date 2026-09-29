@@ -23,6 +23,7 @@ import {
 
 import Image from "next/image";
 import { isOptimizableImageSrc } from "../../lib/image-source";
+import { formatGemCarat } from "../../lib/gem-report";
 export const revalidate = 60;
 const getProductBySlug = cache((slug) => readPublicProductBySlug(slug));
 
@@ -33,6 +34,21 @@ const PRODUCT_SPEC_LABELS = [
   ["stoneType", "Stone"],
   ["stoneShape", "Shape"]
 ];
+
+// Every stone of the sample piece, from the gem report imported in the admin.
+// A column only shows when some line fills it; the carat is the line's total,
+// so the column adds up to the footer.
+const GEM_REPORT_COLUMNS = [
+  ["stone", "Stone"],
+  ["shape", "Shape"],
+  ["size", "Size"],
+  ["quantity", "Qty"],
+  ["caratTotal", "Carat"]
+];
+
+function readGemReportCell(stone, key) {
+  return key === "caratTotal" ? formatGemCarat(stone.caratTotal) : getMeaningfulText(stone[key]);
+}
 
 const COLLECTION_LABELS = {
   "engagement-ring": "Engagement Rings",
@@ -118,6 +134,9 @@ export default async function ProductPage({ params }) {
   const productSpecs = PRODUCT_SPEC_LABELS
     .map(([key, label]) => ({ key, label, value: getMeaningfulText(product.specs?.[key]) }))
     .filter((spec) => spec.value);
+  const gemStones = product.gemReport?.stones || [];
+  const gemColumns = GEM_REPORT_COLUMNS
+    .filter(([key]) => gemStones.some((stone) => readGemReportCell(stone, key)));
   const productDescription = getMeaningfulText(product.description);
   const imageSets = groupProductImagesByMetal(product.images, product.coverImageUrl);
   const metalOptions = imageSets.length > 1 ? imageSets.map(({ key, label }) => ({ key, label })) : [];
@@ -172,17 +191,59 @@ export default async function ProductPage({ params }) {
 
               {/* Every piece is made to order, so the specs describe the sample
                   and say plainly that each one can be changed. */}
-              {productSpecs.length > 0 && (
+              {(productSpecs.length > 0 || gemStones.length > 0) && (
                 <section className="product-spec-block" aria-labelledby="product-specs-heading">
                   <p className="product-kicker" id="product-specs-heading">Sample Piece Details</p>
-                  <dl className="product-specs" data-product-specs>
-                    {productSpecs.map((spec) => (
-                      <div key={spec.key}>
-                        <dt>{spec.label}</dt>
-                        <dd>{spec.value}</dd>
-                      </div>
-                    ))}
-                  </dl>
+                  {productSpecs.length > 0 && (
+                    <dl className="product-specs" data-product-specs>
+                      {productSpecs.map((spec) => (
+                        <div key={spec.key}>
+                          <dt>{spec.label}</dt>
+                          <dd>{spec.value}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  )}
+                  {gemStones.length > 0 && (
+                    <div className="product-gem-report" data-product-gem-report>
+                      <table className="product-gem-table">
+                        <caption>Stone details</caption>
+                        <thead>
+                          <tr>
+                            {gemColumns.map(([key, label]) => (
+                              <th key={key} scope="col" className={`is-${key}`}>{label}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {gemStones.map((stone, index) => (
+                            <tr key={index}>
+                              {gemColumns.map(([key]) => (
+                                <td key={key} className={`is-${key}`}>{readGemReportCell(stone, key)}</td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                        {gemStones.length > 1 && (
+                          <tfoot>
+                            <tr>
+                              {gemColumns.map(([key], columnIndex) => (
+                                <td key={key} className={`is-${key}`}>
+                                  {columnIndex === 0
+                                    ? "Total"
+                                    : key === "quantity"
+                                      ? product.gemReport.totalQuantity
+                                      : key === "caratTotal"
+                                        ? formatGemCarat(product.gemReport.totalCarat)
+                                        : ""}
+                                </td>
+                              ))}
+                            </tr>
+                          </tfoot>
+                        )}
+                      </table>
+                    </div>
+                  )}
                   <p className="product-note product-spec-note" data-product-spec-note>
                     These details describe the sample piece shown. Carat weight, stone, metal and size
                     can all be tailored to you &mdash; contact Maris to adjust the specification.

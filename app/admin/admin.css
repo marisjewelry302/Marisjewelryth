@@ -469,6 +469,104 @@ a {
   font-weight: 500;
 }
 
+/* Gem report preview: shared by the add form and the edit modal, so it
+   resets the form's uppercase label and full-width control styles, and the
+   820px minimum every admin data table carries. */
+.admin-gem-report {
+  display: grid;
+  gap: 10px;
+  align-self: start;
+  min-height: 44px;
+  padding: 12px 14px;
+  border: 1px solid rgba(0, 73, 58, 0.14);
+  background: rgba(255, 250, 246, 0.72);
+  color: var(--maris-muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+/* In the add form the stone table takes a whole row rather than sitting in
+   two columns beside the file picker. */
+.admin-form > .admin-gem-report {
+  grid-column: 1 / -1;
+}
+
+.admin-gem-report-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  align-items: baseline;
+}
+
+.admin-gem-report-summary strong {
+  color: var(--maris-teal);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.admin-gem-report-error {
+  color: var(--maris-red-text);
+  font-weight: 500;
+}
+
+.admin-form .admin-gem-report-mode,
+.admin-gem-report-mode {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  align-items: center;
+  color: var(--maris-ink);
+  font-size: 13px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.admin-form .admin-gem-report-mode select,
+.admin-gem-report-mode select {
+  width: auto;
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid rgba(0, 73, 58, 0.18);
+  background: var(--maris-white);
+  color: var(--maris-ink);
+  font: inherit;
+}
+
+.admin-gem-report-table {
+  overflow-x: auto;
+  border: 1px solid rgba(221, 164, 165, 0.34);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.admin-gem-report-table table {
+  min-width: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-gem-report-table :is(th, td) {
+  padding: 8px 10px;
+  white-space: nowrap;
+}
+
+.admin-gem-report-table td {
+  font-size: 13px;
+}
+
+.admin-gem-report-table .is-number {
+  text-align: right;
+}
+
+.admin-gem-report-table tfoot td {
+  border-bottom: 0;
+  color: var(--maris-teal);
+  font-weight: 500;
+}
+
+.admin-gem-report .admin-secondary {
+  justify-self: start;
+  min-height: 36px;
+}
+
 .admin-form-actions {
   display: flex;
   flex-wrap: wrap;

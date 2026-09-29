@@ -35,6 +35,7 @@
     "test:admin-clarity": "node scripts/test-admin-clarity.mjs",
     "test:admin-best-seller": "node scripts/test-admin-best-seller.mjs",
     "test:admin-product-list": "node scripts/test-admin-product-list.mjs",
+    "test:admin-gem-report": "node scripts/test-admin-gem-report.mjs",
     "test:database": "node scripts/test-supabase-admin-database.mjs",
     "test:database:live": "node scripts/test-supabase-admin-database-live.mjs",
     "test:sheet-images": "node scripts/test-sheet-image-checker.mjs",
