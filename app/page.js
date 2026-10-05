@@ -78,7 +78,7 @@ const shopCategoryItems = [
     alt: "Pear-shaped diamond earrings on blush pink satin"
   },
   {
-    label: "Pendants",
+    label: "Necklaces & Pendants",
     href: "/category/necklaces-pendants",
     image: "/assets/images/home/optimized/category-focus-pendants-pink-v2.webp",
     alt: "Pear-shaped diamond pendant on blush pink satin"
@@ -88,12 +88,6 @@ const shopCategoryItems = [
     href: "/category/bracelets",
     image: "/assets/images/home/optimized/category-focus-bracelets-pink-v2.webp",
     alt: "Diamond bracelet and rose gold bangle on blush pink satin"
-  },
-  {
-    label: "Necklaces",
-    href: "/category/necklaces-pendants",
-    image: "/assets/images/home/optimized/category-focus-necklaces-pink-v2.webp",
-    alt: "Rose gold diamond necklace on blush pink satin"
   }
 ];
 
@@ -171,7 +165,7 @@ export default async function HomePage() {
         <div className="shop-category-grid">
           {shopCategoryItems.map((item) => (
             <a className="shop-category-card" href={item.href} key={item.label}>
-              <Image src={item.image} alt={item.alt} width={480} height={360} sizes="(max-width: 700px) 50vw, 25vw" unoptimized={!isOptimizableImageSrc(item.image)} />
+              <Image src={item.image} alt={item.alt} width={480} height={480} sizes="(max-width: 700px) 50vw, 25vw" unoptimized={!isOptimizableImageSrc(item.image)} />
               <strong>{item.label}</strong>
             </a>
           ))}
