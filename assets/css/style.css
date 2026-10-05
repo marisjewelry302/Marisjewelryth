@@ -3761,3 +3761,18 @@ body:has(.site-header--home) .hero-utility-bar__divider,
 .home-main > section:not(.hero) {
   padding-block: var(--section-rhythm);
 }
+
+/* Hero copy sits over the brightest part of the ring photograph on phones. */
+@media (max-width: 640px) {
+  body .hero-content h1,
+  body .hero-content .hero-eyebrow {
+    text-shadow: 0 1px 3px rgba(0, 34, 28, 0.55), 0 2px 22px rgba(0, 34, 28, 0.45);
+  }
+
+  body.is-home-page .home-main .hero-content p.hero-tagline {
+    color: var(--maris-white);
+    font-size: 13.5px;
+    line-height: 1.6;
+    text-shadow: 0 1px 2px rgba(0, 34, 28, 0.8), 0 0 18px rgba(0, 34, 28, 0.6);
+  }
+}

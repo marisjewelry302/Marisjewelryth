@@ -1915,3 +1915,19 @@ body.is-home-header-compact .site-header--home .icons {
     filter: none;
   }
 }
+
+/* Phone header over the hero photograph. The light icons and the 22% green
+   menu button vanished against the pale ring photo, so they get a dark halo
+   and a solid button. */
+@media (max-width: 920px) {
+  body:not(.is-home-header-compact) .site-header--home .nav-search,
+  body:not(.is-home-header-compact) .site-header--home .icons a {
+    color: var(--maris-white);
+    filter: drop-shadow(0 1px 2px rgba(0, 34, 28, 0.9)) drop-shadow(0 0 8px rgba(0, 34, 28, 0.7));
+  }
+
+  body .site-header--home .mobile-menu-toggle {
+    border-color: rgba(255, 250, 246, 0.5);
+    background: rgba(0, 73, 58, 0.9);
+  }
+}
