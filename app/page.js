@@ -203,12 +203,6 @@ export default async function HomePage() {
       </section>
 
       <section className="atelier-reveal" aria-label="New arrival catalogue">
-        <div className="atelier-reveal__stage" aria-hidden="true">
-          <span className="atelier-reveal__line" />
-          <span className="atelier-reveal__stone" />
-          <span className="atelier-reveal__line" />
-        </div>
-
         <div className="atelier-reveal__panel">
           <div className="atelier-reveal__focus">
             <h2>{featuredProducts.length ? "New arrival" : "Maris catalogue preview"}</h2>

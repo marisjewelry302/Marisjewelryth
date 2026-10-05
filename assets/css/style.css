@@ -3841,3 +3841,21 @@ body:has(.site-header--home) .hero-utility-bar__divider,
     min-height: 44px;
   }
 }
+
+/* New arrival: no inset frame, no ornament and no card outlines. The product
+   photographs carry the section on their own. */
+.home-main .atelier-reveal::before,
+.home-main .atelier-product--fallback::before {
+  content: none;
+}
+
+.home-main .atelier-product,
+.home-main .atelier-product:hover,
+.home-main .atelier-product:focus-visible {
+  border: 0;
+  box-shadow: none;
+}
+
+.home-main .atelier-product .atelier-product__image-fallback {
+  border: 0;
+}
