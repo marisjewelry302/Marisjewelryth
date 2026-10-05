@@ -3760,3 +3760,84 @@ body:has(.site-header--home) .hero-utility-bar__divider,
     text-shadow: 0 1px 2px rgba(0, 34, 28, 0.8), 0 0 18px rgba(0, 34, 28, 0.6);
   }
 }
+
+/* Phone legibility and touch targets. Anything under 12px is hard to read on
+   a phone, and Apple and Google both ask for roughly 44px touch targets. The
+   html body prefix lifts these past the per-page sheets that load after this. */
+@media (max-width: 640px) {
+  html body .top-announcement,
+  html body .top-announcement a,
+  html body .hero-actions a,
+  html body .atelier-product__meta span,
+  html body .section-kicker,
+  html body .value-card h3,
+  html body .catalogue-toolbar label,
+  html body .catalogue-count,
+  html body .product-kicker,
+  html body .product-metal-selector legend,
+  html body .product-action,
+  html body .product-action span,
+  html body .also-like h2,
+  html body .also-card span,
+  html body .also-card small,
+  html body .journal-card-read-time,
+  html body .journal-fact-label,
+  html body dt,
+  html body .maris-footer__copyright,
+  html body .home-signup-popup__eyebrow,
+  html body .home-signup-popup__privacy,
+  html body .home-signup-popup__privacy a,
+  html body .home-signup-popup__remember span,
+  html body .home-signup-popup small,
+  html body .home-signup-popup strong,
+  html body .home-signup-popup__form button,
+  html body .home-signup-popup__decline {
+    font-size: 12px;
+  }
+
+  /* The header sheet stacks several body and scroll-state classes on these, so
+     the repeated classes are what actually outrank it. */
+  html body .navbar.navbar.navbar.navbar .nav a,
+  html body .navbar.navbar.navbar.navbar .nav .nav-dropdown-trigger,
+  html body .navbar.navbar.navbar.navbar .nav .nav-dropdown a,
+  html body .nav-mobile-actions.nav-mobile-actions.nav-mobile-actions a {
+    font-size: 13px;
+  }
+
+  html body.is-home-page .hero-actions .hero-primary,
+  html body.is-home-page .hero-actions .hero-secondary {
+    font-size: 12px;
+  }
+
+  /* Small visuals keep their size; an invisible halo grows the tap area. */
+  html body .product-media-dot,
+  html body .maris-footer__mobile-social a {
+    position: relative;
+  }
+
+  html body .product-media-dot::after,
+  html body .maris-footer__mobile-social a::after {
+    content: "";
+    position: absolute;
+    inset: -10px;
+  }
+
+  html body .maris-footer__links a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+
+  html body .maris-footer__email-box input,
+  html body .maris-footer__email-box button {
+    min-height: 44px;
+  }
+
+  html body .maris-footer__email-box button {
+    min-width: 44px;
+  }
+
+  html body .home-signup-popup__decline {
+    min-height: 44px;
+  }
+}
