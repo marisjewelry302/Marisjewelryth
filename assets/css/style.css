@@ -3859,3 +3859,55 @@ body:has(.site-header--home) .hero-utility-bar__divider,
 .home-main .atelier-product .atelier-product__image-fallback {
   border: 0;
 }
+
+/* New arrival cards: the photograph sits clean on top and the code and name
+   read underneath it, so there is no dark gradient to make the text legible. */
+.home-main .atelier-product:not(.atelier-product--fallback) {
+  align-content: start;
+  gap: 14px;
+  aspect-ratio: auto;
+  padding: 0;
+  background: transparent;
+  overflow: visible;
+}
+
+.home-main .atelier-product:not(.atelier-product--fallback)::after {
+  content: none;
+}
+
+.home-main .atelier-product:not(.atelier-product--fallback) img {
+  position: static;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  border-radius: 8px;
+  background: oklch(96.5% 0.014 76);
+  transform: none;
+}
+
+.home-main .atelier-product:not(.atelier-product--fallback):hover img,
+.home-main .atelier-product:not(.atelier-product--fallback):focus-visible img {
+  transform: scale(1.03);
+}
+
+.home-main .atelier-product:not(.atelier-product--fallback) .atelier-product__meta {
+  max-width: 100%;
+  gap: 6px;
+  color: var(--maris-ink);
+  text-align: center;
+}
+
+.home-main .atelier-product:not(.atelier-product--fallback) .atelier-product__meta > span {
+  color: var(--maris-gold-text);
+}
+
+.home-main .atelier-product:not(.atelier-product--fallback) .atelier-product__meta strong {
+  color: var(--maris-ink);
+  text-shadow: none;
+}
+
+@media (min-width: 641px) {
+  .home-main .atelier-product:not(.atelier-product--fallback) .atelier-product__meta > span {
+    font-size: 11px;
+  }
+}
