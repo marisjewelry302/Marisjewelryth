@@ -1,4 +1,4 @@
-﻿.category-page .page-header {
+.category-page .page-header {
   padding-bottom: 28px;
 }
 
@@ -44,5 +44,115 @@
     font-size: 13px;
     line-height: 1.65;
   }
+}
+
+/* ------------------------------------------------------------------ */
+/* Full-bleed catalogue grid (Cartier-style): 3:4 tiles, 4px gutters,  */
+/* rows of four alternating with rows of three, caption on the image.  */
+/* Scoped to .category-page so no other grid is affected. Selectors    */
+/* carry .category-page to outrank engagement-ring.css / migration.css. */
+/* ------------------------------------------------------------------ */
+.category-page {
+  /* Tile ground behind transparent cut-outs. `contain` never crops: a 3:4
+     image fills the frame exactly, while an older 1:1 cover sits whole in the
+     middle with the ground colour above and below until it is replaced. */
+  --card-fit: contain;
+  --card-ground: #f1ede8;
+  --card-gap: 4px;
+}
+
+.category-page .products {
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: var(--card-gap);
+  width: 100%;
+  margin: 0;
+  padding: 24px 0 0;
+  align-items: stretch;
+}
+
+/* Rows of four (span 3) then rows of three (span 4), repeating every 7 cards.
+   The sr-only <h2> is the first child, so count articles, not children. */
+.category-page .products > .product-card { grid-column: span 3; }
+.category-page .products > .product-card:nth-of-type(7n + 5),
+.category-page .products > .product-card:nth-of-type(7n + 6),
+.category-page .products > .product-card:nth-of-type(7n) { grid-column: span 4; }
+
+.category-page .product-card { position: relative; }
+
+.category-page .product-card-image-frame {
+  aspect-ratio: 3 / 4;
+  background: var(--card-ground);
+}
+
+.category-page .product-card img,
+.category-page .product-card img.product-card-image {
+  aspect-ratio: 3 / 4;
+  height: 100%;
+  padding: 0;
+  object-fit: var(--card-fit);
+  object-position: center;
+}
+
+/* Lifting the frame on hover would open a seam in a 4px grid. */
+.category-page .product-card:hover .product-card-image-frame { transform: none; }
+
+/* Caption sits on the tile, bottom left. */
+.category-page .product-info {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 0 56px 16px 18px;
+  pointer-events: none;
+}
+.category-page .product-info h3 {
+  margin: 0;
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.category-page .product-info p:last-child {
+  margin-top: 4px;
+  font-size: 12px;
+}
+
+/* Price appears on hover where hover exists; always shown on touch. */
+@media (hover: hover) and (pointer: fine) {
+  .category-page .product-info p:last-child {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  .category-page .product-card:hover .product-info p:last-child,
+  .category-page .product-card:focus-within .product-info p:last-child {
+    opacity: 1;
+  }
+}
+
+/* Wishlist heart on the image, top right, above the link. */
+.category-page .wishlist-toggle {
+  top: 6px;
+  right: 6px;
+  z-index: 2;
+}
+
+@media (max-width: 900px) {
+  .category-page .products > .product-card,
+  .category-page .products > .product-card:nth-of-type(7n + 5),
+  .category-page .products > .product-card:nth-of-type(7n + 6),
+  .category-page .products > .product-card:nth-of-type(7n) { grid-column: span 4; }
+}
+
+@media (max-width: 700px) {
+  .category-page .products {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding-top: 16px;
+  }
+  .category-page .products > .product-card,
+  .category-page .products > .product-card:nth-of-type(7n + 5),
+  .category-page .products > .product-card:nth-of-type(7n + 6),
+  .category-page .products > .product-card:nth-of-type(7n) { grid-column: span 1; }
+  .category-page .product-info { padding: 0 40px 10px 10px; }
+  .category-page .product-info h3 { font-size: 11px; letter-spacing: 0.08em; }
+  .category-page .product-info p:last-child { display: none; }
 }
 
