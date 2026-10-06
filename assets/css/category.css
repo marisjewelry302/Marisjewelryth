@@ -48,7 +48,7 @@
 
 /* ------------------------------------------------------------------ */
 /* Full-bleed catalogue grid (Cartier-style): 3:4 tiles, 4px gutters,  */
-/* rows of four alternating with rows of three, caption on the image.  */
+/* four per row, wider gap between rows, caption on the image.         */
 /* Scoped to .category-page so no other grid is affected. Selectors    */
 /* carry .category-page to outrank engagement-ring.css / migration.css. */
 /* ------------------------------------------------------------------ */
@@ -59,23 +59,18 @@
   --card-fit: contain;
   --card-ground: #f1ede8;
   --card-gap: 4px;
+  --card-row-gap: 28px;
 }
 
 .category-page .products {
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  gap: var(--card-gap);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  column-gap: var(--card-gap);
+  row-gap: var(--card-row-gap);
   width: 100%;
   margin: 0;
   padding: 24px 0 0;
   align-items: stretch;
 }
-
-/* Rows of four (span 3) then rows of three (span 4), repeating every 7 cards.
-   The sr-only <h2> is the first child, so count articles, not children. */
-.category-page .products > .product-card { grid-column: span 3; }
-.category-page .products > .product-card:nth-of-type(7n + 5),
-.category-page .products > .product-card:nth-of-type(7n + 6),
-.category-page .products > .product-card:nth-of-type(7n) { grid-column: span 4; }
 
 .category-page .product-card { position: relative; }
 
@@ -136,21 +131,15 @@
 }
 
 @media (max-width: 900px) {
-  .category-page .products > .product-card,
-  .category-page .products > .product-card:nth-of-type(7n + 5),
-  .category-page .products > .product-card:nth-of-type(7n + 6),
-  .category-page .products > .product-card:nth-of-type(7n) { grid-column: span 4; }
+  .category-page .products { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
 @media (max-width: 700px) {
   .category-page .products {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     padding-top: 16px;
+    row-gap: 16px;
   }
-  .category-page .products > .product-card,
-  .category-page .products > .product-card:nth-of-type(7n + 5),
-  .category-page .products > .product-card:nth-of-type(7n + 6),
-  .category-page .products > .product-card:nth-of-type(7n) { grid-column: span 1; }
   .category-page .product-info { padding: 0 40px 10px 10px; }
   .category-page .product-info h3 { font-size: 11px; letter-spacing: 0.08em; }
   .category-page .product-info p:last-child { display: none; }
