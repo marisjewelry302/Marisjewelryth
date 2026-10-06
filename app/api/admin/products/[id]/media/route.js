@@ -38,7 +38,7 @@ const MEDIA_FIELDS = ["cover", "hover", "video", "poster"];
 
 // Points the product at uploaded (or gallery) media, or clears it. Body keys:
 // cover / hover: { path } | { imageId } | null, video / poster: { path } | null,
-// videoPosition: 0 | 1. Replaced files are removed once the row is saved.
+// videoPosition: the video's slide number from 0, 99 for last. Replaced files are removed once the row is saved.
 export async function PATCH(request, { params }) {
   const authorization = await requireAdminPermission(request, ADMIN_PERMISSIONS.CATALOGUE_WRITE);
   if (!authorization.ok) return authorization.response;

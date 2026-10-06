@@ -1,16 +1,30 @@
 // Product media shared by the catalogue reader and the product page gallery.
 
-// products.video_position: where the turntable video sits in the gallery.
+// products.video_position: which slide of the gallery the turntable video is,
+// counting from 0. 0 is first and 1 (the default) is right after the cover. A
+// number past the last photo puts it last, so VIDEO_POSITION_LAST means "at the
+// end, however many photos a metal's set has".
 export const VIDEO_POSITION_FIRST = 0;
 export const VIDEO_POSITION_AFTER_COVER = 1;
+export const VIDEO_POSITION_LAST = 99;
 
 export function normalizeVideoPosition(value) {
-  return Number(value) === VIDEO_POSITION_FIRST ? VIDEO_POSITION_FIRST : VIDEO_POSITION_AFTER_COVER;
+  if (value === null || value === undefined || value === "") {
+    return VIDEO_POSITION_AFTER_COVER;
+  }
+
+  const position = Number(value);
+
+  if (!Number.isInteger(position) || position < 0) {
+    return VIDEO_POSITION_AFTER_COVER;
+  }
+
+  return Math.min(position, VIDEO_POSITION_LAST);
 }
 
 // The gallery's slides, in the order both layouts show them: the cover, the
-// turntable video (after the cover unless admin moved it first), then every
-// gallery view in sort order. A gallery image that is the cover itself is not
+// turntable video (after the cover unless admin moved it to another slot), then
+// every gallery view in sort order. A gallery image that is the cover itself is not
 // shown twice, and a piece with no video has no video slide at all.
 //
 // `images` are { src, alt } in gallery order; `video` is { src, poster,
@@ -35,7 +49,7 @@ export function buildProductMediaSlides({ images = [], coverImageUrl = "", video
   const videoSrc = String(video?.src || "").trim();
 
   if (videoSrc) {
-    const at = normalizeVideoPosition(video.position) === VIDEO_POSITION_FIRST || !slides.length ? 0 : 1;
+    const at = Math.min(normalizeVideoPosition(video.position), slides.length);
 
     slides.splice(at, 0, {
       type: "video",

@@ -119,6 +119,8 @@
   const POSTER_MAX_EDGE = 1080;
   const VIDEO_POSITION_FIRST = 0;
   const VIDEO_POSITION_AFTER_COVER = 1;
+  // "Last, whatever the length": the storefront clamps it to each metal's set.
+  const VIDEO_POSITION_LAST = 99;
   const BEST_SELLER_SLOT_COUNT = 7;
   const PRODUCT_LIST_PAGE_SIZE = 5;
   const adminCache = {
@@ -1146,8 +1148,16 @@
       hoverImageUrl: product?.hoverImageUrl || "",
       videoUrl,
       videoPosterUrl: videoUrl ? product?.videoPosterUrl || "" : "",
-      videoPosition: Number(product?.videoPosition) === VIDEO_POSITION_FIRST ? VIDEO_POSITION_FIRST : VIDEO_POSITION_AFTER_COVER
+      videoPosition: normalizeModalVideoPosition(product?.videoPosition)
     };
+  }
+
+  function normalizeModalVideoPosition(value) {
+    const position = value === null || value === undefined || value === "" ? NaN : Number(value);
+
+    return Number.isInteger(position) && position >= 0
+      ? Math.min(position, VIDEO_POSITION_LAST)
+      : VIDEO_POSITION_AFTER_COVER;
   }
 
   // ── MEDIA UPLOADS ───────────────────────────────────────────────────────────
@@ -1526,12 +1536,95 @@
       ${pending}
       <progress id="modal-video-progress" max="100" value="0" hidden></progress>
       <p id="modal-video-progress-text" class="modal-slot-note" hidden></p>
-      <fieldset class="modal-video-position">
-        <legend class="modal-cover-label">Position in the product page gallery</legend>
-        <label><input type="radio" name="modal-video-position" value="${VIDEO_POSITION_FIRST}" ${modalMedia.videoPosition === VIDEO_POSITION_FIRST ? "checked" : ""}> First slot</label>
-        <label><input type="radio" name="modal-video-position" value="${VIDEO_POSITION_AFTER_COVER}" ${modalMedia.videoPosition !== VIDEO_POSITION_FIRST ? "checked" : ""}> After the cover (default)</label>
-      </fieldset>
+      ${renderModalVideoSlots()}
     `;
+  }
+
+  // The photos of one metal's set in the order the product page shows them: the
+  // views sorted as groupProductImagesByMetal does, with the card cover leading
+  // the set it was shot in. The video's slot counts along this list, and every
+  // other metal follows the same slot.
+  function getModalVideoSlotPhotos() {
+    const tagged = modalGalleryImages.map((image) => ({ ...image, ...readImageTag(image.altText) }));
+    const shared = tagged.filter((image) => !image.metal);
+    const viewOrder = (image) => {
+      const index = IMAGE_VIEW_LABELS.findIndex(([label]) => label === image.view);
+      return index >= 0 ? index : image.metal ? 0.5 : IMAGE_VIEW_LABELS.length;
+    };
+    const sets = IMAGE_METAL_LABELS
+      .map((metal) => ({
+        metal,
+        images: [...tagged.filter((image) => image.metal === metal), ...shared]
+          .sort((left, right) => viewOrder(left) - viewOrder(right) || left.sortOrder - right.sortOrder)
+      }))
+      .filter((set) => set.images.length > shared.length);
+    const coverUrl = modalMedia.coverImageUrl;
+    const coverImage = tagged.find((image) => coverUrl && image.imageUrl === coverUrl);
+    const lead = sets.length < 2
+      ? { metal: "", images: tagged }
+      : sets.find((set) => set.metal === (coverImage?.metal || tagged[0]?.metal)) || sets[0];
+    const coverLeads = coverUrl && (!coverImage?.metal || coverImage.metal === lead.metal);
+    const photos = lead.images.map((image) => image.imageUrl);
+
+    if (!coverLeads) return photos;
+
+    return [coverUrl, ...photos.filter((url) => url !== coverUrl)];
+  }
+
+  // Every slide of the lead set with the video dropped into its slot. Click a
+  // slide, drag the video onto one, or use Earlier / Later to move it.
+  function renderModalVideoSlots() {
+    if (!modalMedia.videoUrl) {
+      return "";
+    }
+
+    const photos = getModalVideoSlotPhotos();
+    const videoIndex = Math.min(modalMedia.videoPosition, photos.length);
+    const slots = [...photos];
+    slots.splice(videoIndex, 0, "");
+    const lastIndex = slots.length - 1;
+    const tiles = slots
+      .map((url, index) => {
+        if (index === videoIndex) {
+          return `
+            <div class="modal-slot-tile is-video" draggable="true" data-video-tile title="Drag onto another slide to move the video there">
+              ${modalMedia.videoPosterUrl ? `<img src="${escapeHtml(modalMedia.videoPosterUrl)}" alt="">` : ""}
+              <span class="modal-slot-badge">${index + 1} · Video</span>
+            </div>
+          `;
+        }
+
+        return `
+          <button class="modal-slot-tile" type="button" data-video-slot="${index}" title="Move the video here">
+            <img src="${escapeHtml(url)}" alt="">
+            <span class="modal-slot-badge">${index + 1}</span>
+          </button>
+        `;
+      })
+      .join("");
+
+    return `
+      <div class="modal-video-position" id="modal-video-slots">
+        <p class="modal-cover-label">Position in the product page gallery · slide ${videoIndex + 1} of ${slots.length}${videoIndex === lastIndex ? " (last)" : ""}</p>
+        <div class="modal-slot-strip">${tiles}</div>
+        <div class="modal-chip-row">
+          <button class="modal-chip-btn" type="button" data-video-nudge="-1" ${videoIndex === 0 ? "disabled" : ""}>&larr; Earlier</button>
+          <button class="modal-chip-btn" type="button" data-video-nudge="1" ${videoIndex === lastIndex ? "disabled" : ""}>Later &rarr;</button>
+        </div>
+        <p class="modal-slot-note">Shown for one metal's photos. Each metal on the product page uses the same slide number.</p>
+      </div>
+    `;
+  }
+
+  // Slide index in the strip -> the number saved. The last slide is saved as
+  // "last" so a metal with more photos still ends on the video.
+  function saveModalVideoSlot(slotIndex) {
+    const slotCount = getModalVideoSlotPhotos().length + 1;
+    const videoPosition = slotIndex >= slotCount - 1 ? VIDEO_POSITION_LAST : Math.max(0, slotIndex);
+
+    if (videoPosition === modalMedia.videoPosition) return;
+
+    commitModalMedia({ videoPosition }, "Saving the video position...", "Video position saved.");
   }
 
   async function prepareModalVideo(file) {
@@ -1625,7 +1718,50 @@
     }
   }
 
+  function handleModalVideoDragStart(event) {
+    if (!event.target.closest("[data-video-tile]")) return;
+
+    event.dataTransfer?.setData("text/plain", "video");
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = "move";
+    }
+  }
+
+  function handleModalVideoDragOver(event) {
+    const slot = event.target.closest("[data-video-slot]");
+    if (!slot) return;
+
+    event.preventDefault();
+    slot.classList.add("drag-over");
+  }
+
+  function handleModalVideoDragLeave(event) {
+    event.target.closest("[data-video-slot]")?.classList.remove("drag-over");
+  }
+
+  function handleModalVideoDrop(event) {
+    const slot = event.target.closest("[data-video-slot]");
+    if (!slot) return;
+
+    event.preventDefault();
+    slot.classList.remove("drag-over");
+    saveModalVideoSlot(Number(slot.dataset.videoSlot));
+  }
+
   function handleModalVideoClick(event) {
+    const slotButton = event.target.closest("[data-video-slot]");
+    if (slotButton) {
+      saveModalVideoSlot(Number(slotButton.dataset.videoSlot));
+      return;
+    }
+
+    const nudgeButton = event.target.closest("[data-video-nudge]");
+    if (nudgeButton) {
+      const current = Math.min(modalMedia.videoPosition, getModalVideoSlotPhotos().length);
+      saveModalVideoSlot(current + Number(nudgeButton.dataset.videoNudge));
+      return;
+    }
+
     if (event.target.closest("[data-video-upload]")) {
       uploadModalVideo();
       return;
@@ -1672,11 +1808,6 @@
     if (input.matches("[data-video-poster-upload]") && input.files?.[0]) {
       uploadModalVideoPoster(input.files[0]);
       return;
-    }
-
-    if (input.name === "modal-video-position") {
-      const videoPosition = Number(input.value) === VIDEO_POSITION_FIRST ? VIDEO_POSITION_FIRST : VIDEO_POSITION_AFTER_COVER;
-      commitModalMedia({ videoPosition }, "Saving the video position...", "Video position saved.");
     }
   }
 
@@ -2606,17 +2737,50 @@
         accent-color: #00493a;
       }
       .modal-video-position {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px 18px;
-        margin: 10px 0 0;
-        padding: 0;
-        border: 0;
+        margin: 12px 0 0;
         font-size: 13px;
         color: #102923;
       }
-      .modal-video-position legend { padding: 0; width: 100%; }
-      .modal-video-position label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+      .modal-slot-strip {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+        gap: 8px;
+        margin: 8px 0;
+      }
+      .modal-slot-tile {
+        position: relative;
+        aspect-ratio: 1;
+        padding: 0;
+        border: 2px solid transparent;
+        background: #ececec;
+        cursor: pointer;
+      }
+      .modal-slot-tile.is-video {
+        border-color: #00493a;
+        background: #00493a;
+        cursor: grab;
+      }
+      .modal-slot-tile.drag-over { border-color: #b9933a; }
+      .modal-slot-tile img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        pointer-events: none;
+      }
+      .modal-slot-tile.is-video img { opacity: 0.55; }
+      .modal-slot-badge {
+        position: absolute;
+        top: 4px;
+        left: 4px;
+        background: #b9933a;
+        color: #fff;
+        font-size: 9px;
+        letter-spacing: 0.1em;
+        padding: 2px 5px;
+        text-transform: uppercase;
+      }
+      .modal-slot-tile.is-video .modal-slot-badge { background: #fff; color: #00493a; }
       @media (max-width: 640px) {
         .modal-card-layout { grid-template-columns: 1fr; }
         .modal-card-preview { max-width: 180px; }
@@ -2787,7 +2951,7 @@
         <hr class="modal-divider">
         <span class="modal-kicker">3 · Product page gallery</span>
         <p id="modal-gallery-count" class="modal-gallery-count">No gallery images yet</p>
-        <p class="modal-gallery-hint" style="margin-top:6px">These views appear on the product page, after the cover and the video, one set per metal · Set each image's metal and view under it · Drag to reorder · ✕ deletes</p>
+        <p class="modal-gallery-hint" style="margin-top:6px">These views appear on the product page, one set per metal, with the video in the slot chosen in step 2 · Set each image's metal and view under it · Drag to reorder · ✕ deletes</p>
         <div id="modal-gallery-grid"></div>
         <label class="modal-label" style="margin-top:4px">
           Add gallery images (uploaded when you press Save Changes)
@@ -2847,6 +3011,10 @@
     const videoBlock = document.getElementById("modal-video-block");
     videoBlock.addEventListener("click", handleModalVideoClick);
     videoBlock.addEventListener("change", handleModalVideoChange);
+    videoBlock.addEventListener("dragstart", handleModalVideoDragStart);
+    videoBlock.addEventListener("dragover", handleModalVideoDragOver);
+    videoBlock.addEventListener("dragleave", handleModalVideoDragLeave);
+    videoBlock.addEventListener("drop", handleModalVideoDrop);
     const galleryGrid = document.getElementById("modal-gallery-grid");
     galleryGrid.addEventListener("click", handleModalGalleryClick);
     galleryGrid.addEventListener("change", handleModalGalleryTagChange);

@@ -10,6 +10,7 @@ import {
 import {
   VIDEO_POSITION_AFTER_COVER,
   VIDEO_POSITION_FIRST,
+  VIDEO_POSITION_LAST,
   buildProductMediaSlides,
   normalizeVideoPosition
 } from "../app/lib/product-media.js";
@@ -26,7 +27,12 @@ const shape = (slides) => slides.map((slide) => (slide.type === "video" ? "video
 assert.equal(normalizeVideoPosition(0), VIDEO_POSITION_FIRST);
 assert.equal(normalizeVideoPosition("0"), VIDEO_POSITION_FIRST);
 assert.equal(normalizeVideoPosition(undefined), VIDEO_POSITION_AFTER_COVER);
-assert.equal(normalizeVideoPosition(7), VIDEO_POSITION_AFTER_COVER);
+assert.equal(normalizeVideoPosition(null), VIDEO_POSITION_AFTER_COVER);
+assert.equal(normalizeVideoPosition(-1), VIDEO_POSITION_AFTER_COVER);
+assert.equal(normalizeVideoPosition("abc"), VIDEO_POSITION_AFTER_COVER);
+assert.equal(normalizeVideoPosition(2.5), VIDEO_POSITION_AFTER_COVER);
+assert.equal(normalizeVideoPosition(7), 7);
+assert.equal(normalizeVideoPosition(500), VIDEO_POSITION_LAST);
 
 // No video: the gallery as it was, with no gap where a video would sit.
 assert.deepEqual(shape(buildProductMediaSlides({ images: gallery })), ["a.jpg", "b.jpg", "c.jpg"]);
@@ -49,6 +55,14 @@ assert.deepEqual(
 assert.deepEqual(
   shape(buildProductMediaSlides({ images: gallery, video: { ...video, position: VIDEO_POSITION_FIRST } })),
   ["video", "a.jpg", "b.jpg", "c.jpg"]
+);
+assert.deepEqual(
+  shape(buildProductMediaSlides({ images: gallery, video: { ...video, position: 2 } })),
+  ["a.jpg", "b.jpg", "video", "c.jpg"]
+);
+assert.deepEqual(
+  shape(buildProductMediaSlides({ images: gallery, video: { ...video, position: VIDEO_POSITION_LAST } })),
+  ["a.jpg", "b.jpg", "c.jpg", "video"]
 );
 assert.deepEqual(shape(buildProductMediaSlides({ images: [], video })), ["video"]);
 assert.deepEqual(shape(buildProductMediaSlides({ images: gallery, video: { src: "  " } })), ["a.jpg", "b.jpg", "c.jpg"]);
