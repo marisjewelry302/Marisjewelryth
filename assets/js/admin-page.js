@@ -3884,6 +3884,11 @@
     event.preventDefault();
     const form = event.currentTarget;
 
+    // Image uploads make this slow; ignore re-submits so the same SKU is not inserted twice.
+    if (form.dataset.submitting === "true") {
+      return;
+    }
+
     if (!ensureAdminDataReady()) {
       return;
     }
@@ -3936,6 +3941,12 @@
       createdAt: new Date().toISOString()
     };
 
+    const submitButton = form.querySelector("button[type='submit']");
+    form.dataset.submitting = "true";
+    if (submitButton) {
+      submitButton.disabled = true;
+    }
+
     try {
       const payload = await fetchAdminApi("/products", {
         method: "POST",
@@ -3955,6 +3966,11 @@
       );
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Unable to save product and images in Supabase.", true);
+    } finally {
+      delete form.dataset.submitting;
+      if (submitButton) {
+        submitButton.disabled = false;
+      }
     }
   });
 
