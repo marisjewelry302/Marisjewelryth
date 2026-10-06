@@ -47,13 +47,13 @@
 }
 
 /* ------------------------------------------------------------------ */
-/* Full-bleed catalogue grid (Cartier-style): 3:4 tiles, 4px gutters,  */
+/* Full-bleed catalogue grid (Cartier-style): 4:5 tiles, 4px gutters,  */
 /* four per row, wider gap between rows, caption on the image.         */
 /* Scoped to .category-page so no other grid is affected. Selectors    */
 /* carry .category-page to outrank engagement-ring.css / migration.css. */
 /* ------------------------------------------------------------------ */
 .category-page {
-  /* Tile ground behind transparent cut-outs. `contain` never crops: a 3:4
+  /* Tile ground behind transparent cut-outs. `contain` never crops: a 4:5
      image fills the frame exactly, while an older 1:1 cover sits whole in the
      middle with the ground colour above and below until it is replaced. */
   --card-fit: contain;
@@ -75,13 +75,13 @@
 .category-page .product-card { position: relative; }
 
 .category-page .product-card-image-frame {
-  aspect-ratio: 3 / 4;
+  aspect-ratio: 4 / 5;
   background: var(--card-ground);
 }
 
 .category-page .product-card img,
 .category-page .product-card img.product-card-image {
-  aspect-ratio: 3 / 4;
+  aspect-ratio: 4 / 5;
   height: 100%;
   padding: 0;
   object-fit: var(--card-fit);
