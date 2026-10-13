@@ -21,7 +21,7 @@ assert.match(
 );
 assert.match(pageSource, /className="shop-category-grid"/);
 
-const expectedLabels = ["Rings", "Earrings", "Pendants", "Bracelets & Bangles", "Necklaces"];
+const expectedLabels = ["Rings", "Earrings", "Necklaces & Pendants", "Bracelets & Bangles"];
 for (const label of expectedLabels) {
   assert.match(pageSource, new RegExp(`label:\\s*"${label}"`), `Missing category label: ${label}`);
 }
@@ -31,10 +31,10 @@ const categoryItemsMatch = pageSource.match(/const shopCategoryItems = \[([\s\S]
 assert.ok(categoryItemsMatch, "Homepage should keep category items in a local array.");
 const categoryItemsSource = categoryItemsMatch[1];
 const itemCount = (categoryItemsSource.match(/\{\s*label:/g) || []).length;
-assert.equal(itemCount, 5, "Shop by Category should render five category items.");
+assert.equal(itemCount, 4, "Shop by Category should render four category items.");
 
 const imagePaths = [...categoryItemsSource.matchAll(/image:\s*"([^"]+)"/g)].map((match) => match[1]);
-assert.equal(imagePaths.length, 5, "Each category item should define an image.");
+assert.equal(imagePaths.length, 4, "Each category item should define an image.");
 
 for (const imagePath of imagePaths) {
   const localPath = imagePath.replace(/^\/+/, "");
@@ -43,7 +43,7 @@ for (const imagePath of imagePaths) {
 
 assert.match(styleSource, /\.shop-category-section\s*\{/);
 assert.match(styleSource, /\.shop-category-grid\s*\{/);
-assert.match(styleSource, /grid-template-columns:\s*repeat\(5,\s*minmax\(0,\s*1fr\)\)/);
+assert.match(styleSource, /grid-template-columns:\s*repeat\(4,\s*minmax\(0,\s*1fr\)\)/);
 assert.match(styleSource, /@media \(max-width:\s*980px\)[\s\S]*\.shop-category-grid/);
 assert.match(styleSource, /@media \(max-width:\s*640px\)[\s\S]*\.shop-category-grid/);
 
