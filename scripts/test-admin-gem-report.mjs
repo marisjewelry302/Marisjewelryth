@@ -121,6 +121,25 @@ assert.equal(parser.formatCarat(0.0035), "0.0035");
 assert.equal(parser.formatCarat(0.966), formatGemCarat(0.966), "Admin and product page format carats alike");
 assert.equal(parser.formatCarat(0.0035), formatGemCarat(0.0035));
 
+// A MatrixGold "Gem Report" CSV: the size column is "W x L x D" and the shape
+// repeats the stone. Two round sizes must stay two lines, not merge into one.
+const matrixGold = parse([
+  "Material,Shape-Cut,W x L x D,Count,Carats per,Carats",
+  "Diamond,Round-Diamond,2.5x2.5x1.56,9,0.059,0.531",
+  "Diamond,Marquise-Diamond,4.5x2.5x1.62,8,0.105,0.844",
+  "Diamond,Round-Diamond,6.5x6.5x4.03,1,1.025,1.025"
+].join("\r\n"));
+assert.equal(matrixGold.ok, true);
+assert.equal(matrixGold.columns.size, "W x L x D");
+assert.deepEqual(matrixGold.report.stones, [
+  { stone: "Diamond", shape: "Round", size: "6.5 mm", quantity: 1, caratEach: 1.025, caratTotal: 1.025 },
+  { stone: "Diamond", shape: "Marquise", size: "4.5 × 2.5 mm", quantity: 8, caratEach: 0.105, caratTotal: 0.844 },
+  { stone: "Diamond", shape: "Round", size: "2.5 mm", quantity: 9, caratEach: 0.059, caratTotal: 0.531 }
+]);
+assert.equal(matrixGold.report.totalQuantity, 18);
+assert.equal(matrixGold.report.totalCarat, 2.4);
+assert.deepEqual(matrixGold.specs, { caratWeight: "2.40 ct total", stoneType: "Diamond", stoneShape: "Round" });
+
 // The server trusts none of the request: text is capped, bad numbers dropped,
 // empty lines removed and the totals summed again.
 const normalized = normalizeGemReport({

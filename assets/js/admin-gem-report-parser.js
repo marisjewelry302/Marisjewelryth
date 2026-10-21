@@ -43,7 +43,8 @@
       role: "quantity",
       patterns: [/\b(qty|quantity|count|pcs|pieces?|nos|no of|number of)\b/, /จำนวน|เม็ด/]
     },
-    { role: "size", patterns: [/\b(size|sizes|dimensions?|diameter|dia)\b/, /ขนาด/] },
+    // MatrixGold labels its size column "W x L x D" with no word for size.
+    { role: "size", patterns: [/\b(size|sizes|dimensions?|dims?|diameter|dia)\b/, /\b[wld]\s*x\s*[wld]\b/, /\bmm\b/, /ขนาด/] },
     { role: "width", patterns: [/\bwidth\b/, /กว้าง/] },
     { role: "length", patterns: [/\blength\b/, /ยาว/] },
     { role: "shape", patterns: [/\bshape\b/, /\bcut\b/, /รูปทรง|ทรง|เจียระไน/] },
@@ -85,6 +86,18 @@
     }
 
     return text.toLowerCase().replace(/(^|[\s(/-])([a-z])/g, (match, lead, letter) => lead + letter.toUpperCase());
+  }
+
+  // MatrixGold writes the shape as "Round-Diamond" beside a "Diamond" column;
+  // the stone column already says it, so the shape reads "Round".
+  function withoutStoneName(shape, stone) {
+    if (!shape || !stone) {
+      return shape;
+    }
+
+    const escaped = stone.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const trimmed = shape.replace(new RegExp(`[\\s_-]+${escaped}$`, "i"), "").trim();
+    return trimmed || shape;
   }
 
   function round4(value) {
@@ -133,6 +146,8 @@
 
   // "1.3", "1.30mm" and "6.5x4.5" all become "1.3 mm" / "6.5 × 4.5 mm"; any
   // other wording ("Pear 7x5", "1.3-1.5") is kept as the report wrote it.
+  // A CAD "W x L x D" cell keeps only its face: the depth is dropped, and a
+  // face with equal sides ("2.5x2.5x1.56", a round) is one diameter, "2.5 mm".
   function formatSize(value) {
     const text = cleanText(value);
 
@@ -141,11 +156,19 @@
     }
 
     if (/^[\d.,\s]+(?:[x×*]\s*[\d.,\s]+)*(?:mm)?$/i.test(text)) {
-      const parts = text
+      let parts = text
         .replace(/mm$/i, "")
         .split(/[x×*]/i)
         .map((part) => part.trim().replace(",", "."))
         .filter(Boolean);
+
+      if (parts.length >= 3) {
+        parts = parts.slice(0, 2);
+      }
+
+      if (parts.length === 2 && Number(parts[0]) === Number(parts[1])) {
+        parts = [parts[0]];
+      }
 
       return parts.length ? `${parts.join(" × ")} mm` : text;
     }
@@ -414,7 +437,7 @@
       }
 
       const stone = tidyLabel(cell(cells, "stone"));
-      const shape = tidyLabel(cell(cells, "shape"));
+      const shape = withoutStoneName(tidyLabel(cell(cells, "shape")), stone);
       const size = columns.size !== undefined
         ? formatSize(cell(cells, "size"))
         : sizeFromDimensions(cell(cells, "width"), cell(cells, "length"));
