@@ -56,7 +56,15 @@ export default function AccountClient() {
   // ─── Load session on mount ──────────────────────────────────────────────
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const email = normalizeEmail(params.get("email"));
+    // The popup hands the email over through sessionStorage; ?email= still works for older links.
+    let handoffEmail = "";
+    try {
+      handoffEmail = window.sessionStorage.getItem("marisSignupPopupEmail") || "";
+      window.sessionStorage.removeItem("marisSignupPopupEmail");
+    } catch {
+      // sessionStorage unavailable: fall back to the query string only.
+    }
+    const email = normalizeEmail(params.get("email") || handoffEmail);
     const source = params.get("source");
     const requestedMode = params.get("mode");
     const nextPath = getSafeNextPath();
