@@ -4,39 +4,16 @@ import { useEffect, useId, useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
-const CLOSED_KEY = "marisSignupPopupClosedUntil";
-const DISMISSED_SESSION_KEY = "marisSignupPopupDismissed";
-// The email travels to /account through sessionStorage so it never lands in the URL.
-const EMAIL_HANDOFF_KEY = "marisSignupPopupEmail";
-const ONE_DAY_MS = 24 * 60 * 60 * 1000;
-const THIRTY_DAYS_MS = 30 * ONE_DAY_MS;
+import {
+  ONE_DAY_MS,
+  THIRTY_DAYS_MS,
+  dismissPopupForSession,
+  shouldSuppressPopup,
+  stashSignupEmail,
+  suppressPopup
+} from "./lib/signup-popup-storage";
+
 const POPUP_DELAY_MS = 3000;
-
-// Storage can throw (Safari private mode, blocked site data), so every access is guarded.
-function readStorage(area, key) {
-  try {
-    return window[area].getItem(key);
-  } catch {
-    return null;
-  }
-}
-
-function writeStorage(area, key, value) {
-  try {
-    window[area].setItem(key, value);
-  } catch {
-    // Storage unavailable: the popup simply may show again on the next visit.
-  }
-}
-
-function suppressPopup(durationMs) {
-  writeStorage("localStorage", CLOSED_KEY, String(Date.now() + durationMs));
-}
-
-function shouldSuppressPopup() {
-  if (Number(readStorage("localStorage", CLOSED_KEY) || 0) > Date.now()) return true;
-  return readStorage("sessionStorage", DISMISSED_SESSION_KEY) === "1";
-}
 
 function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -107,8 +84,7 @@ export default function HomeSignupPopup() {
     if (hideTodayRef.current) {
       suppressPopup(ONE_DAY_MS);
     } else {
-      // Any dismissal keeps the popup away for the rest of this browser session.
-      writeStorage("sessionStorage", DISMISSED_SESSION_KEY, "1");
+      dismissPopupForSession();
     }
 
     setIsOpen(false);
@@ -124,7 +100,7 @@ export default function HomeSignupPopup() {
     }
 
     suppressPopup(hideTodayRef.current ? ONE_DAY_MS : THIRTY_DAYS_MS);
-    writeStorage("sessionStorage", EMAIL_HANDOFF_KEY, normalizedEmail);
+    stashSignupEmail(normalizedEmail);
 
     router.push("/account?mode=signup");
   }

@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
-
-const AUTOPLAY_DELAY_MS = 4800;
+import { HERO_AUTOPLAY_DELAY_MS, canAutoplayHero } from "./lib/hero-autoplay";
 
 export default function HeroSlider({ slides }) {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -32,9 +31,12 @@ export default function HeroSlider({ slides }) {
     };
   }, []);
 
-  // Moving content must be pausable (WCAG 2.2.2), so autoplay stops for the pause
-  // button, reduced-motion visitors, and hidden tabs.
-  const canAutoplay = slides.length > 1 && !isPaused && !isPageHidden && !prefersReducedMotion;
+  const canAutoplay = canAutoplayHero({
+    slideCount: slides.length,
+    isPaused,
+    isPageHidden,
+    prefersReducedMotion
+  });
 
   useEffect(() => {
     if (!canAutoplay) return undefined;
@@ -42,7 +44,7 @@ export default function HeroSlider({ slides }) {
     // Keyed on activeIndex so a manual change restarts the full delay.
     timerRef.current = setInterval(() => {
       setActiveIndex((current) => (current + 1) % slides.length);
-    }, AUTOPLAY_DELAY_MS);
+    }, HERO_AUTOPLAY_DELAY_MS);
     return () => clearInterval(timerRef.current);
   }, [canAutoplay, slides.length, activeIndex]);
 

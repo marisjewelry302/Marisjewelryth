@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { takeSignupEmail } from "../lib/signup-popup-storage";
 
 // Keep localStorage keys for wishlist/bag counts until those surfaces are migrated.
 const WISHLIST_KEY = "marisWishlist";
@@ -57,14 +58,7 @@ export default function AccountClient() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     // The popup hands the email over through sessionStorage; ?email= still works for older links.
-    let handoffEmail = "";
-    try {
-      handoffEmail = window.sessionStorage.getItem("marisSignupPopupEmail") || "";
-      window.sessionStorage.removeItem("marisSignupPopupEmail");
-    } catch {
-      // sessionStorage unavailable: fall back to the query string only.
-    }
-    const email = normalizeEmail(params.get("email") || handoffEmail);
+    const email = normalizeEmail(params.get("email") || takeSignupEmail());
     const source = params.get("source");
     const requestedMode = params.get("mode");
     const nextPath = getSafeNextPath();

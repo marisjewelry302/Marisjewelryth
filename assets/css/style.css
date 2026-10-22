@@ -1163,8 +1163,24 @@ body {
       background-position: center top;
     }
 
+  /* The slide dots stay desktop-only, but the pause control must stay reachable on phones (WCAG 2.2.2). */
   .hero-slide-control {
+    right: 14px;
+    bottom: 14px;
+    width: auto;
+  }
+
+  .hero-slide-control .hero-slide-dot {
     display: none;
+  }
+
+  .hero-slide-toggle {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0 14px;
+    border-radius: 22px;
+    background: rgba(8, 15, 13, 0.46);
+    color: rgba(255, 250, 246, 0.94);
   }
 
   .hero-slide {

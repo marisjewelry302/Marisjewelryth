@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
+import { getImageCenterIndex, isInImageWindow } from "./lib/carousel-window";
 import { isOptimizableImageSrc } from "./lib/image-source";
 
 const BEST_SELLER_SLOT_COUNT = 7;
@@ -14,9 +15,6 @@ const FALLBACK_BEST_SELLER_ITEMS = Array.from({ length: BEST_SELLER_SLOT_COUNT }
 }));
 
 const LOOP_SET_COUNT = 3;
-// Only cards this close to the focused card render an <Image>; the other loop clones stay
-// empty frames, so the markup carries about one set of images instead of three.
-const IMAGE_WINDOW = 3;
 const AUTOPLAY_DELAY_MS = 3200;
 // Pointer travel before a press counts as a drag and swallows the link click.
 const DRAG_CLICK_THRESHOLD_PX = 8;
@@ -288,8 +286,7 @@ export default function BestSellerSection({ items = [] }) {
   const trackStyle = {
     "--best-seller-translate": `${(slideIndex * slideStep) - centerOffset - dragOffset}px`
   };
-  // While dragging, the card under the viewport centre leads the image window.
-  const imageCenterIndex = isDragging && slideStep ? Math.round(slideIndex - dragOffset / slideStep) : slideIndex;
+  const imageCenterIndex = getImageCenterIndex({ slideIndex, dragOffset, slideStep, isDragging });
 
   return (
     <section className="best-seller-section" aria-labelledby="best-seller-heading">
@@ -320,7 +317,7 @@ export default function BestSellerSection({ items = [] }) {
             const distanceFromCenter = Math.abs(index - slideIndex);
             const focusState = distanceFromCenter === 0 ? "center" : distanceFromCenter === 1 ? "side" : "away";
             const isClone = index < realSetStart || index >= realSetStart + bestSellerItems.length;
-            const showImage = Boolean(item.imageSrc) && Math.abs(index - imageCenterIndex) <= IMAGE_WINDOW;
+            const showImage = Boolean(item.imageSrc) && isInImageWindow(index, imageCenterIndex);
             const cardContent = showImage ? (
               <Image
                 src={item.imageSrc}
