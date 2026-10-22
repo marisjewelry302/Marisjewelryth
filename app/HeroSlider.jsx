@@ -5,7 +5,6 @@ import { HERO_AUTOPLAY_DELAY_MS, canAutoplayHero } from "./lib/hero-autoplay";
 
 export default function HeroSlider({ slides }) {
   const [activeIndex, setActiveIndex] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
   const [isPageHidden, setIsPageHidden] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const timerRef = useRef(null);
@@ -33,7 +32,6 @@ export default function HeroSlider({ slides }) {
 
   const canAutoplay = canAutoplayHero({
     slideCount: slides.length,
-    isPaused,
     isPageHidden,
     prefersReducedMotion
   });
@@ -137,17 +135,6 @@ export default function HeroSlider({ slides }) {
               {slide.label || `Slide ${index + 1}`}
             </button>
           ))}
-          {!prefersReducedMotion && (
-            <button
-              type="button"
-              className="hero-slide-toggle"
-              aria-pressed={isPaused}
-              aria-label={isPaused ? "Play slideshow" : "Pause slideshow"}
-              onClick={() => setIsPaused((paused) => !paused)}
-            >
-              {isPaused ? "Play" : "Pause"}
-            </button>
-          )}
         </div>
       )}
     </div>

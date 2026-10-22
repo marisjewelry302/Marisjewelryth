@@ -251,32 +251,6 @@ body {
   outline-offset: 5px;
 }
 
-.hero-slide-toggle {
-  justify-self: start;
-  min-height: 24px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: rgba(255, 250, 246, 0.68);
-  font-family: var(--maris-font-sans);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: color 0.24s ease;
-}
-
-.hero-slide-toggle:hover,
-.hero-slide-toggle:focus-visible {
-  color: var(--maris-gold);
-}
-
-.hero-slide-toggle:focus-visible {
-  outline: 1px solid rgba(255, 250, 246, 0.72);
-  outline-offset: 5px;
-}
-
 .hero-header,
 .hero-header .logo ,
 .hero-header .nav ,
@@ -1163,24 +1137,8 @@ body {
       background-position: center top;
     }
 
-  /* The slide dots stay desktop-only, but the pause control must stay reachable on phones (WCAG 2.2.2). */
   .hero-slide-control {
-    right: 14px;
-    bottom: 14px;
-    width: auto;
-  }
-
-  .hero-slide-control .hero-slide-dot {
     display: none;
-  }
-
-  .hero-slide-toggle {
-    min-width: 44px;
-    min-height: 44px;
-    padding: 0 14px;
-    border-radius: 22px;
-    background: rgba(8, 15, 13, 0.46);
-    color: rgba(255, 250, 246, 0.94);
   }
 
   .hero-slide {

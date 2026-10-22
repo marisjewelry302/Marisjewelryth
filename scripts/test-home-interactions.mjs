@@ -87,9 +87,8 @@ const NOW = 1_800_000_000_000;
 
 // --- Hero autoplay --------------------------------------------------------
 {
-  const base = { slideCount: 3, isPaused: false, isPageHidden: false, prefersReducedMotion: false };
+  const base = { slideCount: 3, isPageHidden: false, prefersReducedMotion: false };
   assert.equal(canAutoplayHero(base), true);
-  assert.equal(canAutoplayHero({ ...base, isPaused: true }), false, "the pause button stops autoplay");
   assert.equal(canAutoplayHero({ ...base, isPageHidden: true }), false, "hidden tabs do not autoplay");
   assert.equal(canAutoplayHero({ ...base, prefersReducedMotion: true }), false, "reduced-motion visitors do not autoplay");
   assert.equal(canAutoplayHero({ ...base, slideCount: 1 }), false, "a single slide has nothing to advance to");
@@ -134,25 +133,12 @@ assert.doesNotMatch(popup, /localStorage\.|sessionStorage\./, "the popup must re
 assert.match(account, /takeSignupEmail\(\)/, "the account page reads the handed-over email");
 
 assert.doesNotMatch(hero, /setDirection|\[direction/, "the unused direction state must stay removed");
-assert.match(hero, /className="hero-slide-toggle"/, "the hero needs a pause control");
-assert.match(hero, /aria-pressed=\{isPaused\}/);
-assert.match(hero, /Pause slideshow/);
-assert.match(hero, /Play slideshow/);
+assert.doesNotMatch(hero, /hero-slide-toggle|isPaused|Pause slideshow/, "the owner decided the hero has no pause/play button");
 assert.match(hero, /className="hero-hit hero-hit-left"[\s\S]*?aria-label="Next slide"[\s\S]*?onClick=\{\(\) => moveSlide\(1\)\}/, "the left click area advances, so its label says Next");
 assert.match(hero, /className="hero-hit hero-hit-right"[\s\S]*?aria-label="Previous slide"[\s\S]*?onClick=\{\(\) => moveSlide\(-1\)\}/, "the right click area goes back, so its label says Previous");
 
 assert.match(carousel, /isInImageWindow\(index, imageCenterIndex\)/, "the carousel renders images only inside the window");
 
-assert.doesNotMatch(
-  css,
-  /\.hero-slide-control\s*\{\s*display:\s*none;?\s*\}/,
-  "the hero control must stay visible on phones so autoplay can be paused"
-);
-assert.match(
-  css,
-  /\.hero-slide-control \.hero-slide-dot\s*\{\s*display:\s*none;/,
-  "phones hide the slide dots but keep the pause button"
-);
-assert.match(css, /\.hero-slide-toggle\s*\{[\s\S]*?min-height:\s*44px;/, "the phone pause button needs a 44px touch target");
+assert.doesNotMatch(css, /[.]hero-slide-toggle/, "the removed pause button must not leave CSS behind");
 
-console.log("PASS: popup storage, hero autoplay and pause control, and carousel image window behave as specified.");
+console.log("PASS: popup storage, hero autoplay, and carousel image window behave as specified.");
