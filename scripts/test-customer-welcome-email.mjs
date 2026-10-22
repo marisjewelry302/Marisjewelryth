@@ -201,12 +201,14 @@ assert.match(welcomeRoute, /already_sent/, "Route should avoid repeated welcome 
 const popup = await readFile(new URL("../app/HomeSignupPopup.jsx", import.meta.url), "utf8");
 assert.match(popup, /Get 10% Off/i, "Popup CTA should match the requested text");
 assert.match(popup, /mode=signup/, "Popup should redirect with signup mode");
-assert.match(popup, /encodeURIComponent\(normalizedEmail\)/, "Popup should encode the submitted email");
+assert.match(popup, /stashSignupEmail\(normalizedEmail\)|"sessionStorage", EMAIL_HANDOFF_KEY, normalizedEmail/, "Popup should hand the submitted email to the account page through sessionStorage");
+assert.doesNotMatch(popup, /router\.push\([^)]*email/, "Popup must not put the email in the URL");
 
 const accountClient = await readFile(new URL("../app/account/AccountClient.jsx", import.meta.url), "utf8");
 assert.match(accountClient, /params\.get\("mode"\)/, "Account page should read signup mode from URL");
 assert.match(accountClient, /requestedMode === "signup"/, "Account page should switch to signup mode from URL");
-assert.match(accountClient, /setPopupEmail\(email\)/, "Account page should prefill email from query");
+assert.match(accountClient, /setPopupEmail\(email\)/, "Account page should prefill the popup email");
+assert.match(accountClient, /takeSignupEmail\(\)|sessionStorage\.getItem\("marisSignupPopupEmail"\)/, "Account page should read the email the popup handed over");
 assert.match(accountClient, /\/api\/account\/welcome-email/, "Account signup should call the welcome email API after successful registration");
 
 const envExample = await readFile(new URL("../.env.example", import.meta.url), "utf8");
