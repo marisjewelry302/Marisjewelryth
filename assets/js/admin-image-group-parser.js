@@ -55,16 +55,18 @@
       return hyphenCode[0].toUpperCase();
     }
 
-    const spacedCode = readable.match(/\b([A-Z]{1,5})\s+(\d{3,6}[A-Z]?)\b/i);
+    // A trailing piece-type tag (SR 0114 ER vs SR 0114 WB) is part of the SKU.
+    const typeTag = "(?:\\s+(ER|WB|DR|MR|MB|MWB|WS))?";
+    const spacedCode = readable.match(new RegExp(`\\b([A-Z]{1,5})\\s+(\\d{3,6}[A-Z]?)${typeTag}\\b`, "i"));
 
     if (spacedCode) {
-      return `${spacedCode[1].toUpperCase()} ${spacedCode[2].toUpperCase()}`;
+      return [spacedCode[1], spacedCode[2], spacedCode[3]].filter(Boolean).join(" ").toUpperCase();
     }
 
-    const compactCode = raw.match(/\b([A-Z]{1,5})(\d{3,6}[A-Z]?)\b/i);
+    const compactCode = raw.match(new RegExp(`\\b([A-Z]{1,5})(\\d{3,6}[A-Z]?)${typeTag}\\b`, "i"));
 
     if (compactCode) {
-      return `${compactCode[1].toUpperCase()} ${compactCode[2].toUpperCase()}`;
+      return [compactCode[1], compactCode[2], compactCode[3]].filter(Boolean).join(" ").toUpperCase();
     }
 
     return "";

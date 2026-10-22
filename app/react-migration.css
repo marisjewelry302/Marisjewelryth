@@ -19,6 +19,14 @@ body:has(.site-header--home) .home-main .hero-content,
   margin-top: clamp(8px, 2.5vh, 36px);
 }
 
+/* Desktop: sit the headline block lower in the hero, clear of the nav. */
+@media (min-width: 921px) {
+  body:has(.site-header--home) .home-main .hero-content,
+  .is-home-page .home-main .hero-content {
+    margin-top: clamp(80px, 13vh, 150px);
+  }
+}
+
 .home-main .hero .hero-eyebrow {
   position: static;
   margin-bottom: 14px;

@@ -280,6 +280,11 @@ export default async function AdminPage() {
                     data-products-search
                   />
                 </label>
+                <div className="admin-pagination admin-status-tabs" role="group" aria-label="Filter products by status">
+                  <button type="button" data-products-status="all" aria-pressed="true">All (<span data-products-status-count="all">0</span>)</button>
+                  <button type="button" data-products-status="active" aria-pressed="false">Active (<span data-products-status-count="active">0</span>)</button>
+                  <button type="button" data-products-status="draft" aria-pressed="false">Draft (<span data-products-status-count="draft">0</span>)</button>
+                </div>
                 <p className="admin-page-summary" aria-live="polite" data-products-page-summary>Showing 0 products</p>
                 <div className="admin-pagination" data-products-pagination aria-label="Product pages"></div>
               </div>

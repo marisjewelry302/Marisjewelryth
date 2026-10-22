@@ -230,7 +230,8 @@ body.is-page-scrolled .icons i {
   grid-template-columns: minmax(220px, 1fr) auto minmax(220px, 1fr);
   align-items: end;
   gap: 16px;
-  width: min(calc(100% - 88px), 1200px);
+  /* Same width as .products so Sort by and Filter sit on the grid's outer edges. */
+  width: min(calc(100% - 40px), 1680px);
   margin: 0 auto;
   padding: 0 0 8px;
 }
@@ -291,7 +292,7 @@ body.is-page-scrolled .icons i {
      row gap only carries the extra needed to clear each card's caption. */
   column-gap: clamp(20px, 2.2vw, 34px);
   row-gap: clamp(24px, 2.6vw, 38px);
-  width: min(calc(100% - 40px), 1400px);
+  width: min(calc(100% - 40px), 1680px);
   margin: 0 auto;
   padding: 24px 0 72px;
   align-items: start;

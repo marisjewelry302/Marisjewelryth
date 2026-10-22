@@ -136,6 +136,7 @@
   };
   const productListState = {
     searchTerm: "",
+    status: "all",
     page: 1
   };
   // draftIds stays null until the manager edits the slots, so a reload or a
@@ -454,18 +455,26 @@
     const products = readProducts();
     const searchLabel = productListState.searchTerm.trim();
     const query = searchLabel.toLowerCase();
+    const statusFilter = productListState.status;
+    const statusProducts = statusFilter === "all"
+      ? products
+      : products.filter((product) => (product.status === "active" ? "active" : "draft") === statusFilter);
     const filteredProducts = query
-      ? products.filter((product) => getProductSearchText(product).includes(query))
-      : products;
+      ? statusProducts.filter((product) => getProductSearchText(product).includes(query))
+      : statusProducts;
     const pageCount = Math.max(1, Math.ceil(filteredProducts.length / PRODUCT_LIST_PAGE_SIZE));
     const currentPage = Math.min(Math.max(Number(productListState.page) || 1, 1), pageCount);
     const startIndex = (currentPage - 1) * PRODUCT_LIST_PAGE_SIZE;
 
     productListState.page = currentPage;
 
+    const activeCount = products.filter((product) => product.status === "active").length;
+
     return {
       query,
       searchLabel,
+      statusFilter,
+      statusCounts: { all: products.length, active: activeCount, draft: products.length - activeCount },
       totalProducts: products.length,
       filteredProducts,
       filteredCount: filteredProducts.length,
@@ -478,6 +487,13 @@
   }
 
   function renderProductListControls(view) {
+    document.querySelectorAll("[data-products-status]").forEach((button) => {
+      button.setAttribute("aria-pressed", String(button.dataset.productsStatus === view.statusFilter));
+    });
+    document.querySelectorAll("[data-products-status-count]").forEach((count) => {
+      count.textContent = String(view.statusCounts[count.dataset.productsStatusCount] ?? 0);
+    });
+
     if (elements.productsPageSummary) {
       if (adminCache.isLoading) {
         elements.productsPageSummary.textContent = "Loading Supabase products...";
@@ -4352,6 +4368,14 @@
     productListState.searchTerm = String(event.currentTarget.value || "");
     productListState.page = 1;
     renderAll();
+  });
+
+  document.querySelectorAll("[data-products-status]").forEach((button) => {
+    button.addEventListener("click", () => {
+      productListState.status = button.dataset.productsStatus || "all";
+      productListState.page = 1;
+      renderAll();
+    });
   });
 
   elements.productsPagination?.addEventListener("click", (event) => {

@@ -634,7 +634,8 @@ a {
   cursor: pointer;
 }
 
-.admin-pagination button[aria-current="page"] {
+.admin-pagination button[aria-current="page"],
+.admin-pagination button[aria-pressed="true"] {
   background: var(--maris-teal);
   color: var(--maris-white);
 }
