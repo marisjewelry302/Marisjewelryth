@@ -5,22 +5,37 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 const CLOSED_KEY = "marisSignupPopupClosedUntil";
+const DISMISSED_SESSION_KEY = "marisSignupPopupDismissed";
+// The email travels to /account through sessionStorage so it never lands in the URL.
+const EMAIL_HANDOFF_KEY = "marisSignupPopupEmail";
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 const THIRTY_DAYS_MS = 30 * ONE_DAY_MS;
 const POPUP_DELAY_MS = 3000;
 
-function getStoredUntil(key) {
-  if (typeof window === "undefined") return 0;
-  return Number(window.localStorage.getItem(key) || 0);
+// Storage can throw (Safari private mode, blocked site data), so every access is guarded.
+function readStorage(area, key) {
+  try {
+    return window[area].getItem(key);
+  } catch {
+    return null;
+  }
 }
 
-function suppressPopup(key, durationMs) {
-  window.localStorage.setItem(key, String(Date.now() + durationMs));
+function writeStorage(area, key, value) {
+  try {
+    window[area].setItem(key, value);
+  } catch {
+    // Storage unavailable: the popup simply may show again on the next visit.
+  }
+}
+
+function suppressPopup(durationMs) {
+  writeStorage("localStorage", CLOSED_KEY, String(Date.now() + durationMs));
 }
 
 function shouldSuppressPopup() {
-  const now = Date.now();
-  return getStoredUntil(CLOSED_KEY) > now;
+  if (Number(readStorage("localStorage", CLOSED_KEY) || 0) > Date.now()) return true;
+  return readStorage("sessionStorage", DISMISSED_SESSION_KEY) === "1";
 }
 
 function isValidEmail(email) {
@@ -33,6 +48,8 @@ export default function HomeSignupPopup() {
   const titleId = useId();
   const dialogRef = useRef(null);
   const previousFocusRef = useRef(null);
+  // Mirrors hideToday so the Escape handler, registered once per open, never reads a stale value.
+  const hideTodayRef = useRef(false);
   const [isOpen, setIsOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [hideToday, setHideToday] = useState(false);
@@ -87,8 +104,11 @@ export default function HomeSignupPopup() {
   }, [isOpen]);
 
   function closePopup() {
-    if (hideToday) {
-      suppressPopup(CLOSED_KEY, ONE_DAY_MS);
+    if (hideTodayRef.current) {
+      suppressPopup(ONE_DAY_MS);
+    } else {
+      // Any dismissal keeps the popup away for the rest of this browser session.
+      writeStorage("sessionStorage", DISMISSED_SESSION_KEY, "1");
     }
 
     setIsOpen(false);
@@ -103,9 +123,10 @@ export default function HomeSignupPopup() {
       return;
     }
 
-    suppressPopup(CLOSED_KEY, hideToday ? ONE_DAY_MS : THIRTY_DAYS_MS);
+    suppressPopup(hideTodayRef.current ? ONE_DAY_MS : THIRTY_DAYS_MS);
+    writeStorage("sessionStorage", EMAIL_HANDOFF_KEY, normalizedEmail);
 
-    router.push(`/account?mode=signup&email=${encodeURIComponent(normalizedEmail)}`);
+    router.push("/account?mode=signup");
   }
 
   if (!isOpen) return null;
@@ -189,7 +210,10 @@ export default function HomeSignupPopup() {
             <input
               type="checkbox"
               checked={hideToday}
-              onChange={(event) => setHideToday(event.target.checked)}
+              onChange={(event) => {
+                hideTodayRef.current = event.target.checked;
+                setHideToday(event.target.checked);
+              }}
             />
             <span>Don't show again today</span>
           </label>

@@ -14,6 +14,9 @@ const FALLBACK_BEST_SELLER_ITEMS = Array.from({ length: BEST_SELLER_SLOT_COUNT }
 }));
 
 const LOOP_SET_COUNT = 3;
+// Only cards this close to the focused card render an <Image>; the other loop clones stay
+// empty frames, so the markup carries about one set of images instead of three.
+const IMAGE_WINDOW = 3;
 const AUTOPLAY_DELAY_MS = 3200;
 // Pointer travel before a press counts as a drag and swallows the link click.
 const DRAG_CLICK_THRESHOLD_PX = 8;
@@ -285,6 +288,8 @@ export default function BestSellerSection({ items = [] }) {
   const trackStyle = {
     "--best-seller-translate": `${(slideIndex * slideStep) - centerOffset - dragOffset}px`
   };
+  // While dragging, the card under the viewport centre leads the image window.
+  const imageCenterIndex = isDragging && slideStep ? Math.round(slideIndex - dragOffset / slideStep) : slideIndex;
 
   return (
     <section className="best-seller-section" aria-labelledby="best-seller-heading">
@@ -315,6 +320,20 @@ export default function BestSellerSection({ items = [] }) {
             const distanceFromCenter = Math.abs(index - slideIndex);
             const focusState = distanceFromCenter === 0 ? "center" : distanceFromCenter === 1 ? "side" : "away";
             const isClone = index < realSetStart || index >= realSetStart + bestSellerItems.length;
+            const showImage = Boolean(item.imageSrc) && Math.abs(index - imageCenterIndex) <= IMAGE_WINDOW;
+            const cardContent = showImage ? (
+              <Image
+                src={item.imageSrc}
+                alt={item.imageAlt || item.label}
+                width={814}
+                height={814}
+                sizes="(max-width: 900px) 100vw, 33vw"
+                unoptimized={!isOptimizableImageSrc(item.imageSrc)}
+                draggable={false}
+              />
+            ) : item.imageSrc ? null : (
+              <span className="best-seller-empty-label">{item.label}</span>
+            );
 
             return (
               <article
@@ -331,35 +350,11 @@ export default function BestSellerSection({ items = [] }) {
                     aria-label={item.label}
                     tabIndex={isClone ? -1 : undefined}
                   >
-                    {item.imageSrc ? (
-                      <Image
-                        src={item.imageSrc}
-                        alt={item.imageAlt || item.label}
-                        width={814}
-                        height={814}
-                        sizes="(max-width: 900px) 100vw, 33vw"
-                        unoptimized={!isOptimizableImageSrc(item.imageSrc)}
-                        draggable={false}
-                      />
-                    ) : (
-                      <span className="best-seller-empty-label">{item.label}</span>
-                    )}
+                    {cardContent}
                   </a>
                 ) : (
                   <div className="best-seller-image-frame">
-                    {item.imageSrc ? (
-                      <Image
-                        src={item.imageSrc}
-                        alt={item.imageAlt || item.label}
-                        width={814}
-                        height={814}
-                        sizes="(max-width: 900px) 100vw, 33vw"
-                        unoptimized={!isOptimizableImageSrc(item.imageSrc)}
-                        draggable={false}
-                      />
-                    ) : (
-                      <span className="best-seller-empty-label">{item.label}</span>
-                    )}
+                    {cardContent}
                   </div>
                 )}
               </article>
