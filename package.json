@@ -32,6 +32,7 @@
     "test:product-media": "node scripts/test-product-media.mjs",
     "test:seo-aeo-geo": "node scripts/test-seo-aeo-geo.mjs",
     "test:site-header-nav": "node scripts/test-site-header-nav.mjs",
+    "test:product-page-caching": "node scripts/test-product-page-caching.mjs",
     "test:admin-clarity": "node scripts/test-admin-clarity.mjs",
     "test:admin-best-seller": "node scripts/test-admin-best-seller.mjs",
     "test:admin-product-list": "node scripts/test-admin-product-list.mjs",
