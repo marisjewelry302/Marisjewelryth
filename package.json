@@ -8,6 +8,7 @@
     "node": ">=20.9.0"
   },
   "scripts": {
+    "test:all": "node scripts/run-all-tests.mjs",
     "check:sheet-images": "node scripts/check-sheet-images.mjs",
     "media:orphans": "node scripts/cleanup-orphan-product-media.mjs",
     "test:static-routing": "node scripts/test-static-routing-contract.mjs",

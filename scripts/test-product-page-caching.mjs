@@ -27,8 +27,10 @@ assert.equal(getPublicProductSeoTitle({ sku: "", category: "ring" }), "Diamond R
 assert.ok(`${getPublicProductSeoTitle({ sku: "SR 0099 MWB", category: "ring", collection: "mens-wedding-bands" })} | Maris Jewelry`.length <= 60, "titles stay short enough for search results");
 
 // --- Product pages must be cacheable --------------------------------------------
-const pageSource = await readFile(new URL("../app/product/[slug]/page.js", import.meta.url), "utf8");
-const slugPageSource = await readFile(new URL("../app/product/[slug]/product-slug-page.js", import.meta.url), "utf8");
+// A Windows checkout turns line endings into CRLF; the patterns below expect LF.
+const readSource = async (path) => (await readFile(new URL(path, import.meta.url), "utf8")).replace(/\r\n/g, "\n");
+const pageSource = await readSource("../app/product/[slug]/page.js");
+const slugPageSource = await readSource("../app/product/[slug]/product-slug-page.js");
 
 assert.match(pageSource, /export async function generateStaticParams\(\)/, "without generateStaticParams the product route renders on every request with no-store");
 assert.match(pageSource, /export const revalidate = \d+/, "product pages need a revalidate window");

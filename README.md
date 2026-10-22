@@ -59,6 +59,16 @@ or:
 .\tools\build-next.cmd
 ```
 
+## Checks
+
+```powershell
+npm run test:all
+```
+
+runs every `scripts/test-*.mjs` file and exits non-zero if any fails. Add words after `--` to run only the scripts whose name contains one of them (`npm run test:all -- popup hero`). Scripts ending in `-live.mjs` need a real Supabase project and are skipped; run them with `npm run test:database:live`. The Supabase variables are removed from the environment of every script, so a run never touches a real database.
+
+GitHub Actions (`.github/workflows/ci.yml`) runs three jobs on every pull request and every push to main: **Tests** (`npm run test:all`), **Build** (`npm run build`) and **npm audit** (`npm audit --audit-level=high`). The audit job also runs every Monday, so a newly published advisory shows up even when nobody opens a pull request.
+
 ## Notes
 
 - Vercel should use the default Next.js settings. This repo no longer has a `prebuild` legacy public sync.
