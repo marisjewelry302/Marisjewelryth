@@ -6,6 +6,7 @@ import {
   getPublicProductAltText,
   getPublicProductDisplayName,
   getPublicProductPath,
+  getPublicProductSeoTitle,
   getPublicProductSlug,
   getPublicVariantDisplayName,
   groupProductImagesByMetal
@@ -90,12 +91,12 @@ export async function generateMetadata({ params }) {
     return { title: "Maris Jewelry" };
   }
 
-  const displayName = getPublicProductDisplayName(product);
+  const seoTitle = getPublicProductSeoTitle(product);
   const collectionLabel = COLLECTION_LABELS[product.collection] || product.category || "Maris Jewelry";
   const productPath = getPublicProductPath(product);
   const metadata = buildPageMetadata({
-    title: `${displayName} | Maris Jewelry`,
-    description: `Explore ${displayName} from ${collectionLabel}. Enquire with Maris Jewelry for current availability, sizing, and custom guidance.`,
+    title: `${seoTitle} | Maris Jewelry`,
+    description: `Explore ${seoTitle} from ${collectionLabel}. Enquire with Maris Jewelry for current availability, sizing, and custom guidance.`,
     path: productPath,
     image: product.primaryImageUrl || product.images?.[0]?.imageUrl
   });

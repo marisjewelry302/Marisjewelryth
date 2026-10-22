@@ -154,6 +154,16 @@ export function getPublicProductPath(product = {}) {
   return slug ? `/product/${slug}` : "/product";
 }
 
+// The display name only says what kind of piece it is ("Diamond Ring"), so on its
+// own it repeats across dozens of products and the page titles collide in search
+// results. The catalogue code is unique per piece, so it goes after the name.
+export function getPublicProductSeoTitle(product = {}) {
+  const displayName = getPublicProductDisplayName(product);
+  const code = formatPublicProductCode(product.sku);
+
+  return code ? `${displayName} ${code}` : displayName;
+}
+
 // Uploads name each image "<product> <metal> <view>" (the admin reads both from
 // the file name), so the alt text is what splits a gallery into metal sets.
 export const PRODUCT_IMAGE_METALS = [
