@@ -16,6 +16,8 @@ const BEST_SELLER_SETTING_KEY = "home_best_sellers";
 
 const BEST_SELLER_SLOT_LIMIT = 7;
 
+const CATALOGUE_PAGE_SIZE = 500;
+
 const ADMIN_CATALOGUE_SELECT = `
   id,
   sku,
@@ -387,7 +389,33 @@ function normalizePublicProduct(row) {
   };
 }
 
-export async function readAdminCatalogueProducts({ env = process.env, client, limit = 100 } = {}) {
+// Reads every row a catalogue query matches. Supabase caps one response, so the
+// query is paged with .range() until a short page comes back. A finite `limit`
+// keeps the single bounded query for callers that only want the newest few.
+async function readCataloguePages(buildQuery, limit) {
+  if (Number.isFinite(limit)) {
+    return buildQuery().limit(limit);
+  }
+
+  const rows = [];
+
+  for (let from = 0; ; from += CATALOGUE_PAGE_SIZE) {
+    const { data, error } = await buildQuery().range(from, from + CATALOGUE_PAGE_SIZE - 1);
+
+    if (error) {
+      return { data: null, error };
+    }
+
+    const page = Array.isArray(data) ? data : [];
+    rows.push(...page);
+
+    if (page.length < CATALOGUE_PAGE_SIZE) {
+      return { data: rows, error: null };
+    }
+  }
+}
+
+export async function readAdminCatalogueProducts({ env = process.env, client, limit = null } = {}) {
   const config = getSupabaseAdminConfig(env);
 
   if (!config.isConfigured) {
@@ -401,11 +429,14 @@ export async function readAdminCatalogueProducts({ env = process.env, client, li
   }
 
   const supabase = client || createSupabaseAdminClient(env);
-  const { data, error } = await supabase
-    .from("products")
-    .select(ADMIN_CATALOGUE_SELECT)
-    .order("updated_at", { ascending: false })
-    .limit(limit);
+  const { data, error } = await readCataloguePages(
+    () => supabase
+      .from("products")
+      .select(ADMIN_CATALOGUE_SELECT)
+      .order("updated_at", { ascending: false })
+      .order("id"),
+    limit
+  );
 
   if (error) {
     throw new Error(error.message || "Supabase catalogue products could not be loaded.");
@@ -420,7 +451,7 @@ export async function readAdminCatalogueProducts({ env = process.env, client, li
   };
 }
 
-export async function readPublicCatalogueProducts({ env = process.env, client, limit = 100 } = {}) {
+export async function readPublicCatalogueProducts({ env = process.env, client, limit = null } = {}) {
   const config = getSupabaseAdminConfig(env);
 
   if (!config.isConfigured) {
@@ -435,12 +466,15 @@ export async function readPublicCatalogueProducts({ env = process.env, client, l
   }
 
   const supabase = client || createSupabaseAdminClient(env);
-  const { data, error } = await supabase
-    .from("products")
-    .select(PUBLIC_CATALOGUE_SELECT)
-    .eq("status", "active")
-    .order("updated_at", { ascending: false })
-    .limit(limit);
+  const { data, error } = await readCataloguePages(
+    () => supabase
+      .from("products")
+      .select(PUBLIC_CATALOGUE_SELECT)
+      .eq("status", "active")
+      .order("updated_at", { ascending: false })
+      .order("id"),
+    limit
+  );
 
   if (error) {
     throw new Error(error.message || "Supabase public catalogue products could not be loaded.");
