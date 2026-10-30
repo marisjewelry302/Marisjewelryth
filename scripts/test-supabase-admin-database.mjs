@@ -124,7 +124,15 @@ const catalogueClient = {
           order(column, options) {
             catalogueCalls.push(["order", column, options]);
 
-            return {
+            const query = {
+              order(nextColumn, nextOptions) {
+                catalogueCalls.push(["order", nextColumn, nextOptions]);
+                return query;
+              },
+              async range(from, to) {
+                catalogueCalls.push(["range", from, to]);
+                return query.limit(to - from + 1);
+              },
               async limit(limit) {
                 catalogueCalls.push(["limit", limit]);
 
@@ -176,6 +184,8 @@ const catalogueClient = {
                 };
               }
             };
+
+            return query;
           }
         };
       }
@@ -283,6 +293,10 @@ const publicCatalogueClient = {
           order(column, options) {
             publicCatalogueCalls.push(["order", column, options]);
             return this;
+          },
+          async range(from, to) {
+            publicCatalogueCalls.push(["range", from, to]);
+            return this.limit(to - from + 1);
           },
           async limit(limit) {
             publicCatalogueCalls.push(["limit", limit]);
