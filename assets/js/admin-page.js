@@ -3140,6 +3140,11 @@
         return;
       }
 
+      if (getCachedProducts().some((item) => item.id !== productId && getProductSku(item).toLowerCase() === sku.toLowerCase())) {
+        setModalMessage(`SKU "${sku}" already exists on another product.`, true);
+        return;
+      }
+
       await fetchAdminApi(`/products?id=${encodeURIComponent(productId)}`, {
         method: "PATCH",
         body: JSON.stringify({

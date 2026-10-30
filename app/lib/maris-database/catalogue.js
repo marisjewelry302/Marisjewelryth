@@ -773,6 +773,20 @@ function toProductMediaPayload(input = {}) {
   return payload;
 }
 
+// Postgres 23505 on products.sku: say which SKU clashed instead of the raw constraint name.
+function toProductWriteError(error, fallback, sku) {
+  const isDuplicateSku = error?.code === "23505" && /sku/i.test(`${error.message} ${error.details || ""}`);
+
+  if (isDuplicateSku) {
+    const label = sku ? `SKU "${sku}"` : "This SKU";
+    const failure = new Error(`${label} already exists. Use a different SKU (e.g. add ER / WB), or edit the existing product.`);
+    failure.status = 409;
+    return failure;
+  }
+
+  return new Error(error?.message || fallback);
+}
+
 export async function createAdminProduct(product, { env = process.env, client } = {}) {
   const config = getSupabaseAdminConfig(env);
   if (!config.isConfigured) {
@@ -811,7 +825,7 @@ export async function createAdminProduct(product, { env = process.env, client } 
     .single();
 
   if (error) {
-    throw new Error(error.message || "Product could not be created.");
+    throw toProductWriteError(error, "Product could not be created.", sku);
   }
 
   if (imageUrl) {
@@ -886,7 +900,7 @@ export async function updateAdminProduct(productId, updates, { env = process.env
     .single();
 
   if (error) {
-    throw new Error(error.message || "Product could not be updated.");
+    throw toProductWriteError(error, "Product could not be updated.", cleanedPayload.sku);
   }
 
   return normalizeProduct(data);

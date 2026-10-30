@@ -42,7 +42,7 @@ export async function POST(request) {
     const product = await createAdminProduct(body);
     return json({ product }, 201);
   } catch (error) {
-    return json({ error: error instanceof Error ? error.message : "Product could not be created." }, 500);
+    return json({ error: error instanceof Error ? error.message : "Product could not be created." }, error?.status || 500);
   }
 }
 
@@ -68,7 +68,7 @@ export async function PATCH(request) {
     const product = await updateAdminProduct(productId, body);
     return json({ product }, 200);
   } catch (error) {
-    return json({ error: error instanceof Error ? error.message : "Product could not be updated." }, 500);
+    return json({ error: error instanceof Error ? error.message : "Product could not be updated." }, error?.status || 500);
   }
 }
 
