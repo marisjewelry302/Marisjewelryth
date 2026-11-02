@@ -1,4 +1,6 @@
 import BestSellerSection from "./BestSellerSection";
+import { HomeServiceStories, HomeContactSection } from "./HomeServices";
+import serviceStyles from "./home-services.module.css";
 import { isOptimizableImageSrc } from "./lib/image-source";
 import Image from "next/image";
 import HeroSlider from "./HeroSlider";
@@ -172,36 +174,6 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="home-collection-showcase" aria-label="Shop signature collections">
-        <div className="home-collection-grid">
-          <a className="home-collection-card home-collection-card--rings" href="/category/rings">
-            <span className="home-collection-card__title">Signature Rings</span>
-            <Image
-              className="home-collection-card__image"
-              src="/assets/images/home/collections/cover-rings-collection.webp"
-              alt="A diamond ring on dark brown satin"
-              width={1254}
-              height={1254}
-              sizes="(max-width: 900px) 100vw, 50vw"
-            />
-            <span className="home-collection-card__action">View Collection</span>
-          </a>
-
-          <a className="home-collection-card home-collection-card--pendants" href="/category/necklaces-pendants">
-            <span className="home-collection-card__title">Elegant Pendants</span>
-            <Image
-              className="home-collection-card__image"
-              src="/assets/images/home/collections/cover-pendants-collection.webp"
-              alt="A pear-shaped diamond pendant on champagne satin"
-              width={1254}
-              height={1254}
-              sizes="(max-width: 900px) 100vw, 50vw"
-            />
-            <span className="home-collection-card__action">View Collection</span>
-          </a>
-        </div>
-      </section>
-
       <section className="atelier-reveal" aria-label="New arrival catalogue">
         <div className="atelier-reveal__panel">
           <div className="atelier-reveal__focus">
@@ -254,35 +226,37 @@ export default async function HomePage() {
 
       <BestSellerSection items={bestSellerProducts} />
 
+      <HomeServiceStories />
+
       <section className="value-strip" aria-labelledby="value-heading">
         <div className="value-lead">
           <p className="section-kicker">Why Maris</p>
-          <h2 id="value-heading">Quiet support from first idea to final piece.</h2>
+          <h2 id="value-heading">For your style, your story, and your brand.</h2>
           <p>
-            Guided choices, clear options, and fine jewelry made to stay wearable beyond the moment.
+            Explore our collections, create a personal piece, or discuss jewelry for your business with the Maris team.
           </p>
         </div>
 
         <div className="value-list">
           <article className="value-card">
             <span aria-hidden="true">01</span>
-            <h3>Custom-ready</h3>
-            <p>Adjust proportion, metal tone, and details to fit the mood you want.</p>
+            <h3>Signature collections</h3>
+            <p>Discover rings, earrings, pendants, and bracelets, with guidance on materials, sizing, and availability.</p>
           </article>
           <article className="value-card">
             <span aria-hidden="true">02</span>
-            <h3>Material guidance</h3>
-            <p>Compare stones and metals by presence, price, and daily wearability.</p>
+            <h3>Custom &amp; bridal</h3>
+            <p>Share your ideas for a personal piece, engagement ring, or wedding bands and explore the details together.</p>
           </article>
           <article className="value-card">
             <span aria-hidden="true">03</span>
-            <h3>Availability checks</h3>
-            <p>Confirm stock, sizing, and timing with the atelier before ordering.</p>
+            <h3>OEM &amp; wholesale</h3>
+            <p>Discuss production for your brand or pieces for your store, with options shaped around your brief and quantities.</p>
           </article>
           <article className="value-card">
             <span aria-hidden="true">04</span>
-            <h3>Partner support</h3>
-            <p>Begin OEM, wholesale, or retail conversations from one clear catalogue base.</p>
+            <h3>Personal guidance</h3>
+            <p>Work through materials, pricing, and timing with our team before confirming your order or project.</p>
           </article>
         </div>
       </section>
@@ -290,22 +264,23 @@ export default async function HomePage() {
       <section className="home-answer-guide" aria-labelledby="home-answer-guide-heading">
         <div className="home-answer-guide__intro">
           <p className="section-kicker">Maris answers</p>
-          <h2 id="home-answer-guide-heading">Clear answers before you choose a piece.</h2>
+          <h2 id="home-answer-guide-heading">How can we help you get started?</h2>
           <p>
-            A calm starting point for buyers comparing engagement rings, custom work, availability, and the right way to begin.
+            Find your next step, whether you are choosing from a collection, planning a custom piece, or sourcing for your business.
           </p>
         </div>
 
-        <div className="home-answer-guide__grid">
+        <div className={serviceStyles.questions}>
           {HOME_FAQS.map((faq) => (
-            <article className="home-answer-guide__item" key={faq.question}>
-              <h3>{faq.question}</h3>
+            <details key={faq.question}>
+              <summary>{faq.question}</summary>
               <p>{faq.answer}</p>
-            </article>
+            </details>
           ))}
         </div>
       </section>
 
+      <HomeContactSection />
       <HomeSignupPopup />
       </main>
     </>

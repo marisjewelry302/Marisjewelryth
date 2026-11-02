@@ -5,14 +5,8 @@ const pageSource = await readFile(new URL("../app/page.js", import.meta.url), "u
 const styleSource = await readFile(new URL("../assets/css/style.css", import.meta.url), "utf8");
 
 const categorySectionIndex = pageSource.indexOf('className="shop-category-section"');
-const collectionSectionIndex = pageSource.indexOf('className="home-collection-showcase"');
 
 assert.ok(categorySectionIndex > -1, "Homepage should render a Shop by Category section.");
-assert.ok(collectionSectionIndex > -1, "Homepage should still render the View Collection showcase.");
-assert.ok(
-  categorySectionIndex < collectionSectionIndex,
-  "Shop by Category should appear before the View Collection showcase."
-);
 
 assert.match(pageSource, /<h2 id="shop-category-heading">Shop By Category<\/h2>/);
 assert.match(
@@ -47,4 +41,4 @@ assert.match(styleSource, /grid-template-columns:\s*repeat\(4,\s*minmax\(0,\s*1f
 assert.match(styleSource, /@media \(max-width:\s*980px\)[\s\S]*\.shop-category-grid/);
 assert.match(styleSource, /@media \(max-width:\s*640px\)[\s\S]*\.shop-category-grid/);
 
-console.log("PASS: Homepage Shop by Category section is wired before View Collection.");
+console.log("PASS: Homepage Shop by Category section is valid.");

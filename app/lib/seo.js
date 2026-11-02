@@ -24,24 +24,24 @@ export const BRAND_CONTACT = {
 
 export const HOME_FAQS = [
   {
-    question: "What does Maris Jewelry offer?",
+    question: "How do I order a piece from the collections?",
     answer:
-      "Maris Jewelry offers a fine jewelry catalogue, engagement rings, wedding bands, everyday diamond pieces, custom design support, and partner conversations for OEM or wholesale projects."
+      "Choose a piece from our catalogue and send an inquiry with its product code and your preferred options. Our team will confirm availability, sizing, pricing, and order details with you."
   },
   {
-    question: "Can I order Maris Jewelry online?",
+    question: "Can I create custom jewelry or wedding rings?",
     answer:
-      "The website works as a catalogue and inquiry path. Product availability, sizing, quotation, and final order details are confirmed directly with the Maris atelier before payment or production."
+      "Yes. Share your ideas, reference images, approximate budget, and preferred date for a custom piece, engagement ring, or wedding bands. We will discuss design options, materials, and timing before you confirm the project."
   },
   {
-    question: "Where is Maris Jewelry located?",
+    question: "How do I start an OEM or wholesale inquiry?",
     answer:
-      "Maris Jewelry is based on Surawong Road in Bang Rak, Bangkok, Thailand, with private consultation and direct contact options for clients researching a piece."
+      "Tell us about your brand or store, the jewelry you need, estimated quantities, and your target schedule. Include designs or references if available. Our team will review your requirements and discuss production or wholesale options, minimum quantities, and quotation details."
   },
   {
-    question: "Can Maris create a custom engagement ring?",
+    question: "What should I confirm before placing an order?",
     answer:
-      "Yes. Maris supports custom ring design from the first brief through stone direction, metal tone, CAD review, production planning, and final handover."
+      "Confirm the materials, dimensions or sizing, quantities, final quotation, and expected delivery timing with our team. Availability and project requirements are reviewed individually before payment or production."
   }
 ];
 

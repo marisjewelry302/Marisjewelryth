@@ -24,7 +24,6 @@
     "test:custom-order": "node scripts/test-custom-order.mjs",
     "test:admin-custom-requests": "node scripts/test-admin-custom-requests.mjs",
     "test:home-category-showcase": "node scripts/test-home-category-showcase.mjs",
-    "test:home-collection-showcase": "node scripts/test-home-collection-showcase.mjs",
     "test:site-typography": "node scripts/test-site-typography.mjs",
     "test:product-wishlist": "node scripts/test-product-wishlist-button.mjs",
     "test:catalogue-filters": "node scripts/test-catalogue-filters.mjs",
