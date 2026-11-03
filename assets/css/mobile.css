@@ -314,6 +314,12 @@
     padding-block: 12px;
   }
 
+  /* Best seller cards 20% smaller; the carousel re-measures them itself. */
+  .best-seller-card {
+    flex-basis: calc((100vw - 8rem) * 0.8) !important;
+    width: calc((100vw - 8rem) * 0.8);
+  }
+
   .home-signup-popup__dialog {
     max-height: calc(100svh - 24px);
     overflow-y: auto;
