@@ -2899,7 +2899,7 @@ html {
   input,
   select,
   textarea {
-    font-size: 16px;
+    font-size: 16px !important;
   }
 
   .home-signup-popup__offer {
