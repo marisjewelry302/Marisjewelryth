@@ -5,6 +5,7 @@ import "../assets/css/placeholder.css";
 import "../assets/css/site-header.css";
 import "../assets/css/footer.css";
 import "./react-migration.css";
+import "../assets/css/mobile.css";
 import JsonLd from "./components/JsonLd";
 import SiteFooter from "./components/SiteFooter";
 import SiteHeader from "./components/SiteHeader";

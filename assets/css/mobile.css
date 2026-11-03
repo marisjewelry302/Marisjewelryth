@@ -1,0 +1,320 @@
+/* Phone layout (<= 767px). Loaded last so it settles the cascade for phones
+   only; desktop and tablet are untouched. Content order and colors stay as
+   designed - this sheet only sets size, rhythm and tap targets.
+
+   Scale: 4px base unit. Gutter 16px. Section gap 32px. Body 15px/1.55.
+   Type: label 11px, small 13px, body 15px, h3 17px, h2 22px, h1 28px.
+   Tap targets: 44px minimum, primary buttons 48px. */
+@media (max-width: 767px) {
+  :root {
+    --m-gutter: 16px;
+    --m-section: 32px;
+    --section-rhythm: 32px;
+  }
+
+  body {
+    font-size: 15px;
+    line-height: 1.55;
+  }
+
+  /* ---- Header: one-line top bar + 56px bar ----
+     !important because the home and inner-page headers each carry their own
+     phone overrides in site-header.css. */
+  .site-header .top-bar {
+    display: flex !important;
+    justify-content: center;
+    height: 32px !important;
+    min-height: 32px !important;
+    padding: 0 var(--m-gutter) !important;
+  }
+
+  .site-header .top-socials {
+    display: none !important;
+  }
+
+  .site-header .top-announcement {
+    height: 32px;
+    margin: 0;
+    max-width: 100%;
+    overflow: hidden;
+    font-size: 11px;
+    line-height: 32px;
+    letter-spacing: 0.02em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .site-header .navbar,
+  body.is-page-scrolled .site-header .navbar {
+    display: grid !important;
+    grid-template-columns: 44px minmax(0, 1fr) auto !important;
+    align-items: center;
+    min-height: 56px !important;
+    padding: 6px 8px !important;
+  }
+
+  .site-header .mobile-menu-toggle {
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    width: 44px;
+    height: 44px;
+    transform: none !important;
+  }
+
+  .site-header .navbar .logo {
+    justify-content: center;
+    height: 44px;
+    transform: none !important;
+  }
+
+  .site-header .navbar .logo a,
+  body.is-page-scrolled .site-header .navbar .logo a {
+    width: 100px !important;
+    height: 42px !important;
+  }
+
+  .site-header .navbar .logo img,
+  body.is-page-scrolled .site-header .navbar .logo img {
+    width: 146px !important;
+    transform: translate(-50%, -46%) !important;
+  }
+
+  .site-header .icons {
+    position: static !important;
+    inset: auto !important;
+    align-self: center;
+    gap: 0;
+    transform: none !important;
+  }
+
+  .site-header .icons a {
+    display: inline-grid !important;
+    width: 40px !important;
+    height: 44px !important;
+    place-items: center;
+  }
+
+  .site-header .icons svg,
+  body.is-page-scrolled .site-header .icons svg {
+    margin: 0 !important;
+    width: 20px;
+    height: 20px;
+  }
+
+  /* ---- Hero ---- */
+  .hero-content h1 {
+    font-size: clamp(26px, 7.4vw, 30px) !important;
+    letter-spacing: 0;
+  }
+
+  .hero-tagline {
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  .hero-actions {
+    display: grid;
+    gap: 10px;
+    width: 100%;
+    max-width: none;
+  }
+
+  .hero-actions a {
+    width: 100%;
+    justify-content: center;
+    min-height: 48px;
+    padding: 0 16px;
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    text-align: center;
+  }
+
+  /* ---- Section rhythm and heads ---- */
+  .shop-category-section,
+  .atelier-reveal,
+  .best-seller-section,
+  .value-strip,
+  .home-answer-guide {
+    padding-block: var(--m-section);
+  }
+
+  h2 {
+    letter-spacing: 0.02em !important;
+    text-wrap: balance;
+  }
+
+  .shop-category-head,
+  .atelier-reveal__focus,
+  .best-seller-head {
+    margin-bottom: 16px;
+  }
+
+  .shop-category-head p,
+  .atelier-reveal__focus p {
+    font-size: 15px;
+    line-height: 1.55;
+  }
+
+  /* Category cards: 2 up, 12px gap, label under the photo */
+  .shop-category-grid {
+    gap: 12px;
+  }
+
+  .shop-category-card {
+    height: auto;
+  }
+
+  .shop-category-card strong {
+    font-size: 14px;
+  }
+
+  /* Value list: compact rows instead of tall cards */
+  .value-card {
+    padding-block: 12px;
+  }
+
+  .value-card h3 {
+    font-size: 15px;
+    letter-spacing: 0.08em;
+  }
+
+  .value-card p {
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+
+  /* ---- Content pages (service, about, legal, journal, forms) ---- */
+  .placeholder-main {
+    padding: 20px 12px 48px !important;
+  }
+
+  .placeholder-card {
+    padding: 24px 16px !important;
+  }
+
+  .placeholder-card .eyebrow,
+  .section-kicker {
+    font-size: 11px;
+    letter-spacing: 0.12em;
+  }
+
+  .placeholder-card .lead {
+    font-size: 15px;
+    line-height: 1.55;
+  }
+
+  .subpage-feature-card,
+  .subpage-panel {
+    padding: 16px !important;
+  }
+
+  .subpage-feature-card h2,
+  .subpage-panel h2 {
+    font-size: 18px !important;
+    line-height: 1.25 !important;
+  }
+
+  .subpage-feature-card p,
+  .subpage-panel p {
+    font-size: 14px;
+    line-height: 1.55;
+  }
+
+  /* Journal list: number and meta share a row, smaller meta, tighter card */
+  .journal-card-link {
+    padding: 16px !important;
+    gap: 8px;
+  }
+
+  .journal-card-number {
+    width: 32px;
+    height: 32px;
+    font-size: 11px;
+  }
+
+  .subpage-article-meta,
+  .journal-card-read-time {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+  }
+
+  .journal-card-link h2 {
+    font-size: 18px !important;
+    line-height: 1.25 !important;
+  }
+
+  .journal-card-link p {
+    font-size: 14px;
+    line-height: 1.55;
+  }
+
+  .journal-library-meta,
+  .journal-library-note {
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  .page-actions {
+    display: grid !important;
+    gap: 10px;
+  }
+
+  .page-actions a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    text-align: center;
+  }
+
+  /* ---- Home: catalogue slots, best seller, popup ---- */
+  .atelier-product-grid {
+    grid-auto-columns: min(72vw, 280px) !important;
+  }
+
+  .atelier-product {
+    aspect-ratio: 0.9 / 1 !important;
+    padding: 14px !important;
+  }
+
+  .best-seller-carousel {
+    padding-block: 12px;
+  }
+
+  .home-signup-popup__dialog {
+    max-height: calc(100svh - 24px);
+    overflow-y: auto;
+  }
+
+  .home-signup-popup__logo {
+    max-height: 52px;
+    width: auto;
+  }
+
+  .home-signup-popup__perks {
+    gap: 8px;
+    font-size: 11px;
+  }
+
+  .home-signup-popup__privacy,
+  .home-signup-popup__remember {
+    font-size: 12px;
+  }
+
+  .home-signup-popup__decline {
+    min-height: 44px;
+  }
+
+  /* ---- Shared controls ---- */
+  main a[class*="button"],
+  main button[type="submit"] {
+    min-height: 48px;
+  }
+
+  small,
+  figcaption {
+    font-size: 12px;
+  }
+}
