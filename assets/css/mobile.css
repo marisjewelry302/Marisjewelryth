@@ -433,3 +433,108 @@
     inset: 0;
   }
 }
+
+/* ---- Footer: about block always open, three compact accordion rows ---- */
+@media (max-width: 768px) {
+  [data-maris-footer] {
+    padding: 16px 16px 12px !important;
+  }
+
+  .maris-footer__mobile {
+    gap: 0 !important;
+  }
+
+  /* Social icons sit on the copyright line, at the right. */
+  .maris-footer__mobile {
+    position: relative;
+  }
+
+  .maris-footer__mobile-head {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    margin: 0 !important;
+  }
+
+  .maris-footer__mobile-social {
+    gap: 10px !important;
+    margin-bottom: 0 !important;
+  }
+
+  .maris-footer__mobile-social a {
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  .maris-footer__mobile-social svg {
+    width: 14px !important;
+    height: 14px !important;
+  }
+
+  /* The brand block has nothing to collapse: its title stays, as plain text. */
+  .maris-footer__section:first-child .maris-footer__toggle {
+    min-height: 32px !important;
+    padding-top: 12px;
+    pointer-events: none;
+  }
+
+  .maris-footer__section:first-child .maris-footer__chevron {
+    display: none;
+  }
+
+  .maris-footer__section:first-child .maris-footer__toggle-label {
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .maris-footer__section:first-child .maris-footer__panel {
+    max-height: none !important;
+    padding-top: 4px;
+    opacity: 1;
+  }
+
+  .maris-footer__section.is-open .maris-footer__panel {
+    padding-bottom: 8px !important;
+  }
+
+  .maris-footer__toggle {
+    min-height: 44px !important;
+  }
+
+  .maris-footer__panel-inner {
+    gap: 4px !important;
+  }
+
+  .maris-footer__panel-inner > p {
+    font-size: 13px !important;
+    line-height: 1.5 !important;
+  }
+
+  /* Links run in a wrapping row instead of one tall column. */
+  .maris-footer__links {
+    display: flex !important;
+    flex-wrap: wrap;
+    gap: 0 20px !important;
+  }
+
+  .maris-footer__links a {
+    display: flex !important;
+    align-items: center;
+    min-height: 40px;
+    font-size: 13px !important;
+    line-height: 1.3 !important;
+  }
+
+  .maris-footer__bottom {
+    display: flex;
+    align-items: center;
+    min-height: 48px;
+    margin-top: 0 !important;
+    padding: 8px 0 !important;
+  }
+
+  .maris-footer__copyright {
+    font-size: 12px !important;
+    line-height: 1.4;
+  }
+}
