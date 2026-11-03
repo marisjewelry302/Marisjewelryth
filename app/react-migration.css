@@ -290,3 +290,10 @@ body:has(.site-header--home) .home-main .hero-content,
     display: none;
   }
 }
+
+/* Best Seller photos run 20% smaller on tablet and desktop (phones are sized in mobile.css). */
+@media (min-width: 768px) {
+  .best-seller-card {
+    flex-basis: calc((100vw - (var(--best-seller-side) * 2) - (var(--best-seller-gap) * 2)) / 3 * 0.8) !important;
+  }
+}
