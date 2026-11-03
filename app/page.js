@@ -151,7 +151,7 @@ export default async function HomePage() {
             Quietly elegant diamond jewelry for proposals, vows, and the intimate milestones held closest to the heart.
           </p>
           <div className="hero-actions">
-            <a className="hero-primary" href="/category/engagement-ring">Find Your Engagement Ring</a>
+            <a className="hero-primary" href="/category/wedding-set">Find Your Wedding Set</a>
             <a className="hero-secondary" href="/about-us">Discover Maris</a>
           </div>
         </div>

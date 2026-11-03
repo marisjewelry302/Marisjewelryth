@@ -182,7 +182,7 @@ body:has(.site-header--home) .home-main .hero-content,
   .is-home-page .home-main .hero-content {
     --hero-h1: clamp(36px, min(4.35vw, 8.6vh), 124px);
     position: absolute;
-    top: max(226px, 42vh);
+    top: max(226px, 55vh);
     left: clamp(44px, 7vw, 420px);
     width: min(calc(var(--hero-h1) * 11.3), calc(100vw - clamp(88px, 14vw, 840px)));
     margin: 0;
