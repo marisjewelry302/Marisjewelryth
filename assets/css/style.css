@@ -110,6 +110,7 @@ body {
 }
 
 .hero-slider {
+  touch-action: pan-y;
   z-index: 0;
 }
 
@@ -180,6 +181,7 @@ body {
 }
 
 .hero-hit {
+  touch-action: pan-y;
   position: absolute;
   top: 0;
   bottom: 0;

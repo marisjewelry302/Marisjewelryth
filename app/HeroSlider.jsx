@@ -10,7 +10,8 @@ export default function HeroSlider({ slides }) {
   const [isPageHidden, setIsPageHidden] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const timerRef = useRef(null);
-  const touchStartXRef = useRef(0);
+  const swipeRef = useRef(null);
+  const suppressClickRef = useRef(false);
 
   const moveSlide = useCallback((delta) => {
     setActiveIndex((current) => (current + delta + slides.length) % slides.length);
@@ -69,14 +70,36 @@ export default function HeroSlider({ slides }) {
     };
   }, [activeIndex, slides]);
 
-  function handleTouchStart(event) {
-    touchStartXRef.current = event.touches[0].clientX;
+  // Pointer events cover finger and mouse alike; touch-action: pan-y in the CSS
+  // keeps vertical page scrolling while the horizontal swipe reaches this handler.
+  function handlePointerDown(event) {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+
+    swipeRef.current = { pointerId: event.pointerId, startX: event.clientX, startY: event.clientY };
+    suppressClickRef.current = false;
   }
 
-  function handleTouchEnd(event) {
-    const distance = event.changedTouches[0].clientX - touchStartXRef.current;
-    if (Math.abs(distance) > 40) {
-      moveSlide(distance > 0 ? -1 : 1);
+  function handlePointerUp(event) {
+    const swipe = swipeRef.current;
+
+    if (!swipe || swipe.pointerId !== event.pointerId) return;
+
+    swipeRef.current = null;
+    const distanceX = event.clientX - swipe.startX;
+    const distanceY = event.clientY - swipe.startY;
+
+    if (Math.abs(distanceX) > 40 && Math.abs(distanceX) > Math.abs(distanceY)) {
+      suppressClickRef.current = true;
+      moveSlide(distanceX > 0 ? -1 : 1);
+    }
+  }
+
+  function handleClickCapture(event) {
+    // A swipe that ends on a half-width hit button must not also count as a tap.
+    if (suppressClickRef.current) {
+      event.preventDefault();
+      event.stopPropagation();
+      suppressClickRef.current = false;
     }
   }
 
@@ -85,7 +108,10 @@ export default function HeroSlider({ slides }) {
   }
 
   return (
-    <div className="hero-slider" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+    <div className="hero-slider" onPointerDown={handlePointerDown}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={() => { swipeRef.current = null; }}
+      onClickCapture={handleClickCapture}>
       {slides.map((slide, index) => {
         let stateClass = "";
         if (index === activeIndex) {

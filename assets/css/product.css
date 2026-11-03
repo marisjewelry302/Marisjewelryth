@@ -698,6 +698,29 @@
   gap: 12px;
 }
 
+/* Four across is too small on a phone, so the row swipes sideways instead. */
+@media (max-width: 640px) {
+  .also-grid {
+    grid-auto-flow: column;
+    grid-auto-columns: min(44vw, 200px);
+    grid-template-columns: none;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    touch-action: pan-x pan-y;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .also-grid::-webkit-scrollbar {
+    display: none;
+  }
+
+  .also-card {
+    scroll-snap-align: start;
+  }
+}
+
 .also-card {
   display: grid;
   gap: 2px;
@@ -798,15 +821,14 @@
     padding-bottom: 44px;
   }
 
-  /* The row keeps all four across the phone, so the gap and the labels shrink
-     to match the narrower tiles. */
+  /* The row swipes sideways on a phone, so the tiles keep a readable size. */
   .also-grid {
-    gap: 6px;
+    gap: 10px;
   }
 
   .also-card span {
     margin-top: 4px;
-    font-size: 10px;
+    font-size: 11px;
   }
 
   /* A two-line cap keeps the four cards the same height whatever the piece is
