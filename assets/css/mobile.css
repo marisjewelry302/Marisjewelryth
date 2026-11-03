@@ -274,7 +274,8 @@
     grid-auto-columns: min(72vw, 280px) !important;
   }
 
-  .atelier-product {
+  /* Placeholder cards only: real product cards size to photo plus caption. */
+  .atelier-product--fallback {
     aspect-ratio: 0.9 / 1 !important;
     padding: 14px !important;
   }
