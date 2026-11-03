@@ -307,6 +307,25 @@
     min-height: 44px;
   }
 
+  /* Cart count sits inside the icon box so the screen edge never clips it. */
+  .site-header .bag-count-badge {
+    top: 2px !important;
+    right: 2px !important;
+    min-width: 16px;
+    height: 16px;
+    font-size: 9px;
+  }
+
+  /* The ghost button was white on a pale photo; a dark wash keeps it legible. */
+  .hero-actions .hero-secondary {
+    border-color: rgba(255, 255, 255, 0.85) !important;
+    background: rgba(16, 41, 35, 0.42) !important;
+    color: #fff;
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+    text-shadow: none;
+  }
+
   /* ---- Shared controls ---- */
   main a[class*="button"],
   main button[type="submit"] {
