@@ -368,3 +368,68 @@
     font-size: 12px;
   }
 }
+
+/* ---- Why Maris list (home) ---- */
+.value-card__link {
+  color: inherit;
+  text-decoration: none;
+}
+
+@media (max-width: 767px) {
+  .value-strip .value-lead h2 {
+    max-width: 14em;
+    text-wrap: balance;
+  }
+
+  .value-strip .section-kicker {
+    color: var(--maris-gold-text);
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .value-strip .value-lead p:last-child {
+    font-size: 15px;
+    line-height: 1.55;
+  }
+
+  /* Number and title share one row; the text uses the full width below. */
+  .value-strip .value-card {
+    position: relative;
+    display: grid;
+    grid-template-columns: 28px minmax(0, 1fr);
+    gap: 4px 12px;
+    align-items: baseline;
+    padding: 16px 0;
+  }
+
+  .value-strip .value-card > span[aria-hidden="true"],
+  .value-strip .value-card:hover > span[aria-hidden="true"],
+  .value-strip .value-card:focus-within > span[aria-hidden="true"] {
+    color: var(--maris-gold-text);
+    font-size: 13px;
+  }
+
+  .value-strip .value-card h3 {
+    grid-column: 2;
+    font-size: 16px !important;
+    font-weight: 600;
+    letter-spacing: 0.01em !important;
+    line-height: 1.3;
+    text-transform: none !important;
+  }
+
+  .value-strip .value-card p {
+    grid-column: 1 / -1;
+    max-width: none;
+    color: #3f524c;
+    font-size: 14px;
+    line-height: 1.55;
+  }
+
+  /* Whole row is the tap target */
+  .value-card__link::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+  }
+}

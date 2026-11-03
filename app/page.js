@@ -240,22 +240,22 @@ export default async function HomePage() {
         <div className="value-list">
           <article className="value-card">
             <span aria-hidden="true">01</span>
-            <h3>Signature collections</h3>
+            <h3><a className="value-card__link" href="#shop-category-heading">Signature collections <span aria-hidden="true">↗</span></a></h3>
             <p>Discover rings, earrings, pendants, and bracelets, with guidance on materials, sizing, and availability.</p>
           </article>
           <article className="value-card">
             <span aria-hidden="true">02</span>
-            <h3>Custom &amp; bridal</h3>
+            <h3><a className="value-card__link" href="/our-service">Custom &amp; bridal <span aria-hidden="true">↗</span></a></h3>
             <p>Share your ideas for a personal piece, engagement ring, or wedding bands and explore the details together.</p>
           </article>
           <article className="value-card">
             <span aria-hidden="true">03</span>
-            <h3>OEM &amp; wholesale</h3>
+            <h3><a className="value-card__link" href="/oem-jewelry">OEM &amp; wholesale <span aria-hidden="true">↗</span></a></h3>
             <p>Discuss production for your brand or pieces for your store, with options shaped around your brief and quantities.</p>
           </article>
           <article className="value-card">
             <span aria-hidden="true">04</span>
-            <h3>Personal guidance</h3>
+            <h3><a className="value-card__link" href="/contact-us">Personal guidance <span aria-hidden="true">↗</span></a></h3>
             <p>Work through materials, pricing, and timing with our team before confirming your order or project.</p>
           </article>
         </div>
