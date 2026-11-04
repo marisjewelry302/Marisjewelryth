@@ -700,3 +700,16 @@
     pointer-events: none;
   }
 }
+
+/* The homepage header is drawn in light text over the hero photograph, and that
+   colour was leaking into the drawer's group titles (Wedding band, Gift, Our
+   Expertise, About Us), leaving white on cream. The drawer is always cream. */
+@media (max-width: 699px) {
+  body .site-header--home .navbar .nav a,
+  body .site-header--home .navbar .nav .nav-dropdown-trigger,
+  body.is-page-scrolled .site-header--home .navbar .nav a,
+  body.is-page-scrolled .site-header--home .navbar .nav .nav-dropdown-trigger {
+    color: var(--maris-ink);
+    text-shadow: none;
+  }
+}
