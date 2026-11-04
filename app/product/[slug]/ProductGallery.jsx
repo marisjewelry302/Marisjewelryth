@@ -13,10 +13,13 @@ export default function ProductGallery({ imageSets, coverImageUrl, video, produc
   const activeSet = imageSets.find((set) => set.key === selectedKey) || imageSets[0];
   const images = activeSet?.images || [];
   // The card cover leads only the metal set it was shot in; a cover that names
-  // no metal (or is not a gallery image at all) leads every set.
+  // no metal leads every set. A cover that is not a named view (main, top,
+  // front, side...) - or not a gallery image at all - stays on the card and is
+  // kept out of the gallery.
   const coverImage = imageSets.flatMap((set) => set.images).find((image) => image.imageUrl === coverImageUrl);
   const coverMetal = getProductImageMetal(coverImage)?.key;
-  const setCoverImageUrl = !coverMetal || coverMetal === activeSet?.key ? coverImageUrl : "";
+  const coverIsView = Boolean(coverImage && getProductImageView(coverImage));
+  const setCoverImageUrl = coverIsView && (!coverMetal || coverMetal === activeSet?.key) ? coverImageUrl : "";
   const viewLabels = new Map(images.map((image) => [image.imageUrl, getProductImageView(image)?.label]));
   const slides = buildProductMediaSlides({
     images: images.map((image, index) => ({
@@ -112,6 +115,14 @@ export default function ProductGallery({ imageSets, coverImageUrl, video, produc
   }, [imageSlides.length]);
 
   const closeLightbox = useCallback(() => setLightboxIndex(-1), []);
+
+  // Zoomed, the photograph fills 2.5x the screen inside a scrollable stage, so
+  // a finger pans it and a pinch still works natively. Reset on every new photo.
+  const [zoomed, setZoomed] = useState(false);
+  const toggleZoom = useCallback(() => setZoomed((current) => !current), []);
+  useEffect(() => {
+    setZoomed(false);
+  }, [lightboxIndex]);
 
   // Switching metal swaps every slide, so start the new set from its first
   // view with the lightbox closed.
@@ -310,7 +321,27 @@ export default function ProductGallery({ imageSets, coverImageUrl, video, produc
             }
           }}
         >
-          <Image src={activeItem.src} alt={`${activeItem.alt} large preview`} width={1024} height={1024} sizes="90vw" unoptimized={!isOptimizableImageSrc(activeItem.src)} />
+          <div className={`product-lightbox-stage${zoomed ? " is-zoomed" : ""}`}>
+            <Image
+              src={activeItem.src}
+              alt={`${activeItem.alt} large preview`}
+              width={1024}
+              height={1024}
+              sizes={zoomed ? "250vw" : "90vw"}
+              onClick={toggleZoom}
+              unoptimized={!isOptimizableImageSrc(activeItem.src)}
+            />
+          </div>
+
+          <button
+            type="button"
+            className="product-lightbox-zoom"
+            onClick={toggleZoom}
+            aria-pressed={zoomed}
+            aria-label={zoomed ? "Zoom out" : "Zoom in"}
+          >
+            <span aria-hidden="true">{zoomed ? "−" : "+"}</span>
+          </button>
 
           {imageSlides.length > 1 && (
             <>

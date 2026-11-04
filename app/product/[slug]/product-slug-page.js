@@ -313,6 +313,15 @@ export default async function ProductPage({ params }) {
               </section>
             </div>
           </div>
+          <div className="product-sticky-cta">
+            <ProductContactLink
+              className="product-action is-primary is-contact"
+              productCode={product.sku}
+              hasMetalChoice={metalOptions.length > 1}
+            >
+              Contact Maris to Order
+            </ProductContactLink>
+          </div>
         </ProductMetalProvider>
 
         {relatedProducts.length > 0 && (

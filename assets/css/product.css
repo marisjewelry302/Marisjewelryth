@@ -297,6 +297,55 @@
   box-shadow: 0 28px 90px rgba(0, 0, 0, 0.36);
 }
 
+.product-sticky-cta {
+  display: none;
+}
+
+.product-lightbox-stage {
+  max-width: 100%;
+  max-height: 88vh;
+  overflow: hidden;
+}
+
+.product-lightbox-stage img {
+  cursor: zoom-in;
+}
+
+.product-lightbox-stage.is-zoomed {
+  width: min(92vw, 1240px);
+  height: 88vh;
+  overflow: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.product-lightbox-stage.is-zoomed img {
+  width: 250%;
+  max-width: none;
+  max-height: none;
+  height: auto;
+  cursor: zoom-out;
+}
+
+.product-lightbox-zoom {
+  position: absolute;
+  top: 24px;
+  right: 84px;
+  width: 44px;
+  height: 44px;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--maris-white);
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.product-lightbox-zoom:hover,
+.product-lightbox-zoom:focus-visible {
+  background: rgba(255, 255, 255, 0.18);
+}
+
 .product-lightbox-nav {
   position: absolute;
   top: 50%;
@@ -856,7 +905,38 @@
   }
 
   .product-lightbox-nav {
-    width: 42px;
-    height: 42px;
+    width: 44px;
+    height: 44px;
+  }
+
+  .product-lightbox-zoom {
+    top: 14px;
+    right: 66px;
+  }
+
+  /* The enquiry button stays in reach while the shopper reads the details. */
+  .product-sticky-cta {
+    display: block;
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 900;
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+    background: rgba(255, 255, 255, 0.96);
+    border-top: 1px solid rgba(16, 41, 35, 0.14);
+    backdrop-filter: blur(8px);
+  }
+
+  .product-sticky-cta .product-action {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 48px;
+  }
+
+  .product-page {
+    padding-bottom: 72px;
   }
 }
