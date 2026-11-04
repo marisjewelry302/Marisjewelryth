@@ -748,3 +748,37 @@
     margin: 0;
   }
 }
+
+/* Why Maris list on phones: four stacked rows became a two by two grid, with
+   each number above its title so the half width column has room for the text. */
+@media (max-width: 767px) {
+  .value-strip .value-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 18px;
+  }
+
+  .value-strip .value-card {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+    align-content: start;
+    gap: 6px;
+    padding: 14px 0;
+  }
+
+  .value-strip .value-card > span[aria-hidden="true"],
+  .value-strip .value-card h3,
+  .value-strip .value-card p {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .value-strip .value-card h3 {
+    font-size: 15px !important;
+    line-height: 1.25;
+  }
+
+  .value-strip .value-card p {
+    font-size: 13px;
+    line-height: 1.5;
+  }
+}
