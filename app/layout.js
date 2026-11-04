@@ -45,7 +45,7 @@ export const metadata = {
     path: "/"
   }),
   icons: {
-    icon: "/assets/images/favicon.svg",
+    icon: { url: "/assets/images/favicon.png", type: "image/png", sizes: "256x256" },
     apple: "/assets/images/logo.png"
   },
   manifest: "/manifest.webmanifest"
