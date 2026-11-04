@@ -47,7 +47,8 @@
   .site-header .navbar,
   body.is-page-scrolled .site-header .navbar {
     display: grid !important;
-    grid-template-columns: 44px minmax(0, 1fr) auto !important;
+    /* Equal outer tracks keep the logo on the true centre of the screen. */
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) !important;
     align-items: center;
     min-height: 56px !important;
     padding: 6px 8px !important;
@@ -84,13 +85,20 @@
     position: static !important;
     inset: auto !important;
     align-self: center;
+    justify-self: end;
     gap: 0;
+    margin-right: -4px;
     transform: none !important;
+  }
+
+  .site-header .mobile-menu-toggle {
+    justify-self: start;
   }
 
   .site-header .icons a {
     display: inline-grid !important;
-    width: 40px !important;
+    width: 32px !important;
+    min-width: 32px !important;
     height: 44px !important;
     place-items: center;
   }
