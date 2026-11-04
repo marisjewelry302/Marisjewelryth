@@ -678,3 +678,25 @@
     line-height: 1.5 !important;
   }
 }
+
+/* Mobile menu drawer: no close button. The dimmed page beside the drawer closes
+   it on tap, the drawer closes on a swipe back to the left, and the open menu
+   button hides so the two never overlap the first menu items. */
+@media (max-width: 900px) {
+  .mobile-menu-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1250;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: rgba(16, 41, 35, 0.48);
+    cursor: default;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body.is-mobile-menu-open .site-header .mobile-menu-toggle {
+    visibility: hidden;
+    pointer-events: none;
+  }
+}

@@ -156,6 +156,7 @@ export default function SiteHeader() {
   const menuButtonRef = useRef(null);
   const navRef = useRef(null);
   const headerRef = useRef(null);
+  const swipeStartRef = useRef(null);
 
   const normalizedPathname = useMemo(() => pathname.replace(/\/$/, "") || "/", [pathname]);
   const isHome = normalizedPathname === "/";
@@ -289,6 +290,30 @@ export default function SiteHeader() {
     setIsOpen(false);
   }, [pathname]);
 
+  // The drawer has no close button: tapping the dimmed page or swiping the
+  // drawer back toward the left edge closes it, and Escape still works.
+  function closeMenu() {
+    setIsOpen(false);
+  }
+
+  function handleNavTouchStart(event) {
+    const touch = event.touches[0];
+    swipeStartRef.current = touch ? { x: touch.clientX, y: touch.clientY } : null;
+  }
+
+  function handleNavTouchEnd(event) {
+    const start = swipeStartRef.current;
+    const touch = event.changedTouches[0];
+    swipeStartRef.current = null;
+    if (!isMobile || !start || !touch) return;
+
+    const dx = touch.clientX - start.x;
+    const dy = touch.clientY - start.y;
+    if (dx < -60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      closeMenu();
+    }
+  }
+
   function isCurrent(href) {
     return normalizedPathname === href || normalizedPathname.startsWith(`${href}/`);
   }
@@ -357,6 +382,16 @@ export default function SiteHeader() {
           <SearchIcon />
         </Link>
 
+        {isMobile && isOpen ? (
+          <button
+            type="button"
+            className="mobile-menu-backdrop"
+            aria-label="Close menu"
+            tabIndex={-1}
+            onClick={closeMenu}
+          />
+        ) : null}
+
         <nav
           id="maris-primary-navigation"
           className="nav"
@@ -364,6 +399,8 @@ export default function SiteHeader() {
           aria-hidden={isMobile && !isOpen}
           inert={isMobile && !isOpen}
           ref={navRef}
+          onTouchStart={handleNavTouchStart}
+          onTouchEnd={handleNavTouchEnd}
         >
           {primaryNav.map((item) => (
             <Link key={item.href} href={item.href} aria-current={isCurrent(item.href) ? "page" : undefined}>
