@@ -2703,6 +2703,26 @@ body:has(.site-header--home) .hero-utility-bar__divider,
   padding-block: var(--section-rhythm);
 }
 
+/* "Why Maris" and the FAQ under it. The list sat about 400px from its heading,
+   and the two bands share one background, so their padding stacked into a
+   160px blank strip. Pull each list closer to its heading and split the
+   vertical space between the two bands. Phones stack to one column below. */
+@media (min-width: 768px) {
+  .home-main > section.value-strip,
+  .home-main > section.home-answer-guide {
+    grid-template-columns: minmax(240px, min(430px, 32%)) minmax(0, 1fr);
+    column-gap: clamp(36px, 4.4vw, 80px);
+  }
+
+  .home-main > section.value-strip {
+    padding-bottom: clamp(28px, 3vw, 44px);
+  }
+
+  .home-main > section.home-answer-guide {
+    padding-top: clamp(28px, 3vw, 44px);
+  }
+}
+
 /* Hero copy sits over the brightest part of the ring photograph on phones. */
 @media (max-width: 640px) {
   body .hero-content h1,
