@@ -183,7 +183,7 @@ export default function ShoppingBagClient() {
   }
 
   return (
-    <main className="bag-main site-main">
+    <main id="main-content" className="bag-main site-main">
       <section className="bag-hero">
         <p className="eyebrow">Selected Pieces</p>
         <h1>Shopping Bag</h1>

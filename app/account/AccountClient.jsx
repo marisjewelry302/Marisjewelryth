@@ -273,7 +273,7 @@ export default function AccountClient() {
   // ─── Render ────────────────────────────────────────────────────────────────
   if (loading) {
     return (
-      <main className="account-main site-main">
+      <main id="main-content" className="account-main site-main">
         <section className="account-hero">
           <p className="eyebrow">Client Access</p>
           <h1>Account</h1>
@@ -286,7 +286,7 @@ export default function AccountClient() {
   }
 
   return (
-    <main className="account-main site-main">
+    <main id="main-content" className="account-main site-main">
       <section className="account-hero">
         <p className="eyebrow">Client Access</p>
         <h1>Account</h1>

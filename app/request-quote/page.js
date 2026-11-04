@@ -10,7 +10,7 @@ export const metadata = buildPageMetadata({
 
 export default function RequestQuotePage() {
   return (
-    <Suspense fallback={<main className="placeholder-main site-main" />}>
+    <Suspense fallback={<main id="main-content" className="placeholder-main site-main" />}>
       <RequestQuoteClient />
     </Suspense>
   );

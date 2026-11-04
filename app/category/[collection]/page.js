@@ -69,7 +69,7 @@ export default async function CategoryPage({ params }) {
   return (
     <>
       <JsonLd data={categoryJsonLd} />
-      <main className="category-page site-main">
+      <main id="main-content" className="category-page site-main">
         <section className="page-header">
           <h1>{collection.title}</h1>
           <p className="category-lead">{collection.lead}</p>

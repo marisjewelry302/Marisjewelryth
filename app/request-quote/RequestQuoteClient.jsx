@@ -65,7 +65,7 @@ export default function RequestQuoteClient() {
   const selectedPieces = useMemo(() => formatSelectedPieces(selectedItems), [selectedItems]);
 
   return (
-    <main className="placeholder-main content-page site-main">
+    <main id="main-content" className="placeholder-main content-page site-main">
       <section className="placeholder-card placeholder-card--editorial">
         <div className="subpage-intro">
           <p className="eyebrow">Quote Request</p>

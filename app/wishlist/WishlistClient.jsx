@@ -166,7 +166,7 @@ export default function WishlistClient() {
   }, [isLoggedIn]);
 
   return (
-    <main className="wishlist-main site-main">
+    <main id="main-content" className="wishlist-main site-main">
       <section className="wishlist-hero">
         <p className="eyebrow">Saved Pieces</p>
         <h1>Wishlist</h1>

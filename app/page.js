@@ -132,7 +132,7 @@ export default async function HomePage() {
     <>
       <link rel="preload" as="image" href={heroSlides[0].image} type="image/webp" fetchPriority="high" />
       <JsonLd data={homeJsonLd} />
-      <main className="home-main site-main">
+      <main id="main-content" className="home-main site-main">
       <section className="hero">
         <div className="hero-utility-bar" aria-label="Maris highlights">
           <span>Bangkok atelier</span>

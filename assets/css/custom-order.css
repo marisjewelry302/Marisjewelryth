@@ -237,7 +237,7 @@
 }
 
 .custom-order-status.is-error {
-  color: var(--maris-red);
+  color: var(--maris-red-text);
   font-weight: 700;
 }
 

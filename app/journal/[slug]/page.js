@@ -31,7 +31,7 @@ export default async function JournalArticlePage({ params }) {
   }
 
   return (
-    <main className="placeholder-main content-page site-main">
+    <main id="main-content" className="placeholder-main content-page site-main">
       <article className="placeholder-card journal-article-shell">
         <header className="journal-article-header">
           <p className="eyebrow">{byLanguage(article.category, language)}</p>

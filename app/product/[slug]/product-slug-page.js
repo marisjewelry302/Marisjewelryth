@@ -174,7 +174,7 @@ export default async function ProductPage({ params }) {
   return (
     <>
       <JsonLd data={productJsonLd} />
-      <main className="product-page">
+      <main id="main-content" className="product-page">
         <ProductMetalProvider initialKey={imageSets[0].key}>
           <div className="product-detail">
             <div className="product-gallery-column">

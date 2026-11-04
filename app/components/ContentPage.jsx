@@ -11,7 +11,7 @@ export default function ContentPage({ page, children }) {
   ].filter(Boolean).join(" ");
 
   return (
-    <main className="placeholder-main content-page site-main">
+    <main id="main-content" className="placeholder-main content-page site-main">
       <section className={cardClassName}>
         <div className="subpage-intro">
           <p className="eyebrow">{page.eyebrow}</p>

@@ -278,9 +278,10 @@ body.is-page-scrolled .icons i {
   cursor: pointer;
 }
 
-.catalogue-select:focus {
-  outline: none;
-  border-color: var(--maris-rose);
+.catalogue-select:focus-visible {
+  outline: 2px solid var(--maris-teal);
+  outline-offset: 2px;
+  border-color: var(--maris-teal);
 }
 
 /* PRODUCTS */
@@ -413,7 +414,7 @@ body.is-page-scrolled .icons i {
 
 .wishlist-toggle:hover,
 .wishlist-toggle.is-saved {
-  color: var(--maris-red);
+  color: var(--maris-red-text);
 }
 
 .bag-count-badge {

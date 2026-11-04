@@ -201,7 +201,7 @@ export default function CustomOrderForm({ productCode, productImage = null, init
   const isGoldMetal = GOLD_METALS.has(options.metal);
 
   return (
-    <main className="custom-order-page">
+    <main id="main-content" className="custom-order-page">
       <section className="custom-order-shell" aria-labelledby="custom-order-title">
         <div
           className={`custom-order-visual${productImage ? " has-product-image" : ""}`}

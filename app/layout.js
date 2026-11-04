@@ -68,6 +68,7 @@ export default function RootLayout({ children }) {
       </head>
       <body className="has-maris-footer notranslate" translate="no" suppressHydrationWarning>
         <JsonLd data={siteJsonLd} />
+        <a className="skip-link" href="#main-content">Skip to main content</a>
         <SiteHeader />
         {children}
         <SiteFooter />

@@ -639,9 +639,10 @@ a {
 .account-form input:focus,
 .account-profile-form input:focus,
 .account-profile-form select:focus {
-  outline: none;
-  border-color: var(--maris-rose);
-  box-shadow: 0 0 0 3px rgba(221, 164, 165, 0.12);
+  outline: 2px solid var(--maris-teal);
+  outline-offset: 2px;
+  border-color: var(--maris-teal);
+  box-shadow: 0 0 0 3px rgba(0, 73, 58, 0.16);
 }
 
 .account-submit,
@@ -1185,9 +1186,10 @@ a {
 .inquiry-form input:focus,
 .inquiry-form textarea:focus,
 .inquiry-form select:focus {
-  outline: none;
-  border-color: var(--maris-rose);
-  box-shadow: 0 0 0 3px rgba(221, 164, 165, 0.12);
+  outline: 2px solid var(--maris-teal);
+  outline-offset: 2px;
+  border-color: var(--maris-teal);
+  box-shadow: 0 0 0 3px rgba(0, 73, 58, 0.16);
 }
 
 .inquiry-form-note {

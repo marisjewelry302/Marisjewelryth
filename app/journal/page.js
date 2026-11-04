@@ -11,7 +11,7 @@ export default function JournalPage() {
   const language = "en";
 
   return (
-    <main className="placeholder-main content-page site-main">
+    <main id="main-content" className="placeholder-main content-page site-main">
       <section className="placeholder-card placeholder-card--editorial journal-library-shell">
         <div className="subpage-intro">
           <p className="eyebrow">Maris Journal</p>

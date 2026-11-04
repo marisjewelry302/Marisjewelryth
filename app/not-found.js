@@ -1,6 +1,6 @@
 export default function NotFound() {
   return (
-    <main className="not-found-shell site-main">
+    <main id="main-content" className="not-found-shell site-main">
       <section className="placeholder-card">
         <p className="eyebrow">Page not found</p>
         <h1>We could not find that page.</h1>
