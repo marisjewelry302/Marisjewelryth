@@ -496,6 +496,10 @@
   margin: 0;
 }
 
+.product-enquiry-specs {
+  margin-top: 28px;
+}
+
 .product-specs {
   display: grid;
   margin: 0;

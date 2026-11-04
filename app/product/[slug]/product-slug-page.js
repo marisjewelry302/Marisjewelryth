@@ -51,6 +51,16 @@ function readGemReportCell(stone, key) {
   return key === "caratTotal" ? formatGemCarat(stone.caratTotal) : getMeaningfulText(stone[key]);
 }
 
+// Details that vary per client and are settled in the enquiry, not printed on
+// the page. Wording stays honest: no fixed weights, grades or terms are implied.
+const ENQUIRY_SPEC_ITEMS = [
+  ["Diamond Size", "Choose the carat weight and size that suit you; we advise on the best proportion for this design."],
+  ["Colour & Clarity", "Selected with the atelier to match your preference and budget."],
+  ["Weight & Ring Size", "Metal weight depends on your finger size and chosen metal, and is confirmed in your quotation."],
+  ["Materials & Making", "Metal, purity, finish and the way the piece is crafted are discussed when you enquire."],
+  ["Certificate & Warranty", "Stone certification and after-care terms are confirmed with the atelier at enquiry."]
+];
+
 const COLLECTION_LABELS = {
   "engagement-ring": "Engagement Rings",
   "wedding-set": "Wedding Set",
@@ -283,6 +293,24 @@ export default async function ProductPage({ params }) {
               </div>
 
               <p className="product-note">Enquire with our atelier for current availability and bespoke sizing.</p>
+
+              {/* Maris makes to order, so these are agreed per client rather than
+                  fixed on the page. Say where they are settled, promise nothing. */}
+              <section className="product-spec-block product-enquiry-specs" aria-labelledby="product-enquiry-heading" data-product-enquiry-specs>
+                <p className="product-kicker" id="product-enquiry-heading">Made to Your Specification</p>
+                <dl className="product-specs">
+                  {ENQUIRY_SPEC_ITEMS.map(([label, text]) => (
+                    <div key={label}>
+                      <dt>{label}</dt>
+                      <dd>{text}</dd>
+                    </div>
+                  ))}
+                </dl>
+                <p className="product-note product-spec-note">
+                  Tell us your preferences when you contact Maris &mdash; we will recommend a design and
+                  confirm every detail in your quotation before anything is made.
+                </p>
+              </section>
             </div>
           </div>
         </ProductMetalProvider>
