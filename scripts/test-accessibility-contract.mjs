@@ -30,5 +30,5 @@ assert.match(files.gallery, /role="dialog"/);
 assert.match(files.gallery, /aria-modal="true"/);
 assert.match(files.gallery, /aria-label="Close image preview"/);
 assert.doesNotMatch(files.gallery, /tabIndex=\{0\}[\s\S]*?role="button"/);
-assert.match(files.productPage, /<main className="product-page">/);
+assert.match(files.productPage, /<main id="main-content" className="product-page">/);
 assert.match(files.category, /<h2 className="sr-only">Available/);
