@@ -713,3 +713,38 @@
     text-shadow: none;
   }
 }
+
+/* Catalogue controls on phones: Sort by sits left and Filter right on one row,
+   with the piece count as a slim line beneath, instead of three stacked,
+   full width blocks that pushed the products down the screen. */
+@media (max-width: 768px) {
+  .catalogue-toolbar {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: end;
+    column-gap: 10px;
+    row-gap: 6px;
+    padding-bottom: 4px;
+  }
+
+  .catalogue-toolbar .toolbar-group {
+    gap: 4px;
+  }
+
+  .catalogue-toolbar .toolbar-group-right {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .catalogue-toolbar .catalogue-select {
+    padding: 9px 8px;
+    text-overflow: ellipsis;
+  }
+
+  .catalogue-toolbar .catalogue-count {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-self: start;
+    align-self: start;
+    margin: 0;
+  }
+}
