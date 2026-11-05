@@ -96,6 +96,8 @@ export default function ContentPage({ page, children }) {
           </section>
         )}
 
+        {page.effectiveDate && <p className="subpage-note">Effective date: {page.effectiveDate}</p>}
+
         {page.policySections && (
           <div className="policy-content">
             {page.policySections.map((section) => (

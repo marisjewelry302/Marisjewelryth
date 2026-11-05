@@ -117,7 +117,8 @@ const sendResult = await sendWelcomeEmail({
 }, {
   env: {
     RESEND_API_KEY: "re_test",
-    MARIS_EMAIL_FROM: "Maris Jewelry <welcome@example.com>"
+    MARIS_EMAIL_FROM: "Maris Jewelry <welcome@example.com>",
+    MARIS_CUSTOMER_SESSION_SECRET: "test-signing-secret"
   },
   fetchImpl: async (url, options) => {
     resendCalls.push({ url, options });

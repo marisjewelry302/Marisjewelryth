@@ -1,6 +1,7 @@
 import { hashCustomerPassword, verifyCustomerPassword } from "./customer-auth.js";
 import { sanitizeCustomerMetadata } from "./customer-data.js";
 import { createSupabaseAdminClient, getSupabaseAdminConfig } from "./maris-database.js";
+import { deleteEmailSubscriber } from "./customer-subscribers.js";
 
 const CUSTOMER_COLUMNS = `
   id,
@@ -221,4 +222,49 @@ export async function changeCustomerPassword(id, currentPassword, newPassword, {
     .eq("id", id);
 
   return { status: "updated" };
+}
+
+// ─── Delete Account ────────────────────────────────────────────────────────
+
+// Erases the account itself, its saved wishlist and bag (removed by the
+// foreign keys' ON DELETE CASCADE), and the marketing record for the address.
+// Enquiries, quote and custom-order requests, and order and payment records are
+// business records the shop may need to keep, so they are not removed here;
+// their customer_id is set to null by the foreign keys and the privacy policy
+// says how long they are kept.
+export async function deleteCustomerAccount(id, password, { env = process.env, client } = {}) {
+  const { config, client: defaultClient } = getClient(env);
+
+  if (!config.isConfigured) return { status: "not_configured" };
+
+  const supabase = client || defaultClient;
+
+  const { data, error } = await supabase
+    .from("customers")
+    .select("id, email, password_hash, metadata")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message || "Could not load customer.");
+  if (!data) return { status: "not_found" };
+
+  const passwordHash = data.password_hash || data.metadata?.password_hash;
+
+  if (!passwordHash || !verifyCustomerPassword(password, passwordHash)) {
+    return { status: "wrong_password" };
+  }
+
+  // The marketing record goes first: if it cannot be deleted the account is
+  // left intact and the person can try again, rather than being left with a
+  // deleted account and a mailing-list entry nobody can reach.
+  await deleteEmailSubscriber(data.email, { env, client });
+
+  const { error: deleteError } = await supabase
+    .from("customers")
+    .delete()
+    .eq("id", id);
+
+  if (deleteError) throw new Error(deleteError.message || "Account could not be deleted.");
+
+  return { status: "deleted" };
 }

@@ -1609,3 +1609,95 @@ a {
     min-height: 24px;
   }
 }
+
+/* Account: consent checkbox and delete-account form. The .account-form input
+   rule makes every input full width and 50px tall, so the checkbox rows reset
+   it with higher specificity. */
+.account-form label.account-consent,
+.account-delete-form label.account-consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 12px;
+  font-size: 14px;
+  letter-spacing: 0;
+  text-transform: none;
+  line-height: 1.6;
+  color: var(--maris-ink);
+  cursor: pointer;
+}
+
+.account-form label.account-consent input,
+.account-delete-form label.account-consent input {
+  flex: 0 0 auto;
+  width: 18px;
+  min-height: 18px;
+  height: 18px;
+  margin-top: 3px;
+  padding: 0;
+  accent-color: var(--maris-teal);
+}
+
+.account-form .account-form-note a,
+.account-delete-form a {
+  color: var(--maris-teal);
+}
+
+.account-delete-form {
+  display: grid;
+  gap: 12px;
+  margin-top: 38px;
+  padding-top: 28px;
+  border-top: 1px solid rgba(221, 164, 165, 0.42);
+}
+
+.account-delete-form h3 {
+  font-family: var(--maris-font-sans);
+  font-weight: 300;
+  line-height: 1;
+}
+
+.account-delete-form p {
+  font-size: 14px;
+  line-height: 1.75;
+  color: var(--maris-muted);
+}
+
+.account-delete-form label {
+  margin-top: 8px;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--maris-gold);
+}
+
+.account-delete-form input[type="password"] {
+  width: 100%;
+  min-height: 50px;
+  padding: 0 14px;
+  border: 1px solid rgba(221, 164, 165, 0.42);
+  border-radius: 0;
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--maris-ink);
+  font: inherit;
+}
+
+.account-submit--danger {
+  border-color: #9b3944;
+  background: #9b3944;
+}
+
+.account-submit--danger:hover {
+  background: #7e2d37;
+}
+
+.form-note {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--maris-muted);
+}
+
+.form-note a {
+  color: var(--maris-teal);
+}

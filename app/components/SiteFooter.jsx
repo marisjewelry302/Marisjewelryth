@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useId, useState } from "react";
 
+import { openCookieSettings } from "../lib/cookie-consent";
 import NewsletterSignup from "./NewsletterSignup";
 
 const footerSections = [
@@ -174,6 +175,9 @@ export default function SiteFooter() {
 
         <div className="maris-footer__bottom">
           <p className="maris-footer__copyright">© 2026 Maris Jewelry. All rights reserved.</p>
+          <button className="maris-footer__cookie-settings" type="button" onClick={openCookieSettings}>
+            Cookie settings
+          </button>
         </div>
       </div>
     </footer>

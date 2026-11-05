@@ -203,3 +203,60 @@ export async function markWelcomeEmailSent(email, { customerId = null, resendEma
     subscriber: normalizeSubscriber(data)
   };
 }
+
+// Withdraws marketing consent. The row stays, with consent false, so a later
+// sign-up form or import cannot silently put the address back on the list
+// without the person asking to join again.
+export async function unsubscribeEmail(email, { env = process.env, client } = {}) {
+  const { config, client: supabase } = getSubscribersClient({ env, client });
+
+  if (!config.isConfigured) {
+    return {
+      status: "not_configured",
+      missingEnv: config.missingEnv
+    };
+  }
+
+  const normalizedEmail = normalizeMarketingEmail(email);
+
+  if (!normalizedEmail) {
+    return { status: "invalid" };
+  }
+
+  const { error } = await supabase
+    .from(SUBSCRIBER_TABLE)
+    .update({ consent: false })
+    .eq("email", normalizedEmail);
+
+  if (error) {
+    throw new Error(error.message || "Unsubscribe could not be saved.");
+  }
+
+  return { status: "unsubscribed" };
+}
+
+// Used when a customer deletes their account: their marketing record goes with it.
+export async function deleteEmailSubscriber(email, { env = process.env, client } = {}) {
+  const { config, client: supabase } = getSubscribersClient({ env, client });
+
+  if (!config.isConfigured) {
+    return { status: "not_configured", missingEnv: config.missingEnv };
+  }
+
+  const normalizedEmail = normalizeMarketingEmail(email);
+
+  if (!normalizedEmail) {
+    return { status: "invalid" };
+  }
+
+  const { error } = await supabase
+    .from(SUBSCRIBER_TABLE)
+    .delete()
+    .eq("email", normalizedEmail);
+
+  if (error) {
+    throw new Error(error.message || "Subscriber record could not be deleted.");
+  }
+
+  return { status: "deleted" };
+}

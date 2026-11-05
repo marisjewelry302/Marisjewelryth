@@ -49,6 +49,13 @@ export async function POST(request) {
     body = {};
   }
 
+  // Creating an account is not consent to marketing. The sign-up form only
+  // calls this route when the person ticked the marketing box, and the server
+  // checks that again so no other caller can subscribe someone by accident.
+  if (body?.marketingConsent !== true) {
+    return json({ error: "Marketing consent is required." }, 400);
+  }
+
   try {
     const subscriberResult = await upsertEmailSubscriber({
       email: customer.email,

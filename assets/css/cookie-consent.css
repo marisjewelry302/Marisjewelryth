@@ -1,0 +1,293 @@
+/* Cookie consent banner. Uses the palette tokens declared once in style.css;
+   this sheet must not declare :root. It sits above the home signup popup
+   (z-index 2000), which waits for a consent answer before opening anyway. */
+
+.cookie-consent {
+  position: fixed;
+  right: clamp(12px, 2vw, 24px);
+  bottom: clamp(12px, 2vw, 24px);
+  left: clamp(12px, 2vw, 24px);
+  z-index: 2100;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+  outline: none;
+  animation: cookie-consent-enter 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.cookie-consent__inner {
+  display: grid;
+  gap: 16px;
+  width: min(980px, 100%);
+  max-height: calc(100dvh - 24px);
+  overflow-y: auto;
+  padding: clamp(18px, 2.2vw, 26px);
+  border: 1px solid rgba(0, 73, 58, 0.14);
+  border-radius: 8px;
+  background: var(--maris-paper);
+  box-shadow: 0 24px 64px rgba(16, 41, 35, 0.22);
+  color: var(--maris-ink);
+  font-family: var(--maris-font-body);
+  pointer-events: auto;
+}
+
+.cookie-consent:focus-visible .cookie-consent__inner {
+  outline: 2px solid var(--maris-teal);
+  outline-offset: 3px;
+}
+
+.cookie-consent__eyebrow {
+  margin: 0 0 4px;
+  color: var(--maris-gold-text);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.cookie-consent__title {
+  margin: 0 0 6px;
+  color: var(--maris-teal);
+  font-family: var(--maris-font-display);
+  font-size: clamp(18px, 1.6vw, 21px);
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.cookie-consent__text {
+  margin: 0;
+  color: var(--maris-muted);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.cookie-consent__link {
+  color: var(--maris-teal);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.cookie-consent__categories {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.cookie-consent__category {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 14px;
+  border: 1px solid rgba(0, 73, 58, 0.1);
+  border-radius: 6px;
+  background: var(--maris-white);
+}
+
+.cookie-consent__category-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--maris-ink);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cookie-consent__badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(0, 73, 58, 0.08);
+  color: var(--maris-teal);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.cookie-consent__category-text {
+  margin: 4px 0 0;
+  color: var(--maris-muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+/* Native checkbox restyled as a switch; it keeps its keyboard behaviour. */
+.cookie-consent__switch {
+  appearance: none;
+  position: relative;
+  flex: 0 0 auto;
+  width: 44px;
+  height: 24px;
+  margin: 0;
+  border-radius: 999px;
+  background: var(--maris-silver);
+  box-shadow: inset 0 0 0 1px rgba(16, 41, 35, 0.16);
+  cursor: pointer;
+  transition: background-color 180ms ease;
+}
+
+.cookie-consent__switch::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--maris-white);
+  box-shadow: 0 1px 3px rgba(16, 41, 35, 0.3);
+  transition: transform 180ms ease;
+}
+
+.cookie-consent__switch:checked {
+  background: var(--maris-teal);
+}
+
+.cookie-consent__switch:checked::after {
+  transform: translateX(20px);
+}
+
+.cookie-consent__switch:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.cookie-consent__switch:focus-visible {
+  outline: 2px solid var(--maris-teal);
+  outline-offset: 3px;
+}
+
+.cookie-consent__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.cookie-consent__button {
+  min-height: 44px;
+  padding: 0 22px;
+  border: 1px solid var(--maris-teal);
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease;
+}
+
+.cookie-consent__button.is-primary {
+  background: var(--maris-teal);
+  color: var(--maris-white);
+}
+
+.cookie-consent__button.is-primary:hover {
+  background: var(--maris-ink);
+  border-color: var(--maris-ink);
+}
+
+.cookie-consent__button.is-secondary {
+  background: transparent;
+  color: var(--maris-teal);
+}
+
+.cookie-consent__button.is-secondary:hover {
+  background: rgba(0, 73, 58, 0.06);
+}
+
+.cookie-consent__button.is-ghost {
+  margin-right: auto;
+  border-color: transparent;
+  background: transparent;
+  color: var(--maris-teal);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.cookie-consent__button:focus-visible {
+  outline: 2px solid var(--maris-teal);
+  outline-offset: 3px;
+}
+
+/* Wide screens: copy on the left, buttons on the right, while collapsed. */
+@media (min-width: 900px) {
+  .cookie-consent:not(.is-expanded) .cookie-consent__inner {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 28px;
+  }
+
+  .cookie-consent:not(.is-expanded) .cookie-consent__button.is-ghost {
+    margin-right: 0;
+  }
+}
+
+@media (max-width: 560px) {
+  .cookie-consent__actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .cookie-consent__button.is-primary {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+
+  .cookie-consent__button.is-ghost {
+    grid-column: 1 / -1;
+    margin-right: 0;
+  }
+}
+
+/* Footer entry point for reopening the panel. */
+.maris-footer__cookie-settings {
+  margin: 6px 0 0;
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  color: rgba(236, 236, 236, 0.75);
+  font-family: inherit;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.maris-footer__cookie-settings:hover {
+  color: var(--maris-white);
+}
+
+.maris-footer__cookie-settings:focus-visible {
+  outline: 2px solid var(--maris-rose);
+  outline-offset: 2px;
+}
+
+@keyframes cookie-consent-enter {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cookie-consent {
+    animation: none;
+  }
+
+  .cookie-consent__switch,
+  .cookie-consent__switch::after,
+  .cookie-consent__button {
+    transition: none;
+  }
+}

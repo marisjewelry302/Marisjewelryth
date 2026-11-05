@@ -52,15 +52,22 @@ export default function AccountClient() {
   const [popupEmail, setPopupEmail] = useState("");
   const [isPopupSource, setIsPopupSource] = useState(false);
   const [safeNextPath, setSafeNextPath] = useState("");
+  const [popupConsent, setPopupConsent] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteMessage, setDeleteMessage] = useState("");
 
   // ─── Load session on mount ──────────────────────────────────────────────
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     // The popup hands the email over through sessionStorage; ?email= still works for older links.
     let handoffEmail = "";
+    let handoffConsent = false;
     try {
       handoffEmail = window.sessionStorage.getItem("marisSignupPopupEmail") || "";
+      // The pop-up only records this after the visitor ticked its own marketing box.
+      handoffConsent = window.sessionStorage.getItem("marisSignupPopupConsent") === "1";
       window.sessionStorage.removeItem("marisSignupPopupEmail");
+      window.sessionStorage.removeItem("marisSignupPopupConsent");
     } catch {
       // sessionStorage unavailable: fall back to the query string only.
     }
@@ -73,6 +80,7 @@ export default function AccountClient() {
     if ((requestedMode === "signup" || source === "popup") && email) {
       setPopupEmail(email);
       setIsPopupSource(true);
+      setPopupConsent(handoffConsent);
     }
 
     if (requestedMode === "signup" || source === "popup") {
@@ -97,6 +105,7 @@ export default function AccountClient() {
     setSubmitting(true);
 
     const formData = new FormData(event.currentTarget);
+    const wantsMarketing = formData.get("marketing") === "on";
 
     try {
       const res = await fetch("/api/account/signup", {
@@ -119,26 +128,31 @@ export default function AccountClient() {
 
       setCustomer(data.customer);
       setProfileMessage("Account created. Welcome to Maris.");
+
+      // Marketing email is opt-in: only a ticked box subscribes the address.
+      if (wantsMarketing) {
+        try {
+          const welcomeResponse = await fetch("/api/account/welcome-email", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              marketingConsent: true,
+              source: isPopupSource ? "popup" : "account"
+            })
+          });
+          const welcomeData = await welcomeResponse.json().catch(() => ({}));
+
+          if (welcomeResponse.ok && welcomeData.status === "sent") {
+            setProfileMessage("Account created. Your Maris welcome email is on the way.");
+          }
+        } catch {
+          // Account creation must remain successful even if email delivery is unavailable.
+        }
+      }
+
       if (safeNextPath) {
         window.location.assign(safeNextPath);
         return;
-      }
-
-      try {
-        const welcomeResponse = await fetch("/api/account/welcome-email", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            source: isPopupSource ? "popup" : "account"
-          })
-        });
-        const welcomeData = await welcomeResponse.json().catch(() => ({}));
-
-        if (welcomeResponse.ok && welcomeData.status === "sent") {
-          setProfileMessage("Account created. Your Maris welcome email is on the way.");
-        }
-      } catch {
-        // Account creation must remain successful even if email delivery is unavailable.
       }
     } catch {
       setMessage("Something went wrong. Please try again.");
@@ -261,6 +275,38 @@ export default function AccountClient() {
     }
   }
 
+  // ─── Delete Account ────────────────────────────────────────────────────────
+  async function handleDeleteAccount(event) {
+    event.preventDefault();
+    setDeleteMessage("");
+    setDeleting(true);
+
+    const formData = new FormData(event.currentTarget);
+
+    try {
+      const res = await fetch("/api/account/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: String(formData.get("deletePassword") || "") })
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        setDeleteMessage(data.error || "Could not delete account.");
+        return;
+      }
+
+      setCustomer(false);
+      setMode("signin");
+      setProfileMessage("");
+      setMessage("Your account has been deleted.");
+    } catch {
+      setDeleteMessage("Something went wrong. Please try again.");
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   // ─── Sign Out ──────────────────────────────────────────────────────────────
   async function signOut() {
     await fetch("/api/account/signout", { method: "POST" }).catch(() => {});
@@ -332,7 +378,7 @@ export default function AccountClient() {
                 {isPopupSource && (
                   <div className="account-offer-notice">
                     <span>Maris member offer</span>
-                    <p>Complete your Maris account to receive your 10% offer.</p>
+                    <p>Complete your Maris account and keep the marketing box ticked to receive your 10% offer.</p>
                   </div>
                 )}
                 <h2>Create your Maris account</h2>
@@ -344,6 +390,13 @@ export default function AccountClient() {
                 <input id="create-phone" name="phone" type="tel" autoComplete="tel" />
                 <label htmlFor="create-password">Password</label>
                 <input id="create-password" name="password" type="password" autoComplete="new-password" minLength="12" required />
+                <label className="account-consent" htmlFor="create-marketing">
+                  <input id="create-marketing" name="marketing" type="checkbox" defaultChecked={popupConsent} />
+                  <span>Email me Maris Jewelry news and offers, including the 10% welcome offer. You can unsubscribe at any time.</span>
+                </label>
+                <p className="account-form-note">
+                  How we use your details is explained in our <a href="/privacy-policy">Privacy Policy</a>.
+                </p>
                 <button className="account-submit" type="submit" disabled={submitting}>
                   {submitting ? "Creating…" : "Create Account"}
                 </button>
@@ -428,6 +481,28 @@ export default function AccountClient() {
             {profileMessage && (
               <p className="account-message" role="status" aria-live="polite">{profileMessage}</p>
             )}
+
+            {/* Delete Account Form */}
+            <form className="account-delete-form" onSubmit={handleDeleteAccount}>
+              <h3>Delete account</h3>
+              <p>
+                This permanently deletes your account, your saved wishlist and bag, and your email subscription.
+                Enquiries, quote requests, and order records we may need to keep are retained as described in our{" "}
+                <a href="/privacy-policy">Privacy Policy</a>. Items saved in this browser stay on this device.
+              </p>
+              <label htmlFor="delete-password">Confirm with your password</label>
+              <input id="delete-password" name="deletePassword" type="password" autoComplete="current-password" required />
+              <label className="account-consent" htmlFor="delete-confirm">
+                <input id="delete-confirm" name="deleteConfirm" type="checkbox" required />
+                <span>I understand this cannot be undone.</span>
+              </label>
+              <button className="account-submit account-submit--danger" type="submit" disabled={deleting}>
+                {deleting ? "Deleting…" : "Delete my account"}
+              </button>
+              {deleteMessage && (
+                <p className="account-message account-message--error" role="alert">{deleteMessage}</p>
+              )}
+            </form>
           </div>
         )}
       </section>

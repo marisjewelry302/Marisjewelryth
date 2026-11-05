@@ -4,10 +4,14 @@ import { useEffect, useId, useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
+import { hasCookieConsentDecision, onCookieConsentChange } from "./lib/cookie-consent";
+
 const CLOSED_KEY = "marisSignupPopupClosedUntil";
 const DISMISSED_SESSION_KEY = "marisSignupPopupDismissed";
 // The email travels to /account through sessionStorage so it never lands in the URL.
 const EMAIL_HANDOFF_KEY = "marisSignupPopupEmail";
+// Set only when the visitor ticked the marketing box, so the sign-up page can carry that choice over.
+const CONSENT_HANDOFF_KEY = "marisSignupPopupConsent";
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 const THIRTY_DAYS_MS = 30 * ONE_DAY_MS;
 const POPUP_DELAY_MS = 3000;
@@ -53,16 +57,35 @@ export default function HomeSignupPopup() {
   const [isOpen, setIsOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [hideToday, setHideToday] = useState(false);
+  const [agreeMarketing, setAgreeMarketing] = useState(false);
   const [message, setMessage] = useState("");
 
   useEffect(() => {
     if (shouldSuppressPopup()) return undefined;
 
-    const timer = window.setTimeout(() => {
-      setIsOpen(true);
-    }, POPUP_DELAY_MS);
+    let timer = null;
+    function startTimer() {
+      timer = window.setTimeout(() => {
+        setIsOpen(true);
+      }, POPUP_DELAY_MS);
+    }
 
-    return () => window.clearTimeout(timer);
+    // Two overlays at once is too much on a first visit: while the cookie
+    // banner is still waiting for an answer, the popup waits for it.
+    if (hasCookieConsentDecision()) {
+      startTimer();
+      return () => window.clearTimeout(timer);
+    }
+
+    const unsubscribe = onCookieConsentChange(() => {
+      unsubscribe();
+      if (timer === null && !shouldSuppressPopup()) startTimer();
+    });
+
+    return () => {
+      unsubscribe();
+      if (timer !== null) window.clearTimeout(timer);
+    };
   }, []);
 
   useEffect(() => {
@@ -123,8 +146,15 @@ export default function HomeSignupPopup() {
       return;
     }
 
+    // The offer is a marketing offer, so it needs a clear, separate yes to marketing emails.
+    if (!agreeMarketing) {
+      setMessage("Please tick the box to receive marketing emails and your 10% offer.");
+      return;
+    }
+
     suppressPopup(hideTodayRef.current ? ONE_DAY_MS : THIRTY_DAYS_MS);
     writeStorage("sessionStorage", EMAIL_HANDOFF_KEY, normalizedEmail);
+    writeStorage("sessionStorage", CONSENT_HANDOFF_KEY, "1");
 
     router.push("/account?mode=signup");
   }
@@ -202,8 +232,20 @@ export default function HomeSignupPopup() {
 
           {message && <p className="home-signup-popup__message" role="alert">{message}</p>}
 
+          <label className="home-signup-popup__remember home-signup-popup__consent">
+            <input
+              type="checkbox"
+              checked={agreeMarketing}
+              onChange={(event) => {
+                setAgreeMarketing(event.target.checked);
+                setMessage("");
+              }}
+            />
+            <span>I agree to receive Maris Jewelry marketing emails, including offers. I can unsubscribe at any time.</span>
+          </label>
+
           <p className="home-signup-popup__privacy">
-            By continuing, you agree to receive Maris Jewelry updates and accept our <a href="/privacy-policy">Privacy Policy</a>.
+            See how we use your details in our <a href="/privacy-policy">Privacy Policy</a>.
           </p>
 
           <label className="home-signup-popup__remember">

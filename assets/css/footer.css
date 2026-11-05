@@ -391,3 +391,15 @@ body.not-found-page.has-maris-footer {
     gap: 6px;
   }
 }
+
+.maris-footer__newsletter-note {
+  margin: 8px 0 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.maris-footer__newsletter-note a {
+  color: inherit;
+  text-decoration: underline;
+}

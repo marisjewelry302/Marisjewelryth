@@ -82,6 +82,9 @@ export default function NewsletterSignup({
             disabled={sending}
           />
         </label>
+        <p className="form-note">
+          By joining, you agree to receive Maris Jewelry marketing emails. You can unsubscribe at any time. See our <a href="/privacy-policy">Privacy Policy</a>.
+        </p>
         <p className="form-status" role="status" aria-live="polite" data-type={statusType || undefined}>{status}</p>
         <button className="inquiry-submit" type="submit" disabled={sending}>
           {sending ? "Joining..." : "Join Newsletter"}
@@ -109,6 +112,9 @@ export default function NewsletterSignup({
           {sending ? "..." : "Join"}
         </button>
       </form>
+      <p className="maris-footer__newsletter-note">
+        By joining, you agree to receive marketing emails. Unsubscribe any time. <a href="/privacy-policy">Privacy Policy</a>
+      </p>
       <p className="maris-footer__email-status" role="status" aria-live="polite" data-type={statusType || undefined}>{status}</p>
     </div>
   );

@@ -1,3 +1,5 @@
+import { buildOneClickUnsubscribeUrl, buildUnsubscribeUrl } from "./email-unsubscribe.js";
+
 const RESEND_EMAIL_ENDPOINT = "https://api.resend.com/emails";
 const RESEND_API_KEY_ENV = "RESEND_API_KEY";
 const MARIS_EMAIL_FROM_ENV = "MARIS_EMAIL_FROM";
@@ -56,7 +58,7 @@ function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
-export function buildWelcomeEmail(customer) {
+export function buildWelcomeEmail(customer, { unsubscribeUrl = "" } = {}) {
   const name = String(customer?.fullName || "Maris Client").trim() || "Maris Client";
   const safeName = escapeHtml(name);
   const subject = "Welcome to Maris Jewelry - your 10% first-purchase offer";
@@ -73,6 +75,7 @@ export function buildWelcomeEmail(customer) {
         <p style="margin: 4px 0 0;">your first confirmed Maris order</p>
       </div>
       <p>This offer is confirmed directly by the Maris team before payment or production begins.</p>
+      ${unsubscribeUrl ? `<p style="margin-top: 32px; font-size: 12px; color: #7a6f63;">You are receiving this email because you agreed to receive Maris Jewelry marketing emails. <a href="${escapeHtml(unsubscribeUrl)}" style="color: #7a6f63;">Unsubscribe</a> at any time.</p>` : ""}
     </div>
   `;
   const text = [
@@ -81,7 +84,8 @@ export function buildWelcomeEmail(customer) {
     preview,
     "",
     "Member offer: 10% off your first confirmed Maris order.",
-    "This offer is confirmed directly by the Maris team before payment or production begins."
+    "This offer is confirmed directly by the Maris team before payment or production begins.",
+    ...(unsubscribeUrl ? ["", `You are receiving this email because you agreed to receive Maris Jewelry marketing emails. Unsubscribe at any time: ${unsubscribeUrl}`] : [])
   ].join("\n");
 
   return { subject, html, text };
@@ -104,7 +108,19 @@ export async function sendWelcomeEmail(customer, { env = process.env, fetchImpl 
     return { status: "invalid" };
   }
 
-  const message = buildWelcomeEmail(customer);
+  // A marketing email must not go out without a working way to opt out, so a
+  // missing signing secret stops the send rather than dropping the link.
+  const unsubscribeUrl = buildUnsubscribeUrl(email, { env });
+  const oneClickUrl = buildOneClickUnsubscribeUrl(email, { env });
+
+  if (!unsubscribeUrl || !oneClickUrl) {
+    return {
+      status: "not_configured",
+      missingEnv: ["MARIS_CUSTOMER_SESSION_SECRET"]
+    };
+  }
+
+  const message = buildWelcomeEmail(customer, { unsubscribeUrl });
   const idempotencyKey = `welcome-${customer?.id || email}`.slice(0, 256);
   const response = await fetchImpl(RESEND_EMAIL_ENDPOINT, {
     method: "POST",
@@ -119,7 +135,11 @@ export async function sendWelcomeEmail(customer, { env = process.env, fetchImpl 
       to: [email],
       subject: message.subject,
       html: message.html,
-      text: message.text
+      text: message.text,
+      headers: {
+        "List-Unsubscribe": `<${oneClickUrl}>`,
+        "List-Unsubscribe-Post": "List-Unsubscribe=One-Click"
+      }
     })
   });
 
