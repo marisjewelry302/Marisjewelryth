@@ -549,6 +549,51 @@
   margin-top: 28px;
 }
 
+.product-promises {
+  display: grid;
+  gap: 16px;
+  margin: 48px 0;
+  padding: 28px 0;
+  border-top: 1px solid rgba(221, 164, 165, 0.32);
+  border-bottom: 1px solid rgba(221, 164, 165, 0.32);
+  text-align: center;
+}
+
+.product-promise-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.product-promise-list li {
+  display: grid;
+  gap: 6px;
+  align-content: start;
+}
+
+.product-promise-list strong {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--maris-ink);
+}
+
+.product-promise-list span {
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--maris-muted);
+}
+
+@media (max-width: 720px) {
+  .product-promise-list {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+}
+
 .product-specs {
   display: grid;
   margin: 0;

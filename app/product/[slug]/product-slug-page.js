@@ -310,6 +310,18 @@ export async function ProductPageView({ params, locale = "en" }) {
           </div>
         </ProductMetalProvider>
 
+        <section className="product-promises" aria-labelledby="product-promises-heading" data-product-promises>
+          <p className="product-kicker" id="product-promises-heading">{t.promisesLabel}</p>
+          <ul className="product-promise-list">
+            {t.promises.map(([title, text]) => (
+              <li key={title}>
+                <strong>{title}</strong>
+                <span>{text}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+
         {relatedProducts.length > 0 && (
           <section className="also-like" data-also-like-section>
             <h2>{t.alsoLike}</h2>

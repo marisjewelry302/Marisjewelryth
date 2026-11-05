@@ -56,6 +56,12 @@ export const shopEn = {
       ["Materials & Making", "Metal, purity, finish and the way the piece is crafted are discussed when you enquire."],
       ["Certificate & Warranty", "Stone certification and after-care terms are confirmed with the atelier at enquiry."]
     ],
+    promisesLabel: "The Maris Promise",
+    promises: [
+      ["Lifelong cleaning service", "Cleaning and care for as long as Maris Jewelry is in business."],
+      ["Special price from manufacturer", "Made and priced direct from our own atelier."],
+      ["Worldwide shipment", "Carefully packed and sent to you wherever you are."]
+    ],
     metaDescription: "Explore {title} from {collection}. Enquire with Maris Jewelry for current availability, sizing, and custom guidance.",
     sampleDetails: "Sample Piece Details",
     stoneDetails: "Stone details",
@@ -375,6 +381,12 @@ export const shopTh = {
       ["น้ำหนักและไซส์แหวน", "น้ำหนักโลหะขึ้นอยู่กับขนาดนิ้วและโลหะที่เลือก และจะยืนยันในใบเสนอราคา"],
       ["วัสดุและการผลิต", "โลหะ ความบริสุทธิ์ งานตกแต่งผิว และวิธีการสร้างชิ้นงาน จะพูดคุยกันเมื่อคุณสอบถาม"],
       ["ใบรับรองและการรับประกัน", "ใบรับรองพลอยและเงื่อนไขการดูแลหลังการขาย จะยืนยันกับห้องทำงานเมื่อสอบถาม"]
+    ],
+    promisesLabel: "สิ่งที่ Maris มอบให้",
+    promises: [
+      ["บริการดูแลทำความสะอาดตลอดการใช้งาน", "ตราบเท่าที่เรายังดำเนินกิจการ"],
+      ["ราคาพิเศษจากผู้ผลิต", "ผลิตและกำหนดราคาโดยตรงจากห้องทำงานของเรา"],
+      ["จัดส่งทั่วโลก", "บรรจุอย่างประณีตและส่งถึงคุณไม่ว่าอยู่ที่ใด"]
     ],
     metaDescription: "เลือกชม {title} จาก {collection} สอบถาม Maris Jewelry เพื่อทราบความพร้อมล่าสุด ไซส์ และคำแนะนำงานสั่งทำ",
     sampleDetails: "รายละเอียดชิ้นงานตัวอย่าง",
