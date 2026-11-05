@@ -69,20 +69,6 @@ Use local artifact variables in the current shell:
 .\tools\use-local-artifacts.ps1
 ```
 
-Start a local preview server in the background:
-
-```powershell
-.\tools\start-preview.ps1
-```
-
-The preview helper uses a small PowerShell static server, so it does not require Python.
-
-Start a preview server in the current shell instead:
-
-```powershell
-.\tools\start-preview.ps1 -Foreground
-```
-
 Open a test browser with its user-data directory outside the repo:
 
 ```powershell
@@ -108,18 +94,6 @@ Open the external artifact folders in Explorer:
 ```powershell
 .\tools\open-artifacts-folder.ps1
 .\tools\open-artifacts-folder.ps1 -Target screenshots
-```
-
-Check whether the preview server is running:
-
-```powershell
-.\tools\preview-status.ps1
-```
-
-Stop the background preview server:
-
-```powershell
-.\tools\stop-preview.ps1
 ```
 
 ## Session-only mode

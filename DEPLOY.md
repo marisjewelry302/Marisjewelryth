@@ -45,8 +45,6 @@ npm run test:admin-database-auth
 npm run build
 ```
 
-`npm run check:sheet-images` remains available only as a manual diagnostic for historical Google Sheet audits or one-off legacy imports. It is no longer called by `npm run build`.
-
 If this Windows machine cannot find `npm` or `node`, use:
 
 ```powershell

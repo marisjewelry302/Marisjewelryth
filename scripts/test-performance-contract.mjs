@@ -5,8 +5,6 @@ const optimizedAssets = [
   "../assets/images/home/optimized/home-hero-optimized.webp",
   "../assets/images/service/custom-jewelry-service-hero-02-seamless.webp",
   "../assets/images/home/optimized/home-hero-pendant-earrings.webp",
-  "../assets/images/home/collections/cover-rings-collection.webp",
-  "../assets/images/home/collections/cover-pendants-collection.webp",
   "../assets/images/home/popup/popup-background.webp",
   "../assets/images/service/custom-jewelry-process-storyboard.webp",
   "../assets/images/service/custom-jewelry-service-hero.webp"

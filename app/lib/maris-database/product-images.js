@@ -11,6 +11,7 @@ import {
 } from "./product-media.js";
 
 const MAX_PRODUCT_IMAGE_BYTES = 5 * 1024 * 1024;
+const ALLOWED_PRODUCT_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/avif", "image/gif"]);
 
 export class AdminProductImageUploadError extends Error {
   constructor(message, statusCode = 400) {
@@ -61,8 +62,9 @@ export async function uploadAdminProductImage(
     throw new AdminProductImageUploadError("Product image must be 5 MB or smaller.", 413);
   }
 
-  if (contentType && !String(contentType).toLowerCase().startsWith("image/")) {
-    throw new AdminProductImageUploadError("Product image upload must be an image file.", 400);
+  // SVG is left out on purpose: it can carry script and is served from the storage origin.
+  if (contentType && !ALLOWED_PRODUCT_IMAGE_TYPES.has(String(contentType).toLowerCase())) {
+    throw new AdminProductImageUploadError("Product image must be a JPEG, PNG, WebP, AVIF or GIF file.", 400);
   }
 
   const sku = await readProductSku(supabase, productId);

@@ -73,7 +73,6 @@ GitHub Actions (`.github/workflows/ci.yml`) runs three jobs on every pull reques
 
 - Vercel should use the default Next.js settings. This repo no longer has a `prebuild` legacy public sync.
 - The storefront catalogue now reads Supabase through `/api/catalogue/products`; `/admin` manages product records and product images with Supabase Database and Storage.
-- `npm run check:sheet-images` is still available as a manual historical Google Sheet diagnostic, but it is no longer part of the build gate.
 - Vercel deploys from the repository root and uses `vercel.json` for `npm ci` plus `npm run build`.
 - Do not create or deploy nested Next.js apps inside this checkout; shared site work belongs in the root app.
 - Generated screenshots, runtime folders, temp previews, and logs are stored outside the repository.

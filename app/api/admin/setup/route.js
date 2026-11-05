@@ -29,14 +29,24 @@ export async function POST(request) {
   const displayName = String(formData.get("displayName") || "");
   const password = String(formData.get("password") || "");
   const confirmPassword = String(formData.get("confirmPassword") || "");
-  const rateLimit = await consumeAuthAttempt({
-    request,
-    action: "admin_setup",
-    identifier: username,
-    maxAttempts: 3,
-    windowSeconds: 60 * 60,
-    blockSeconds: 60 * 60
-  });
+  let rateLimit;
+
+  try {
+    rateLimit = await consumeAuthAttempt({
+      request,
+      action: "admin_setup",
+      identifier: username,
+      maxAttempts: 3,
+      windowSeconds: 60 * 60,
+      blockSeconds: 60 * 60
+    });
+  } catch (error) {
+    return redirectTo(request, "/admin/setup?error=database");
+  }
+
+  if (rateLimit.status === "not_configured") {
+    return redirectTo(request, "/admin/setup?error=database");
+  }
 
   if (!rateLimit.allowed) {
     return redirectTo(request, "/admin/setup?error=rate_limit");

@@ -5,7 +5,6 @@ import { fileURLToPath } from "node:url";
 
 const adminHtml = await readFile(new URL("../app/admin/page.js", import.meta.url), "utf8");
 const adminJs = await readFile(new URL("../assets/js/admin-page.js", import.meta.url), "utf8");
-const productDataJs = await readFile(new URL("../assets/js/product-data.js", import.meta.url), "utf8");
 const contactPage = await readFile(new URL("../app/contact-us/page.js", import.meta.url), "utf8");
 const quotePage = await readFile(new URL("../app/request-quote/RequestQuoteClient.jsx", import.meta.url), "utf8");
 const homepage = (await readFile(new URL("../app/page.js", import.meta.url), "utf8")) + (await readFile(new URL("../app/components/HomeView.jsx", import.meta.url), "utf8")) + (await readFile(new URL("../app/lib/home-copy.js", import.meta.url), "utf8"));
@@ -86,12 +85,6 @@ assert.match(
   adminJs,
   /ADMIN_PRODUCT_IMAGES_PATH\s*=\s*"\/product-images"/,
   "Edit Product modal should call protected image actions for deleting or reordering product images"
-);
-
-assert.doesNotMatch(
-  productDataJs,
-  /marisPublishedCatalogueProducts|MARIS_PUBLISHED_PRODUCTS|publishedProductsKey|docs\.google\.com\/spreadsheets/,
-  "Admin product data helper must not read browser-local products or Google Sheet as a live source"
 );
 
 assert.doesNotMatch(
