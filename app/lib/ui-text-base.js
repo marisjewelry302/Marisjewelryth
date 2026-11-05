@@ -240,10 +240,10 @@ const th = {
     ],
     groups: [
       {
-        label: "แหวนแต่งงาน",
+        label: "แหวนแถว",
         items: [
-          { href: "/category/wedding-bands", label: "แหวนแต่งงาน" },
-          { href: "/category/mens-wedding-bands", label: "แหวนแต่งงานผู้ชาย" }
+          { href: "/category/wedding-bands", label: "แหวนแถว" },
+          { href: "/category/mens-wedding-bands", label: "แหวนแถวผู้ชาย" }
         ]
       },
       {
@@ -278,7 +278,7 @@ const th = {
       {
         key: "brand",
         title: "Maris Jewelry",
-        body: "เครื่องประดับชั้นดี แหวนหมั้น แหวนแต่งงาน และบริการช่วยออกแบบเครื่องประดับตามสั่ง จากกรุงเทพฯ",
+        body: "เครื่องประดับชั้นดี แหวนหมั้น แหวนแถว และบริการช่วยออกแบบเครื่องประดับตามสั่ง จากกรุงเทพฯ",
         links: [
           { href: "/about-us", label: "เกี่ยวกับเรา" },
           { href: "/contact-us", label: "ติดต่อเรา" },
@@ -290,7 +290,7 @@ const th = {
         title: "คอลเลกชัน",
         links: [
           { href: "/category/engagement-ring", label: "แหวนหมั้น" },
-          { href: "/category/wedding-bands", label: "แหวนแต่งงาน" },
+          { href: "/category/wedding-bands", label: "แหวนแถว" },
           { href: "/category/necklaces-pendants", label: "สร้อยคอและจี้" },
           { href: "/category/rings", label: "แหวน" }
         ]
