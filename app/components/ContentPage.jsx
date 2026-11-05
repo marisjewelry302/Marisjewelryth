@@ -99,6 +99,20 @@ export default function ContentPage({ page, children, locale = "en" }) {
           </section>
         )}
 
+        {page.aftercare && (
+          <section className="subpage-panel">
+            <h2>{page.aftercare.title}</h2>
+            <div className="subpage-stack">
+              {page.aftercare.items.map((item) => (
+                <article key={item.title}>
+                  <h3>{item.title}</h3>
+                  <p>{item.text}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
+
         {page.effectiveDate && <p className="subpage-note">{effectiveDateLabel}: {page.effectiveDate}</p>}
 
         {page.policySections && (

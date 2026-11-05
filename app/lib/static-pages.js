@@ -118,6 +118,13 @@ export const staticPages = {
         image: { src: serviceProcessImage, alt: "Finished ring presented in premium packaging", position: "100% 100%" }
       }
     ],
+    aftercare: {
+      title: "After your piece is delivered",
+      items: [
+        { title: "Lifelong cleaning service", text: "We clean and care for your piece for as long as Maris Jewelry remains in business." },
+        { title: "Ask the atelier", text: "Other after-care, such as inspection or adjustment, is confirmed with the atelier when you enquire." }
+      ]
+    },
     note: "Custom orders are confirmed directly before production. Final timing, material details, stone availability, and quotation depend on the approved brief.",
     actions: [
       { href: "/contact-us?service=Custom%20Jewelry%20Service", label: "Start a custom inquiry" },
@@ -184,6 +191,7 @@ export const staticPages = {
     lead: "Shipping details depend on item availability, sizing, production timing, and destination. Maris Jewelry confirms timing before final order commitment.",
     description: "Read Maris Jewelry shipping guidance for availability, timing, and delivery planning.",
     policySections: [
+      { title: "Worldwide shipment", text: "We ship worldwide. The destination, carrier, and delivery window are confirmed with you before the order is finalized, and every piece is carefully packed for the journey." },
       { title: "Availability first", text: "Ready pieces, made-to-order items, and custom projects may have different preparation timelines. We confirm the current status before payment or final order details." },
       { title: "Delivery timing", text: "Estimated delivery windows are shared after product confirmation. Public holidays, special sizing, or custom work can affect the final schedule." },
       { title: "Address review", text: "Clients are responsible for providing complete delivery details. We may pause dispatch if an address needs clarification." }

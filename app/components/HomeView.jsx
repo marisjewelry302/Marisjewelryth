@@ -207,6 +207,18 @@ export default async function HomeView({ locale = "en" }) {
         </div>
       </section>
 
+      <section className="product-promises is-home" aria-labelledby="home-promises-heading">
+        <p className="section-kicker" id="home-promises-heading">{c.promisesKicker}</p>
+        <ul className="product-promise-list">
+          {c.promises.map((item) => (
+            <li key={item.title}>
+              <strong>{item.title}</strong>
+              <span>{item.text}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
+
       <section className="home-answer-guide" aria-labelledby="home-answer-guide-heading">
         <div className="home-answer-guide__intro">
           <p className="section-kicker">{c.answersKicker}</p>

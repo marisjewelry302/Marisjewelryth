@@ -67,6 +67,12 @@ export const homeCopy = {
       { title: "OEM & wholesale", text: "Discuss production for your brand or pieces for your store, with options shaped around your brief and quantities." },
       { title: "Personal guidance", text: "Work through materials, pricing, and timing with our team before confirming your order or project." }
     ],
+    promisesKicker: "The Maris Promise",
+    promises: [
+      { title: "Lifelong cleaning service", text: "Cleaning and care for as long as Maris Jewelry is in business." },
+      { title: "Special price from manufacturer", text: "Made and priced direct from our own atelier." },
+      { title: "Worldwide shipment", text: "Carefully packed and sent to you wherever you are." }
+    ],
     answersKicker: "Maris answers",
     answersHeading: "How can we help you get started?",
     answersLead:
@@ -135,6 +141,12 @@ export const homeCopy = {
       { title: "งานสั่งทำและเครื่องประดับสำหรับงานแต่ง", text: "แชร์ไอเดียสำหรับชิ้นงานส่วนตัว แหวนหมั้น หรือแหวนแถว แล้วมาสำรวจรายละเอียดไปด้วยกัน" },
       { title: "OEM และขายส่ง", text: "พูดคุยเรื่องการผลิตสำหรับแบรนด์ของคุณ หรือเลือกชิ้นงานสำหรับร้าน ด้วยตัวเลือกที่ปรับตามโจทย์และจำนวนของคุณ" },
       { title: "คำแนะนำเฉพาะตัว", text: "ปรึกษาเรื่องวัสดุ ราคา และระยะเวลากับทีมของเรา ก่อนยืนยันคำสั่งซื้อหรือโปรเจกต์" }
+    ],
+    promisesKicker: "สิ่งที่ Maris มอบให้",
+    promises: [
+      { title: "บริการดูแลทำความสะอาดตลอดการใช้งาน", text: "ตราบเท่าที่เรายังดำเนินกิจการ" },
+      { title: "ราคาพิเศษจากผู้ผลิต", text: "ผลิตและกำหนดราคาโดยตรงจากห้องทำงานของเรา" },
+      { title: "จัดส่งทั่วโลก", text: "บรรจุอย่างประณีตและส่งถึงคุณไม่ว่าอยู่ที่ใด" }
     ],
     answersKicker: "คำตอบจาก Maris",
     answersHeading: "เราช่วยคุณเริ่มต้นได้อย่างไร",
