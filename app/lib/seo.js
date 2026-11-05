@@ -1,6 +1,6 @@
 import { getPublicProductPath } from "./product-display.js";
 
-export const SITE_URL = "https://marisjewelryth.vercel.app";
+export const SITE_URL = "https://marisjewelry.com";
 export const BRAND_NAME = "Maris Jewelry";
 export const DEFAULT_OG_IMAGE = "/assets/images/home/optimized/home-hero-optimized.webp";
 

@@ -8,8 +8,8 @@ async function readSource(path) {
 const seo = await import("../app/lib/seo.js");
 const { getPublicProductPath } = await import("../app/lib/product-display.js");
 
-assert.equal(seo.SITE_URL, "https://marisjewelryth.vercel.app");
-assert.equal(seo.absoluteUrl("/category/engagement-ring"), "https://marisjewelryth.vercel.app/category/engagement-ring");
+assert.equal(seo.SITE_URL, "https://marisjewelry.com");
+assert.equal(seo.absoluteUrl("/category/engagement-ring"), "https://marisjewelry.com/category/engagement-ring");
 
 const homeMetadata = seo.buildPageMetadata({
   title: "Bangkok Fine Jewelry Atelier",
@@ -17,9 +17,9 @@ const homeMetadata = seo.buildPageMetadata({
   path: "/"
 });
 
-assert.equal(homeMetadata.metadataBase.href, "https://marisjewelryth.vercel.app/");
-assert.equal(homeMetadata.alternates.canonical, "https://marisjewelryth.vercel.app/");
-assert.equal(homeMetadata.openGraph.url, "https://marisjewelryth.vercel.app/");
+assert.equal(homeMetadata.metadataBase.href, "https://marisjewelry.com/");
+assert.equal(homeMetadata.alternates.canonical, "https://marisjewelry.com/");
+assert.equal(homeMetadata.openGraph.url, "https://marisjewelry.com/");
 assert.equal(homeMetadata.twitter.card, "summary_large_image");
 
 const faqSchema = seo.buildFaqPageJsonLd(seo.HOME_FAQS);
@@ -46,7 +46,7 @@ const productSchema = seo.buildProductJsonLd({
 });
 
 assert.equal(productSchema["@type"], "Product");
-assert.equal(productSchema.url, "https://marisjewelryth.vercel.app/product/er-001");
+assert.equal(productSchema.url, "https://marisjewelry.com/product/er-001");
 assert.equal(productSchema.offers.priceCurrency, "THB");
 assert.equal(productSchema.offers.seller.name, "Maris Jewelry");
 
