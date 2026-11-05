@@ -5,13 +5,13 @@ import Image from "next/image";
 import { isOptimizableImageSrc } from "../../lib/image-source";
 import { getProductImageMetal, getProductImageView, getPublicImageAltText } from "../../lib/product-display";
 import { buildProductMediaSlides } from "../../lib/product-media";
-import { useLocale } from "../../hooks/useLocale";
+import { useShopLocale } from "../../hooks/useShopLocale";
 import { fill } from "../../lib/i18n";
 import ProductVideo from "./ProductVideo";
 import { useProductMetal } from "./ProductMetalContext";
 
 export default function ProductGallery({ imageSets, coverImageUrl, video, productCode, productName }) {
-  const { t } = useLocale();
+  const { t } = useShopLocale();
   const g = t.gallery;
   const { selectedKey } = useProductMetal();
   const activeSet = imageSets.find((set) => set.key === selectedKey) || imageSets[0];

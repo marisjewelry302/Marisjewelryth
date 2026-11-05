@@ -34,7 +34,7 @@ const [
   readFile("app/product/[slug]/product-slug-page.js", "utf8").then(async (source) => source + (await readFile("app/lib/ui-text-shop.js", "utf8"))),
   readFile("package.json", "utf8"),
   readFile("app/lib/static-pages.js", "utf8"),
-  readFile("app/components/SiteHeader.jsx", "utf8").then(async (source) => source + (await readFile("app/lib/ui-text.js", "utf8"))),
+  readFile("app/components/SiteHeader.jsx", "utf8").then(async (source) => source + (await readFile("app/lib/ui-text-base.js", "utf8"))),
   readFile("app/sitemap.js", "utf8"),
   readFile("next.config.mjs", "utf8"),
   readFile("assets/css/style.css", "utf8")

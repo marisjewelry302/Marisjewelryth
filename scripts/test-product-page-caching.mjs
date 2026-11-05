@@ -34,7 +34,9 @@ const slugPageSource = await readSource("../app/product/[slug]/product-slug-page
 
 assert.match(pageSource, /export async function generateStaticParams\(\)/, "without generateStaticParams the product route renders on every request with no-store");
 assert.match(pageSource, /export const revalidate = \d+/, "product pages need a revalidate window");
-assert.match(pageSource, /catch \(error\) \{\s*return \[\];/, "an unreadable catalogue at build time must fall back to on-demand pages, not fail the build");
+const paramsHelperSource = await readSource("../app/lib/product-static-params.js");
+assert.match(pageSource, /getProductStaticParams\(\)/, "the English route must list its products through the shared helper");
+assert.match(paramsHelperSource, /catch \(error\) \{\s*return \[\];/, "an unreadable catalogue at build time must fall back to on-demand pages, not fail the build");
 const withoutComments = (source) => source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
 assert.doesNotMatch(withoutComments(pageSource + slugPageSource), /force-dynamic|cookies\(|headers\(\)|noStore|no-store/, "request-time APIs would opt the product page out of caching again");
 assert.match(slugPageSource, /getPublicProductSeoTitle\(product\)/, "the product metadata must use the unique title");
@@ -46,14 +48,8 @@ delete process.env.SUPABASE_URL;
 delete process.env.NEXT_PUBLIC_SUPABASE_URL;
 delete process.env.SUPABASE_SERVICE_ROLE_KEY;
 try {
-  const paramsSource = pageSource.replace(/^import "[^"]+\.css";\n/m, "").replace(/^export \{[^}]+\} from "[^"]+";\n/m, "");
-  const moduleUrl = `data:text/javascript;base64,${Buffer.from(
-    paramsSource
-      .replace('"../../lib/maris-database.js"', JSON.stringify(new URL("../app/lib/maris-database.js", import.meta.url).href))
-      .replace('"../../lib/product-display.js"', JSON.stringify(new URL("../app/lib/product-display.js", import.meta.url).href))
-  ).toString("base64")}`;
-  const { generateStaticParams } = await import(moduleUrl);
-  assert.deepEqual(await generateStaticParams(), [], "no database means no prerendered products, and no crash");
+  const { getProductStaticParams } = await import(new URL("../app/lib/product-static-params.js", import.meta.url).href);
+  assert.deepEqual(await getProductStaticParams(), [], "no database means no prerendered products, and no crash");
 } finally {
   if (savedEnv.url !== undefined) process.env.SUPABASE_URL = savedEnv.url;
   if (savedEnv.public !== undefined) process.env.NEXT_PUBLIC_SUPABASE_URL = savedEnv.public;

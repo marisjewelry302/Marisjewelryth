@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import ProductCard from "../../components/ProductCard";
-import { useLocale } from "../../hooks/useLocale";
+import { useShopLocale } from "../../hooks/useShopLocale";
 import {
   buildCatalogueFilterGroups,
   getProductCarat,
@@ -32,8 +32,8 @@ function sortProducts(products, mode) {
   return nextProducts;
 }
 
-export default function CategoryProducts({ products, collectionTitle }) {
-  const { t } = useLocale();
+export default function CategoryProducts({ products, collectionTitle, collectionSlug = "" }) {
+  const { t } = useShopLocale();
   const copy = t.catalogue;
   const BASE_SORT_OPTIONS = [
     { value: "featured", label: copy.featured },
@@ -108,6 +108,7 @@ export default function CategoryProducts({ products, collectionTitle }) {
               key={product.id || product.sku}
               product={product}
               collectionLabel={collectionTitle}
+              collectionSlug={collectionSlug}
               isAboveFold={index < ABOVE_FOLD_CARD_COUNT}
             />
           ))

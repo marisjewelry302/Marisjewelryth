@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 
 import { getLocale, localizePath } from "../lib/i18n";
-import { uiText } from "../lib/ui-text";
+import { baseText } from "../lib/ui-text-base";
 
 // Client components share one layout for both languages, so they read the
 // language from the URL instead of receiving it as a prop.
@@ -12,7 +12,7 @@ export function useLocale() {
 
   return {
     locale,
-    t: uiText[locale],
+    t: baseText[locale],
     href: (path) => localizePath(path, locale)
   };
 }

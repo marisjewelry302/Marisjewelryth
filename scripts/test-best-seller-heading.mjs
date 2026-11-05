@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 
-const componentSource = (await readFile("app/BestSellerSection.jsx", "utf8")) + (await readFile("app/lib/ui-text.js", "utf8"));
+const componentSource = (await readFile("app/BestSellerSection.jsx", "utf8")) + (await readFile("app/lib/ui-text-base.js", "utf8"));
 const styleSource = await readFile("assets/css/style.css", "utf8");
 
 function fail(message) {

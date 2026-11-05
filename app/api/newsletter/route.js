@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 
 import { NextResponse } from "next/server";
 
+import { getClientIp } from "../../lib/auth-rate-limit.js";
 import { subscribeToNewsletter } from "../../lib/customer-subscribers.js";
 import { normalizeMarketingEmail } from "../../lib/customer-email.js";
 import { isSameOriginRequest } from "../../lib/request-security.js";
@@ -32,13 +33,7 @@ function json(payload, status = 200) {
 // decide who the caller is, so the client-settable chain is a last resort read
 // from the right.
 function getClientKey(request) {
-  const trusted = request.headers.get("x-vercel-forwarded-for")
-    || request.headers.get("x-real-ip");
-  const chain = String(request.headers.get("x-forwarded-for") || "")
-    .split(",")
-    .map((entry) => entry.trim())
-    .filter(Boolean);
-  const caller = trusted?.trim() || chain.at(-1) || "unknown";
+  const caller = getClientIp(request);
 
   // Hashed before it is stored: the throttle only needs to tell callers apart,
   // and a mailing list is no place to keep visitor IP addresses.

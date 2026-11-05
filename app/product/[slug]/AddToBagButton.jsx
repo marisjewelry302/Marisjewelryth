@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useLocale } from "../../hooks/useLocale";
+import { useShopLocale } from "../../hooks/useShopLocale";
 import { fill } from "../../lib/i18n";
 import { getPublicProductDisplayName, getPublicProductPath } from "../../lib/product-display";
 
@@ -26,7 +26,7 @@ function writeBag(items) {
 }
 
 export default function AddToBagButton({ product, collectionLabel }) {
-  const { t } = useLocale();
+  const { t } = useShopLocale();
   const copy = t.product;
   const productId = `${product.collection}:${product.sku}`;
   const displayName = getPublicProductDisplayName(product);

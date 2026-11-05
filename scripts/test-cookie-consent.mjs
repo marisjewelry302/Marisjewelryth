@@ -13,9 +13,9 @@ function check(condition, message) {
 
 const [layout, footer, popup, banner, css, pages] = await Promise.all([
   readFile("app/layout.js", "utf8"),
-  readFile("app/components/SiteFooter.jsx", "utf8").then(async (source) => source + (await readFile("app/lib/ui-text.js", "utf8"))),
+  readFile("app/components/SiteFooter.jsx", "utf8").then(async (source) => source + (await readFile("app/lib/ui-text-base.js", "utf8"))),
   readFile("app/HomeSignupPopup.jsx", "utf8"),
-  readFile("app/components/CookieConsent.jsx", "utf8").then(async (source) => source + (await readFile("app/lib/ui-text.js", "utf8"))),
+  readFile("app/components/CookieConsent.jsx", "utf8").then(async (source) => source + (await readFile("app/lib/ui-text-base.js", "utf8"))),
   readFile("assets/css/cookie-consent.css", "utf8"),
   readFile("app/lib/static-pages.js", "utf8")
 ]);

@@ -5,7 +5,7 @@ import Image from "next/image";
 import { isOptimizableImageSrc } from "../lib/image-source";
 import { useSearchParams } from "next/navigation";
 import LeadForm from "../components/LeadForm";
-import { useLocale } from "../hooks/useLocale";
+import { useShopLocale } from "../hooks/useShopLocale";
 import { fill, localizePriceLabel } from "../lib/i18n";
 import { localizeCollectionName } from "../lib/ui-text-shop";
 
@@ -50,7 +50,7 @@ function formatSelectedPieces(items) {
 }
 
 export default function RequestQuoteClient() {
-  const { locale, t, href: localHref } = useLocale();
+  const { locale, t, href: localHref } = useShopLocale();
   const q = t.quote;
   const searchParams = useSearchParams();
   const [selectedItems, setSelectedItems] = useState([]);

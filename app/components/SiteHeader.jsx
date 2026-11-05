@@ -121,6 +121,8 @@ export default function SiteHeader() {
   const navRef = useRef(null);
   const headerRef = useRef(null);
   const swipeStartRef = useRef(null);
+  // The query string only exists in the browser, so it is added to the language link after mount.
+  const [languageSuffix, setLanguageSuffix] = useState("");
 
   const normalizedPathname = useMemo(() => stripLocale(pathname).replace(/\/$/, "") || "/", [pathname]);
   const isHome = normalizedPathname === "/";
@@ -252,6 +254,7 @@ export default function SiteHeader() {
 
   useEffect(() => {
     setIsOpen(false);
+    setLanguageSuffix(`${window.location.search}${window.location.hash}`);
   }, [pathname]);
 
   // The drawer has no close button: tapping the dimmed page or swiping the
@@ -315,9 +318,18 @@ export default function SiteHeader() {
               </span>
             )
           ))}
-          <Link className="top-lang" href={languageSwitch.href} lang={languageSwitch.lang} hrefLang={languageSwitch.lang}>
+          <a
+            className="top-lang"
+            href={`${languageSwitch.href}${languageSuffix}`}
+            lang={languageSwitch.lang}
+            hrefLang={languageSwitch.lang}
+            onClick={(event) => {
+              // Read the address at click time so a query changed without a route change is kept too.
+              event.currentTarget.href = `${languageSwitch.href}${window.location.search}${window.location.hash}`;
+            }}
+          >
             {languageSwitch.label}
-          </Link>
+          </a>
         </div>
       </div>
 

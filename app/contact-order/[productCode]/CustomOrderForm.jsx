@@ -2,17 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
-import { useLocale } from "../../hooks/useLocale";
+import { useShopLocale } from "../../hooks/useShopLocale";
 import { isOptimizableImageSrc } from "../../lib/image-source";
 
 const METALS = ["WG", "YG", "RG", "PN", "Pd"];
-const METAL_LABELS = {
-  WG: "White Gold",
-  YG: "Yellow Gold",
-  RG: "Rose Gold",
-  PN: "Platinum",
-  Pd: "Palladium"
-};
 const GOLD_METALS = new Set(["WG", "YG", "RG"]);
 const METAL_PURITIES = ["9K", "14K", "18K"];
 const STONE_COLORS = [
@@ -80,7 +73,7 @@ function buildSelectedOptionSummary(options, copy) {
 }
 
 export default function CustomOrderForm({ productCode, productImage = null, initialMetal = "" }) {
-  const { t } = useLocale();
+  const { t } = useShopLocale();
   const o = t.order;
   const [options, setOptions] = useState(() => (
     initialMetal ? { ...INITIAL_OPTIONS, metal: initialMetal } : INITIAL_OPTIONS

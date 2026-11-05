@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import { useLocale } from "../hooks/useLocale";
+import { useShopLocale } from "../hooks/useShopLocale";
 import { fill } from "../lib/i18n";
 
 const WISHLIST_KEY = "marisWishlist";
@@ -22,7 +22,7 @@ function writeWishlist(items) {
 }
 
 export default function WishlistButton({ item, variant = "icon" }) {
-  const { t } = useLocale();
+  const { t } = useShopLocale();
   const copy = t.wishlistButton;
   const [isSaved, setIsSaved] = useState(false);
 

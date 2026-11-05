@@ -66,7 +66,8 @@ export function buildPageMetadata({
   // `path` is always the English path; the Thai page lives under /th.
   const isThai = locale === THAI_LOCALE;
   const canonicalUrl = absoluteUrl(localizePath(path, locale));
-  const languages = hasThaiVersion(path)
+  // A noindex page is not a language alternate of anything, so it declares none.
+  const languages = !noindex && hasThaiVersion(path)
     ? {
         en: absoluteUrl(path),
         th: absoluteUrl(localizePath(path, THAI_LOCALE)),

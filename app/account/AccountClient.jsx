@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import { useLocale } from "../hooks/useLocale";
+import { useShopLocale } from "../hooks/useShopLocale";
 import { fill } from "../lib/i18n";
 
 // Keep localStorage keys for wishlist/bag counts until those surfaces are migrated.
@@ -26,11 +26,24 @@ function normalizeEmail(email) {
 function getSafeNextPath() {
   const nextPath = new URLSearchParams(window.location.search).get("next");
 
-  if (!nextPath || !nextPath.startsWith("/") || nextPath.startsWith("//")) {
+  if (!nextPath || !nextPath.startsWith("/")) {
     return "";
   }
 
-  return nextPath;
+  // Browsers read a backslash as a slash and drop tabs and newlines, so "/\\host" and
+  // "/\t/host" both mean "//host". Resolve the value the way the browser will and
+  // accept it only when it stays on this site.
+  try {
+    const url = new URL(nextPath, window.location.origin);
+
+    if (url.origin !== window.location.origin) {
+      return "";
+    }
+
+    return `${url.pathname}${url.search}${url.hash}`;
+  } catch {
+    return "";
+  }
 }
 
 function getSummary() {
@@ -45,7 +58,7 @@ function getSummary() {
 }
 
 export default function AccountClient() {
-  const { t, href } = useLocale();
+  const { t, href } = useShopLocale();
   const a = t.account;
   const [mode, setMode] = useState("signin");
   const [customer, setCustomer] = useState(null); // null = not loaded, false = not signed in

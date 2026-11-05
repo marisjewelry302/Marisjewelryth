@@ -124,6 +124,8 @@ export async function ProductPageView({ params, locale = "en" }) {
 
   const { products: relatedProducts } = await readRelatedPublicProducts(product.collection, product.id, { sku: product.sku });
   const collectionLabel = copy.collections[product.collection]?.title || product.category || "Maris Jewelry";
+  // What the bag and wishlist store: always the English title, so a saved piece reads the same in either language.
+  const storedCollectionLabel = uiText.en.collections[product.collection]?.title || product.category || "Maris Jewelry";
   const displayName = getPublicProductDisplayName(product);
   const collectionLine = getMeaningfulText(product.collectionName);
   const productPath = getPublicProductPath(product);
@@ -138,12 +140,12 @@ export async function ProductPageView({ params, locale = "en" }) {
   const imageSets = groupProductImagesByMetal(product.images, product.coverImageUrl);
   const metalOptions = imageSets.length > 1 ? imageSets.map(({ key, label }) => ({ key, label })) : [];
   const wishlistItem = {
-    id: `${product.collection || collectionLabel}:${product.sku}`,
+    id: `${product.collection || storedCollectionLabel}:${product.sku}`,
     title: product.sku,
     details: [displayName],
     image: product.primaryImageUrl,
     href: productPath,
-    collection: collectionLabel,
+    collection: storedCollectionLabel,
     priceLabel: formatPrice(product.basePrice)
   };
   const productJsonLd = {
@@ -266,7 +268,7 @@ export async function ProductPageView({ params, locale = "en" }) {
               <p className="product-price" data-product-price>{formatPrice(product.basePrice, locale)}</p>
 
               <div className="product-actions">
-                <AddToBagButton product={product} collectionLabel={collectionLabel} />
+                <AddToBagButton product={product} collectionLabel={storedCollectionLabel} />
                 <WishlistButton item={wishlistItem} variant="action" />
                 <ProductContactLink
                   className="product-action is-primary is-contact"

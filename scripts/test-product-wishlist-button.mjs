@@ -13,7 +13,7 @@ assert.match(
 
 assert.match(
   productPage,
-  /const wishlistItem = \{[\s\S]*id: `\$\{product\.collection \|\| collectionLabel\}:\$\{product\.sku\}`[\s\S]*title: product\.sku[\s\S]*details: \[displayName\][\s\S]*image: product\.primaryImageUrl[\s\S]*href: productPath[\s\S]*collection: collectionLabel[\s\S]*priceLabel: formatPrice\(product\.basePrice\)[\s\S]*\};/,
+  /const wishlistItem = \{[\s\S]*id: `\$\{product\.collection \|\| storedCollectionLabel\}:\$\{product\.sku\}`[\s\S]*title: product\.sku[\s\S]*details: \[displayName\][\s\S]*image: product\.primaryImageUrl[\s\S]*href: productPath[\s\S]*collection: storedCollectionLabel[\s\S]*priceLabel: formatPrice\(product\.basePrice\)[\s\S]*\};/,
   "Product detail page should build the same wishlist item contract used by catalogue cards."
 );
 

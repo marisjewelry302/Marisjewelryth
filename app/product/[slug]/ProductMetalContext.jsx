@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState } from "react";
-import { useLocale } from "../../hooks/useLocale";
+import { useShopLocale } from "../../hooks/useShopLocale";
 
 // The metal switch sits in the details column and the gallery it drives sits
 // in the image column, so the choice lives in a provider wrapping both.
@@ -22,7 +22,7 @@ export function useProductMetal() {
 }
 
 export function ProductMetalSelector({ metals }) {
-  const { t } = useLocale();
+  const { t } = useShopLocale();
   const { selectedKey, setSelectedKey } = useProductMetal();
 
   if (!metals || metals.length < 2) {
@@ -58,7 +58,7 @@ export function ProductMetalSelector({ metals }) {
 // photo and pre-selects it. A piece with one metal needs no parameter.
 export function ProductContactLink({ productCode, hasMetalChoice, className, children }) {
   const { selectedKey } = useProductMetal();
-  const { href } = useLocale();
+  const { href } = useShopLocale();
   const metalQuery = hasMetalChoice && selectedKey ? `?metal=${encodeURIComponent(selectedKey)}` : "";
 
   return (

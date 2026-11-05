@@ -80,7 +80,7 @@ export default async function CategoryPageView({ params, locale = "en" }) {
           <p className="category-lead">{collection.lead}</p>
         </section>
 
-        <CategoryProducts products={products} collectionTitle={collection.title} />
+        <CategoryProducts products={products} collectionTitle={collection.title} collectionSlug={collection.slug} />
       </main>
     </>
   );

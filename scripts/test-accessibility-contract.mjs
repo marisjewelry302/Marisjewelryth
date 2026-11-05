@@ -11,7 +11,7 @@ const files = Object.fromEntries(await Promise.all(
     gallery: "../app/product/[slug]/ProductGallery.jsx",
     productPage: "../app/product/[slug]/product-slug-page.js",
     category: "../app/category/[collection]/CategoryProducts.jsx"
-  }).map(async ([key, path]) => [key, (await readFile(new URL(path, import.meta.url), "utf8")) + (await readFile(new URL("../app/lib/ui-text.js", import.meta.url), "utf8")) + (await readFile(new URL("../app/lib/ui-text-shop.js", import.meta.url), "utf8"))])
+  }).map(async ([key, path]) => [key, (await readFile(new URL(path, import.meta.url), "utf8")) + (await readFile(new URL("../app/lib/ui-text-base.js", import.meta.url), "utf8")) + (await readFile(new URL("../app/lib/ui-text-shop.js", import.meta.url), "utf8"))])
 ));
 
 assert.match(files.header, /aria-controls="maris-primary-navigation"/);

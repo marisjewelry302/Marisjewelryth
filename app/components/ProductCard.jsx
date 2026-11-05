@@ -1,7 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { useLocale } from "../hooks/useLocale";
+import { useShopLocale } from "../hooks/useShopLocale";
+import { shopEn } from "../lib/ui-text-shop";
 import { formatProductPrice } from "../lib/collections";
 import { isOptimizableImageSrc } from "../lib/image-source";
 import {
@@ -33,8 +34,8 @@ function getCardImages(product) {
   return { primaryImage, hoverImage: hoverImage !== primaryImage ? hoverImage : "" };
 }
 
-export default function ProductCard({ product, collectionLabel, isAboveFold = false }) {
-  const { locale, t, href: localHref } = useLocale();
+export default function ProductCard({ product, collectionLabel, collectionSlug = "", isAboveFold = false }) {
+  const { locale, t, href: localHref } = useShopLocale();
   const productPath = getPublicProductPath(product);
   const href = localHref(productPath);
   const displayName = getPublicProductDisplayName(product);
@@ -42,13 +43,15 @@ export default function ProductCard({ product, collectionLabel, isAboveFold = fa
   const { primaryImage, hoverImage } = getCardImages(product);
   const hasHoverImage = Boolean(hoverImage);
   const carat = getProductCarat(product);
+  // Saved items keep the English title so the same piece reads the same from either language.
+  const storedCollection = shopEn.collections[collectionSlug]?.title || collectionLabel;
   const wishlistItem = {
-    id: `${product.collection || collectionLabel}:${productCode}`,
+    id: `${product.collection || storedCollection}:${productCode}`,
     title: productCode,
     details: [displayName],
     image: primaryImage,
     href: productPath,
-    collection: collectionLabel,
+    collection: storedCollection,
     priceLabel: formatProductPrice(product.basePrice)
   };
 

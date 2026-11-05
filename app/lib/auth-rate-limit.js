@@ -6,7 +6,7 @@ import { createSupabaseAdminClient, getSupabaseAdminConfig } from "./maris-datab
 // never key a rate limit. Vercel sets the two single-value headers below itself;
 // the chain is a last resort and is read from the right, where the closest trusted
 // proxy appends the address it actually received the request from.
-function getClientIp(request) {
+export function getClientIp(request) {
   const trusted = request.headers.get("x-vercel-forwarded-for")
     || request.headers.get("x-real-ip");
 

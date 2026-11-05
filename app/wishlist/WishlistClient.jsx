@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useCustomerSession } from "../hooks/useCustomerSession";
-import { useLocale } from "../hooks/useLocale";
+import { useShopLocale } from "../hooks/useShopLocale";
 import { fill } from "../lib/i18n";
 import { localizeCollectionName } from "../lib/ui-text-shop";
 import { isOptimizableImageSrc } from "../lib/image-source";
@@ -93,7 +93,7 @@ async function saveWishlist(items) {
 }
 
 export default function WishlistClient() {
-  const { locale, t, href: localHref } = useLocale();
+  const { locale, t, href: localHref } = useShopLocale();
   const w = t.wishlist;
   const { isLoggedIn, isLoading: sessionLoading } = useCustomerSession();
   const [items, setItems] = useState([]);

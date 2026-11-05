@@ -199,7 +199,7 @@ assert.match(welcomeRoute, /sendWelcomeEmail/, "Welcome email route should deleg
 assert.doesNotMatch(welcomeRoute, /RESEND_API_KEY.*NextResponse\.json|apiKey.*NextResponse\.json/i, "Route must not leak provider secrets");
 assert.match(welcomeRoute, /already_sent/, "Route should avoid repeated welcome emails");
 
-const popup = (await readFile(new URL("../app/HomeSignupPopup.jsx", import.meta.url), "utf8")) + (await readFile(new URL("../app/lib/ui-text.js", import.meta.url), "utf8"));
+const popup = (await readFile(new URL("../app/HomeSignupPopup.jsx", import.meta.url), "utf8")) + (await readFile(new URL("../app/lib/ui-text-base.js", import.meta.url), "utf8"));
 assert.match(popup, /Get 10% Off/i, "Popup CTA should match the requested text");
 assert.match(popup, /mode=signup/, "Popup should redirect with signup mode");
 assert.match(popup, /stashSignupEmail\(normalizedEmail\)|"sessionStorage", EMAIL_HANDOFF_KEY, normalizedEmail/, "Popup should hand the submitted email to the account page through sessionStorage");

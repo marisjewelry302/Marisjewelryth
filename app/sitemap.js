@@ -5,13 +5,15 @@ import { getPublicProductPath } from "./lib/product-display.js";
 import { THAI_LOCALE, hasThaiVersion, localizePath } from "./lib/i18n";
 import { absoluteUrl } from "./lib/seo";
 
+// Refreshed hourly. A database error is not caught here: publishing a sitemap
+// with no products would tell search engines the pages are gone, whereas an
+// error leaves the last good sitemap in place (and fails the build if it
+// happens there). An unconfigured database still returns no products.
+export const revalidate = 3600;
+
 async function getSitemapProducts() {
-  try {
-    const result = await readPublicCatalogueProducts();
-    return Array.isArray(result.products) ? result.products : [];
-  } catch {
-    return [];
-  }
+  const result = await readPublicCatalogueProducts();
+  return Array.isArray(result.products) ? result.products : [];
 }
 
 // A page with a Thai version lists both URLs, each pointing at the other, so
