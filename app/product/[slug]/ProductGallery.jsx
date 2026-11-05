@@ -5,10 +5,14 @@ import Image from "next/image";
 import { isOptimizableImageSrc } from "../../lib/image-source";
 import { getProductImageMetal, getProductImageView, getPublicImageAltText } from "../../lib/product-display";
 import { buildProductMediaSlides } from "../../lib/product-media";
+import { useLocale } from "../../hooks/useLocale";
+import { fill } from "../../lib/i18n";
 import ProductVideo from "./ProductVideo";
 import { useProductMetal } from "./ProductMetalContext";
 
 export default function ProductGallery({ imageSets, coverImageUrl, video, productCode, productName }) {
+  const { t } = useLocale();
+  const g = t.gallery;
   const { selectedKey } = useProductMetal();
   const activeSet = imageSets.find((set) => set.key === selectedKey) || imageSets[0];
   const images = activeSet?.images || [];
@@ -205,7 +209,7 @@ export default function ProductGallery({ imageSets, coverImageUrl, video, produc
         data-product-gallery
         data-product-metal={activeSet?.key || undefined}
         aria-roledescription="carousel"
-        aria-label={`${productCode} images`}
+        aria-label={fill(g.images, { code: productCode })}
       >
         <div className="product-media-track" ref={trackRef}>
           {slides.map((slide, index) => {
@@ -220,7 +224,7 @@ export default function ProductGallery({ imageSets, coverImageUrl, video, produc
                 ref={(node) => { slideRefs.current[index] = node; }}
                 role="group"
                 aria-roledescription="slide"
-                aria-label={`${index + 1} of ${slides.length}: ${slide.label}`}
+                aria-label={fill(g.slide, { index: index + 1, total: slides.length, label: slide.label })}
               >
                 {isPhoto ? (
                   <button
@@ -230,7 +234,7 @@ export default function ProductGallery({ imageSets, coverImageUrl, video, produc
                     onClick={() => lightboxAt >= 0 && setLightboxIndex(lightboxAt)}
                     disabled={lightboxAt < 0}
                     tabIndex={index === activeSlide ? 0 : -1}
-                    aria-label={`Open ${slide.label.toLowerCase()} preview for ${productCode}`}
+                    aria-label={fill(g.open, { label: slide.label.toLowerCase(), code: productCode })}
                   >
                     {slide.src && isReached && (
                       <Image
@@ -256,7 +260,7 @@ export default function ProductGallery({ imageSets, coverImageUrl, video, produc
 
         {slides.length > 1 && (
           <>
-            <div className="product-media-thumbs" aria-label="Choose a view">
+            <div className="product-media-thumbs" aria-label={g.choose}>
               {slides.map((slide, index) => {
                 const thumbSrc = slide.type === "video" ? slide.poster || firstPhoto : slide.src;
 
@@ -266,7 +270,7 @@ export default function ProductGallery({ imageSets, coverImageUrl, video, produc
                     type="button"
                     className={`product-media-thumb is-${slide.type}`}
                     onClick={() => goToSlide(index)}
-                    aria-label={`Show ${slide.label.toLowerCase()}`}
+                    aria-label={fill(g.show, { label: slide.label.toLowerCase() })}
                     aria-current={index === activeSlide ? "true" : undefined}
                   >
                     {thumbSrc && (
@@ -298,7 +302,7 @@ export default function ProductGallery({ imageSets, coverImageUrl, video, produc
                   type="button"
                   className="product-media-dot"
                   onClick={() => goToSlide(index)}
-                  aria-label={`Go to slide ${index + 1}: ${slide.label}`}
+                  aria-label={fill(g.goTo, { index: index + 1, label: slide.label })}
                   aria-current={index === activeSlide ? "true" : undefined}
                 />
               ))}
@@ -313,7 +317,7 @@ export default function ProductGallery({ imageSets, coverImageUrl, video, produc
           data-product-lightbox
           role="dialog"
           aria-modal="true"
-          aria-label={`${productCode} image preview`}
+          aria-label={fill(g.preview, { code: productCode })}
           ref={lightboxRef}
           onClick={(event) => {
             if (event.target === event.currentTarget) {
@@ -324,7 +328,7 @@ export default function ProductGallery({ imageSets, coverImageUrl, video, produc
           <div className={`product-lightbox-stage${zoomed ? " is-zoomed" : ""}`}>
             <Image
               src={activeItem.src}
-              alt={`${activeItem.alt} large preview`}
+              alt={fill(g.large, { alt: activeItem.alt })}
               width={1024}
               height={1024}
               sizes={zoomed ? "250vw" : "90vw"}
@@ -338,7 +342,7 @@ export default function ProductGallery({ imageSets, coverImageUrl, video, produc
             className="product-lightbox-zoom"
             onClick={toggleZoom}
             aria-pressed={zoomed}
-            aria-label={zoomed ? "Zoom out" : "Zoom in"}
+            aria-label={zoomed ? g.zoomOut : g.zoomIn}
           >
             <span aria-hidden="true">{zoomed ? "−" : "+"}</span>
           </button>
@@ -349,7 +353,7 @@ export default function ProductGallery({ imageSets, coverImageUrl, video, produc
                 type="button"
                 className="product-lightbox-nav is-prev"
                 onClick={() => stepGallery(-1)}
-                aria-label="Show previous image"
+                aria-label={g.prev}
               >
                 <span aria-hidden="true">‹</span>
               </button>
@@ -357,7 +361,7 @@ export default function ProductGallery({ imageSets, coverImageUrl, video, produc
                 type="button"
                 className="product-lightbox-nav is-next"
                 onClick={() => stepGallery(1)}
-                aria-label="Show next image"
+                aria-label={g.next}
               >
                 <span aria-hidden="true">›</span>
               </button>
@@ -371,7 +375,7 @@ export default function ProductGallery({ imageSets, coverImageUrl, video, produc
             type="button"
             className="product-lightbox-close"
             onClick={closeLightbox}
-            aria-label="Close image preview"
+            aria-label={g.close}
             autoFocus
           >
             ×

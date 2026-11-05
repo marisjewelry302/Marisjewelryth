@@ -21,6 +21,8 @@ import {
   buildPageMetadata,
   buildProductJsonLd
 } from "../../lib/seo";
+import { THAI_LOCALE, fill, localizePath } from "../../lib/i18n";
+import { uiText } from "../../lib/ui-text";
 
 import Image from "next/image";
 import { isOptimizableImageSrc } from "../../lib/image-source";
@@ -30,47 +32,16 @@ const getProductBySlug = cache((slug) => readPublicProductBySlug(slug));
 
 // Details of the piece as photographed. The metal is picked with the selector
 // above, so it has no row; carat weight leads because buyers compare it first.
-const PRODUCT_SPEC_LABELS = [
-  ["caratWeight", "Carat Weight"],
-  ["stoneType", "Stone"],
-  ["stoneShape", "Shape"]
-];
+const PRODUCT_SPEC_KEYS = ["caratWeight", "stoneType", "stoneShape"];
 
 // Every stone of the sample piece, from the gem report imported in the admin.
 // A column only shows when some line fills it; the carat is the line's total,
 // so the column adds up to the footer.
-const GEM_REPORT_COLUMNS = [
-  ["stone", "Stone"],
-  ["shape", "Shape"],
-  ["size", "Size"],
-  ["quantity", "Qty"],
-  ["caratTotal", "Carat"]
-];
+const GEM_REPORT_KEYS = ["stone", "shape", "size", "quantity", "caratTotal"];
 
 function readGemReportCell(stone, key) {
   return key === "caratTotal" ? formatGemCarat(stone.caratTotal) : getMeaningfulText(stone[key]);
 }
-
-// Details that vary per client and are settled in the enquiry, not printed on
-// the page. Wording stays honest: no fixed weights, grades or terms are implied.
-const ENQUIRY_SPEC_ITEMS = [
-  ["Diamond Size", "Choose the carat weight and size that suit you; we advise on the best proportion for this design."],
-  ["Colour & Clarity", "Selected with the atelier to match your preference and budget."],
-  ["Weight & Ring Size", "Metal weight depends on your finger size and chosen metal, and is confirmed in your quotation."],
-  ["Materials & Making", "Metal, purity, finish and the way the piece is crafted are discussed when you enquire."],
-  ["Certificate & Warranty", "Stone certification and after-care terms are confirmed with the atelier at enquiry."]
-];
-
-const COLLECTION_LABELS = {
-  "engagement-ring": "Engagement Rings",
-  "wedding-set": "Wedding Set",
-  "wedding-bands": "Wedding Bands",
-  "mens-wedding-bands": "Men's Wedding Bands",
-  "necklaces-pendants": "Necklaces & Pendants",
-  bracelets: "Bracelets",
-  earrings: "Earrings",
-  rings: "Rings"
-};
 
 // A pasted product code reaches this route percent-encoded ("SR%200015%20ER"),
 // and the segment arrives here as written, so it is decoded before it is looked
@@ -85,15 +56,18 @@ function readRequestedSlug(slug) {
   }
 }
 
-function formatPrice(basePrice) {
+function formatPrice(basePrice, locale = "en") {
+  const isThai = locale === THAI_LOCALE;
+
   if (basePrice === null || basePrice === undefined) {
-    return "Price on request";
+    return isThai ? "สอบถามราคา" : "Price on request";
   }
 
-  return `${Number(basePrice).toLocaleString()} THB`;
+  return `${Number(basePrice).toLocaleString()} ${isThai ? "บาท" : "THB"}`;
 }
 
-export async function generateMetadata({ params }) {
+export async function buildProductMetadata({ params, locale = "en" }) {
+  const copy = uiText[locale === THAI_LOCALE ? "th" : "en"];
   const { slug } = await params;
   const { product } = await getProductBySlug(readRequestedSlug(slug));
 
@@ -102,13 +76,14 @@ export async function generateMetadata({ params }) {
   }
 
   const seoTitle = getPublicProductSeoTitle(product);
-  const collectionLabel = COLLECTION_LABELS[product.collection] || product.category || "Maris Jewelry";
+  const collectionLabel = copy.collections[product.collection]?.title || product.category || "Maris Jewelry";
   const productPath = getPublicProductPath(product);
   const metadata = buildPageMetadata({
     title: `${seoTitle} | Maris Jewelry`,
-    description: `Explore ${seoTitle} from ${collectionLabel}. Enquire with Maris Jewelry for current availability, sizing, and custom guidance.`,
+    description: fill(copy.product.metaDescription, { title: seoTitle, collection: collectionLabel }),
     path: productPath,
-    image: product.primaryImageUrl || product.images?.[0]?.imageUrl
+    image: product.primaryImageUrl || product.images?.[0]?.imageUrl,
+    locale
   });
 
   return {
@@ -120,7 +95,17 @@ export async function generateMetadata({ params }) {
   };
 }
 
+export async function generateMetadata({ params }) {
+  return buildProductMetadata({ params });
+}
+
 export default async function ProductPage({ params }) {
+  return ProductPageView({ params });
+}
+
+export async function ProductPageView({ params, locale = "en" }) {
+  const copy = uiText[locale === THAI_LOCALE ? "th" : "en"];
+  const t = copy.product;
   const { slug } = await params;
   const requestedSlug = readRequestedSlug(slug);
   const { product } = await getProductBySlug(requestedSlug);
@@ -134,20 +119,21 @@ export default async function ProductPage({ params }) {
   // Legacy slugs and raw SKUs both resolve, so send them to the one canonical
   // path rather than serving the same piece under several URLs.
   if (canonicalSlug && requestedSlug !== canonicalSlug) {
-    permanentRedirect(`/product/${canonicalSlug}`);
+    permanentRedirect(localizePath(`/product/${canonicalSlug}`, locale));
   }
 
   const { products: relatedProducts } = await readRelatedPublicProducts(product.collection, product.id, { sku: product.sku });
-  const collectionLabel = COLLECTION_LABELS[product.collection] || product.category || "Maris Jewelry";
+  const collectionLabel = copy.collections[product.collection]?.title || product.category || "Maris Jewelry";
   const displayName = getPublicProductDisplayName(product);
   const collectionLine = getMeaningfulText(product.collectionName);
   const productPath = getPublicProductPath(product);
-  const productSpecs = PRODUCT_SPEC_LABELS
-    .map(([key, label]) => ({ key, label, value: getMeaningfulText(product.specs?.[key]) }))
+  const productSpecs = PRODUCT_SPEC_KEYS
+    .map((key) => ({ key, label: t.specs[key], value: getMeaningfulText(product.specs?.[key]) }))
     .filter((spec) => spec.value);
   const gemStones = product.gemReport?.stones || [];
-  const gemColumns = GEM_REPORT_COLUMNS
-    .filter(([key]) => gemStones.some((stone) => readGemReportCell(stone, key)));
+  const gemColumns = GEM_REPORT_KEYS
+    .filter((key) => gemStones.some((stone) => readGemReportCell(stone, key)))
+    .map((key) => [key, t.gemColumns[key]]);
   const productDescription = getMeaningfulText(product.description);
   const imageSets = groupProductImagesByMetal(product.images, product.coverImageUrl);
   const metalOptions = imageSets.length > 1 ? imageSets.map(({ key, label }) => ({ key, label })) : [];
@@ -166,8 +152,8 @@ export default async function ProductPage({ params }) {
       buildBreadcrumbJsonLd([
         ...(product.collection ? [{ name: collectionLabel, path: `/category/${product.collection}` }] : []),
         { name: displayName, path: productPath }
-      ]),
-      buildProductJsonLd({ product, displayName, collectionLabel })
+      ], locale),
+      buildProductJsonLd({ product, displayName, collectionLabel, locale })
     ]
   };
 
@@ -204,7 +190,7 @@ export default async function ProductPage({ params }) {
                   and say plainly that each one can be changed. */}
               {(productSpecs.length > 0 || gemStones.length > 0) && (
                 <section className="product-spec-block" aria-labelledby="product-specs-heading">
-                  <p className="product-kicker" id="product-specs-heading">Sample Piece Details</p>
+                  <p className="product-kicker" id="product-specs-heading">{t.sampleDetails}</p>
                   {productSpecs.length > 0 && (
                     <dl className="product-specs" data-product-specs>
                       {productSpecs.map((spec) => (
@@ -218,7 +204,7 @@ export default async function ProductPage({ params }) {
                   {gemStones.length > 0 && (
                     <div className="product-gem-report" data-product-gem-report>
                       <table className="product-gem-table">
-                        <caption>Stone details</caption>
+                        <caption>{t.stoneDetails}</caption>
                         <thead>
                           <tr>
                             {gemColumns.map(([key, label]) => (
@@ -241,7 +227,7 @@ export default async function ProductPage({ params }) {
                               {gemColumns.map(([key], columnIndex) => (
                                 <td key={key} className={`is-${key}`}>
                                   {columnIndex === 0
-                                    ? "Total"
+                                    ? t.total
                                     : key === "quantity"
                                       ? product.gemReport.totalQuantity
                                       : key === "caratTotal"
@@ -256,8 +242,7 @@ export default async function ProductPage({ params }) {
                     </div>
                   )}
                   <p className="product-note product-spec-note" data-product-spec-note>
-                    These details describe the sample piece shown. Carat weight, stone, metal and size
-                    can all be tailored to you &mdash; contact Maris to adjust the specification.
+                    {t.sampleNote}
                   </p>
                 </section>
               )}
@@ -278,7 +263,7 @@ export default async function ProductPage({ params }) {
                 </ul>
               )}
 
-              <p className="product-price" data-product-price>{formatPrice(product.basePrice)}</p>
+              <p className="product-price" data-product-price>{formatPrice(product.basePrice, locale)}</p>
 
               <div className="product-actions">
                 <AddToBagButton product={product} collectionLabel={collectionLabel} />
@@ -288,18 +273,18 @@ export default async function ProductPage({ params }) {
                   productCode={product.sku}
                   hasMetalChoice={metalOptions.length > 1}
                 >
-                  Contact Maris to Order
+                  {t.contactToOrder}
                 </ProductContactLink>
               </div>
 
-              <p className="product-note">Enquire with our atelier for current availability and bespoke sizing.</p>
+              <p className="product-note">{t.availabilityNote}</p>
 
               {/* Maris makes to order, so these are agreed per client rather than
                   fixed on the page. Say where they are settled, promise nothing. */}
               <section className="product-spec-block product-enquiry-specs" aria-labelledby="product-enquiry-heading" data-product-enquiry-specs>
-                <p className="product-kicker" id="product-enquiry-heading">Made to Your Specification</p>
+                <p className="product-kicker" id="product-enquiry-heading">{t.madeToSpec}</p>
                 <dl className="product-specs">
-                  {ENQUIRY_SPEC_ITEMS.map(([label, text]) => (
+                  {t.enquiry.map(([label, text]) => (
                     <div key={label}>
                       <dt>{label}</dt>
                       <dd>{text}</dd>
@@ -307,8 +292,7 @@ export default async function ProductPage({ params }) {
                   ))}
                 </dl>
                 <p className="product-note product-spec-note">
-                  Tell us your preferences when you contact Maris &mdash; we will recommend a design and
-                  confirm every detail in your quotation before anything is made.
+                  {t.madeToSpecNote}
                 </p>
               </section>
             </div>
@@ -319,17 +303,17 @@ export default async function ProductPage({ params }) {
               productCode={product.sku}
               hasMetalChoice={metalOptions.length > 1}
             >
-              Contact Maris to Order
+              {t.contactToOrder}
             </ProductContactLink>
           </div>
         </ProductMetalProvider>
 
         {relatedProducts.length > 0 && (
           <section className="also-like" data-also-like-section>
-            <h2>You may also like</h2>
+            <h2>{t.alsoLike}</h2>
             <div className="also-grid" data-also-like>
               {relatedProducts.map((item) => (
-                <a key={item.id} className="also-card" href={getPublicProductPath(item)}>
+                <a key={item.id} className="also-card" href={localizePath(getPublicProductPath(item), locale)}>
                   {item.primaryImageUrl && (
                     <Image src={item.primaryImageUrl} alt={getPublicProductAltText(item)} width={1024} height={1024} sizes="(max-width: 900px) 50vw, 25vw" unoptimized={!isOptimizableImageSrc(item.primaryImageUrl)} />
                   )}

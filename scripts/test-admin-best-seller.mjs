@@ -161,7 +161,7 @@ function createBestSellerClient() {
 const database = await import("../app/lib/maris-database.js");
 const adminPage = await readRequiredSource("app/admin/page.js");
 const adminScript = await readRequiredSource("assets/js/admin-page.js");
-const homepage = await readRequiredSource("app/page.js");
+const homepage = (await readRequiredSource("app/page.js")) + (await readRequiredSource("app/components/HomeView.jsx"));
 const bestSellerSection = await readRequiredSource("app/BestSellerSection.jsx");
 const bestSellerRoute = await readOptionalSource("app/api/admin/best-sellers/route.js");
 

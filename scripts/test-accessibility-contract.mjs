@@ -11,7 +11,7 @@ const files = Object.fromEntries(await Promise.all(
     gallery: "../app/product/[slug]/ProductGallery.jsx",
     productPage: "../app/product/[slug]/product-slug-page.js",
     category: "../app/category/[collection]/CategoryProducts.jsx"
-  }).map(async ([key, path]) => [key, await readFile(new URL(path, import.meta.url), "utf8")])
+  }).map(async ([key, path]) => [key, (await readFile(new URL(path, import.meta.url), "utf8")) + (await readFile(new URL("../app/lib/ui-text.js", import.meta.url), "utf8")) + (await readFile(new URL("../app/lib/ui-text-shop.js", import.meta.url), "utf8"))])
 ));
 
 assert.match(files.header, /aria-controls="maris-primary-navigation"/);
@@ -28,7 +28,9 @@ assert.match(files.account, /aria-pressed=\{mode === "signin"\}/);
 assert.match(files.gallery, /className="product-gallery-open"/);
 assert.match(files.gallery, /role="dialog"/);
 assert.match(files.gallery, /aria-modal="true"/);
-assert.match(files.gallery, /aria-label="Close image preview"/);
+assert.match(files.gallery, /aria-label={g.close}/);
+assert.match(files.gallery, /close: "Close image preview"/);
 assert.doesNotMatch(files.gallery, /tabIndex=\{0\}[\s\S]*?role="button"/);
 assert.match(files.productPage, /<main id="main-content" className="product-page">/);
-assert.match(files.category, /<h2 className="sr-only">Available/);
+assert.match(files.category, /<h2 className="sr-only">{copy.available}/);
+assert.match(files.category, /available: "Available"/);

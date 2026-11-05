@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import { useLocale } from "../../hooks/useLocale";
 import { isOptimizableImageSrc } from "../../lib/image-source";
 
 // How much of the video has to be on screen before it plays. The gallery track
@@ -21,6 +22,7 @@ function prefersReducedMotion() {
 // asks for reduced motion gets the poster and a play button instead, and one
 // who pauses it keeps it paused until they press play again.
 export default function ProductVideo({ src, poster, fallbackSrc, label }) {
+  const { t } = useLocale();
   const videoRef = useRef(null);
   const [isVisible, setIsVisible] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -148,7 +150,7 @@ export default function ProductVideo({ src, poster, fallbackSrc, label }) {
         type="button"
         className={`product-video-toggle${isPlaying ? " is-playing" : ""}`}
         onClick={toggle}
-        aria-label={isPlaying ? "Pause 360° video" : "Play 360° video"}
+        aria-label={isPlaying ? t.gallery.pauseVideo : t.gallery.playVideo}
       >
         <span aria-hidden="true">{isPlaying ? "❚❚" : "▶"}</span>
       </button>

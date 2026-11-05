@@ -11,7 +11,20 @@ const PUBLIC_PAGES = [
   ["/returns", "returns"],
   ["/journal", "journal"],
   ["/shopping-bag", "bag"],
-  ["/wishlist", "wishlist"]
+  ["/wishlist", "wishlist"],
+  ["/th", "thai home"],
+  ["/th/contact-us", "thai contact"],
+  ["/th/about-us", "thai about"],
+  ["/th/our-service", "thai service"],
+  ["/th/privacy-policy", "thai privacy"],
+  ["/th/newsletter", "thai newsletter"],
+  ["/th/category/engagement-ring", "thai category"],
+  ["/th/journal", "thai journal"],
+  ["/th/journal/journal-diamond-4c-guide", "thai article"],
+  ["/th/shopping-bag", "thai bag"],
+  ["/th/wishlist", "thai wishlist"],
+  ["/th/request-quote", "thai quote"],
+  ["/th/account", "thai account"]
 ];
 
 for (const [path, name] of PUBLIC_PAGES) {

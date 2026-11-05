@@ -4,7 +4,8 @@ import { buildPageMetadata } from "../lib/seo";
 export const metadata = buildPageMetadata({
   title: "Shopping Bag | Maris Jewelry",
   description: "Review your selected Maris Jewelry pieces before requesting pricing and availability.",
-  path: "/shopping-bag"
+  path: "/shopping-bag",
+  noindex: true
 });
 
 export default function ShoppingBagPage() {

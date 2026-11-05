@@ -30,7 +30,7 @@ for (const removedPng of [
   await assert.rejects(access(new URL(removedPng, import.meta.url)));
 }
 
-const homePage = await readFile(new URL("../app/page.js", import.meta.url), "utf8");
+const homePage = (await readFile(new URL("../app/page.js", import.meta.url), "utf8")) + (await readFile(new URL("../app/components/HomeView.jsx", import.meta.url), "utf8"));
 const categoryPage = await readFile(new URL("../app/category/[collection]/page.js", import.meta.url), "utf8");
 const productPage = await readFile(new URL("../app/product/[slug]/product-slug-page.js", import.meta.url), "utf8");
 const catalogueRoute = await readFile(new URL("../app/api/catalogue/products/route.js", import.meta.url), "utf8");

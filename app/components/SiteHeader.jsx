@@ -5,47 +5,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { useLocale } from "../hooks/useLocale";
+import { stripLocale } from "../lib/i18n";
+
 const BAG_KEY = "marisShoppingBag";
-
-const primaryNav = [
-  { href: "/category/wedding-set", label: "Wedding set" },
-  { href: "/category/engagement-ring", label: "Engagement ring" }
-];
-
-const dropdownNav = [
-  {
-    label: "Wedding band",
-    items: [
-      { href: "/category/wedding-bands", label: "Wedding Bands" },
-      { href: "/category/mens-wedding-bands", label: "Men's Wedding Bands" }
-    ]
-  },
-  {
-    label: "Gift",
-    items: [
-      { href: "/category/necklaces-pendants", label: "Necklaces & Pendants" },
-      { href: "/category/bracelets", label: "Bracelets" },
-      { href: "/category/earrings", label: "Earrings" },
-      { href: "/category/rings", label: "Rings" }
-    ]
-  },
-  {
-    label: "Our Expertise",
-    items: [
-      { href: "/our-service", label: "Our Service" },
-      { href: "/oem-jewelry", label: "OEM Jewelry Service" },
-      { href: "/wholesale-retail", label: "Wholesale & Retail" }
-    ]
-  },
-  {
-    label: "About Us",
-    items: [
-      { href: "/about-us", label: "About Us" },
-      { href: "/contact-us", label: "Contact Us" },
-      { href: "/journal", label: "Articles" }
-    ]
-  }
-];
 
 const socialNav = [
   { href: "https://www.facebook.com/share/1JH2idcjPM/", label: "Facebook", icon: "facebook" },
@@ -150,6 +113,7 @@ function SocialIcon({ name }) {
 
 export default function SiteHeader() {
   const pathname = usePathname();
+  const { locale, t, href: localHref } = useLocale();
   const [isOpen, setIsOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [bagCount, setBagCount] = useState(0);
@@ -158,12 +122,12 @@ export default function SiteHeader() {
   const headerRef = useRef(null);
   const swipeStartRef = useRef(null);
 
-  const normalizedPathname = useMemo(() => pathname.replace(/\/$/, "") || "/", [pathname]);
+  const normalizedPathname = useMemo(() => stripLocale(pathname).replace(/\/$/, "") || "/", [pathname]);
   const isHome = normalizedPathname === "/";
   const isAdminRoute = normalizedPathname === "/admin" || normalizedPathname.startsWith("/admin/");
 
   useEffect(() => {
-    document.documentElement.lang = "en";
+    document.documentElement.lang = locale;
     try {
       window.localStorage.removeItem("marisLanguage");
       window.localStorage.removeItem("marisHomeLanguage");
@@ -193,7 +157,7 @@ export default function SiteHeader() {
       window.removeEventListener("maris:bagchange", updateBagCount);
       document.body.classList.remove("is-page-scrolled", "is-mobile-menu-open");
     };
-  }, []);
+  }, [locale]);
 
   useEffect(() => {
     document.body.classList.toggle("is-mobile-menu-open", isOpen);
@@ -326,11 +290,11 @@ export default function SiteHeader() {
     <header ref={headerRef} className={`site-header${isHome ? " site-header--home" : ""}`}>
       <div className="top-bar">
         <p className="top-announcement">
-          Private consultation for confirmed Maris pieces.
+          {t.header.announcement}
           {" "}
-          <Link href="/contact-us">Contact Maris</Link>
+          <Link href={localHref("/contact-us")}>{t.header.contactLink}</Link>
         </p>
-        <div className="top-socials" aria-label="Social media links">
+        <div className="top-socials" aria-label={t.header.socialLabel}>
           {socialNav.map((item) => (
             item.href ? (
               <a key={item.label} href={item.href} aria-label={item.label} target="_blank" rel="noopener noreferrer">
@@ -349,7 +313,7 @@ export default function SiteHeader() {
         <button
           type="button"
           className="mobile-menu-toggle"
-          aria-label={isOpen ? "Close menu" : "Open menu"}
+          aria-label={isOpen ? t.header.closeMenu : t.header.openMenu}
           aria-expanded={isOpen}
           aria-controls="maris-primary-navigation"
           ref={menuButtonRef}
@@ -361,14 +325,14 @@ export default function SiteHeader() {
         </button>
 
         <div className="logo">
-          <Link href="/" aria-label="Go to homepage">
+          <Link href={localHref("/")} aria-label={t.header.homeLabel}>
             {/* CSS drives the width across scroll and breakpoints, so height must
                 stay auto or the intrinsic height attribute would squash it.
                 `sizes` must match the widest CSS width (home hero: 342px) or
                 next/image only serves a 128/256px file and the logo blurs. */}
             <Image
               src="/assets/images/logo.png"
-              alt="Maris Jewelry Logo"
+              alt={t.header.logoAlt}
               width={122}
               height={122}
               sizes="(max-width: 767px) 250px, 342px"
@@ -378,7 +342,7 @@ export default function SiteHeader() {
           </Link>
         </div>
 
-        <Link className="nav-search" href="/category/engagement-ring" aria-label="Browse jewelry">
+        <Link className="nav-search" href={localHref("/category/engagement-ring")} aria-label={t.header.browse}>
           <SearchIcon />
         </Link>
 
@@ -386,7 +350,7 @@ export default function SiteHeader() {
           <button
             type="button"
             className="mobile-menu-backdrop"
-            aria-label="Close menu"
+            aria-label={t.header.closeMenu}
             tabIndex={-1}
             onClick={closeMenu}
           />
@@ -395,20 +359,20 @@ export default function SiteHeader() {
         <nav
           id="maris-primary-navigation"
           className="nav"
-          aria-label="Primary navigation"
+          aria-label={t.header.primaryNav}
           aria-hidden={isMobile && !isOpen}
           inert={isMobile && !isOpen}
           ref={navRef}
           onTouchStart={handleNavTouchStart}
           onTouchEnd={handleNavTouchEnd}
         >
-          {primaryNav.map((item) => (
-            <Link key={item.href} href={item.href} aria-current={isCurrent(item.href) ? "page" : undefined}>
+          {t.header.primary.map((item) => (
+            <Link key={item.href} href={localHref(item.href)} aria-current={isCurrent(item.href) ? "page" : undefined}>
               {item.label}
             </Link>
           ))}
 
-          {dropdownNav.map((group) => {
+          {t.header.groups.map((group) => {
             const current = group.items.some((item) => isCurrent(item.href));
 
             return (
@@ -418,7 +382,7 @@ export default function SiteHeader() {
                 </button>
                 <div className="nav-dropdown">
                   {group.items.map((item) => (
-                    <Link key={item.href} href={item.href} aria-current={isCurrent(item.href) ? "page" : undefined}>
+                    <Link key={item.href} href={localHref(item.href)} aria-current={isCurrent(item.href) ? "page" : undefined}>
                       {item.label}
                     </Link>
                   ))}
@@ -428,20 +392,20 @@ export default function SiteHeader() {
           })}
 
           <div className="nav-mobile-actions">
-            <Link href="/account">Account</Link>
-            <Link href="/wishlist">Wishlist</Link>
-            <Link href="/shopping-bag">Shopping bag</Link>
+            <Link href="/account">{t.header.account}</Link>
+            <Link href="/wishlist">{t.header.wishlist}</Link>
+            <Link href="/shopping-bag">{t.header.bag}</Link>
           </div>
         </nav>
 
-        <div className="icons" aria-label="Account and shopping links">
-          <Link href="/account" aria-label="Account" aria-current={isCurrent("/account") ? "page" : undefined}>
+        <div className="icons" aria-label={t.header.iconsLabel}>
+          <Link href="/account" aria-label={t.header.account} aria-current={isCurrent("/account") ? "page" : undefined}>
             <Icon name="user" />
           </Link>
-          <Link href="/wishlist" aria-label="Wishlist" aria-current={isCurrent("/wishlist") ? "page" : undefined}>
+          <Link href="/wishlist" aria-label={t.header.wishlist} aria-current={isCurrent("/wishlist") ? "page" : undefined}>
             <Icon name="heart" />
           </Link>
-          <Link href="/shopping-bag" aria-label="Shopping bag" aria-current={isCurrent("/shopping-bag") ? "page" : undefined}>
+          <Link href="/shopping-bag" aria-label={t.header.bag} aria-current={isCurrent("/shopping-bag") ? "page" : undefined}>
             <Icon name="bag" />
             <span className="bag-count-badge" data-bag-count-badge hidden={bagCount === 0}>
               {bagCount}

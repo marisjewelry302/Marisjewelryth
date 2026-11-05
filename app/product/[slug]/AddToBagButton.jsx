@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useLocale } from "../../hooks/useLocale";
+import { fill } from "../../lib/i18n";
 import { getPublicProductDisplayName, getPublicProductPath } from "../../lib/product-display";
 
 const BAG_KEY = "marisShoppingBag";
@@ -24,6 +26,8 @@ function writeBag(items) {
 }
 
 export default function AddToBagButton({ product, collectionLabel }) {
+  const { t } = useLocale();
+  const copy = t.product;
   const productId = `${product.collection}:${product.sku}`;
   const displayName = getPublicProductDisplayName(product);
   const [isAdded, setIsAdded] = useState(false);
@@ -64,9 +68,9 @@ export default function AddToBagButton({ product, collectionLabel }) {
       type="button"
       className={`product-action${isAdded ? " is-added" : ""}`}
       onClick={toggleBag}
-      aria-label={isAdded ? `Remove ${product.sku} from shopping bag` : `Add ${product.sku} to shopping bag`}
+      aria-label={isAdded ? fill(copy.removeLabel, { code: product.sku }) : fill(copy.addLabel, { code: product.sku })}
     >
-      {isAdded ? "Added to Bag" : "Add to Bag"}
+      {isAdded ? copy.addedToBag : copy.addToBag}
     </button>
   );
 }

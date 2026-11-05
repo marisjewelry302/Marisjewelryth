@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
+import { useLocale } from "./hooks/useLocale";
 
 const AUTOPLAY_DELAY_MS = 4800;
 
 export default function HeroSlider({ slides }) {
+  const { t } = useLocale();
   const [activeIndex, setActiveIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [isPageHidden, setIsPageHidden] = useState(false);
@@ -137,13 +139,13 @@ export default function HeroSlider({ slides }) {
       <button
         type="button"
         className="hero-hit hero-hit-left"
-        aria-label="Next slide"
+        aria-label={t.hero.next}
         onClick={() => moveSlide(1)}
       />
       <button
         type="button"
         className="hero-hit hero-hit-right"
-        aria-label="Previous slide"
+        aria-label={t.hero.previous}
         onClick={() => moveSlide(-1)}
       />
 
@@ -158,7 +160,7 @@ export default function HeroSlider({ slides }) {
               onClick={() => setActiveIndex(index)}
             >
               <span aria-hidden="true" />
-              {slide.label || `Slide ${index + 1}`}
+              {slide.label || `${t.hero.slide} ${index + 1}`}
             </button>
           ))}
           {!prefersReducedMotion && (
@@ -166,10 +168,10 @@ export default function HeroSlider({ slides }) {
               type="button"
               className="hero-slide-toggle"
               aria-pressed={isPaused}
-              aria-label={isPaused ? "Play slideshow" : "Pause slideshow"}
+              aria-label={isPaused ? t.hero.play : t.hero.pause}
               onClick={() => setIsPaused((paused) => !paused)}
             >
-              {isPaused ? "Play" : "Pause"}
+              {isPaused ? t.hero.playShort : t.hero.pauseShort}
             </button>
           )}
         </div>

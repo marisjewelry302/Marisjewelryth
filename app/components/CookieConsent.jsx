@@ -4,30 +4,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 
+import { useLocale } from "../hooks/useLocale";
 import {
   COOKIE_SETTINGS_EVENT,
   readCookieConsent,
   saveCookieConsent
 } from "../lib/cookie-consent";
-
-const CATEGORIES = [
-  {
-    key: "necessary",
-    title: "Strictly necessary",
-    text: "Keep you signed in, protect forms, and remember this choice. The site cannot work without them, so they are always on.",
-    locked: true
-  },
-  {
-    key: "analytics",
-    title: "Analytics",
-    text: "Help us understand which pages and pieces visitors look at, so we can improve the catalogue. No data is sold."
-  },
-  {
-    key: "marketing",
-    title: "Marketing",
-    text: "Let us measure our social media and advertising campaigns and show you more relevant Maris pieces elsewhere."
-  }
-];
 
 function isAdminPath(pathname) {
   const normalized = (pathname || "/").replace(/\/$/, "") || "/";
@@ -36,6 +18,8 @@ function isAdminPath(pathname) {
 
 export default function CookieConsent() {
   const pathname = usePathname();
+  const { t, href } = useLocale();
+  const copy = t.cookie;
   const titleId = useId();
   const descriptionId = useId();
   const panelRef = useRef(null);
@@ -89,20 +73,18 @@ export default function CookieConsent() {
     >
       <div className="cookie-consent__inner">
         <div className="cookie-consent__copy">
-          <p className="cookie-consent__eyebrow">Your privacy</p>
-          <h2 id={titleId} className="cookie-consent__title">We use cookies</h2>
+          <p className="cookie-consent__eyebrow">{copy.eyebrow}</p>
+          <h2 id={titleId} className="cookie-consent__title">{copy.title}</h2>
           <p id={descriptionId} className="cookie-consent__text">
-            Maris Jewelry uses essential cookies to run this site. With your permission we would also
-            like to use optional cookies for analytics and marketing. You can change your choice at
-            any time from &ldquo;Cookie settings&rdquo; in the footer.{" "}
-            <Link href="/privacy-policy" className="cookie-consent__link">Privacy policy</Link>
+            {copy.textBefore}{" "}
+            <Link href={href("/privacy-policy")} className="cookie-consent__link">{copy.privacyPolicy}</Link>
           </p>
         </div>
 
         {showDetails && (
           <fieldset className="cookie-consent__categories">
-            <legend className="sr-only">Cookie categories</legend>
-            {CATEGORIES.map((category) => {
+            <legend className="sr-only">{copy.legend}</legend>
+            {copy.categories.map((category) => {
               const inputId = `${titleId}-${category.key}`;
               const checked = category.locked ? true : choices[category.key];
 
@@ -111,7 +93,7 @@ export default function CookieConsent() {
                   <div className="cookie-consent__category-copy">
                     <label htmlFor={inputId} className="cookie-consent__category-title">
                       {category.title}
-                      {category.locked && <span className="cookie-consent__badge">Always on</span>}
+                      {category.locked && <span className="cookie-consent__badge">{copy.alwaysOn}</span>}
                     </label>
                     <p className="cookie-consent__category-text">{category.text}</p>
                   </div>
@@ -137,11 +119,11 @@ export default function CookieConsent() {
         <div className="cookie-consent__actions">
           {showDetails ? (
             <button type="button" className="cookie-consent__button is-secondary" onClick={() => finish(choices)}>
-              Save preferences
+              {copy.save}
             </button>
           ) : (
             <button type="button" className="cookie-consent__button is-ghost" onClick={() => setShowDetails(true)}>
-              Customize
+              {copy.customize}
             </button>
           )}
           <button
@@ -149,14 +131,14 @@ export default function CookieConsent() {
             className="cookie-consent__button is-secondary"
             onClick={() => finish({ analytics: false, marketing: false })}
           >
-            Necessary only
+            {copy.necessaryOnly}
           </button>
           <button
             type="button"
             className="cookie-consent__button is-primary"
             onClick={() => finish({ analytics: true, marketing: true })}
           >
-            Accept all
+            {copy.acceptAll}
           </button>
         </div>
       </div>

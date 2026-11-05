@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
+import { useLocale } from "./hooks/useLocale";
 import { isOptimizableImageSrc } from "./lib/image-source";
 
 const BEST_SELLER_SLOT_COUNT = 7;
@@ -46,6 +47,7 @@ function normalizeBestSellerItems(items) {
 }
 
 export default function BestSellerSection({ items = [] }) {
+  const { t } = useLocale();
   const trackRef = useRef(null);
   const carouselRef = useRef(null);
   const bestSellerItems = useMemo(() => normalizeBestSellerItems(items), [items]);
@@ -294,13 +296,13 @@ export default function BestSellerSection({ items = [] }) {
   return (
     <section className="best-seller-section" aria-labelledby="best-seller-heading">
       <div className="best-seller-head">
-        <h2 id="best-seller-heading">Best Seller</h2>
+        <h2 id="best-seller-heading">{t.bestSeller.heading}</h2>
         <span aria-hidden="true" />
       </div>
 
       <div
         className={`best-seller-carousel${isDragging ? " is-dragging" : ""}`}
-        aria-label="Best seller products"
+        aria-label={t.bestSeller.listLabel}
         ref={carouselRef}
         onPointerDown={handlePointerDown}
         onClickCapture={handleClickCapture}

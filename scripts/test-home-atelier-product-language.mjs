@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import assert from "node:assert/strict";
 
-const homepage = readFileSync("app/page.js", "utf8");
+const homepage = readFileSync("app/page.js", "utf8") + readFileSync("app/components/HomeView.jsx", "utf8");
 
 assert.match(
   homepage,

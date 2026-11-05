@@ -8,7 +8,7 @@ const adminJs = await readFile(new URL("../assets/js/admin-page.js", import.meta
 const productDataJs = await readFile(new URL("../assets/js/product-data.js", import.meta.url), "utf8");
 const contactPage = await readFile(new URL("../app/contact-us/page.js", import.meta.url), "utf8");
 const quotePage = await readFile(new URL("../app/request-quote/RequestQuoteClient.jsx", import.meta.url), "utf8");
-const homepage = await readFile(new URL("../app/page.js", import.meta.url), "utf8");
+const homepage = (await readFile(new URL("../app/page.js", import.meta.url), "utf8")) + (await readFile(new URL("../app/components/HomeView.jsx", import.meta.url), "utf8")) + (await readFile(new URL("../app/lib/home-copy.js", import.meta.url), "utf8"));
 const typographySource = (await Promise.all([
   "../assets/css/style.css",
   "../assets/css/engagement-ring.css",

@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from "react";
 
+import { useLocale } from "../hooks/useLocale";
+import { fill } from "../lib/i18n";
+
 // Keep localStorage keys for wishlist/bag counts until those surfaces are migrated.
 const WISHLIST_KEY = "marisWishlist";
 const BAG_KEY = "marisShoppingBag";
@@ -42,6 +45,8 @@ function getSummary() {
 }
 
 export default function AccountClient() {
+  const { t, href } = useLocale();
+  const a = t.account;
   const [mode, setMode] = useState("signin");
   const [customer, setCustomer] = useState(null); // null = not loaded, false = not signed in
   const [loading, setLoading] = useState(true);
@@ -122,12 +127,12 @@ export default function AccountClient() {
       const data = await res.json();
 
       if (!res.ok) {
-        setMessage(data.error || "Could not create account.");
+        setMessage(data.error || a.msg.createFail);
         return;
       }
 
       setCustomer(data.customer);
-      setProfileMessage("Account created. Welcome to Maris.");
+      setProfileMessage(a.msg.created);
 
       // Marketing email is opt-in: only a ticked box subscribes the address.
       if (wantsMarketing) {
@@ -143,7 +148,7 @@ export default function AccountClient() {
           const welcomeData = await welcomeResponse.json().catch(() => ({}));
 
           if (welcomeResponse.ok && welcomeData.status === "sent") {
-            setProfileMessage("Account created. Your Maris welcome email is on the way.");
+            setProfileMessage(a.msg.createdEmail);
           }
         } catch {
           // Account creation must remain successful even if email delivery is unavailable.
@@ -155,7 +160,7 @@ export default function AccountClient() {
         return;
       }
     } catch {
-      setMessage("Something went wrong. Please try again.");
+      setMessage(a.msg.wrong);
     } finally {
       setSubmitting(false);
     }
@@ -182,17 +187,17 @@ export default function AccountClient() {
       const data = await res.json();
 
       if (!res.ok) {
-        setMessage(data.error || "Incorrect email or password.");
+        setMessage(data.error || a.msg.badLogin);
         return;
       }
 
       setCustomer(data.customer);
-      setProfileMessage(`Welcome back, ${data.customer.fullName || "Maris Client"}.`);
+      setProfileMessage(fill(a.msg.welcomeBack, { name: data.customer.fullName || a.client }));
       if (safeNextPath) {
         window.location.assign(safeNextPath);
       }
     } catch {
-      setMessage("Something went wrong. Please try again.");
+      setMessage(a.msg.wrong);
     } finally {
       setSubmitting(false);
     }
@@ -220,14 +225,14 @@ export default function AccountClient() {
       const data = await res.json();
 
       if (!res.ok) {
-        setProfileMessage(data.error || "Could not save profile.");
+        setProfileMessage(data.error || a.msg.saveFail);
         return;
       }
 
       setCustomer(data.customer);
-      setProfileMessage("Profile details saved.");
+      setProfileMessage(a.msg.saved);
     } catch {
-      setProfileMessage("Something went wrong. Please try again.");
+      setProfileMessage(a.msg.wrong);
     } finally {
       setSubmitting(false);
     }
@@ -244,7 +249,7 @@ export default function AccountClient() {
     const confirm = String(formData.get("confirmPassword") || "");
 
     if (newPassword !== confirm) {
-      setProfileMessage("New passwords do not match.");
+      setProfileMessage(a.msg.mismatch);
       setSubmitting(false);
       return;
     }
@@ -262,14 +267,14 @@ export default function AccountClient() {
       const data = await res.json();
 
       if (!res.ok) {
-        setProfileMessage(data.error || "Could not change password.");
+        setProfileMessage(data.error || a.msg.pwFail);
         return;
       }
 
-      setProfileMessage("Password changed successfully.");
+      setProfileMessage(a.msg.pwDone);
       event.currentTarget.reset();
     } catch {
-      setProfileMessage("Something went wrong. Please try again.");
+      setProfileMessage(a.msg.wrong);
     } finally {
       setSubmitting(false);
     }
@@ -292,16 +297,16 @@ export default function AccountClient() {
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        setDeleteMessage(data.error || "Could not delete account.");
+        setDeleteMessage(data.error || a.msg.deleteFail);
         return;
       }
 
       setCustomer(false);
       setMode("signin");
       setProfileMessage("");
-      setMessage("Your account has been deleted.");
+      setMessage(a.msg.deleted);
     } catch {
-      setDeleteMessage("Something went wrong. Please try again.");
+      setDeleteMessage(a.msg.wrong);
     } finally {
       setDeleting(false);
     }
@@ -321,11 +326,11 @@ export default function AccountClient() {
     return (
       <main id="main-content" className="account-main site-main">
         <section className="account-hero">
-          <p className="eyebrow">Client Access</p>
-          <h1>Account</h1>
+          <p className="eyebrow">{a.eyebrow}</p>
+          <h1>{a.title}</h1>
         </section>
-        <section className="account-shell" aria-label="Account system">
-          <p className="account-loading">Loading…</p>
+        <section className="account-shell" aria-label={a.systemLabel}>
+          <p className="account-loading">{a.loading}</p>
         </section>
       </main>
     );
@@ -334,23 +339,23 @@ export default function AccountClient() {
   return (
     <main id="main-content" className="account-main site-main">
       <section className="account-hero">
-        <p className="eyebrow">Client Access</p>
-        <h1>Account</h1>
-        <p className="lead">A quiet place for saved details, wishlist pieces, and future private appointments.</p>
+        <p className="eyebrow">{a.eyebrow}</p>
+        <h1>{a.title}</h1>
+        <p className="lead">{a.lead}</p>
       </section>
 
-      <section className="account-shell" aria-label="Account system">
+      <section className="account-shell" aria-label={a.systemLabel}>
         {!customer ? (
           // ─── Auth Forms ─────────────────────────────────────────────────
           <div className="account-auth">
-            <div className="account-tabs" aria-label="Account forms">
+            <div className="account-tabs" aria-label={a.formsLabel}>
               <button
                 className={mode === "signin" ? "is-active" : ""}
                 type="button"
                 aria-pressed={mode === "signin"}
                 onClick={() => { setMode("signin"); setMessage(""); }}
               >
-                Sign In
+                {a.signIn}
               </button>
               <button
                 className={mode === "create" ? "is-active" : ""}
@@ -358,47 +363,47 @@ export default function AccountClient() {
                 aria-pressed={mode === "create"}
                 onClick={() => { setMode("create"); setMessage(""); }}
               >
-                Create Account
+                {a.create}
               </button>
             </div>
 
             {mode === "signin" ? (
               <form className="account-form" onSubmit={handleSignin}>
-                <h2>Welcome back</h2>
-                <label htmlFor="signin-email">Email</label>
+                <h2>{a.welcomeBack}</h2>
+                <label htmlFor="signin-email">{a.email}</label>
                 <input id="signin-email" name="email" type="email" autoComplete="email" required />
-                <label htmlFor="signin-password">Password</label>
+                <label htmlFor="signin-password">{a.password}</label>
                 <input id="signin-password" name="password" type="password" autoComplete="current-password" required />
                 <button className="account-submit" type="submit" disabled={submitting}>
-                  {submitting ? "Signing in…" : "Sign In"}
+                  {submitting ? a.signingIn : a.signIn}
                 </button>
               </form>
             ) : (
               <form className="account-form" onSubmit={handleCreate}>
                 {isPopupSource && (
                   <div className="account-offer-notice">
-                    <span>Maris member offer</span>
-                    <p>Complete your Maris account and keep the marketing box ticked to receive your 10% offer.</p>
+                    <span>{a.offerTag}</span>
+                    <p>{a.offerText}</p>
                   </div>
                 )}
-                <h2>Create your Maris account</h2>
-                <label htmlFor="create-name">Full name</label>
+                <h2>{a.createTitle}</h2>
+                <label htmlFor="create-name">{a.fullName}</label>
                 <input id="create-name" name="name" type="text" autoComplete="name" required />
-                <label htmlFor="create-email">Email</label>
+                <label htmlFor="create-email">{a.email}</label>
                 <input id="create-email" name="email" type="email" autoComplete="email" defaultValue={popupEmail} required />
-                <label htmlFor="create-phone">Phone</label>
+                <label htmlFor="create-phone">{a.phone}</label>
                 <input id="create-phone" name="phone" type="tel" autoComplete="tel" />
-                <label htmlFor="create-password">Password</label>
+                <label htmlFor="create-password">{a.password}</label>
                 <input id="create-password" name="password" type="password" autoComplete="new-password" minLength="12" required />
                 <label className="account-consent" htmlFor="create-marketing">
                   <input id="create-marketing" name="marketing" type="checkbox" defaultChecked={popupConsent} />
-                  <span>Email me Maris Jewelry news and offers, including the 10% welcome offer. You can unsubscribe at any time.</span>
+                  <span>{a.marketing}</span>
                 </label>
                 <p className="account-form-note">
-                  How we use your details is explained in our <a href="/privacy-policy">Privacy Policy</a>.
+                  {a.privacyBefore} <a href={href("/privacy-policy")}>{a.privacyPolicy}</a>.
                 </p>
                 <button className="account-submit" type="submit" disabled={submitting}>
-                  {submitting ? "Creating…" : "Create Account"}
+                  {submitting ? a.creating : a.create}
                 </button>
               </form>
             )}
@@ -412,25 +417,25 @@ export default function AccountClient() {
           <div className="account-dashboard">
             <div className="account-dashboard-head">
               <div>
-                <p className="eyebrow">My Maris</p>
-                <h2>Welcome, {customer.fullName || "Maris Client"}</h2>
+                <p className="eyebrow">{a.myMaris}</p>
+                <h2>{fill(a.welcome, { name: customer.fullName || a.client })}</h2>
                 <p>{customer.email}</p>
               </div>
               <button className="account-link-button" type="button" onClick={signOut}>
-                Sign Out
+                {a.signOut}
               </button>
             </div>
 
             <div className="account-summary">
-              <a href="/wishlist"><span>{summary.wishlist}</span><small>Wishlist Pieces</small></a>
-              <a href="/shopping-bag"><span>{summary.bag}</span><small>Shopping Bag</small></a>
-              <a href="/request-quote"><span>{summary.quotes}</span><small>Quote Requests</small></a>
+              <a href={href("/wishlist")}><span>{summary.wishlist}</span><small>{a.wishlistPieces}</small></a>
+              <a href={href("/shopping-bag")}><span>{summary.bag}</span><small>{a.bag}</small></a>
+              <a href={href("/request-quote")}><span>{summary.quotes}</span><small>{a.quotes}</small></a>
             </div>
 
             {/* Profile Form */}
             <form className="account-profile-form" onSubmit={handleProfileSave}>
-              <h3>Profile details</h3>
-              <label htmlFor="profile-name">Full name</label>
+              <h3>{a.profile}</h3>
+              <label htmlFor="profile-name">{a.fullName}</label>
               <input
                 id="profile-name"
                 name="name"
@@ -439,7 +444,7 @@ export default function AccountClient() {
                 defaultValue={customer.fullName || ""}
                 required
               />
-              <label htmlFor="profile-phone">Phone</label>
+              <label htmlFor="profile-phone">{a.phone}</label>
               <input
                 id="profile-phone"
                 name="phone"
@@ -447,34 +452,32 @@ export default function AccountClient() {
                 autoComplete="tel"
                 defaultValue={customer.phone || ""}
               />
-              <label htmlFor="profile-service">Interested in</label>
+              <label htmlFor="profile-service">{a.interested}</label>
               <select
                 id="profile-service"
                 name="service"
                 defaultValue={customer.metadata?.preferredService || "Engagement Rings"}
               >
-                <option value="Engagement Rings">Engagement Rings</option>
-                <option value="Wedding Bands">Wedding Bands</option>
-                <option value="Men's Wedding Bands">Men&apos;s Wedding Bands</option>
-                <option value="Gifts">Gifts</option>
-                <option value="Private Consultation">Private Consultation</option>
+                {a.services.map(([value, label]) => (
+                  <option value={value} key={value}>{label}</option>
+                ))}
               </select>
               <button className="account-submit" type="submit" disabled={submitting}>
-                {submitting ? "Saving…" : "Save Details"}
+                {submitting ? a.saving : a.save}
               </button>
             </form>
 
             {/* Change Password Form */}
             <form className="account-password-form" onSubmit={handleChangePassword}>
-              <h3>Change password</h3>
-              <label htmlFor="current-password">Current password</label>
+              <h3>{a.changePassword}</h3>
+              <label htmlFor="current-password">{a.currentPassword}</label>
               <input id="current-password" name="currentPassword" type="password" autoComplete="current-password" required />
-              <label htmlFor="new-password">New password</label>
+              <label htmlFor="new-password">{a.newPassword}</label>
               <input id="new-password" name="newPassword" type="password" autoComplete="new-password" minLength="12" required />
-              <label htmlFor="confirm-password">Confirm new password</label>
+              <label htmlFor="confirm-password">{a.confirmPassword}</label>
               <input id="confirm-password" name="confirmPassword" type="password" autoComplete="new-password" minLength="12" required />
               <button className="account-submit" type="submit" disabled={submitting}>
-                {submitting ? "Updating…" : "Change Password"}
+                {submitting ? a.updating : a.changePasswordButton}
               </button>
             </form>
 
@@ -484,20 +487,19 @@ export default function AccountClient() {
 
             {/* Delete Account Form */}
             <form className="account-delete-form" onSubmit={handleDeleteAccount}>
-              <h3>Delete account</h3>
+              <h3>{a.deleteTitle}</h3>
               <p>
-                This permanently deletes your account, your saved wishlist and bag, and your email subscription.
-                Enquiries, quote requests, and order records we may need to keep are retained as described in our{" "}
-                <a href="/privacy-policy">Privacy Policy</a>. Items saved in this browser stay on this device.
+                {a.deleteBefore}{" "}
+                <a href={href("/privacy-policy")}>{a.privacyPolicy}</a>. {a.deleteAfter}
               </p>
-              <label htmlFor="delete-password">Confirm with your password</label>
+              <label htmlFor="delete-password">{a.deleteConfirmPassword}</label>
               <input id="delete-password" name="deletePassword" type="password" autoComplete="current-password" required />
               <label className="account-consent" htmlFor="delete-confirm">
                 <input id="delete-confirm" name="deleteConfirm" type="checkbox" required />
-                <span>I understand this cannot be undone.</span>
+                <span>{a.deleteUnderstand}</span>
               </label>
               <button className="account-submit account-submit--danger" type="submit" disabled={deleting}>
-                {deleting ? "Deleting…" : "Delete my account"}
+                {deleting ? a.deleting : a.deleteButton}
               </button>
               {deleteMessage && (
                 <p className="account-message account-message--error" role="alert">{deleteMessage}</p>

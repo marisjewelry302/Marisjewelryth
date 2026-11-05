@@ -2,33 +2,9 @@
 
 import { useState } from "react";
 
+import { useLocale } from "../hooks/useLocale";
+
 const INQUIRY_ENDPOINT = "/api/inquiries";
-
-const messages = {
-  contact: {
-    status: "Your inquiry has been sent to the Maris atelier.",
-    title: "Your inquiry is with us",
-    body: "The atelier has received your message and will reply through your preferred contact channel."
-  },
-  quote: {
-    status: "Your quote request has been sent to the Maris atelier.",
-    title: "Your quote request is with us",
-    body: "The atelier will confirm availability for your selected pieces and reply with pricing direction."
-  },
-  newsletter: {
-    status: "Your details have been sent to the Maris atelier.",
-    title: "You're on the Maris list",
-    body: "The atelier will use these details for future collection and custom design updates."
-  }
-};
-
-// Shown when the submission never reached the server. The summary and copy
-// button below give the visitor a way to send it themselves rather than losing
-// what they typed.
-const FAILURE_RESULT = {
-  title: "We could not send that",
-  body: "Your message did not reach the atelier. Copy the summary below and send it through Line, email, or phone, and we will pick it up from there."
-};
 
 function collectData(formData) {
   const ignored = new Set(["form-name", "subject"]);
@@ -74,6 +50,8 @@ export default function LeadForm({
   resetOnSuccess = true,
   requireSelectedPieces = false
 }) {
+  const { t, href } = useLocale();
+  const copy = t.lead;
   const [status, setStatus] = useState("");
   const [result, setResult] = useState(null);
   const [summary, setSummary] = useState([]);
@@ -93,7 +71,7 @@ export default function LeadForm({
     const selectedPieces = String(formData.get("selected_pieces") || "").trim();
 
     if (requireSelectedPieces && !selectedPieces) {
-      setStatus("Please select at least one piece before sending a quote request.");
+      setStatus(copy.selectPiece);
       return;
     }
 
@@ -101,7 +79,7 @@ export default function LeadForm({
     const nextSummary = buildSummary(type, data);
 
     setSending(true);
-    setStatus("Sending...");
+    setStatus(copy.sending);
 
     // Keep the summary ready either way: on success it is a receipt, on failure
     // it is what the visitor copies instead of retyping everything.
@@ -125,8 +103,8 @@ export default function LeadForm({
       if (response.ok) {
         // "duplicate" means this exact message is already with the atelier, so
         // from the visitor's point of view it went through.
-        setStatus(messages[type]?.status || "Your message has been sent.");
-        setResult(messages[type]);
+        setStatus(copy.messages[type]?.status || copy.sent);
+        setResult(copy.messages[type]);
         setFailed(false);
 
         if (resetOnSuccess) {
@@ -137,18 +115,18 @@ export default function LeadForm({
       }
 
       if (response.status === 400 && Array.isArray(payload.errors) && payload.errors.length) {
-        setStatus(payload.errors[0].message || "Please check the form details.");
+        setStatus(payload.errors[0].message || copy.checkForm);
         setResult(null);
         setFailed(false);
         return;
       }
 
-      setStatus(payload.error || "Your message could not be sent.");
-      setResult(FAILURE_RESULT);
+      setStatus(payload.error || copy.notSent);
+      setResult(copy.failure);
       setFailed(true);
     } catch {
-      setStatus("Your message could not be sent. Please check your connection.");
-      setResult(FAILURE_RESULT);
+      setStatus(copy.notSentConnection);
+      setResult(copy.failure);
       setFailed(true);
     } finally {
       setSending(false);
@@ -174,8 +152,8 @@ export default function LeadForm({
         <p className="form-status" role="status" aria-live="polite">{status}</p>
         <button className="inquiry-submit" type="submit" disabled={sending}>
           {sending
-            ? "Sending..."
-            : type === "quote" ? "Send Quote Request" : type === "newsletter" ? "Join Newsletter" : "Send Inquiry"}
+            ? copy.sending
+            : type === "quote" ? copy.submitQuote : type === "newsletter" ? copy.submitNewsletter : copy.submitContact}
         </button>
       </form>
 
@@ -187,10 +165,10 @@ export default function LeadForm({
             {/* Only worth offering when the send failed; on success the atelier
                 already has the message and copying it serves no purpose. */}
             {failed && (
-              <button type="button" onClick={copySummary}>{copied ? "Copied" : "Copy summary"}</button>
+              <button type="button" onClick={copySummary}>{copied ? copy.copied : copy.copy}</button>
             )}
-            <a href={type === "quote" ? "/contact-us" : "/request-quote"}>
-              {type === "quote" ? "Contact Maris directly" : "Request a quote instead"}
+            <a href={href(type === "quote" ? "/contact-us" : "/request-quote")}>
+              {type === "quote" ? copy.contactDirect : copy.quoteInstead}
             </a>
           </div>
         </div>

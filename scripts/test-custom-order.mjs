@@ -939,7 +939,7 @@ assert.match(envExample, /^MARIS_ORDER_EMAIL_TO=/m, ".env.example should documen
 const packageJson = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
 assert.equal(packageJson.scripts["test:custom-order"], "node scripts/test-custom-order.mjs");
 
-const contactOrderPageSource = await readRequiredSource("../app/contact-order/[productCode]/page.js");
+const contactOrderPageSource = (await readRequiredSource("../app/contact-order/[productCode]/page.js")) + (await readRequiredSource("../app/contact-order/[productCode]/contact-order-page.js"));
 assert.doesNotMatch(contactOrderPageSource, /dynamic\s*=\s*["']force-dynamic["']/);
 assert.match(contactOrderPageSource, /revalidate\s*=\s*3600/);
 assert.match(contactOrderPageSource, /decodeURIComponent/);
@@ -948,7 +948,7 @@ assert.match(contactOrderPageSource, /generateMetadata/);
 assert.match(contactOrderPageSource, /CustomOrderForm/);
 assert.match(contactOrderPageSource, /productCode=\{decodedProductCode\}/);
 
-const customOrderFormSource = await readRequiredSource("../app/contact-order/[productCode]/CustomOrderForm.jsx");
+const customOrderFormSource = (await readRequiredSource("../app/contact-order/[productCode]/CustomOrderForm.jsx")) + (await readRequiredSource("../app/lib/ui-text-shop.js"));
 assert.match(customOrderFormSource, /^"use client";/);
 assert.deepEqual(
   readStringArrayConstant(customOrderFormSource, "STONE_COLORS").filter(Boolean),
@@ -986,7 +986,7 @@ assert.match(customOrderFormSource, /optionTriggerRef\.current\?\.focus\(\)/);
 assert.match(customOrderFormSource, /\["WG",\s*"YG",\s*"RG",\s*"PN",\s*"Pd"\]/);
 assert.match(customOrderFormSource, /PN:\s*"Platinum"/);
 assert.match(customOrderFormSource, /Pd:\s*"Palladium"/);
-assert.match(customOrderFormSource, /\{METAL_LABELS\[metal\]\}/);
+assert.match(customOrderFormSource, /\{o\.metals\[metal\]\}/);
 assert.match(customOrderFormSource, /\["9K",\s*"14K",\s*"18K"\]/);
 assert.match(customOrderFormSource, /GOLD_METALS\.has/);
 assert.match(customOrderFormSource, /metal_purity:\s*isGoldMetal/);
@@ -1020,12 +1020,12 @@ assert.match(contactOrderPageSource, /assets\/css\/custom-order\.css/, "Contact 
 const productRouteSource = await readRequiredSource("../app/product/[slug]/page.js");
 assert.match(productRouteSource, /assets\/css\/product\.css/, "Product should load its route CSS");
 
-const productPageSource = await readRequiredSource("../app/product/[slug]/product-slug-page.js");
+const productPageSource = (await readRequiredSource("../app/product/[slug]/product-slug-page.js")) + (await readRequiredSource("../app/lib/ui-text-shop.js"));
 // The contact link lives in a client component so it can carry the metal the
 // shopper is viewing.
 assert.match(productPageSource, /<ProductContactLink[\s\S]*?productCode=\{product\.sku\}/);
 const productMetalContextSource = await readRequiredSource("../app/product/[slug]/ProductMetalContext.jsx");
-assert.match(productMetalContextSource, /href=\{`\/contact-order\/\$\{encodeURIComponent\(productCode\)\}\$\{metalQuery\}`\}/);
+assert.match(productMetalContextSource, /href=\{href\(`\/contact-order\/\$\{encodeURIComponent\(productCode\)\}\$\{metalQuery\}`\)\}/);
 assert.match(productPageSource, /Contact Maris to Order/);
 assert.doesNotMatch(productPageSource, /\/request-quote\?collection=/);
 assert.doesNotMatch(productPageSource, /Confirm Availability/);

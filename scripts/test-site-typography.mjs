@@ -15,7 +15,7 @@ const sources = {
   customerEmail: await readSource("../app/lib/customer-email.js"),
   customOrderEmail: await readSource("../app/lib/custom-order-email.js"),
   layout: await readSource("../app/layout.js"),
-  homepage: await readSource("../app/page.js"),
+  homepage: (await readSource("../app/page.js")) + (await readSource("../app/components/HomeView.jsx")),
   bestSeller: await readSource("../app/BestSellerSection.jsx")
 };
 

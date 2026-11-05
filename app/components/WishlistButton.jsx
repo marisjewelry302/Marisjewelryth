@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from "react";
 
+import { useLocale } from "../hooks/useLocale";
+import { fill } from "../lib/i18n";
+
 const WISHLIST_KEY = "marisWishlist";
 
 function readWishlist() {
@@ -19,6 +22,8 @@ function writeWishlist(items) {
 }
 
 export default function WishlistButton({ item, variant = "icon" }) {
+  const { t } = useLocale();
+  const copy = t.wishlistButton;
   const [isSaved, setIsSaved] = useState(false);
 
   useEffect(() => {
@@ -55,11 +60,11 @@ export default function WishlistButton({ item, variant = "icon" }) {
         type="button"
         className={`product-action wishlist-action${isSaved ? " is-added is-saved" : ""}`}
         aria-pressed={isSaved}
-        aria-label={isSaved ? `Remove ${item.title} from wishlist` : `Save ${item.title} to wishlist`}
+        aria-label={isSaved ? fill(copy.remove, { code: item.title }) : fill(copy.save, { code: item.title })}
         onClick={toggleWishlist}
       >
         <span className="wishlist-action-icon" aria-hidden="true">{isSaved ? "♥" : "♡"}</span>
-        <span>{isSaved ? "Saved to Wishlist" : "Add to Wishlist"}</span>
+        <span>{isSaved ? copy.saved : copy.add}</span>
       </button>
     );
   }
@@ -69,7 +74,7 @@ export default function WishlistButton({ item, variant = "icon" }) {
       type="button"
       className={`wishlist-toggle${isSaved ? " is-saved" : ""}`}
       aria-pressed={isSaved}
-      aria-label={isSaved ? `Remove ${item.title} from wishlist` : `Save ${item.title} to wishlist`}
+      aria-label={isSaved ? fill(copy.remove, { code: item.title }) : fill(copy.save, { code: item.title })}
       onClick={toggleWishlist}
     >
       ♥

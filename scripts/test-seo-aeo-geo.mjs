@@ -51,8 +51,8 @@ assert.equal(productSchema.offers.priceCurrency, "THB");
 assert.equal(productSchema.offers.seller.name, "Maris Jewelry");
 
 const layout = await readSource("../app/layout.js");
-const homepage = await readSource("../app/page.js");
-const categoryPage = await readSource("../app/category/[collection]/page.js");
+const homepage = (await readSource("../app/page.js")) + (await readSource("../app/components/HomeView.jsx"));
+const categoryPage = (await readSource("../app/category/[collection]/page.js")) + (await readSource("../app/category/[collection]/category-page.js"));
 const productPage = await readSource("../app/product/[slug]/product-slug-page.js");
 const robots = await readSource("../app/robots.js");
 const sitemap = await readSource("../app/sitemap.js");
@@ -69,7 +69,7 @@ assert.match(homepage, /home-answer-guide/);
 
 assert.match(categoryPage, /buildCollectionPageJsonLd/);
 assert.match(categoryPage, /buildBreadcrumbJsonLd/);
-assert.match(categoryPage, /alternates:\s*\{\s*canonical:/);
+assert.match(categoryPage, /path:\s*`\/category\/\$\{collection\.slug\}`/);
 
 assert.match(productPage, /buildProductJsonLd/);
 assert.match(productPage, /buildBreadcrumbJsonLd/);
@@ -82,8 +82,8 @@ assert.match(robots, /\/api\//);
 assert.match(sitemap, /readPublicCatalogueProducts/);
 // One canonical product URL: the sitemap, the storefront links, and the product
 // page redirect all read the path from the same helper.
-assert.match(sitemap, /absoluteUrl\(getPublicProductPath\(product\)\)/);
-assert.match(productPage, /permanentRedirect\(`\/product\/\$\{canonicalSlug\}`\)/);
+assert.match(sitemap, /withLanguages\(\s*getPublicProductPath\(product\)/);
+assert.match(productPage, /permanentRedirect\(localizePath\(`\/product\/\$\{canonicalSlug\}`, locale\)\)/);
 assert.equal(getPublicProductPath({ sku: "SR 0015 ER", slug: "sr-0015" }), "/product/sr-0015-er");
 assert.equal(getPublicProductPath({ slug: "sr-0015" }), "/product/sr-0015");
 

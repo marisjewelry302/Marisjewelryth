@@ -1,3 +1,5 @@
+import { journalThai } from "./journal-data-th.js";
+
 export const journalArticles = [
   {
     "slug": "journal-diamond-4c-guide",
@@ -761,4 +763,20 @@ export function byLanguage(entry, language = "en") {
   }
 
   return entry[language] || entry.en || "";
+}
+
+// One article in one language. Thai text comes from journal-data-th.js; any
+// field it does not provide falls back to the English article.
+export function getJournalText(article, language = "en") {
+  const thai = language === "th" ? journalThai[article.slug] : null;
+
+  return {
+    category: thai?.category ?? byLanguage(article.category),
+    title: thai?.title ?? byLanguage(article.title),
+    excerpt: thai?.excerpt ?? byLanguage(article.excerpt),
+    readTime: thai?.readTime ?? byLanguage(article.readTime),
+    facts: thai?.facts ?? byLanguage(article.facts),
+    sections: thai?.sections ?? byLanguage(article.sections),
+    note: thai?.note ?? byLanguage(article.note)
+  };
 }

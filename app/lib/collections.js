@@ -151,10 +151,12 @@ export function productMatchesCollection(product, collectionSlug) {
   return inferCollectionFromCode(product.sku || product.code || "") === expected;
 }
 
-export function formatProductPrice(basePrice) {
+export function formatProductPrice(basePrice, locale = "en") {
+  const isThai = locale === "th";
+
   if (basePrice === null || basePrice === undefined || basePrice === "") {
-    return "Price on request";
+    return isThai ? "สอบถามราคา" : "Price on request";
   }
 
-  return `${Number(basePrice).toLocaleString()} THB`;
+  return `${Number(basePrice).toLocaleString()} ${isThai ? "บาท" : "THB"}`;
 }

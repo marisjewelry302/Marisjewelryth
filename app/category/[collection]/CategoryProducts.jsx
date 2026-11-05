@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import ProductCard from "../../components/ProductCard";
+import { useLocale } from "../../hooks/useLocale";
 import {
   buildCatalogueFilterGroups,
   getProductCarat,
@@ -12,15 +13,6 @@ import {
 // the opening viewport, so loading exactly those eagerly costs nothing further down.
 const ABOVE_FOLD_CARD_COUNT = 4;
 
-const BASE_SORT_OPTIONS = [
-  { value: "featured", label: "Featured" },
-  { value: "code-asc", label: "Product Code A-Z" }
-];
-
-const CARAT_SORT_OPTIONS = [
-  { value: "carat-desc", label: "Carat: High to Low" },
-  { value: "carat-asc", label: "Carat: Low to High" }
-];
 
 function sortProducts(products, mode) {
   const nextProducts = [...products];
@@ -41,6 +33,16 @@ function sortProducts(products, mode) {
 }
 
 export default function CategoryProducts({ products, collectionTitle }) {
+  const { t } = useLocale();
+  const copy = t.catalogue;
+  const BASE_SORT_OPTIONS = [
+    { value: "featured", label: copy.featured },
+    { value: "code-asc", label: copy.codeAsc }
+  ];
+  const CARAT_SORT_OPTIONS = [
+    { value: "carat-desc", label: copy.caratDesc },
+    { value: "carat-asc", label: copy.caratAsc }
+  ];
   const [sortBy, setSortBy] = useState("featured");
   const [filterBy, setFilterBy] = useState("all");
 
@@ -52,7 +54,7 @@ export default function CategoryProducts({ products, collectionTitle }) {
     products.some((product) => getProductCarat(product) > 0)
       ? [...BASE_SORT_OPTIONS, ...CARAT_SORT_OPTIONS]
       : BASE_SORT_OPTIONS
-  ), [products]);
+  ), [products, copy]);
 
   // Options are derived from the pieces on the page, so a remembered choice can
   // stop existing when the collection changes. Fall back instead of showing a
@@ -69,9 +71,9 @@ export default function CategoryProducts({ products, collectionTitle }) {
 
   return (
     <>
-      <section className="catalogue-toolbar" aria-label="Catalogue controls">
+      <section className="catalogue-toolbar" aria-label={copy.controls}>
         <div className="toolbar-group">
-          <label htmlFor="sort-by">Sort by</label>
+          <label htmlFor="sort-by">{copy.sortBy}</label>
           <select id="sort-by" className="catalogue-select" value={activeSort} onChange={(event) => setSortBy(event.target.value)}>
             {sortOptions.map((option) => (
               <option key={option.value} value={option.value}>{option.label}</option>
@@ -79,17 +81,17 @@ export default function CategoryProducts({ products, collectionTitle }) {
           </select>
         </div>
 
-        <p className="catalogue-count">{visibleProducts.length} {visibleProducts.length === 1 ? "piece" : "pieces"}</p>
+        <p className="catalogue-count">{visibleProducts.length} {visibleProducts.length === 1 ? copy.piece : copy.pieces}</p>
 
         {filterGroups.length ? (
           <div className="toolbar-group toolbar-group-right">
-            <label htmlFor="filter-by">Filter</label>
+            <label htmlFor="filter-by">{copy.filter}</label>
             <select id="filter-by" className="catalogue-select" value={activeFilter} onChange={(event) => setFilterBy(event.target.value)}>
-              <option value="all">All Pieces ({products.length})</option>
+              <option value="all">{copy.allPieces} ({products.length})</option>
               {filterGroups.map((group) => (
-                <optgroup key={group.key} label={group.label}>
+                <optgroup key={group.key} label={copy.groups[group.key] || group.label}>
                   {group.options.map((option) => (
-                    <option key={option.token} value={option.token}>{option.label} ({option.count})</option>
+                    <option key={option.token} value={option.token}>{copy.values[option.token] || option.label} ({option.count})</option>
                   ))}
                 </optgroup>
               ))}
@@ -98,8 +100,8 @@ export default function CategoryProducts({ products, collectionTitle }) {
         ) : null}
       </section>
 
-      <section className="products" aria-label={`${collectionTitle} products`}>
-        <h2 className="sr-only">Available {collectionTitle}</h2>
+      <section className="products" aria-label={`${collectionTitle} ${copy.productsLabel}`}>
+        <h2 className="sr-only">{copy.available} {collectionTitle}</h2>
         {visibleProducts.length ? (
           visibleProducts.map((product, index) => (
             <ProductCard
@@ -111,7 +113,7 @@ export default function CategoryProducts({ products, collectionTitle }) {
           ))
         ) : (
           <div className="catalogue-empty">
-            No products are available in this collection yet. Please contact Maris Jewelry for current availability.
+            {copy.empty}
           </div>
         )}
       </section>

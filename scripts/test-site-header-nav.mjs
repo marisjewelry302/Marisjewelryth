@@ -1,16 +1,17 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-const source = await readFile(new URL("../app/components/SiteHeader.jsx", import.meta.url), "utf8");
+const source = (await readFile(new URL("../app/components/SiteHeader.jsx", import.meta.url), "utf8")) + (await readFile(new URL("../app/lib/ui-text.js", import.meta.url), "utf8"));
 
-function extractArray(name) {
-  const match = source.match(new RegExp(String.raw`const ${name} = \[([\s\S]*?)\];`));
+// The navigation lives in lib/ui-text.js, English first; the first match is the English menu.
+function extractNav(pattern, name) {
+  const match = source.match(pattern);
   assert.ok(match, `${name} declaration should exist`);
   return match[1];
 }
 
-const primaryNav = extractArray("primaryNav");
-const dropdownNav = extractArray("dropdownNav");
+const primaryNav = extractNav(/primary: \[([\s\S]*?)\n    \],/, "primaryNav");
+const dropdownNav = extractNav(/groups: \[([\s\S]*?)\n    \]\n  \},/, "dropdownNav");
 
 assert.match(
   primaryNav,

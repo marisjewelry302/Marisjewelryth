@@ -4,6 +4,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
+import { useLocale } from "./hooks/useLocale";
 import { hasCookieConsentDecision, onCookieConsentChange } from "./lib/cookie-consent";
 
 const CLOSED_KEY = "marisSignupPopupClosedUntil";
@@ -48,6 +49,8 @@ function isValidEmail(email) {
 
 export default function HomeSignupPopup() {
   const router = useRouter();
+  const { t, href } = useLocale();
+  const copy = t.popup;
   const emailId = useId();
   const titleId = useId();
   const dialogRef = useRef(null);
@@ -142,13 +145,13 @@ export default function HomeSignupPopup() {
     const normalizedEmail = email.trim().toLowerCase();
 
     if (!isValidEmail(normalizedEmail)) {
-      setMessage("Please enter a valid email address.");
+      setMessage(copy.invalidEmail);
       return;
     }
 
     // The offer is a marketing offer, so it needs a clear, separate yes to marketing emails.
     if (!agreeMarketing) {
-      setMessage("Please tick the box to receive marketing emails and your 10% offer.");
+      setMessage(copy.needConsent);
       return;
     }
 
@@ -156,7 +159,7 @@ export default function HomeSignupPopup() {
     writeStorage("sessionStorage", EMAIL_HANDOFF_KEY, normalizedEmail);
     writeStorage("sessionStorage", CONSENT_HANDOFF_KEY, "1");
 
-    router.push("/account?mode=signup");
+    router.push(href("/account?mode=signup"));
   }
 
   if (!isOpen) return null;
@@ -172,7 +175,7 @@ export default function HomeSignupPopup() {
         tabIndex={-1}
         ref={dialogRef}
       >
-        <h2 id={titleId} className="sr-only">Join Maris Jewelry</h2>
+        <h2 id={titleId} className="sr-only">{copy.join}</h2>
         <div className="home-signup-popup__image-panel">
           <Image src="/assets/images/home/popup/popup-background.webp" alt="" aria-hidden={true} width={1024} height={1536} sizes="(max-width: 900px) 100vw, 420px" />
           <span className="home-signup-popup__image-brand">
@@ -182,44 +185,44 @@ export default function HomeSignupPopup() {
         </div>
 
         <div className="home-signup-popup__content">
-          <button className="home-signup-popup__close" type="button" aria-label="Close signup popup" onClick={closePopup}>
+          <button className="home-signup-popup__close" type="button" aria-label={copy.close} onClick={closePopup}>
             &times;
           </button>
 
-          <p className="home-signup-popup__eyebrow">Welcome to</p>
+          <p className="home-signup-popup__eyebrow">{copy.welcome}</p>
           <Image className="home-signup-popup__logo" src="/assets/images/home/popup/maris-popup-logo.png" alt="Maris Jewelry" width={1321} height={740} sizes="220px" />
           <span className="home-signup-popup__rule" aria-hidden="true" />
 
-          <p className="home-signup-popup__intro">Sign up for our mailing list and enjoy</p>
-          <p className="home-signup-popup__offer">10% OFF</p>
-          <p className="home-signup-popup__suboffer">your first confirmed order</p>
+          <p className="home-signup-popup__intro">{copy.intro}</p>
+          <p className="home-signup-popup__offer">{copy.offer}</p>
+          <p className="home-signup-popup__suboffer">{copy.subOffer}</p>
 
-          <div className="home-signup-popup__perks" aria-label="Member benefits">
+          <div className="home-signup-popup__perks" aria-label={copy.perksLabel}>
             <div>
               <Image src="/assets/images/home/popup/popup-icon-tag.png" alt="" aria-hidden={true} width={355} height={369} sizes="23px" />
-              <strong>10% OFF</strong>
-              <small>your first confirmed order</small>
+              <strong>{copy.perks[0].title}</strong>
+              <small>{copy.perks[0].text}</small>
             </div>
             <div>
               <Image src="/assets/images/home/popup/popup-icon-clock-v2.png" alt="" aria-hidden={true} width={371} height={397} sizes="23px" />
-              <strong>Early access</strong>
-              <small>to new Maris pieces</small>
+              <strong>{copy.perks[1].title}</strong>
+              <small>{copy.perks[1].text}</small>
             </div>
             <div>
               <Image src="/assets/images/home/popup/popup-icon-gift.png" alt="" aria-hidden={true} width={405} height={388} sizes="23px" />
-              <strong>Private offers</strong>
-              <small>for Maris members</small>
+              <strong>{copy.perks[2].title}</strong>
+              <small>{copy.perks[2].text}</small>
             </div>
           </div>
 
           <form className="home-signup-popup__form" onSubmit={handleSubmit} noValidate>
-            <label className="sr-only" htmlFor={emailId}>Email address</label>
+            <label className="sr-only" htmlFor={emailId}>{copy.emailAddress}</label>
             <input
               id={emailId}
               name="email"
               type="email"
               autoComplete="email"
-              placeholder="Enter your email"
+              placeholder={copy.emailPlaceholder}
               value={email}
               onChange={(event) => {
                 setEmail(event.target.value);
@@ -227,7 +230,7 @@ export default function HomeSignupPopup() {
               }}
               required
             />
-            <button type="submit">Get 10% Off</button>
+            <button type="submit">{copy.submit}</button>
           </form>
 
           {message && <p className="home-signup-popup__message" role="alert">{message}</p>}
@@ -241,11 +244,11 @@ export default function HomeSignupPopup() {
                 setMessage("");
               }}
             />
-            <span>I agree to receive Maris Jewelry marketing emails, including offers. I can unsubscribe at any time.</span>
+            <span>{copy.consent}</span>
           </label>
 
           <p className="home-signup-popup__privacy">
-            See how we use your details in our <a href="/privacy-policy">Privacy Policy</a>.
+            {copy.privacyBefore} <a href={href("/privacy-policy")}>{copy.privacyPolicy}</a>.
           </p>
 
           <label className="home-signup-popup__remember">
@@ -257,10 +260,10 @@ export default function HomeSignupPopup() {
                 setHideToday(event.target.checked);
               }}
             />
-            <span>Don't show again today</span>
+            <span>{copy.hideToday}</span>
           </label>
 
-          <button className="home-signup-popup__decline" type="button" onClick={closePopup}>No, thank you</button>
+          <button className="home-signup-popup__decline" type="button" onClick={closePopup}>{copy.decline}</button>
         </div>
       </section>
     </div>

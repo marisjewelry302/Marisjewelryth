@@ -2,9 +2,9 @@
 
 import { useId, useState } from "react";
 
+import { useLocale } from "../hooks/useLocale";
+
 const NEWSLETTER_ENDPOINT = "/api/newsletter";
-const SUCCESS_MESSAGE = "You're on the Maris list.";
-const FAILURE_MESSAGE = "Your email could not be saved.";
 
 export default function NewsletterSignup({
   source = "footer",
@@ -13,6 +13,8 @@ export default function NewsletterSignup({
 }) {
   // Rendered once in the desktop footer and again in the mobile accordion, so
   // the label target has to be generated rather than hard-coded.
+  const { t, href } = useLocale();
+  const copy = t.newsletter;
   const emailId = useId();
   const [email, setEmail] = useState(defaultEmail);
   const [status, setStatus] = useState("");
@@ -32,7 +34,7 @@ export default function NewsletterSignup({
     }
 
     setSending(true);
-    report("Joining...");
+    report(copy.joining);
 
     try {
       const response = await fetch(NEWSLETTER_ENDPOINT, {
@@ -44,14 +46,14 @@ export default function NewsletterSignup({
       const payload = await response.json().catch(() => ({}));
 
       if (response.ok) {
-        report(SUCCESS_MESSAGE, "success");
+        report(copy.success, "success");
         setEmail("");
         return;
       }
 
-      report(payload.error || FAILURE_MESSAGE, "error");
+      report(payload.error || copy.failure, "error");
     } catch {
-      report(`${FAILURE_MESSAGE} Please check your connection.`, "error");
+      report(`${copy.failure} ${copy.connection}`, "error");
     } finally {
       setSending(false);
     }
@@ -69,7 +71,7 @@ export default function NewsletterSignup({
     return (
       <form className="inquiry-form newsletter-form" onSubmit={handleSubmit}>
         <label htmlFor={emailId}>
-          Email address
+          {copy.emailAddress}
           <input
             id={emailId}
             name="email"
@@ -83,11 +85,11 @@ export default function NewsletterSignup({
           />
         </label>
         <p className="form-note">
-          By joining, you agree to receive Maris Jewelry marketing emails. You can unsubscribe at any time. See our <a href="/privacy-policy">Privacy Policy</a>.
+          {copy.pageConsent} <a href={href("/privacy-policy")}>{copy.privacyPolicy}</a>.
         </p>
         <p className="form-status" role="status" aria-live="polite" data-type={statusType || undefined}>{status}</p>
         <button className="inquiry-submit" type="submit" disabled={sending}>
-          {sending ? "Joining..." : "Join Newsletter"}
+          {sending ? copy.joining : copy.joinPage}
         </button>
       </form>
     );
@@ -96,24 +98,24 @@ export default function NewsletterSignup({
   return (
     <div className="maris-footer__newsletter">
       <form className="maris-footer__email-box" onSubmit={handleSubmit}>
-        <label className="maris-footer__sr-only" htmlFor={emailId}>Email address</label>
+        <label className="maris-footer__sr-only" htmlFor={emailId}>{copy.emailAddress}</label>
         <input
           id={emailId}
           name="email"
           type="email"
           required
           autoComplete="email"
-          placeholder="Email address"
+          placeholder={copy.emailAddress}
           value={email}
           onChange={handleChange}
           disabled={sending}
         />
-        <button type="submit" aria-label="Join newsletter" disabled={sending}>
-          {sending ? "..." : "Join"}
+        <button type="submit" aria-label={copy.joinLabel} disabled={sending}>
+          {sending ? "..." : copy.join}
         </button>
       </form>
       <p className="maris-footer__newsletter-note">
-        By joining, you agree to receive marketing emails. Unsubscribe any time. <a href="/privacy-policy">Privacy Policy</a>
+        {copy.footerConsent} <a href={href("/privacy-policy")}>{copy.privacyPolicy}</a>
       </p>
       <p className="maris-footer__email-status" role="status" aria-live="polite" data-type={statusType || undefined}>{status}</p>
     </div>

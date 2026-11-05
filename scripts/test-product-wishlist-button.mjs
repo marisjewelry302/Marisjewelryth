@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
-const productPage = readFileSync("app/product/[slug]/product-slug-page.js", "utf8");
-const wishlistButton = readFileSync("app/components/WishlistButton.jsx", "utf8");
+const productPage = readFileSync("app/product/[slug]/product-slug-page.js", "utf8") + readFileSync("app/lib/ui-text-shop.js", "utf8");
+const wishlistButton = readFileSync("app/components/WishlistButton.jsx", "utf8") + readFileSync("app/lib/ui-text-shop.js", "utf8");
 const productCss = readFileSync("assets/css/product.css", "utf8");
 
 assert.match(

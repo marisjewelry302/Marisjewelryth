@@ -3,6 +3,9 @@
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useCustomerSession } from "../hooks/useCustomerSession";
+import { useLocale } from "../hooks/useLocale";
+import { fill } from "../lib/i18n";
+import { localizeCollectionName } from "../lib/ui-text-shop";
 import { isOptimizableImageSrc } from "../lib/image-source";
 
 const WISHLIST_KEY = "marisWishlist";
@@ -90,6 +93,8 @@ async function saveWishlist(items) {
 }
 
 export default function WishlistClient() {
+  const { locale, t, href: localHref } = useLocale();
+  const w = t.wishlist;
   const { isLoggedIn, isLoading: sessionLoading } = useCustomerSession();
   const [items, setItems] = useState([]);
   const didSyncRef = useRef(false);
@@ -168,46 +173,46 @@ export default function WishlistClient() {
   return (
     <main id="main-content" className="wishlist-main site-main">
       <section className="wishlist-hero">
-        <p className="eyebrow">Saved Pieces</p>
-        <h1>Wishlist</h1>
-        <p className="lead">Keep the pieces you love in one quiet place. Tap the heart on any catalogue item, then come back here to review it.</p>
-        <p className="wishlist-count">{items.length === 1 ? "1 saved piece" : `${items.length} saved pieces`}</p>
+        <p className="eyebrow">{w.eyebrow}</p>
+        <h1>{w.title}</h1>
+        <p className="lead">{w.lead}</p>
+        <p className="wishlist-count">{items.length === 1 ? w.one : fill(w.many, { n: items.length })}</p>
       </section>
 
-      <section className="wishlist-panel" aria-label="Saved wishlist items">
+      <section className="wishlist-panel" aria-label={w.label}>
         {!items.length ? (
           <div className="wishlist-empty">
-            <p className="eyebrow">Nothing Saved Yet</p>
-            <h2>Your wishlist is waiting.</h2>
-            <p>Start from the catalogue and press the heart beside any piece you want to keep for later.</p>
+            <p className="eyebrow">{w.emptyEyebrow}</p>
+            <h2>{w.emptyTitle}</h2>
+            <p>{w.emptyText}</p>
             <div className="page-actions">
-              <a className="primary-link" href="/category/engagement-ring">Browse Engagement Rings</a>
-              <a href="/">Go to Home</a>
+              <a className="primary-link" href={localHref("/category/engagement-ring")}>{w.browse}</a>
+              <a href={localHref("/")}>{w.goHome}</a>
             </div>
           </div>
         ) : (
           <div className="wishlist-grid">
             {items.map((item) => {
               const quoteHref = item.href?.startsWith("/product/")
-                ? `/request-quote?id=${encodeURIComponent(item.title || item.id)}`
-                : "/request-quote";
+                ? localHref(`/request-quote?id=${encodeURIComponent(item.title || item.id)}`)
+                : localHref("/request-quote");
 
               return (
                 <article className="wishlist-item" key={item.id || item.title}>
-                  <a className="wishlist-image" href={item.href || "/category/engagement-ring"}>
-                    <Image src={item.image || "/assets/images/logo.png"} alt={item.title || "Wishlist item"} width={1024} height={1024} sizes="(max-width: 900px) 50vw, 390px" unoptimized={!isOptimizableImageSrc(item.image || "/assets/images/logo.png")} />
+                  <a className="wishlist-image" href={localHref(item.href || "/category/engagement-ring")}>
+                    <Image src={item.image || "/assets/images/logo.png"} alt={item.title || w.itemAlt} width={1024} height={1024} sizes="(max-width: 900px) 50vw, 390px" unoptimized={!isOptimizableImageSrc(item.image || "/assets/images/logo.png")} />
                   </a>
                   <div className="wishlist-copy">
-                    <p className="wishlist-collection">{item.collection || "Maris Jewelry"}</p>
-                    <h2>{item.title || "Maris Piece"}</h2>
+                    <p className="wishlist-collection">{localizeCollectionName(item.collection || "Maris Jewelry", locale)}</p>
+                    <h2>{item.title || w.piece}</h2>
                     {(Array.isArray(item.details) ? item.details : []).map((detail) => (
                       <p key={detail}>{detail}</p>
                     ))}
                     <div className="wishlist-actions">
-                      <a href={item.href || "/category/engagement-ring"}>View Details</a>
-                      <a href={quoteHref}>Request Quote</a>
+                      <a href={localHref(item.href || "/category/engagement-ring")}>{w.viewDetails}</a>
+                      <a href={quoteHref}>{w.requestQuote}</a>
                       <button type="button" onClick={() => updateItems(items.filter((savedItem) => savedItem.id !== item.id))}>
-                        Remove
+                        {w.remove}
                       </button>
                     </div>
                   </div>

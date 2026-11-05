@@ -1,7 +1,10 @@
 import Image from "next/image";
+import { THAI_LOCALE, localizePath } from "../lib/i18n";
 import { isOptimizableImageSrc } from "../lib/image-source";
+import { contentPageTextTh } from "../lib/static-pages-th";
 
-export default function ContentPage({ page, children }) {
+export default function ContentPage({ page, children, locale = "en" }) {
+  const effectiveDateLabel = locale === THAI_LOCALE ? contentPageTextTh.effectiveDate : "Effective date";
   const hasStepImages = page.steps?.some((step) => step.image);
   const heroImages = page.heroImages ?? (page.heroImage ? [page.heroImage] : []);
   const cardClassName = [
@@ -96,7 +99,7 @@ export default function ContentPage({ page, children }) {
           </section>
         )}
 
-        {page.effectiveDate && <p className="subpage-note">Effective date: {page.effectiveDate}</p>}
+        {page.effectiveDate && <p className="subpage-note">{effectiveDateLabel}: {page.effectiveDate}</p>}
 
         {page.policySections && (
           <div className="policy-content">
@@ -117,7 +120,7 @@ export default function ContentPage({ page, children }) {
         {page.actions && (
           <div className="page-actions">
             {page.actions.map((action, index) => (
-              <a key={action.href} className={index === 0 ? "primary-link" : undefined} href={action.href}>
+              <a key={action.href} className={index === 0 ? "primary-link" : undefined} href={localizePath(action.href, locale)}>
                 {action.label}
               </a>
             ))}

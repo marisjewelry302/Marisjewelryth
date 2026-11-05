@@ -1,4 +1,6 @@
+import { THAI_LOCALE } from "./i18n";
 import { buildPageMetadata } from "./seo";
+import { staticPagesTh } from "./static-pages-th";
 
 const serviceProcessImage = "/assets/images/service/custom-jewelry-process-storyboard.webp";
 const serviceHeroImage = "/assets/images/service/custom-jewelry-service-hero.webp";
@@ -261,12 +263,35 @@ export const staticPages = {
   }
 };
 
-export function getStaticPage(slug) {
-  return staticPages[slug] || null;
+// Thai pages reuse the English entry for layout and images and replace the
+// words, so a new image or layout change only has to be made once.
+function localizePage(page, thai) {
+  return {
+    ...page,
+    ...thai,
+    heroImages: page.heroImages?.map((image, index) => ({ ...image, alt: thai.heroAlts?.[index] ?? image.alt })),
+    steps: thai.steps?.map((step, index) => {
+      const source = page.steps?.[index];
+      return {
+        ...step,
+        image: source?.image ? { ...source.image, alt: step.imageAlt ?? source.image.alt } : undefined
+      };
+    })
+  };
 }
 
-export function getStaticPageMetadata(slug) {
-  const page = getStaticPage(slug);
+export function getStaticPage(slug, locale = "en") {
+  const page = staticPages[slug] || null;
+
+  if (page && locale === THAI_LOCALE && staticPagesTh[slug]) {
+    return localizePage(page, staticPagesTh[slug]);
+  }
+
+  return page;
+}
+
+export function getStaticPageMetadata(slug, locale = "en") {
+  const page = getStaticPage(slug, locale);
 
   if (!page) {
     return buildPageMetadata({ title: "Maris Jewelry" });
@@ -276,6 +301,7 @@ export function getStaticPageMetadata(slug) {
     title: `${page.title} | Maris Jewelry`,
     description: page.description || page.lead,
     path: `/${slug}`,
-    image: page.heroImages?.[0]?.src || page.heroImage?.src
+    image: page.heroImages?.[0]?.src || page.heroImage?.src,
+    locale
   });
 }

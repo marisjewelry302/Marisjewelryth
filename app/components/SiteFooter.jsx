@@ -4,43 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useId, useState } from "react";
 
+import { useLocale } from "../hooks/useLocale";
 import { openCookieSettings } from "../lib/cookie-consent";
+import { stripLocale } from "../lib/i18n";
 import NewsletterSignup from "./NewsletterSignup";
-
-const footerSections = [
-  {
-    title: "Maris Jewelry",
-    body: "Fine jewelry, engagement rings, wedding bands, and custom design support from Bangkok.",
-    links: [
-      { href: "/about-us", label: "About Us" },
-      { href: "/contact-us", label: "Contact Us" },
-      { href: "/journal", label: "Articles" }
-    ]
-  },
-  {
-    title: "Collections",
-    links: [
-      { href: "/category/engagement-ring", label: "Engagement Rings" },
-      { href: "/category/wedding-bands", label: "Wedding Bands" },
-      { href: "/category/necklaces-pendants", label: "Necklaces & Pendants" },
-      { href: "/category/rings", label: "Rings" }
-    ]
-  },
-  {
-    title: "Support",
-    links: [
-      { href: "/terms-of-service", label: "Terms of Service" },
-      { href: "/shipping", label: "Shipping" },
-      { href: "/returns", label: "Returns" },
-      { href: "/privacy-policy", label: "Privacy Policy" }
-    ]
-  },
-  {
-    title: "Newsletter",
-    body: "Receive collection notes, custom design updates, and Maris Jewelry announcements.",
-    newsletter: true
-  }
-];
 
 function SocialIcon({ label }) {
   const commonProps = {
@@ -86,7 +53,7 @@ function SocialLinks() {
   ));
 }
 
-function FooterSection({ section, index }) {
+function FooterSection({ section, index, href }) {
   const [isOpen, setIsOpen] = useState(index === 0);
   const panelId = useId();
 
@@ -114,7 +81,7 @@ function FooterSection({ section, index }) {
           {section.links && (
             <div className="maris-footer__links">
               {section.links.map((item) => (
-                <Link key={item.href} href={item.href}>{item.label}</Link>
+                <Link key={item.href} href={href(item.href)}>{item.label}</Link>
               ))}
             </div>
           )}
@@ -127,7 +94,9 @@ function FooterSection({ section, index }) {
 
 export default function SiteFooter() {
   const pathname = usePathname();
-  const normalizedPathname = pathname.replace(/\/$/, "") || "/";
+  const { t, href } = useLocale();
+  const footerSections = t.footer.sections;
+  const normalizedPathname = stripLocale(pathname).replace(/\/$/, "") || "/";
 
   if (normalizedPathname === "/admin" || normalizedPathname.startsWith("/admin/")) {
     return null;
@@ -138,20 +107,20 @@ export default function SiteFooter() {
       <div className="maris-footer__inner">
         <div className="maris-footer__desktop">
           {footerSections.map((section) => (
-            <section className="maris-footer__desktop-col" key={section.title}>
+            <section className="maris-footer__desktop-col" key={section.key}>
               <h2>{section.title}</h2>
               {section.body && <p>{section.body}</p>}
               {section.links && (
                 <ul>
                   {section.links.map((item) => (
                     <li key={item.href}>
-                      <Link href={item.href}>{item.label}</Link>
+                      <Link href={href(item.href)}>{item.label}</Link>
                     </li>
                   ))}
                 </ul>
               )}
               {section.newsletter && <NewsletterSignup source="footer" />}
-              {section.title === "Maris Jewelry" && (
+              {section.key === "brand" && (
                 <div className="maris-footer__social">
                   <SocialLinks />
                 </div>
@@ -168,15 +137,15 @@ export default function SiteFooter() {
           </div>
           <div className="maris-footer__sections">
             {footerSections.map((section, index) => (
-              <FooterSection key={section.title} section={section} index={index} />
+              <FooterSection key={section.key} section={section} index={index} href={href} />
             ))}
           </div>
         </div>
 
         <div className="maris-footer__bottom">
-          <p className="maris-footer__copyright">© 2026 Maris Jewelry. All rights reserved.</p>
+          <p className="maris-footer__copyright">{t.footer.copyright}</p>
           <button className="maris-footer__cookie-settings" type="button" onClick={openCookieSettings}>
-            Cookie settings
+            {t.footer.cookieSettings}
           </button>
         </div>
       </div>

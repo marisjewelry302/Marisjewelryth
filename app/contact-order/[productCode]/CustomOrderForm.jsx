@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
+import { useLocale } from "../../hooks/useLocale";
 import { isOptimizableImageSrc } from "../../lib/image-source";
 
 const METALS = ["WG", "YG", "RG", "PN", "Pd"];
@@ -57,28 +58,30 @@ function buildCustomOptions(options) {
   };
 }
 
-function buildSelectedOptionSummary(options) {
+function buildSelectedOptionSummary(options, copy) {
   const isGoldMetal = GOLD_METALS.has(options.metal);
   const metalText = [
     isGoldMetal ? options.metal_purity : "",
-    options.metal ? METAL_LABELS[options.metal] : ""
+    options.metal ? copy.metals[options.metal] : ""
   ].filter(Boolean).join(" ");
   const stoneText = [
     options.choose_stone.carat ? `${options.choose_stone.carat} ct` : "",
     options.choose_stone.color,
     options.choose_stone.clarity,
-    options.choose_stone.cut
+    options.choose_stone.cut ? (copy.cuts[options.choose_stone.cut] || options.choose_stone.cut) : ""
   ].filter(Boolean).join(" ");
 
   return [
     metalText,
-    options.ring_size ? `Size ${options.ring_size}` : "",
-    options.origin,
+    options.ring_size ? `${copy.sizePrefix} ${options.ring_size}` : "",
+    options.origin ? (copy.origins[options.origin] || options.origin) : "",
     stoneText
   ].filter(Boolean).join(" · ");
 }
 
 export default function CustomOrderForm({ productCode, productImage = null, initialMetal = "" }) {
+  const { t } = useLocale();
+  const o = t.order;
   const [options, setOptions] = useState(() => (
     initialMetal ? { ...INITIAL_OPTIONS, metal: initialMetal } : INITIAL_OPTIONS
   ));
@@ -89,7 +92,7 @@ export default function CustomOrderForm({ productCode, productImage = null, init
   const optionTriggerRef = useRef(null);
   const modalRef = useRef(null);
 
-  const selectedOptionSummary = useMemo(() => buildSelectedOptionSummary(options), [options]);
+  const selectedOptionSummary = useMemo(() => buildSelectedOptionSummary(options, o), [options, o]);
 
   const closeOptions = useCallback(() => {
     setIsOptionsOpen(false);
@@ -167,7 +170,7 @@ export default function CustomOrderForm({ productCode, productImage = null, init
 
     setPending(true);
     setStatusTone("idle");
-    setStatusMessage("Sending contact request");
+    setStatusMessage(o.sending);
 
     try {
       const response = await fetch("/api/custom-order-requests", {
@@ -181,7 +184,7 @@ export default function CustomOrderForm({ productCode, productImage = null, init
 
       if (response.ok && (result.status === "created" || result.status === "duplicate")) {
         setStatusTone("success");
-        setStatusMessage("Request received. The Maris team will contact you to confirm product details.");
+        setStatusMessage(o.received);
         return;
       }
 
@@ -189,10 +192,10 @@ export default function CustomOrderForm({ productCode, productImage = null, init
         ? result.errors.map((error) => error.message).filter(Boolean).join(" ")
         : "";
       setStatusTone("error");
-      setStatusMessage(validationText || result.error || "We could not send your request right now. Please check your details and try again.");
+      setStatusMessage(validationText || result.error || o.failed);
     } catch {
       setStatusTone("error");
-      setStatusMessage("We could not connect to send your request. Please try again.");
+      setStatusMessage(o.noConnection);
     } finally {
       setPending(false);
     }
@@ -219,46 +222,46 @@ export default function CustomOrderForm({ productCode, productImage = null, init
             />
           )}
           <div className="custom-order-visual__caption">
-            <span>Maris atelier</span>
+            <span>{o.atelier}</span>
             <strong>{productCode}</strong>
           </div>
         </div>
 
         <div className="custom-order-workspace">
           <div className="custom-order-heading">
-            <p>Contact order request</p>
-            <h1 id="custom-order-title">Contact Maris to Order</h1>
-            <span>Share your contact details and optional preferences. Our atelier will confirm availability before any next step.</span>
+            <p>{o.eyebrow}</p>
+            <h1 id="custom-order-title">{o.title}</h1>
+            <span>{o.lead}</span>
           </div>
 
           <form className="custom-order-form" onSubmit={handleSubmit}>
             <label className="custom-order-field">
-              <span>Product code</span>
+              <span>{o.productCode}</span>
               <input name="product_code" value={productCode} readOnly />
             </label>
 
             <label className="custom-order-field">
-              <span>Full name</span>
+              <span>{o.fullName}</span>
               <input name="full_name" type="text" autoComplete="name" required />
             </label>
 
             <label className="custom-order-field">
-              <span>Company name</span>
+              <span>{o.company}</span>
               <input name="company_name" type="text" autoComplete="organization" />
             </label>
 
             <label className="custom-order-field">
-              <span>Email</span>
+              <span>{o.email}</span>
               <input name="email" type="email" autoComplete="email" required />
             </label>
 
             <label className="custom-order-field">
-              <span>Contact number</span>
+              <span>{o.contactNumber}</span>
               <input name="contact_number" type="tel" autoComplete="tel" required />
             </label>
 
             <label className="custom-order-honeypot" aria-hidden="true" tabIndex={-1}>
-              <span>Website URL</span>
+              <span>{o.websiteUrl}</span>
               <input name="website_url" type="text" autoComplete="off" tabIndex={-1} />
             </label>
 
@@ -269,12 +272,12 @@ export default function CustomOrderForm({ productCode, productImage = null, init
                 onClick={() => setIsOptionsOpen(true)}
                 ref={optionTriggerRef}
               >
-                Additional Options
+                {o.additional}
               </button>
               {selectedOptionSummary ? (
                 <p className="custom-order-selected">{selectedOptionSummary}</p>
               ) : (
-                <p className="custom-order-selected is-empty">No optional details selected</p>
+                <p className="custom-order-selected is-empty">{o.noneSelected}</p>
               )}
             </div>
 
@@ -283,7 +286,7 @@ export default function CustomOrderForm({ productCode, productImage = null, init
             </p>
 
             <button className="custom-order-submit" type="submit" disabled={pending}>
-              {pending ? "Sending Request" : "Send Contact Request"}
+              {pending ? o.sendingShort : o.send}
             </button>
           </form>
         </div>
@@ -291,7 +294,7 @@ export default function CustomOrderForm({ productCode, productImage = null, init
 
       {isOptionsOpen ? (
         <div className="custom-order-modal-layer">
-          <button className="custom-order-modal-backdrop" type="button" aria-label="Close options" onClick={closeOptions} />
+          <button className="custom-order-modal-backdrop" type="button" aria-label={o.closeOptions} onClick={closeOptions} />
           <section
             className="custom-order-modal"
             role="dialog"
@@ -302,17 +305,17 @@ export default function CustomOrderForm({ productCode, productImage = null, init
           >
             <div className="custom-order-modal__header">
               <div>
-                <p>Optional details</p>
-                <h2 id="custom-order-options-title">Product Options</h2>
+                <p>{o.optionalDetails}</p>
+                <h2 id="custom-order-options-title">{o.productOptions}</h2>
               </div>
-              <button className="custom-order-modal__close" type="button" onClick={closeOptions} aria-label="Close options">
-                Close
+              <button className="custom-order-modal__close" type="button" onClick={closeOptions} aria-label={o.closeOptions}>
+                {o.close}
               </button>
             </div>
 
             <div className="custom-order-option-group">
-              <span className="custom-order-option-label">Metal</span>
-              <div className="custom-order-segmented" role="group" aria-label="Metal">
+              <span className="custom-order-option-label">{o.metal}</span>
+              <div className="custom-order-segmented" role="group" aria-label={o.metal}>
                 {METALS.map((metal) => (
                   <button
                     key={metal}
@@ -321,15 +324,15 @@ export default function CustomOrderForm({ productCode, productImage = null, init
                     aria-pressed={options.metal === metal}
                     onClick={() => updateMetal(metal)}
                   >
-                    {METAL_LABELS[metal]}
+                    {o.metals[metal]}
                   </button>
                 ))}
               </div>
             </div>
 
             <div className="custom-order-option-group">
-              <span className="custom-order-option-label">Metal purity</span>
-              <div className="custom-order-segmented" role="group" aria-label="Metal purity">
+              <span className="custom-order-option-label">{o.purity}</span>
+              <div className="custom-order-segmented" role="group" aria-label={o.purity}>
                 {METAL_PURITIES.map((purity) => (
                   <button
                     key={purity}
@@ -344,12 +347,12 @@ export default function CustomOrderForm({ productCode, productImage = null, init
                 ))}
               </div>
               {!isGoldMetal && options.metal ? (
-                <small>Purity is available only for WG, YG, or RG.</small>
+                <small>{o.purityNote}</small>
               ) : null}
             </div>
 
             <label className="custom-order-field">
-              <span>Ring size</span>
+              <span>{o.ringSize}</span>
               <input
                 name="ring_size"
                 type="number"
@@ -363,7 +366,7 @@ export default function CustomOrderForm({ productCode, productImage = null, init
 
             <div className="custom-order-stone-grid">
               <label className="custom-order-field">
-                <span>Stone carat</span>
+                <span>{o.carat}</span>
                 <input
                   name="carat"
                   type="number"
@@ -376,36 +379,36 @@ export default function CustomOrderForm({ productCode, productImage = null, init
               </label>
 
               <label className="custom-order-field">
-                <span>Color</span>
+                <span>{o.color}</span>
                 <select name="color" value={options.choose_stone.color} onChange={(event) => updateStone("color", event.target.value)}>
                   {STONE_COLORS.map((color) => (
-                    <option key={color || "empty-color"} value={color}>{color || "Select"}</option>
+                    <option key={color || "empty-color"} value={color}>{color || o.select}</option>
                   ))}
                 </select>
               </label>
 
               <label className="custom-order-field">
-                <span>Clarity</span>
+                <span>{o.clarity}</span>
                 <select name="clarity" value={options.choose_stone.clarity} onChange={(event) => updateStone("clarity", event.target.value)}>
                   {STONE_CLARITIES.map((clarity) => (
-                    <option key={clarity || "empty-clarity"} value={clarity}>{clarity || "Select"}</option>
+                    <option key={clarity || "empty-clarity"} value={clarity}>{clarity || o.select}</option>
                   ))}
                 </select>
               </label>
 
               <label className="custom-order-field">
-                <span>Cut</span>
+                <span>{o.cut}</span>
                 <select name="cut" value={options.choose_stone.cut} onChange={(event) => updateStone("cut", event.target.value)}>
                   {STONE_CUTS.map((cut) => (
-                    <option key={cut || "empty-cut"} value={cut}>{cut || "Select"}</option>
+                    <option key={cut || "empty-cut"} value={cut}>{cut ? (o.cuts[cut] || cut) : o.select}</option>
                   ))}
                 </select>
               </label>
             </div>
 
             <div className="custom-order-option-group">
-              <span className="custom-order-option-label">Origin</span>
-              <div className="custom-order-segmented" role="group" aria-label="Stone origin">
+              <span className="custom-order-option-label">{o.origin}</span>
+              <div className="custom-order-segmented" role="group" aria-label={o.stoneOrigin}>
                 {ORIGINS.map((origin) => (
                   <button
                     key={origin}
@@ -414,7 +417,7 @@ export default function CustomOrderForm({ productCode, productImage = null, init
                     aria-pressed={options.origin === origin}
                     onClick={() => updateOption("origin", origin)}
                   >
-                    {origin}
+                    {o.origins[origin] || origin}
                   </button>
                 ))}
               </div>
@@ -422,13 +425,13 @@ export default function CustomOrderForm({ productCode, productImage = null, init
 
             {selectedOptionSummary ? (
               <div className="custom-order-modal__summary">
-                <span>Selected summary</span>
+                <span>{o.summary}</span>
                 <p>{selectedOptionSummary}</p>
               </div>
             ) : null}
 
             <button className="custom-order-modal__apply" type="button" onClick={closeOptions}>
-              Save options
+              {o.saveOptions}
             </button>
           </section>
         </div>

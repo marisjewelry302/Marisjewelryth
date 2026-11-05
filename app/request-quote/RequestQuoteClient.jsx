@@ -5,6 +5,9 @@ import Image from "next/image";
 import { isOptimizableImageSrc } from "../lib/image-source";
 import { useSearchParams } from "next/navigation";
 import LeadForm from "../components/LeadForm";
+import { useLocale } from "../hooks/useLocale";
+import { fill, localizePriceLabel } from "../lib/i18n";
+import { localizeCollectionName } from "../lib/ui-text-shop";
 
 const BAG_KEY = "marisShoppingBag";
 
@@ -47,6 +50,8 @@ function formatSelectedPieces(items) {
 }
 
 export default function RequestQuoteClient() {
+  const { locale, t, href: localHref } = useLocale();
+  const q = t.quote;
   const searchParams = useSearchParams();
   const [selectedItems, setSelectedItems] = useState([]);
 
@@ -68,27 +73,25 @@ export default function RequestQuoteClient() {
     <main id="main-content" className="placeholder-main content-page site-main">
       <section className="placeholder-card placeholder-card--editorial">
         <div className="subpage-intro">
-          <p className="eyebrow">Quote Request</p>
-          <h1>Request pricing and availability</h1>
-          <p className="lead">
-            Share the piece you are considering or send your saved bag, and Maris Jewelry will confirm pricing direction, availability, and the next best step.
-          </p>
+          <p className="eyebrow">{q.eyebrow}</p>
+          <h1>{q.title}</h1>
+          <p className="lead">{q.lead}</p>
         </div>
 
         <div className="inquiry-layout">
           <div className="inquiry-column">
             <div className="quote-selection-intro" aria-live="polite">
-              <strong>{selectedItems.length ? `${selectedItems.length} selected piece${selectedItems.length === 1 ? "" : "s"}` : "No piece selected yet"}</strong>
+              <strong>{selectedItems.length ? (selectedItems.length === 1 ? q.selectedOne : fill(q.selectedMany, { n: selectedItems.length })) : q.none}</strong>
               <span>
                 {selectedItems.length
-                  ? "These details will be attached to your quote request."
-                  : "Start from a product page or your shopping bag to bring selected items into this form."}
+                  ? q.attached
+                  : q.startFrom}
               </span>
             </div>
 
             {!selectedItems.length && (
               <div className="empty-selection">
-                <p>Start from a product page or your shopping bag to bring selected items into this request form.</p>
+                <p>{q.emptyBox}</p>
               </div>
             )}
 
@@ -96,19 +99,19 @@ export default function RequestQuoteClient() {
               <div className="selected-piece-list">
                 {selectedItems.map((item) => (
                   <article className="selected-piece-card" key={item.id || item.title}>
-                    <a className="selected-piece-image" href={item.href || "/category/engagement-ring"}>
-                      <Image src={item.image || "/assets/images/logo.png"} alt={item.title || "Selected piece"} width={1024} height={1024} sizes="(max-width: 900px) 50vw, 320px" unoptimized={!isOptimizableImageSrc(item.image || "/assets/images/logo.png")} />
+                    <a className="selected-piece-image" href={localHref(item.href || "/category/engagement-ring")}>
+                      <Image src={item.image || "/assets/images/logo.png"} alt={item.title || q.itemAlt} width={1024} height={1024} sizes="(max-width: 900px) 50vw, 320px" unoptimized={!isOptimizableImageSrc(item.image || "/assets/images/logo.png")} />
                     </a>
                     <div className="selected-piece-copy">
-                      <p className="selected-piece-collection">{item.collection || "Maris Jewelry"}</p>
-                      <h2>{item.title || "Maris Piece"}</h2>
+                      <p className="selected-piece-collection">{localizeCollectionName(item.collection || "Maris Jewelry", locale)}</p>
+                      <h2>{item.title || q.piece}</h2>
                       {(Array.isArray(item.details) ? item.details : []).map((detail) => (
                         <p key={detail}>{detail}</p>
                       ))}
                     </div>
                     <div className="selected-piece-meta">
-                      <span>{item.priceLabel || "Price on request"}</span>
-                      <a href={item.href || "/category/engagement-ring"}>View details</a>
+                      <span>{localizePriceLabel(item.priceLabel || "Price on request", locale)}</span>
+                      <a href={localHref(item.href || "/category/engagement-ring")}>{q.viewDetails}</a>
                     </div>
                   </article>
                 ))}
@@ -118,26 +121,20 @@ export default function RequestQuoteClient() {
 
           <div className="inquiry-column">
             <section className="inquiry-card inquiry-card--accent">
-              <h2>What happens next</h2>
+              <h2>{q.nextTitle}</h2>
               <div className="inquiry-list">
-                <article>
-                  <strong>1. Review your selection</strong>
-                  <p>We look at the selected pieces, requested timing, and whether you need ready-to-order guidance or custom development.</p>
-                </article>
-                <article>
-                  <strong>2. Confirm price direction</strong>
-                  <p>We reply with pricing range, metal or stone notes, and any details that affect the final quote.</p>
-                </article>
-                <article>
-                  <strong>3. Plan the next step</strong>
-                  <p>Depending on the piece, we can move into sizing, custom adjustments, appointment planning, or order confirmation.</p>
-                </article>
+                {q.steps.map(([stepTitle, stepText]) => (
+                  <article key={stepTitle}>
+                    <strong>{stepTitle}</strong>
+                    <p>{stepText}</p>
+                  </article>
+                ))}
               </div>
             </section>
 
             <section className="inquiry-card">
-              <h2>Tell us what you need</h2>
-              <p>Leave your details below so Maris Jewelry can return with the right pricing direction and availability notes.</p>
+              <h2>{q.needTitle}</h2>
+              <p>{q.needLead}</p>
 
               <LeadForm
                 formName="maris-quote-request"
@@ -152,71 +149,65 @@ export default function RequestQuoteClient() {
 
                 <div className="inquiry-field-grid">
                   <label>
-                    <span>Full name</span>
+                    <span>{q.fullName}</span>
                     <input type="text" name="name" autoComplete="name" required />
                   </label>
                   <label>
-                    <span>Email</span>
+                    <span>{q.email}</span>
                     <input type="email" name="email" autoComplete="email" required />
                   </label>
                   <label>
-                    <span>Phone</span>
+                    <span>{q.phone}</span>
                     <input type="tel" name="phone" autoComplete="tel" />
                   </label>
                   <label>
-                    <span>Preferred contact</span>
+                    <span>{q.preferred}</span>
                     <select name="preferred_contact" defaultValue="Email">
-                      <option value="Email">Email</option>
-                      <option value="Phone">Phone</option>
-                      <option value="Line">Line</option>
-                      <option value="WhatsApp">WhatsApp</option>
+                      {q.contacts.map(([value, label]) => (
+                        <option value={value} key={value}>{label}</option>
+                      ))}
                     </select>
                   </label>
                   <label>
-                    <span>Budget range</span>
-                    <input type="text" name="budget_range" placeholder="e.g. 30,000 - 60,000 THB" />
+                    <span>{q.budget}</span>
+                    <input type="text" name="budget_range" placeholder={q.budgetPlaceholder} />
                   </label>
                   <label>
-                    <span>Ring size (if known)</span>
-                    <input type="text" name="ring_size" placeholder="e.g. US 6 / EU 52" />
+                    <span>{q.ringSize}</span>
+                    <input type="text" name="ring_size" placeholder={q.ringSizePlaceholder} />
                   </label>
                   <label>
-                    <span>Timing</span>
+                    <span>{q.timing}</span>
                     <select name="timeline" defaultValue="Just researching">
-                      <option value="As soon as possible">As soon as possible</option>
-                      <option value="Within 2 weeks">Within 2 weeks</option>
-                      <option value="Within this month">Within this month</option>
-                      <option value="Just researching">Just researching</option>
+                      {q.timings.map(([value, label]) => (
+                        <option value={value} key={value}>{label}</option>
+                      ))}
                     </select>
                   </label>
                   <label>
-                    <span>Interested in</span>
+                    <span>{q.interested}</span>
                     <select name="service" defaultValue="Engagement Rings">
-                      <option value="Engagement Rings">Engagement Rings</option>
-                      <option value="Wedding Bands">Wedding Bands</option>
-                      <option value="Men's Wedding Bands">Men's Wedding Bands</option>
-                      <option value="Gifts">Gifts</option>
-                      <option value="Custom Design">Custom Design</option>
+                      {q.services.map(([value, label]) => (
+                        <option value={value} key={value}>{label}</option>
+                      ))}
                     </select>
                   </label>
                 </div>
 
                 <label>
-                  <span>Notes</span>
-                  <textarea name="message" placeholder="Tell us about your preferred metal, stone, deadline, or any changes you would like to discuss." />
+                  <span>{q.notes}</span>
+                  <textarea name="message" placeholder={q.notesPlaceholder} />
                 </label>
 
-                <p className="inquiry-form-note">
-                  If you already know your event date or target budget, adding it here will help Maris Jewelry give a more useful first reply.
-                </p>
+                <p className="inquiry-form-note">{q.formNote}</p>
               </LeadForm>
             </section>
           </div>
         </div>
 
         <div className="page-actions">
-          <a className="primary-link" href="/shopping-bag">Return to selection</a>
-          <a href="/category/engagement-ring">Browse Engagement Rings</a>
+          <a className="primary-link" href={localHref("/shopping-bag")}>{q.returnSelection}</a>
+          <a href={localHref("/category/engagement-ring")}>{q.browse}</a>
         </div>
       </section>
     </main>

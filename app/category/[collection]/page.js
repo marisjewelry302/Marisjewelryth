@@ -1,82 +1,15 @@
-import { notFound } from "next/navigation";
-import "../../../assets/css/category.css";
-import CategoryProducts from "./CategoryProducts";
-import JsonLd from "../../components/JsonLd";
-import { COLLECTION_ORDER, getCollection, productMatchesCollection } from "../../lib/collections";
-import { readPublicCatalogueProducts } from "../../lib/maris-database.js";
-import {
-  absoluteUrl,
-  buildBreadcrumbJsonLd,
-  buildCollectionPageJsonLd,
-  buildPageMetadata
-} from "../../lib/seo";
+import CategoryPageView, { buildCategoryMetadata, getCategoryStaticParams } from "./category-page";
 
 export const revalidate = 60;
 
 export function generateStaticParams() {
-  return COLLECTION_ORDER.map((collection) => ({ collection }));
+  return getCategoryStaticParams();
 }
 
 export async function generateMetadata({ params }) {
-  const { collection: collectionSlug } = await params;
-  const collection = getCollection(collectionSlug);
-
-  if (!collection) {
-    return { title: "Maris Jewelry" };
-  }
-
-  const canonicalPath = `/category/${collection.slug}`;
-  const metadata = buildPageMetadata({
-    title: `${collection.title} | Maris Jewelry`,
-    description: `${collection.lead} Browse Maris Jewelry catalogue pieces and contact the atelier to confirm availability or custom details.`,
-    path: canonicalPath
-  });
-
-  return {
-    ...metadata,
-    alternates: { canonical: absoluteUrl(canonicalPath) }
-  };
+  return buildCategoryMetadata({ params });
 }
 
-async function getCollectionProducts(collectionSlug) {
-  try {
-    const result = await readPublicCatalogueProducts({ limit: 200 });
-    return result.products.filter((product) => productMatchesCollection(product, collectionSlug));
-  } catch (error) {
-    return [];
-  }
-}
-
-export default async function CategoryPage({ params }) {
-  const { collection: collectionSlug } = await params;
-  const collection = getCollection(collectionSlug);
-
-  if (!collection) {
-    notFound();
-  }
-
-  const products = await getCollectionProducts(collection.slug);
-  const categoryJsonLd = {
-    "@context": "https://schema.org",
-    "@graph": [
-      buildBreadcrumbJsonLd([
-        { name: collection.title, path: `/category/${collection.slug}` }
-      ]),
-      buildCollectionPageJsonLd({ collection, products })
-    ]
-  };
-
-  return (
-    <>
-      <JsonLd data={categoryJsonLd} />
-      <main id="main-content" className="category-page site-main">
-        <section className="page-header">
-          <h1>{collection.title}</h1>
-          <p className="category-lead">{collection.lead}</p>
-        </section>
-
-        <CategoryProducts products={products} collectionTitle={collection.title} />
-      </main>
-    </>
-  );
+export default function CategoryPage({ params }) {
+  return <CategoryPageView params={params} />;
 }

@@ -1,14 +1,14 @@
 import assert from "node:assert/strict";
 import { access, readFile } from "node:fs/promises";
 
-const pageSource = await readFile(new URL("../app/page.js", import.meta.url), "utf8");
+const pageSource = (await readFile(new URL("../app/page.js", import.meta.url), "utf8")) + (await readFile(new URL("../app/components/HomeView.jsx", import.meta.url), "utf8")) + (await readFile(new URL("../app/lib/home-copy.js", import.meta.url), "utf8"));
 const styleSource = await readFile(new URL("../assets/css/style.css", import.meta.url), "utf8");
 
 const categorySectionIndex = pageSource.indexOf('className="shop-category-section"');
 
 assert.ok(categorySectionIndex > -1, "Homepage should render a Shop by Category section.");
 
-assert.match(pageSource, /<h2 id="shop-category-heading">Shop By Category<\/h2>/);
+assert.match(pageSource, /<h2 id="shop-category-heading">\{c\.shopHeading\}<\/h2>/);
 assert.match(
   pageSource,
   /From classic earstuds to chandeliers, from timeless bracelet to chic bangles\./
@@ -24,7 +24,7 @@ assert.doesNotMatch(pageSource, /label:\s*"Brooches"/, "Brooch category should n
 const categoryItemsMatch = pageSource.match(/const shopCategoryItems = \[([\s\S]*?)\];/);
 assert.ok(categoryItemsMatch, "Homepage should keep category items in a local array.");
 const categoryItemsSource = categoryItemsMatch[1];
-const itemCount = (categoryItemsSource.match(/\{\s*label:/g) || []).length;
+const itemCount = (categoryItemsSource.match(/\{\s*href:/g) || []).length;
 assert.equal(itemCount, 4, "Shop by Category should render four category items.");
 
 const imagePaths = [...categoryItemsSource.matchAll(/image:\s*"([^"]+)"/g)].map((match) => match[1]);

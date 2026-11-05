@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 
-const componentSource = await readFile("app/BestSellerSection.jsx", "utf8");
+const componentSource = (await readFile("app/BestSellerSection.jsx", "utf8")) + (await readFile("app/lib/ui-text.js", "utf8"));
 const styleSource = await readFile("assets/css/style.css", "utf8");
 
 function fail(message) {
@@ -15,7 +15,7 @@ if (/section-kicker|Maris selection|Maris collection/i.test(headMarkup)) {
   fail("Best Seller heading must not render a Maris collection/selection kicker.");
 }
 
-if (!/<h2 id="best-seller-heading">Best Seller<\/h2>/.test(headMarkup)) {
+if (!/<h2 id="best-seller-heading">\{t\.bestSeller\.heading\}<\/h2>/.test(headMarkup)) {
   fail("Best Seller heading markup must stay present.");
 }
 

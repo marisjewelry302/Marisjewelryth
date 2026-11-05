@@ -1,3 +1,4 @@
+import { THAI_LOCALE, hasThaiVersion, localizePath } from "./i18n.js";
 import { getPublicProductPath } from "./product-display.js";
 
 export const SITE_URL = "https://marisjewelry.com";
@@ -58,17 +59,30 @@ export function buildPageMetadata({
   description = "Fine jewelry, engagement rings, wedding bands, and custom design support from Bangkok.",
   path = "/",
   image = DEFAULT_OG_IMAGE,
-  type = "website"
+  type = "website",
+  noindex = false,
+  locale = "en"
 } = {}) {
-  const canonicalUrl = absoluteUrl(path);
+  // `path` is always the English path; the Thai page lives under /th.
+  const isThai = locale === THAI_LOCALE;
+  const canonicalUrl = absoluteUrl(localizePath(path, locale));
+  const languages = hasThaiVersion(path)
+    ? {
+        en: absoluteUrl(path),
+        th: absoluteUrl(localizePath(path, THAI_LOCALE)),
+        "x-default": absoluteUrl(path)
+      }
+    : undefined;
   const imageUrl = absoluteUrl(image);
 
   return {
+    ...(noindex ? { robots: { index: false, follow: false } } : {}),
     metadataBase: new URL(SITE_URL),
     title,
     description,
     alternates: {
-      canonical: canonicalUrl
+      canonical: canonicalUrl,
+      ...(languages ? { languages } : {})
     },
     openGraph: {
       title,
@@ -76,13 +90,14 @@ export function buildPageMetadata({
       url: canonicalUrl,
       siteName: BRAND_NAME,
       type,
-      locale: "en_US",
+      locale: isThai ? "th_TH" : "en_US",
+      ...(languages ? { alternateLocale: [isThai ? "en_US" : "th_TH"] } : {}),
       images: [
         {
           url: imageUrl,
           width: 1200,
           height: 630,
-          alt: `${BRAND_NAME} fine jewelry`
+          alt: isThai ? `${BRAND_NAME} เครื่องประดับชั้นดี` : `${BRAND_NAME} fine jewelry`
         }
       ]
     },
@@ -151,10 +166,11 @@ export function buildLocalBusinessJsonLd() {
   };
 }
 
-export function buildFaqPageJsonLd(faqs = HOME_FAQS) {
+export function buildFaqPageJsonLd(faqs = HOME_FAQS, locale = "en") {
   return {
     "@type": "FAQPage",
-    "@id": `${SITE_URL}/#faq`,
+    "@id": `${absoluteUrl(localizePath("/", locale))}#faq`,
+    inLanguage: locale === THAI_LOCALE ? "th-TH" : "en",
     mainEntity: faqs.map((faq) => ({
       "@type": "Question",
       name: faq.question,
@@ -166,10 +182,10 @@ export function buildFaqPageJsonLd(faqs = HOME_FAQS) {
   };
 }
 
-export function buildBreadcrumbJsonLd(items = []) {
+export function buildBreadcrumbJsonLd(items = [], locale = "en") {
   const normalizedItems = items.length > 0 && items[0].path === "/"
     ? items
-    : [{ name: "Home", path: "/" }, ...items];
+    : [{ name: locale === THAI_LOCALE ? "หน้าแรก" : "Home", path: "/" }, ...items];
 
   return {
     "@type": "BreadcrumbList",
@@ -177,17 +193,17 @@ export function buildBreadcrumbJsonLd(items = []) {
       "@type": "ListItem",
       position: index + 1,
       name: item.name,
-      item: absoluteUrl(item.path)
+      item: absoluteUrl(localizePath(item.path, locale))
     }))
   };
 }
 
-export function buildCollectionPageJsonLd({ collection, products = [] }) {
-  const path = `/category/${collection.slug}`;
+export function buildCollectionPageJsonLd({ collection, products = [], locale = "en" }) {
+  const path = localizePath(`/category/${collection.slug}`, locale);
   const itemListElement = products.slice(0, 24).map((product, index) => ({
     "@type": "ListItem",
     position: index + 1,
-    url: absoluteUrl(getPublicProductPath(product)),
+    url: absoluteUrl(localizePath(getPublicProductPath(product), locale)),
     name: product.name || product.sku
   }));
 
@@ -209,8 +225,8 @@ export function buildCollectionPageJsonLd({ collection, products = [] }) {
   };
 }
 
-export function buildProductJsonLd({ product, displayName, collectionLabel }) {
-  const productPath = getPublicProductPath(product);
+export function buildProductJsonLd({ product, displayName, collectionLabel, locale = "en" }) {
+  const productPath = localizePath(getPublicProductPath(product), locale);
   const imageUrls = [
     product.primaryImageUrl,
     ...(Array.isArray(product.images) ? product.images.map((image) => image.imageUrl || image.url || image.src) : [])
@@ -228,7 +244,10 @@ export function buildProductJsonLd({ product, displayName, collectionLabel }) {
       name: BRAND_NAME
     },
     category: collectionLabel || product.collection || product.category,
-    description: `${displayName || product.name || product.sku} from ${collectionLabel || BRAND_NAME}. Availability, sizing, and order details are confirmed directly with the atelier.`,
+    description: locale === THAI_LOCALE
+      ? `${displayName || product.name || product.sku} จาก ${collectionLabel || BRAND_NAME} ความพร้อมของสินค้า ไซส์ และรายละเอียดการสั่งซื้อ ยืนยันโดยตรงกับห้องทำงาน`
+      : `${displayName || product.name || product.sku} from ${collectionLabel || BRAND_NAME}. Availability, sizing, and order details are confirmed directly with the atelier.`,
+    inLanguage: locale === THAI_LOCALE ? "th-TH" : "en",
     image: [...new Set(imageUrls)],
     url: absoluteUrl(productPath),
     offers: hasPrice

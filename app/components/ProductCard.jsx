@@ -1,4 +1,7 @@
+"use client";
+
 import Image from "next/image";
+import { useLocale } from "../hooks/useLocale";
 import { formatProductPrice } from "../lib/collections";
 import { isOptimizableImageSrc } from "../lib/image-source";
 import {
@@ -31,7 +34,9 @@ function getCardImages(product) {
 }
 
 export default function ProductCard({ product, collectionLabel, isAboveFold = false }) {
-  const href = getPublicProductPath(product);
+  const { locale, t, href: localHref } = useLocale();
+  const productPath = getPublicProductPath(product);
+  const href = localHref(productPath);
   const displayName = getPublicProductDisplayName(product);
   const productCode = product.sku || displayName;
   const { primaryImage, hoverImage } = getCardImages(product);
@@ -42,7 +47,7 @@ export default function ProductCard({ product, collectionLabel, isAboveFold = fa
     title: productCode,
     details: [displayName],
     image: primaryImage,
-    href,
+    href: productPath,
     collection: collectionLabel,
     priceLabel: formatProductPrice(product.basePrice)
   };
@@ -55,7 +60,7 @@ export default function ProductCard({ product, collectionLabel, isAboveFold = fa
       data-metal={getProductMetalValues(product).join(" ")}
       data-filters={getProductFacetTokens(product).join(" ")}
     >
-      <a className={`product-card-link${hasHoverImage ? " has-hover-image" : ""}`} href={href} aria-label={`View ${productCode} ${displayName}`}>
+      <a className={`product-card-link${hasHoverImage ? " has-hover-image" : ""}`} href={href} aria-label={`${t.catalogue.view} ${productCode} ${displayName}`}>
         <span className="product-card-image-frame">
           <Image
             className="product-card-image product-card-image-primary"
@@ -87,7 +92,7 @@ export default function ProductCard({ product, collectionLabel, isAboveFold = fa
       <div className="product-info">
         <h3>{formatPublicProductCode(productCode)}</h3>
         <p>{displayName}</p>
-        <p>{formatProductPrice(product.basePrice)}</p>
+        <p>{formatProductPrice(product.basePrice, locale)}</p>
       </div>
     </article>
   );
