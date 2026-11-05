@@ -33,3 +33,7 @@ Thumbs.db
 # 40 MB .3dm never lands in a commit.
 cad-source/
 .captures/
+
+# Playwright
+test-results/
+playwright-report/
