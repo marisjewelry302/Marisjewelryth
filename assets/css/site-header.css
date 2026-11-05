@@ -1931,3 +1931,39 @@ body.is-home-header-compact .site-header--home .icons {
     background: rgba(0, 73, 58, 0.9);
   }
 }
+
+/* Language switch, last item in the top bar after the social icons. It sits in
+   the .top-socials row so it follows them on desktop; the generic
+   ".top-socials a" box (22px square / 44px touch target) is widened for text. */
+.site-header .top-socials a.top-lang {
+  width: auto;
+  height: auto;
+  min-height: 22px;
+  padding: 0 0 0 clamp(10px, 1.2vw, 16px);
+  border-left: 1px solid rgba(255, 250, 246, 0.35);
+  font-family: var(--maris-font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .site-header .top-socials a.top-lang {
+    min-width: 44px;
+    min-height: 44px;
+    padding-inline: 10px 0;
+  }
+}
+
+/* At 420px and below the social icons are hidden to leave room for the
+   announcement; keep only the language switch visible. */
+@media (max-width: 420px) {
+  .site-header .top-socials {
+    display: flex !important;
+  }
+
+  .site-header .top-socials a:not(.top-lang) {
+    display: none;
+  }
+}

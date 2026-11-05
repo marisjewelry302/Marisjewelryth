@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useLocale } from "../hooks/useLocale";
-import { stripLocale } from "../lib/i18n";
+import { THAI_LOCALE, hasThaiVersion, localizePath, stripLocale } from "../lib/i18n";
 
 const BAG_KEY = "marisShoppingBag";
 
@@ -278,6 +278,15 @@ export default function SiteHeader() {
     }
   }
 
+  // The other language's version of this page; a page without one falls back to that language's home.
+  const languageSwitch = locale === THAI_LOCALE
+    ? { href: normalizedPathname, label: "English", lang: "en" }
+    : {
+        href: hasThaiVersion(normalizedPathname) ? localizePath(normalizedPathname, THAI_LOCALE) : "/th",
+        label: "ภาษาไทย",
+        lang: "th"
+      };
+
   function isCurrent(href) {
     return normalizedPathname === href || normalizedPathname.startsWith(`${href}/`);
   }
@@ -306,6 +315,9 @@ export default function SiteHeader() {
               </span>
             )
           ))}
+          <Link className="top-lang" href={languageSwitch.href} lang={languageSwitch.lang} hrefLang={languageSwitch.lang}>
+            {languageSwitch.label}
+          </Link>
         </div>
       </div>
 

@@ -234,7 +234,7 @@ const th = {
     bag: "ตะกร้าสินค้า",
     iconsLabel: "ลิงก์บัญชีและการซื้อสินค้า",
     primary: [
-      { href: "/category/wedding-set", label: "ชุดแต่งงาน" },
+      { href: "/category/wedding-set", label: "เซ็ตแหวนคู่" },
       { href: "/category/engagement-ring", label: "แหวนหมั้น" }
     ],
     groups: [
