@@ -60,7 +60,7 @@ export function JournalArticleView({ slug, locale = "en" }) {
 
   return (
     <main id="main-content" className="placeholder-main content-page site-main">
-      <article className="placeholder-card journal-article-shell">
+      <article className={`placeholder-card journal-article-shell journal-article-shell--${language}`}>
         <header className="journal-article-header">
           <p className="eyebrow">{text.category}</p>
           <h1>{text.title}</h1>

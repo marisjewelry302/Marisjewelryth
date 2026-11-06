@@ -10,10 +10,10 @@ export const journalArticles = [
       "en": "Video"
     },
     "title": {
-      "en": "Round solitaire on the finger: 0.5 to 2 carats"
+      "en": "A round diamond solitaire from 0.5 to 2 carats"
     },
     "excerpt": {
-      "en": "Four sizes of a round diamond solitaire, worn side by side."
+      "en": "The same round solitaire in four sizes, worn on the hand so you can compare them."
     },
     "readTime": {
       "en": "1 min read"
@@ -21,34 +21,51 @@ export const journalArticles = [
     "facts": {
       "en": [
         [
-          "Sizes in the clip",
+          "Sizes in the video",
           "0.5 / 1 / 1.5 / 2 carats"
+        ],
+        [
+          "Design",
+          "Round diamond solitaire"
+        ],
+        [
+          "Tip",
+          "Try the sizes on before you choose"
         ]
       ]
     },
     "sections": {
       "en": [
         {
-          "title": "How each size looks",
-          "paragraphs": [],
+          "title": "Four sizes, one design",
+          "paragraphs": [
+            "The video puts the same ring on the finger at four sizes. Here is how each one looks."
+          ],
           "bullets": [
-            "0.5 carat: neat and refined, easy for every day",
-            "1 carat: starts to stand out, still matches most outfits",
-            "1.5 carat: fuller and more luxurious",
-            "2 carat: the boldest, one ring is enough"
+            "0.5 carat: neat and refined, easy to wear every day",
+            "1 carat: starts to stand out and still matches most outfits",
+            "1.5 carat: fuller and more luxurious, a clear focal point on the hand",
+            "2 carat: the boldest of the four, one ring is enough"
           ]
         },
         {
           "title": "Bigger is not always better",
           "paragraphs": [
-            "Finger proportions and the setting change the look a lot. Try the sizes on and see which one suits you."
+            "Finger proportions and the setting change how a diamond looks. A raised setting, for example, can make the ring look elegant at any size."
+          ],
+          "bullets": []
+        },
+        {
+          "title": "Try before you choose",
+          "paragraphs": [
+            "Put two sizes on the same hand and look from above and from the side. Contact Maris Jewelry and we will help you compare."
           ],
           "bullets": []
         }
       ]
     },
     "note": {
-      "en": "Want to try them on? Contact Maris Jewelry."
+      "en": "Not sure which size suits you? Contact Maris Jewelry and we will help you compare."
     }
   },
   {
