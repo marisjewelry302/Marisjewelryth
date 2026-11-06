@@ -41,9 +41,9 @@ export const homeCopy = {
     shopLead:
       "From classic earstuds to chandeliers, from timeless bracelet to chic bangles. Shop our wide selection of jewelry",
     categories: [
-      { label: "Rings", alt: "Diamond rings arranged on blush pink satin" },
-      { label: "Earrings", alt: "Pear-shaped diamond earrings on blush pink satin" },
-      { label: "Necklaces & Pendants", alt: "Pear-shaped diamond pendant on blush pink satin" },
+      { label: "Rings", alt: "Diamond ring in a green Maris Jewelry gift box" },
+      { label: "Earrings", alt: "Diamond stud earrings in a green Maris Jewelry gift box" },
+      { label: "Necklaces & Pendants", alt: "Diamond pendant and earring set in a green Maris Jewelry gift box" },
       { label: "Bracelets", alt: "Diamond tennis bracelet in a green Maris Jewelry gift box" }
     ],
     catalogueLabel: "New arrival catalogue",
@@ -116,9 +116,9 @@ export const homeCopy = {
     shopLead:
       "ตั้งแต่ต่างหูเม็ดเดี่ยวคลาสสิกไปจนถึงต่างหูแชนเดอเลียร์ จากสร้อยข้อมือเหนือกาลเวลาไปจนถึงกำไลสุดเก๋ เลือกชมเครื่องประดับของเราได้หลากหลาย",
     categories: [
-      { label: "แหวน", alt: "แหวนเพชรจัดวางบนผ้าซาตินสีชมพูอ่อน" },
-      { label: "ต่างหู", alt: "ต่างหูเพชรทรงหยดน้ำบนผ้าซาตินสีชมพูอ่อน" },
-      { label: "สร้อยคอและจี้", alt: "จี้เพชรทรงหยดน้ำบนผ้าซาตินสีชมพูอ่อน" },
+      { label: "แหวน", alt: "แหวนเพชรในกล่อง Maris Jewelry สีเขียว" },
+      { label: "ต่างหู", alt: "ต่างหูเพชรในกล่อง Maris Jewelry สีเขียว" },
+      { label: "สร้อยคอและจี้", alt: "จี้เพชรและต่างหูในกล่อง Maris Jewelry สีเขียว" },
       { label: "สร้อยข้อมือ", alt: "สร้อยข้อมือเพชรในกล่อง Maris Jewelry สีเขียว" }
     ],
     catalogueLabel: "แคตตาล็อกสินค้าใหม่",
