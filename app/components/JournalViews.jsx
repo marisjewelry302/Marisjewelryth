@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { THAI_LOCALE, localizePath } from "../lib/i18n";
 import { getJournalArticle, getJournalText, getJournalVideoEmbed, journalArticles } from "../lib/journal-data";
@@ -28,6 +29,16 @@ export function JournalListView({ locale = "en" }) {
 
             return (
               <a className="subpage-article-card journal-card-link" href={link(`/journal/${article.slug}`)} key={article.slug}>
+                {article.image ? (
+                  <Image
+                    className="journal-card-thumb"
+                    src={article.image}
+                    alt={text.title}
+                    width={1280}
+                    height={720}
+                    sizes="(max-width: 960px) 100vw, 540px"
+                  />
+                ) : null}
                 <span className="journal-card-number">{String(index + 1).padStart(2, "0")}</span>
                 <div className="journal-card-meta-row">
                   <p className="subpage-article-meta">{text.category}</p>

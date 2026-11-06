@@ -37,6 +37,14 @@
   box-shadow: 0 22px 48px rgba(0, 73, 58, 0.12);
 }
 
+.journal-card-thumb {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
 .journal-card-number {
   display: inline-flex;
   align-items: center;

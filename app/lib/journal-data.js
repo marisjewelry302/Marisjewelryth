@@ -6,6 +6,7 @@ export const journalArticles = [
     "url": "/journal/journal-round-diamond-solitaire-video",
     "video": "https://www.youtube.com/shorts/XqAXJD_EF3M",
     "videoFormat": "vertical",
+    "image": "/assets/images/journal/round-diamond-solitaire-video.jpg",
     "category": {
       "en": "Video"
     },
