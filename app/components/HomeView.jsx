@@ -46,7 +46,7 @@ const shopCategoryItems = [
   { href: "/category/rings", image: "/assets/images/home/optimized/category-focus-rings-box-v3.webp" },
   { href: "/category/earrings", image: "/assets/images/home/optimized/category-focus-earrings-scene-v6.webp" },
   { href: "/category/necklaces-pendants", image: "/assets/images/home/optimized/category-focus-pendants-scene-v6.webp" },
-  { href: "/category/bracelets", image: "/assets/images/home/optimized/category-focus-bracelets-scene-v6.webp" }
+  { href: "/category/bracelets", image: "/assets/images/home/optimized/category-focus-bracelets-scene-v7.webp" }
 ];
 
 const valueHrefs = ["#shop-category-heading", "/our-service", "/oem-jewelry", "/contact-us"];
