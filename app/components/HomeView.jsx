@@ -44,7 +44,7 @@ const atelierFallbackHrefs = ["/category/engagement-ring", "/request-quote", "/a
 
 const shopCategoryItems = [
   { href: "/category/rings", image: "/assets/images/home/optimized/category-focus-rings-box-v3.webp" },
-  { href: "/category/earrings", image: "/assets/images/home/optimized/category-focus-earrings-front-v4.webp" },
+  { href: "/category/earrings", image: "/assets/images/home/optimized/category-focus-earrings-front-v5.webp" },
   { href: "/category/necklaces-pendants", image: "/assets/images/home/optimized/category-focus-pendants-box-v3.webp" },
   { href: "/category/bracelets", image: "/assets/images/home/optimized/category-focus-bracelets-box-v3.webp" }
 ];
