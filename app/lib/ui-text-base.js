@@ -32,18 +32,18 @@ const en = {
         ]
       },
       {
-        label: "Wholesale",
-        items: [
-          { href: "/wholesale", label: "Wholesale" }
-        ]
-      },
-      {
         label: "Gift",
         items: [
           { href: "/category/necklaces-pendants", label: "Necklaces & Pendants" },
           { href: "/category/bracelets", label: "Bracelets" },
           { href: "/category/earrings", label: "Earrings" },
           { href: "/category/rings", label: "Rings" }
+        ]
+      },
+      {
+        label: "Wholesale",
+        items: [
+          { href: "/wholesale", label: "Wholesale" }
         ]
       },
       {
@@ -252,18 +252,18 @@ const th = {
         ]
       },
       {
-        label: "ขายส่ง",
-        items: [
-          { href: "/wholesale", label: "ขายส่ง" }
-        ]
-      },
-      {
         label: "ของขวัญ",
         items: [
           { href: "/category/necklaces-pendants", label: "สร้อยคอและจี้" },
           { href: "/category/bracelets", label: "สร้อยข้อมือ" },
           { href: "/category/earrings", label: "ต่างหู" },
           { href: "/category/rings", label: "แหวน" }
+        ]
+      },
+      {
+        label: "ขายส่ง",
+        items: [
+          { href: "/wholesale", label: "ขายส่ง" }
         ]
       },
       {

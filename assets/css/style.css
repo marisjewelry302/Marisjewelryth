@@ -3023,3 +3023,108 @@ html {
     gap: 20px;
   }
 }
+
+/* Product page info zone: image left, exclusive accordion right. */
+.product-extra {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: clamp(28px, 6vw, 96px);
+  align-items: center;
+  margin: 0 0 56px;
+}
+
+.product-extra-media {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  background: var(--maris-blush);
+}
+
+.product-extra-media img {
+  object-fit: cover;
+  object-position: 55% 50%;
+}
+
+.product-extra-list {
+  max-width: 520px;
+  border-top: 1px solid rgba(16, 41, 35, 0.14);
+}
+
+.product-extra-list details {
+  border-bottom: 1px solid rgba(16, 41, 35, 0.14);
+}
+
+.product-extra-list summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 22px 0;
+  font-size: 16px;
+  color: var(--maris-ink);
+  cursor: pointer;
+  list-style: none;
+}
+
+.product-extra-list summary::-webkit-details-marker {
+  display: none;
+}
+
+.product-extra-list summary::after {
+  content: "";
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg) translateY(-2px);
+  transition: transform 0.2s ease;
+}
+
+.product-extra-list details[open] summary::after {
+  transform: rotate(-135deg) translateY(-2px);
+}
+
+.product-extra-list summary:focus-visible {
+  outline: 2px solid var(--maris-teal);
+  outline-offset: 2px;
+}
+
+.product-extra-body {
+  padding: 0 0 24px;
+  font-size: 14px;
+  line-height: 1.75;
+  color: var(--maris-muted);
+}
+
+.product-extra .product-extra-body p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.75;
+  font-weight: 400;
+  color: var(--maris-muted);
+}
+
+.product-extra .product-extra-body .product-extra-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin-top: 12px;
+}
+
+.product-extra-links a {
+  color: var(--maris-teal);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+@media (max-width: 900px) {
+  .product-extra {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .product-extra-list {
+    max-width: none;
+  }
+}

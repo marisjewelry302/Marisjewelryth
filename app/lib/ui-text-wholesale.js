@@ -4,14 +4,24 @@
 export const wholesaleEn = {
   eyebrow: "Maris Wholesale",
   title: "Wholesale portal",
-  lead: "Partner pricing, minimum order quantities, and purchase orders for approved retailers and brands.",
+  lead: "Fine jewelry in real gold, real diamonds, and real gemstones, crafted in our Bangkok atelier for retailers, brands, and boutique buyers.",
   inquiry: {
     title: "Start with an inquiry",
     text: "Tell us about your store or brand and the fine jewelry, real gold, real diamond, or real gemstone pieces you need. The atelier replies with terms and next steps before you apply for portal access.",
     action: "Send an inquiry",
     emailLabel: "Or email us directly",
     email: "marisjewelryth@gmail.com",
+    channelsLabel: "Prefer to chat? Message us on",
     portalNote: "Already have an approved wholesale account? Sign in below."
+  },
+  highlights: {
+    title: "What we supply wholesale",
+    items: [
+      { title: "Fine jewelry", text: "Rings, wedding bands, earrings, necklaces, and bracelets, designed with care for selective retail and boutique collections." },
+      { title: "Real gold", text: "Pieces in genuine gold. Tell us the karat and tone you need and we will confirm what we can make for you." },
+      { title: "Real diamond", text: "Genuine diamond jewelry, from classic solitaires to delicate accents. Share your size and quality direction for a quotation." },
+      { title: "Real gemstone", text: "Genuine gemstones in the colors your customers love. Share your preferred stones and budget and we will advise on options." }
+    ]
   },
   loading: "Loading your wholesale account…",
   unavailable: "The wholesale portal is not available right now. Please try again later or contact the atelier.",
@@ -169,14 +179,24 @@ export const wholesaleEn = {
 export const wholesaleTh = {
   eyebrow: "Maris Wholesale",
   title: "พอร์ทัลขายส่ง",
-  lead: "ราคาพาร์ทเนอร์ จำนวนสั่งขั้นต่ำ และใบสั่งซื้อสำหรับร้านค้าและแบรนด์ที่ได้รับอนุมัติ",
+  lead: "เครื่องประดับ Fine Jewelry ทองแท้ เพชรแท้ และพลอยแท้ ผลิตอย่างประณีตจากอะเทลิเยร์ของเราในกรุงเทพฯ สำหรับร้านค้า แบรนด์ และผู้ซื้อบูติก",
   inquiry: {
     title: "เริ่มต้นด้วยการส่ง Inquiry",
     text: "บอกเราเกี่ยวกับร้านหรือแบรนด์ของคุณ และเครื่องประดับ Fine Jewelry ทองแท้ เพชรแท้ หรือพลอยแท้ที่ต้องการ ทีมงานจะตอบกลับพร้อมเงื่อนไขและขั้นตอนถัดไป ก่อนที่คุณจะสมัครใช้พอร์ทัล",
     action: "ส่ง Inquiry",
     emailLabel: "หรืออีเมลถึงเราโดยตรง",
     email: "marisjewelryth@gmail.com",
+    channelsLabel: "สะดวกคุยแชต? ทักเราได้ที่",
     portalNote: "มีบัญชีขายส่งที่ได้รับอนุมัติแล้ว? เข้าสู่ระบบด้านล่าง"
+  },
+  highlights: {
+    title: "สินค้าที่เรารับจำหน่ายขายส่ง",
+    items: [
+      { title: "Fine Jewelry", text: "แหวน แหวนแถว ต่างหู สร้อยคอ และสร้อยข้อมือ ออกแบบอย่างพิถีพิถันสำหรับร้านค้าและคอลเลกชันบูติก" },
+      { title: "ทองแท้", text: "ชิ้นงานทองแท้ บอกเราถึงเปอร์เซ็นต์ทองและโทนสีที่ต้องการ แล้วเราจะยืนยันสิ่งที่ผลิตให้ได้" },
+      { title: "เพชรแท้", text: "เครื่องประดับเพชรแท้ ตั้งแต่โซลิแทร์คลาสสิกจนถึงเพชรประดับเล็ก ๆ บอกขนาดและระดับคุณภาพที่ต้องการเพื่อขอใบเสนอราคา" },
+      { title: "พลอยแท้", text: "พลอยแท้ในสีที่ลูกค้าของคุณชื่นชอบ บอกชนิดพลอยและงบประมาณ แล้วเราจะแนะนำตัวเลือกให้" }
+    ]
   },
   loading: "กำลังโหลดบัญชีขายส่งของคุณ…",
   unavailable: "ขณะนี้พอร์ทัลขายส่งยังใช้งานไม่ได้ กรุณาลองใหม่ภายหลังหรือติดต่อทีมงาน",

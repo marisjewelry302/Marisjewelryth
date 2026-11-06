@@ -62,6 +62,14 @@ export const shopEn = {
       ["Special price from manufacturer", "Made and priced direct from our own atelier."],
       ["Worldwide shipment", "Carefully packed and sent to you wherever you are."]
     ],
+    infoImageAlt: "Maris Jewelry pieces resting on pink satin",
+    infoLabel: "Good to know",
+    info: [
+      { title: "Packaging", text: "Every Maris piece is presented with care, ready to give or to keep.", open: true },
+      { title: "Shipping & Returns", text: "Delivery and return details are set out on our shipping and returns pages.", links: [["Shipping", "/shipping"], ["Returns", "/returns"]] },
+      { title: "Ask a Maris Advisor", text: "Questions about a design, stones or a custom request? Our atelier is happy to help.", links: [["Contact Maris", "/contact-us"]] },
+      { title: "Size Guide", text: "Tell us your ring size, or your finger size if you are unsure, when you enquire. We confirm it in your quotation before anything is made." }
+    ],
     metaDescription: "Explore {title} from {collection}. Enquire with Maris Jewelry for current availability, sizing, and custom guidance.",
     sampleDetails: "Sample Piece Details",
     stoneDetails: "Stone details",
@@ -387,6 +395,14 @@ export const shopTh = {
       ["บริการดูแลทำความสะอาดตลอดการใช้งาน", "ตราบเท่าที่เรายังดำเนินกิจการ"],
       ["ราคาพิเศษจากผู้ผลิต", "ผลิตและกำหนดราคาโดยตรงจากห้องทำงานของเรา"],
       ["จัดส่งทั่วโลก", "บรรจุอย่างประณีตและส่งถึงคุณไม่ว่าอยู่ที่ใด"]
+    ],
+    infoImageAlt: "ผลงาน Maris Jewelry บนผ้าซาตินสีชมพู",
+    infoLabel: "ข้อมูลที่ควรรู้",
+    info: [
+      { title: "บรรจุภัณฑ์", text: "ทุกชิ้นงานของ Maris บรรจุอย่างประณีต พร้อมมอบเป็นของขวัญหรือเก็บไว้ใช้เอง", open: true },
+      { title: "การจัดส่งและการคืนสินค้า", text: "รายละเอียดการจัดส่งและการคืนสินค้า ดูได้ที่หน้าการจัดส่งและหน้าการคืนสินค้า", links: [["การจัดส่ง", "/shipping"], ["การคืนสินค้า", "/returns"]] },
+      { title: "ปรึกษาที่ปรึกษา Maris", text: "สงสัยเรื่องแบบ พลอย หรืองานสั่งทำ? ห้องทำงานของเรายินดีให้คำแนะนำ", links: [["ติดต่อ Maris", "/contact-us"]] },
+      { title: "คู่มือเลือกไซส์", text: "แจ้งไซส์แหวนของคุณ หรือขนาดนิ้วหากไม่แน่ใจ เมื่อสอบถาม เราจะยืนยันในใบเสนอราคาก่อนเริ่มผลิตสิ่งใด" }
     ],
     metaDescription: "เลือกชม {title} จาก {collection} สอบถาม Maris Jewelry เพื่อทราบความพร้อมล่าสุด ไซส์ และคำแนะนำงานสั่งทำ",
     sampleDetails: "รายละเอียดชิ้นงานตัวอย่าง",

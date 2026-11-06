@@ -322,6 +322,29 @@ export async function ProductPageView({ params, locale = "en" }) {
           </ul>
         </section>
 
+        <section className="product-extra" aria-label={t.infoLabel} data-product-extra>
+          <div className="product-extra-media">
+            <Image src="/assets/images/service/custom-jewelry-service-hero-02-seamless.webp" alt={t.infoImageAlt} fill sizes="(max-width: 900px) 100vw, 45vw" />
+          </div>
+          <div className="product-extra-list">
+            {t.info.map((item) => (
+              <details key={item.title} name="product-extra" open={item.open || undefined}>
+                <summary>{item.title}</summary>
+                <div className="product-extra-body">
+                  <p>{item.text}</p>
+                  {item.links && (
+                    <p className="product-extra-links">
+                      {item.links.map(([label, href]) => (
+                        <a key={href} href={localizePath(href, locale)}>{label}</a>
+                      ))}
+                    </p>
+                  )}
+                </div>
+              </details>
+            ))}
+          </div>
+        </section>
+
         {relatedProducts.length > 0 && (
           <section className="also-like" data-also-like-section>
             <h2>{t.alsoLike}</h2>

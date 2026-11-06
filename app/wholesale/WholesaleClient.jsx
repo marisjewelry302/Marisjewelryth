@@ -19,6 +19,9 @@ import {
 } from "../lib/wholesale";
 import styles from "./wholesale.module.css";
 
+const LINE_URL = "https://lin.ee/tFg8osD";
+const FACEBOOK_URL = "https://www.facebook.com/share/1JH2idcjPM/";
+const INSTAGRAM_URL = "https://www.instagram.com/maris_jewelry_th?igsh=MXNoeHpxN2VkaTU0NA==";
 const CART_KEY = "marisWholesaleCart";
 const FALLBACK_IMAGE = "/assets/images/logo.png";
 
@@ -126,7 +129,27 @@ export default function WholesaleClient() {
               <a className={styles.button} href={`${href("/contact-us")}?service=${encodeURIComponent("Wholesale & Retail")}`}>{w.inquiry.action}</a>
               <span>{w.inquiry.emailLabel}: <a className={styles.textLink} href={`mailto:${w.inquiry.email}`}>{w.inquiry.email}</a></span>
             </div>
+            <p className={styles.channels}>
+              <span>{w.inquiry.channelsLabel}</span>
+              <a className={styles.textLink} href={LINE_URL} target="_blank" rel="noopener noreferrer">LINE</a>
+              <a className={styles.textLink} href={FACEBOOK_URL} target="_blank" rel="noopener noreferrer">Facebook</a>
+              <a className={styles.textLink} href={INSTAGRAM_URL} target="_blank" rel="noopener noreferrer">Instagram</a>
+            </p>
             <p className={styles.muted}>{w.inquiry.portalNote}</p>
+          </div>
+        </section>
+      )}
+
+      {phase !== "loading" && account?.status !== "approved" && (
+        <section className={styles.shell} aria-labelledby="wholesale-highlights">
+          <h2 id="wholesale-highlights" className={styles.sectionTitle}>{w.highlights.title}</h2>
+          <div className={styles.highlightGrid}>
+            {w.highlights.items.map((item) => (
+              <article key={item.title} className={styles.highlight}>
+                <h3>{item.title}</h3>
+                <p>{item.text}</p>
+              </article>
+            ))}
           </div>
         </section>
       )}

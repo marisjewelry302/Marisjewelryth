@@ -157,6 +157,7 @@ export default function ContactPageView({ locale = "en", defaultService }) {
               </div>
 
               <div className="contact-social">
+                <a href="https://lin.ee/tFg8osD" target="_blank" rel="noopener noreferrer">LINE</a>
                 <a href="https://www.instagram.com/maris_jewelry_th?igsh=MXNoeHpxN2VkaTU0NA==" target="_blank" rel="noopener noreferrer">Instagram</a>
                 <a href="https://www.facebook.com/share/1JH2idcjPM/" target="_blank" rel="noopener noreferrer">Facebook</a>
                 <a href="https://pin.it/5pKmV7MKf" target="_blank" rel="noopener noreferrer">Pinterest</a>
