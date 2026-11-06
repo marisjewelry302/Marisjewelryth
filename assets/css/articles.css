@@ -141,6 +141,16 @@
   margin-inline: auto;
 }
 
+.journal-video-link {
+  margin: 0;
+  text-align: center;
+}
+
+.journal-video-link a {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
 .journal-video iframe {
   position: absolute;
   inset: 0;

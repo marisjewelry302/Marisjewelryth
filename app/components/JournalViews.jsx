@@ -81,6 +81,13 @@ export function JournalArticleView({ slug, locale = "en" }) {
                 />
               </div>
             ) : null}
+            {videoEmbed ? (
+              <p className="journal-video-link">
+                <a href={article.video} target="_blank" rel="noopener noreferrer">
+                  {language === "th" ? "ดูบน YouTube" : "Watch on YouTube"}
+                </a>
+              </p>
+            ) : null}
             {text.sections.map((section) => (
               <section className="journal-section" key={section.title}>
                 <h2>{section.title}</h2>

@@ -10,63 +10,72 @@ export const journalArticles = [
       "en": "Video"
     },
     "title": {
-      "en": "Round diamond solitaire engagement ring: watch it in motion"
+      "en": "Round diamond solitaire on the finger: 0.5 to 2 carats compared"
     },
     "excerpt": {
-      "en": "A short film of our round diamond solitaire engagement ring, plus what to look at when you choose this classic design."
+      "en": "Watch a round diamond solitaire engagement ring in four sizes, from 0.5 to 2 carats, and see how each one looks when worn."
     },
     "readTime": {
       "en": "2 min read"
     },
     "facts": {
       "en": [
-        ["Format", "Short video, watch right here"],
-        ["Design", "Round diamond solitaire engagement ring"],
-        ["Smart tip", "Judge sparkle in motion, not only in photos"]
+        [
+          "Sizes shown",
+          "0.5, 1.0, 1.5 and 2.0 carats"
+        ],
+        [
+          "Design",
+          "Round diamond solitaire engagement ring"
+        ],
+        [
+          "Smart tip",
+          "Try the sizes on before you decide"
+        ]
       ]
     },
     "sections": {
       "en": [
         {
-          "title": "What the video shows",
+          "title": "Four sizes, one design",
           "paragraphs": [
-            "This short film presents the Maris round diamond solitaire engagement ring. A single round diamond sits at the centre, so the eye goes straight to the stone and the way it catches light as the ring moves.",
-            "Press play above to see the ring from several angles."
+            "This short video puts the same round diamond solitaire design on the finger in four sizes, so you can compare how the stone looks when it is actually worn rather than on a chart.",
+            "Press play above, or open it on YouTube."
           ],
           "bullets": [
-            "One round centre diamond on a clean, simple setting",
-            "The ring shown in motion rather than in a still photo",
-            "A quick way to get a feel for the design before you visit or enquire"
+            "0.5 carat: a refined, understated look that is easy to wear every day",
+            "1.0 carat: the diamond starts to stand out while still matching easily with everyday outfits",
+            "1.5 carat: fuller and more luxurious, for those who want the ring to be a focal point of the hand",
+            "2.0 carat: the most striking and full look, a single ring that makes the whole hand feel special"
           ]
         },
         {
-          "title": "Why a round solitaire stays a favourite",
+          "title": "Bigger is not always better",
           "paragraphs": [
-            "The round brilliant shape is designed to return a lot of light, and a solitaire keeps the focus on that one stone. It is a timeless design that suits daily wear and pairs easily with a plain or diamond wedding band.",
-            "Because the design is simple, the quality of the diamond and the craftsmanship of the setting matter even more."
+            "The most beautiful size is not necessarily the largest. The proportions of your finger and the design of the setting change how a diamond looks on the hand.",
+            "A setting that lifts the centre stone, for example, can make the ring look elegant at any size."
           ],
           "bullets": [
-            "Classic look that does not date",
-            "Simple setting that keeps the diamond front and centre",
-            "Easy to match with a wedding band later"
+            "Finger proportions affect how large a diamond appears",
+            "The setting design changes the overall look",
+            "Comfort for daily wear matters as much as size"
           ]
         },
         {
-          "title": "What to look at when you watch",
+          "title": "Try it on for yourself",
           "paragraphs": [
-            "Watch how the diamond sparkles as it turns: lively flashes of white light are a good sign of a well-cut stone. Notice how high the stone sits and how comfortable the proportions look on the finger.",
-            "If you like what you see, contact us to talk about diamond size, metal colour and ring size."
+            "The best way to choose is to try the sizes on and see which one feels most like you. Contact Maris Jewelry and we will help you compare sizes and settings."
           ],
           "bullets": [
-            "Sparkle and brightness as the ring moves",
-            "Proportion of the stone to the band",
-            "Metal colour and overall finish"
+            "Compare two sizes side by side on the same hand",
+            "Look at the ring from above and from the side",
+            "Ask about the setting that suits your finger"
           ]
         }
       ]
     },
     "note": {
-      "en": "Want to see this design in more detail? Contact Maris Jewelry and we will help you choose the diamond and setting."
+      "en": "Not sure which size suits you? Contact Maris Jewelry and we will help you compare and choose."
     }
   },
   {

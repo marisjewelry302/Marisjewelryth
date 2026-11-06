@@ -14,6 +14,8 @@ const contentSecurityPolicy = [
   // Turntable videos stream from Supabase Storage; admin previews a picked
   // file from a blob: URL before it uploads.
   "media-src 'self' blob: https://*.supabase.co",
+  // Journal articles embed YouTube videos (privacy-enhanced domain only).
+  "frame-src https://www.youtube-nocookie.com",
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
