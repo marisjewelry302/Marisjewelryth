@@ -26,7 +26,7 @@ export const HOME_FAQS_TH = [
 
 export const homeCopy = {
   en: {
-    title: "Maris Jewelry | Bangkok Fine Jewelry Atelier",
+    title: "Maris Jewelry | Bangkok Fine Jeweler",
     description:
       "Browse engagement rings, wedding bands, fine jewelry, and custom design guidance from Maris Jewelry, a Bangkok atelier for catalogue inquiries and private requests.",
     highlightsLabel: "Maris highlights",

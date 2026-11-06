@@ -41,7 +41,7 @@ const anuphan = localFont({
 
 export const metadata = {
   ...buildPageMetadata({
-    title: "Maris Jewelry | Bangkok Fine Jewelry Atelier",
+    title: "Maris Jewelry | Bangkok Fine Jeweler",
     description:
       "Explore Maris Jewelry for engagement rings, wedding bands, fine jewelry, custom design guidance, and atelier-led availability review in Bangkok.",
     path: "/"
