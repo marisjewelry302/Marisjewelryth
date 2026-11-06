@@ -43,7 +43,12 @@ const nextConfig = {
     // Product photography is served from Supabase Storage; everything else comes
     // from the same origin through the /assets/* route handler.
     remotePatterns: [{ protocol: "https", hostname: "*.supabase.co", pathname: "/storage/v1/object/public/**" }],
-    formats: ["image/avif", "image/webp"]
+    formats: ["image/avif", "image/webp"],
+    // Vercel's Hobby plan caps image transformations at 5K/month and blocks
+    // optimization once exceeded. Serve files as stored (Supabase CDN / /assets)
+    // so the quota is never touched. Upload product photos as pre-compressed
+    // WebP (~1024px) to keep pages light.
+    unoptimized: true
   },
   turbopack: {
     root: projectRoot
