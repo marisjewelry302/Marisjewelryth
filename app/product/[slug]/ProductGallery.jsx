@@ -50,7 +50,8 @@ export default function ProductGallery({ imageSets, coverImageUrl, video, produc
   const [loadedThrough, setLoadedThrough] = useState(1);
 
   useEffect(() => {
-    setLoadedThrough((current) => Math.max(current, activeSlide + 1));
+    // Stay two slides ahead so the next swipe never lands on an empty frame.
+    setLoadedThrough((current) => Math.max(current, activeSlide + 2));
   }, [activeSlide]);
 
   // Nothing advances the active slide without an observer, so a browser that
@@ -89,6 +90,10 @@ export default function ProductGallery({ imageSets, coverImageUrl, video, produc
     const slide = slideRefs.current[index];
 
     if (!track || !slide) return;
+
+    // A thumbnail or dot can jump several slides at once; load every slide on
+    // the way, plus the one after, before the scroll starts.
+    setLoadedThrough((current) => Math.max(current, index + 1));
 
     const reduceMotion = typeof window.matchMedia === "function"
       && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
