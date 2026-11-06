@@ -728,7 +728,7 @@ const uploadedImage = await uploadAdminProductImage({
 });
 
 const uploadedPath = uploadClient.state.uploads[0].path;
-assert.match(uploadedPath, /^products\/er-1001\/gallery\/\d+-[a-z0-9]+\.png$/, "Gallery uploads file under the product code");
+assert.equal(uploadedPath, "products/er-1001/gallery/main-ring.png", "Gallery uploads keep the file's own name under the product code");
 assert.equal(uploadClient.state.uploads[0].options.contentType, "image/png");
 assert.equal(uploadClient.state.uploads[0].options.upsert, false);
 assert.equal(uploadClient.state.insertedImages[0].product_id, "product-1");

@@ -39,6 +39,21 @@ async function readProductSku(supabase, productId) {
   return data.sku || "";
 }
 
+// "R 0050 White Gold 1.JPG" -> { stem: "r-0050-white-gold-1", ext: "jpg" }.
+// Storage keys must stay plain ASCII, so Thai or symbols fall back to a stamp.
+function splitImageFileName(fileName) {
+  const base = String(fileName || "").split(/[\\/]/).pop() || "";
+  const dot = base.lastIndexOf(".");
+  const ext = (dot > 0 ? base.slice(dot + 1) : "").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
+  const stem = (dot > 0 ? base.slice(0, dot) : base)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80);
+
+  return { stem: stem || `image-${Date.now()}`, ext };
+}
+
 export async function uploadAdminProductImage(
   { productId, fileName, contentType, buffer, altText, sortOrder, isPrimary },
   { env = process.env, client } = {}
@@ -68,15 +83,22 @@ export async function uploadAdminProductImage(
   }
 
   const sku = await readProductSku(supabase, productId);
-  const ext = fileName.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
-  const uniqueName = `${getProductMediaFolder(sku, productId)}/gallery/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-
-  const { data: uploadData, error: uploadError } = await supabase.storage
+  const { stem, ext } = splitImageFileName(fileName);
+  const folder = `${getProductMediaFolder(sku, productId)}/gallery`;
+  const upload = (name) => supabase.storage
     .from(PRODUCT_IMAGE_BUCKET)
-    .upload(uniqueName, buffer, {
+    .upload(`${folder}/${name}.${ext}`, buffer, {
       contentType: contentType || "image/jpeg",
       upsert: false
     });
+
+  // Keep the file's own name so Storage reads like the folder on the desk. Only
+  // when that name is already taken does a short suffix keep both files.
+  let { data: uploadData, error: uploadError } = await upload(stem);
+
+  if (uploadError && /already exists|duplicate/i.test(uploadError.message || "")) {
+    ({ data: uploadData, error: uploadError } = await upload(`${stem}-${Math.random().toString(36).slice(2, 6)}`));
+  }
 
   if (uploadError) {
     throw new AdminProductImageUploadError(uploadError.message || "Image could not be uploaded.", 500);
