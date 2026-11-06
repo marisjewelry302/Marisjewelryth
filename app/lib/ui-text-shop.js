@@ -62,7 +62,7 @@ export const shopEn = {
       ["Special price from manufacturer", "Made and priced direct from our own atelier."],
       ["Worldwide shipment", "Carefully packed and sent to you wherever you are."]
     ],
-    infoImageAlt: "Maris Jewelry pieces resting on pink satin",
+    infoImageAlt: "Maris Jewelry packaging: green gift bag, ring box, terms card and certificate of authenticity",
     infoLabel: "Good to know",
     info: [
       { title: "Packaging", text: "Every Maris piece is presented with care, ready to give or to keep.", open: true },
@@ -396,7 +396,7 @@ export const shopTh = {
       ["ราคาพิเศษจากผู้ผลิต", "ผลิตและกำหนดราคาโดยตรงจากห้องทำงานของเรา"],
       ["จัดส่งทั่วโลก", "บรรจุอย่างประณีตและส่งถึงคุณไม่ว่าอยู่ที่ใด"]
     ],
-    infoImageAlt: "ผลงาน Maris Jewelry บนผ้าซาตินสีชมพู",
+    infoImageAlt: "บรรจุภัณฑ์ Maris Jewelry ถุงของขวัญสีเขียว กล่องแหวน การ์ดเงื่อนไข และใบรับรอง",
     infoLabel: "ข้อมูลที่ควรรู้",
     info: [
       { title: "บรรจุภัณฑ์", text: "ทุกชิ้นงานของ Maris บรรจุอย่างประณีต พร้อมมอบเป็นของขวัญหรือเก็บไว้ใช้เอง", open: true },

@@ -324,7 +324,7 @@ export async function ProductPageView({ params, locale = "en" }) {
 
         <section className="product-extra" aria-label={t.infoLabel} data-product-extra>
           <div className="product-extra-media">
-            <Image src="/assets/images/service/custom-jewelry-service-hero-02-seamless.webp" alt={t.infoImageAlt} fill sizes="(max-width: 900px) 100vw, 45vw" />
+            <Image src="/assets/images/service/maris-packaging.webp" alt={t.infoImageAlt} fill sizes="(max-width: 900px) calc(100vw - 48px), (max-width: 1368px) 47vw, 620px" />
           </div>
           <div className="product-extra-list">
             {t.info.map((item) => (

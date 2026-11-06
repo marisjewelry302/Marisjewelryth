@@ -18,6 +18,8 @@
   --maris-red-text: #b8283a;
   --maris-ink: #102923;
   --maris-muted: #5c6d68;
+  --maris-ink-soft: rgba(16, 41, 35, 0.82);
+  --maris-hairline: #e8c9ca;
   --maris-paper: #fffaf6;
   --maris-white: #ffffff;
   --maris-shadow: rgba(0, 73, 58, 0.12);
@@ -3024,34 +3026,38 @@ html {
   }
 }
 
-/* Product page info zone: image left, exclusive accordion right. */
+/* Product page info zone: packaging photo left, exclusive accordion right.
+   Same column, gutter and gap as .product-detail above it. */
 .product-extra {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: clamp(28px, 6vw, 96px);
-  align-items: center;
-  margin: 0 0 56px;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1fr);
+  gap: clamp(20px, 3.5vw, 48px);
+  align-items: start;
+  width: min(1320px, calc(100% - 48px));
+  margin: 0 auto 64px;
 }
 
+/* The photo is 3:2, so it is shown uncropped: bow, bag and certificate footer all stay in frame. */
 .product-extra-media {
   position: relative;
-  aspect-ratio: 1 / 1;
+  aspect-ratio: 3 / 2;
   overflow: hidden;
+  border-radius: 3px;
   background: var(--maris-blush);
 }
 
 .product-extra-media img {
   object-fit: cover;
-  object-position: 55% 50%;
 }
 
+/* The first rule lines up with the top edge of the photo. */
 .product-extra-list {
-  max-width: 520px;
-  border-top: 1px solid rgba(16, 41, 35, 0.14);
+  width: 100%;
+  border-top: 1px solid var(--maris-hairline);
 }
 
 .product-extra-list details {
-  border-bottom: 1px solid rgba(16, 41, 35, 0.14);
+  border-bottom: 1px solid var(--maris-hairline);
 }
 
 .product-extra-list summary {
@@ -3059,11 +3065,17 @@ html {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 22px 0;
-  font-size: 16px;
+  padding: 1.75rem 0;
+  font-size: 1.0625rem;
+  font-weight: 500;
+  /* rem line heights: whole pixels at the default size (every row boundary lands on a
+     pixel, so all hairlines render alike) and they still scale with enlarged text. */
+  line-height: 1.5rem;
   color: var(--maris-ink);
   cursor: pointer;
   list-style: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.15s ease;
 }
 
 .product-extra-list summary::-webkit-details-marker {
@@ -3073,58 +3085,131 @@ html {
 .product-extra-list summary::after {
   content: "";
   flex: 0 0 auto;
-  width: 8px;
-  height: 8px;
-  border-right: 1.5px solid currentColor;
-  border-bottom: 1.5px solid currentColor;
-  transform: rotate(45deg) translateY(-2px);
+  width: 9px;
+  height: 9px;
+  margin-right: 4px;
+  border-right: 1.75px solid currentColor;
+  border-bottom: 1.75px solid currentColor;
+  transform: rotate(45deg) translateY(-3px);
   transition: transform 0.2s ease;
 }
 
 .product-extra-list details[open] summary::after {
-  transform: rotate(-135deg) translateY(-2px);
+  transform: rotate(-135deg) translateY(-3px);
 }
 
-.product-extra-list summary:focus-visible {
-  outline: 2px solid var(--maris-teal);
-  outline-offset: 2px;
+.product-extra-list details[open] summary {
+  color: var(--maris-teal);
+}
+
+.product-extra-list summary:active {
+  opacity: 0.7;
+}
+
+@media (hover: hover) {
+  .product-extra-list summary:hover {
+    color: var(--maris-teal);
+  }
+}
+
+.product-extra-list summary:focus-visible,
+.product-extra-links a:focus-visible {
+  outline: 3px solid var(--maris-teal);
+  outline-offset: 3px;
 }
 
 .product-extra-body {
   padding: 0 0 24px;
-  font-size: 14px;
-  line-height: 1.75;
-  color: var(--maris-muted);
 }
 
+/* Line heights in this zone are rem on purpose (not unitless): they stay whole pixels at
+   the default size so every hairline lands on a pixel, and they still follow the root
+   font size, so text-only enlargement cannot make wrapped lines collide. */
 .product-extra .product-extra-body p {
+  max-width: 56ch;
   margin: 0;
-  font-size: 14px;
-  line-height: 1.75;
+  font-size: 0.9375rem;
+  line-height: 1.625rem;
   font-weight: 400;
-  color: var(--maris-muted);
+  color: var(--maris-ink-soft);
 }
 
 .product-extra .product-extra-body .product-extra-links {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px 20px;
-  margin-top: 12px;
+  gap: 0 24px;
+  margin-top: 8px;
 }
 
 .product-extra-links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: 0.9375rem;
+  font-weight: 500;
   color: var(--maris-teal);
   text-decoration: underline;
   text-underline-offset: 3px;
+}
+
+/* Thai sets taller than Latin: more room for tone marks. Anuphan looks heavier
+   than Urbanist at the same weight, so the title stays at 400 and the larger size
+   and darker ink carry the hierarchy. */
+html[lang="th"] .product-extra-list summary {
+  font-size: 1.125rem;
+  font-weight: 400;
+  line-height: 1.75rem;
+}
+
+html[lang="th"] .product-extra-links a {
+  font-size: 1rem;
+}
+
+html[lang="th"] .product-extra .product-extra-body p {
+  font-size: 1rem;
+  line-height: 1.8125rem;
+  line-break: strict;
+  overflow-wrap: break-word;
+  text-wrap: pretty;
+}
+
+/* Narrower photo on laptops: slightly tighter rows keep the two columns level. */
+@media (max-width: 1180px) {
+  .product-extra-list summary {
+    padding: 1.5rem 0;
+  }
 }
 
 @media (max-width: 900px) {
   .product-extra {
     grid-template-columns: 1fr;
     gap: 24px;
+    margin-bottom: 48px;
   }
 
-  .product-extra-list {
-    max-width: none;
+  .product-extra-list summary {
+    padding: 1.25rem 0;
+  }
+
+  .product-extra .product-extra-body p {
+    max-width: 60ch;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .product-extra-list summary,
+  .product-extra-list summary::after {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .product-extra-list summary:focus-visible,
+  .product-extra-links a:focus-visible {
+    outline-color: Highlight;
+  }
+
+  .product-extra-links a {
+    color: LinkText;
   }
 }
