@@ -27,6 +27,13 @@ import { uiText } from "../../lib/ui-text";
 import Image from "next/image";
 import { isOptimizableImageSrc } from "../../lib/image-source";
 import { formatGemCarat } from "../../lib/gem-report";
+
+// The packaging photo lives in Supabase Storage (product-images/site/), next to the
+// product photos. The copy in assets/ is the fallback when SUPABASE_URL is not set.
+const PACKAGING_IMAGE_SRC = process.env.SUPABASE_URL
+  ? `${process.env.SUPABASE_URL.replace(/\/+$/, "")}/storage/v1/object/public/product-images/site/maris-packaging.webp`
+  : "/assets/images/service/maris-packaging.webp";
+
 export const revalidate = 60;
 const getProductBySlug = cache((slug) => readPublicProductBySlug(slug));
 
@@ -324,7 +331,7 @@ export async function ProductPageView({ params, locale = "en" }) {
 
         <section className="product-extra" aria-label={t.infoLabel} data-product-extra>
           <div className="product-extra-media">
-            <Image src="/assets/images/service/maris-packaging.webp" alt={t.infoImageAlt} fill sizes="(max-width: 900px) calc(100vw - 48px), (max-width: 1368px) 47vw, 620px" unoptimized />
+            <Image src={PACKAGING_IMAGE_SRC} alt={t.infoImageAlt} fill sizes="(max-width: 900px) calc(100vw - 48px), (max-width: 1368px) 47vw, 620px" unoptimized />
           </div>
           <div className="product-extra-list">
             {t.info.map((item) => (
