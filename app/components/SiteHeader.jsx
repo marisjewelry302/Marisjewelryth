@@ -117,6 +117,7 @@ export default function SiteHeader() {
   const [isOpen, setIsOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [bagCount, setBagCount] = useState(0);
+  const [openGroup, setOpenGroup] = useState(null);
   const menuButtonRef = useRef(null);
   const navRef = useRef(null);
   const headerRef = useRef(null);
@@ -178,8 +179,10 @@ export default function SiteHeader() {
     if (!isMobile || !isOpen || !navRef.current) return undefined;
 
     const nav = navRef.current;
-    const focusable = [...nav.querySelectorAll('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])')];
-    focusable[0]?.focus();
+    // Collapsed accordion panels are inert, so the list is read fresh each time.
+    const readFocusable = () => [...nav.querySelectorAll('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])')]
+      .filter((node) => !node.closest("[inert]"));
+    readFocusable()[0]?.focus();
 
     function handleMenuKeydown(event) {
       if (event.key === "Escape") {
@@ -189,6 +192,7 @@ export default function SiteHeader() {
         return;
       }
 
+      const focusable = readFocusable();
       if (event.key !== "Tab" || focusable.length === 0) return;
       const first = focusable[0];
       const last = focusable[focusable.length - 1];
@@ -257,15 +261,57 @@ export default function SiteHeader() {
     setLanguageSuffix(`${window.location.search}${window.location.hash}`);
   }, [pathname]);
 
-  // The drawer has no close button: tapping the dimmed page or swiping the
-  // drawer back toward the left edge closes it, and Escape still works.
+  // The drawer closes from its X button, by tapping the dimmed page, by dragging
+  // it back toward the left edge, or with Escape.
   function closeMenu() {
     setIsOpen(false);
   }
 
+  function toggleOpen() {
+    setIsOpen((current) => {
+      const next = !current;
+      // Opening lands on the group the reader is already in, so they see where they are.
+      if (next) {
+        const here = t.header.groups.find((group) => group.items.some((item) => isCurrent(item.href)));
+        setOpenGroup(here ? here.label : null);
+      }
+      return next;
+    });
+  }
+
+  function resetNavDrag() {
+    const nav = navRef.current;
+    if (!nav) return;
+    nav.style.transition = "";
+    nav.style.transform = "";
+  }
+
   function handleNavTouchStart(event) {
     const touch = event.touches[0];
-    swipeStartRef.current = touch ? { x: touch.clientX, y: touch.clientY } : null;
+    swipeStartRef.current = touch ? { x: touch.clientX, y: touch.clientY, dragging: false } : null;
+  }
+
+  // The drawer follows the finger while it is dragged left, then either closes or
+  // springs back on release. Vertical movement is left to normal scrolling.
+  function handleNavTouchMove(event) {
+    const start = swipeStartRef.current;
+    const touch = event.touches[0];
+    const nav = navRef.current;
+    if (!isMobile || !start || !touch || !nav) return;
+
+    const dx = touch.clientX - start.x;
+    const dy = touch.clientY - start.y;
+
+    if (!start.dragging) {
+      if (dx < -10 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+        start.dragging = true;
+        nav.style.transition = "none";
+      } else {
+        return;
+      }
+    }
+
+    nav.style.transform = `translateX(${Math.min(0, dx)}px)`;
   }
 
   function handleNavTouchEnd(event) {
@@ -275,8 +321,9 @@ export default function SiteHeader() {
     if (!isMobile || !start || !touch) return;
 
     const dx = touch.clientX - start.x;
-    const dy = touch.clientY - start.y;
-    if (dx < -60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+    const wasDragging = start.dragging;
+    resetNavDrag();
+    if (wasDragging && dx < -80) {
       closeMenu();
     }
   }
@@ -341,7 +388,7 @@ export default function SiteHeader() {
           aria-expanded={isOpen}
           aria-controls="maris-primary-navigation"
           ref={menuButtonRef}
-          onClick={() => setIsOpen((current) => !current)}
+          onClick={toggleOpen}
         >
           <span />
           <span />
@@ -388,28 +435,67 @@ export default function SiteHeader() {
           inert={isMobile && !isOpen}
           ref={navRef}
           onTouchStart={handleNavTouchStart}
+          onTouchMove={handleNavTouchMove}
           onTouchEnd={handleNavTouchEnd}
+          onTouchCancel={() => {
+            swipeStartRef.current = null;
+            resetNavDrag();
+          }}
         >
+          <button type="button" className="nav-mobile-close" aria-label={t.header.closeMenu} onClick={() => {
+            closeMenu();
+            menuButtonRef.current?.focus();
+          }}>
+            <svg aria-hidden="true" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.7" viewBox="0 0 24 24">
+              <path d="M6 6l12 12M18 6 6 18" />
+            </svg>
+          </button>
+
           {t.header.primary.map((item) => (
             <Link key={item.href} href={localHref(item.href)} aria-current={isCurrent(item.href) ? "page" : undefined}>
               {item.label}
             </Link>
           ))}
 
-          {t.header.groups.map((group) => {
+          {t.header.groups.map((group, index) => {
             const current = group.items.some((item) => isCurrent(item.href));
 
+            // A group with a single entry is just a link on a phone; a heading
+            // that repeats its only child costs a tap and says nothing new.
+            if (isMobile && group.items.length === 1) {
+              const only = group.items[0];
+              return (
+                <Link key={group.label} href={localHref(only.href)} className="nav-single-link" aria-current={isCurrent(only.href) ? "page" : undefined}>
+                  {group.label}
+                </Link>
+              );
+            }
+
+            const expanded = isMobile && openGroup === group.label;
+            const panelId = `maris-nav-group-${index}`;
+
             return (
-              <div key={group.label} className={`nav-item-dropdown${current ? " is-current" : ""}`}>
-                <button className="nav-dropdown-trigger" type="button" tabIndex={-1}>
+              <div key={group.label} className={`nav-item-dropdown${current ? " is-current" : ""}${expanded ? " is-expanded" : ""}`}>
+                <button
+                  className="nav-dropdown-trigger"
+                  type="button"
+                  tabIndex={isMobile ? 0 : -1}
+                  aria-expanded={isMobile ? expanded : undefined}
+                  aria-controls={isMobile ? panelId : undefined}
+                  onClick={() => {
+                    if (isMobile) setOpenGroup((currentGroup) => (currentGroup === group.label ? null : group.label));
+                  }}
+                >
                   {group.label}
                 </button>
-                <div className="nav-dropdown">
-                  {group.items.map((item) => (
-                    <Link key={item.href} href={localHref(item.href)} aria-current={isCurrent(item.href) ? "page" : undefined}>
-                      {item.label}
-                    </Link>
-                  ))}
+                <div className="nav-dropdown" id={panelId} inert={isMobile && !expanded}>
+                  <div className="nav-dropdown__inner">
+                    {group.items.map((item) => (
+                      <Link key={item.href} href={localHref(item.href)} aria-current={isCurrent(item.href) ? "page" : undefined}>
+                        {item.label}
+                      </Link>
+                    ))}
+                  </div>
                 </div>
               </div>
             );

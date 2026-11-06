@@ -6,6 +6,7 @@ import "../assets/css/site-header.css";
 import "../assets/css/footer.css";
 import "./react-migration.css";
 import "../assets/css/mobile.css";
+import "../assets/css/mobile-drawer.css";
 import "../assets/css/cookie-consent.css";
 import CookieConsent from "./components/CookieConsent";
 import JsonLd from "./components/JsonLd";

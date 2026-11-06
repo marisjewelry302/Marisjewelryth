@@ -1,0 +1,305 @@
+/* Phone navigation drawer.
+   Loaded last on purpose: the header rules are spread over several sheets, some
+   of them with deliberately stacked selectors, so this one restates the drawer
+   in full with enough weight to be the final word on phones (up to 699px).
+   Wider screens keep the hover dropdowns from site-header.css untouched. */
+
+@media (max-width: 699px) {
+  body.is-mobile-menu-open {
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  /* A backdrop-filter on the navbar makes it the containing block for the fixed
+     drawer, which pushed the drawer down by the announcement bar and cut off
+     its bottom. Dropping the blur while the menu is open lets "fixed" mean the
+     screen again. */
+  html body.is-mobile-menu-open .site-header .navbar.navbar.navbar.navbar {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  /* Backdrop fades in instead of snapping on. */
+  html body .site-header .mobile-menu-backdrop {
+    background: rgba(10, 32, 27, 0.5);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+    animation: maris-drawer-fade 0.28s ease both;
+  }
+
+  /* The drawer itself */
+  html body .site-header .navbar.navbar.navbar.navbar .nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1300;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 0;
+    width: min(88vw, 360px);
+    height: 100vh;
+    height: 100dvh;
+    padding: 72px 22px calc(24px + env(safe-area-inset-bottom, 0px));
+    background: #fffaf3;
+    box-shadow: 24px 0 60px rgba(0, 40, 32, 0.18);
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    transform: translateX(-104%);
+    visibility: hidden;
+    transition:
+      transform 0.34s cubic-bezier(0.32, 0.72, 0, 1),
+      visibility 0s linear 0.34s;
+  }
+
+  html body .site-header .navbar.navbar.navbar.navbar .nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  html body.is-mobile-menu-open .site-header .navbar.navbar.navbar.navbar .nav {
+    transform: translateX(0);
+    visibility: visible;
+    transition:
+      transform 0.34s cubic-bezier(0.32, 0.72, 0, 1),
+      visibility 0s;
+  }
+
+  /* Close button, top right of the drawer. */
+  html body .site-header .nav-mobile-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--maris-ink, #12332b);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html body .site-header .nav-mobile-close svg {
+    width: 24px;
+    height: 24px;
+    margin: 0;
+  }
+
+  html body .site-header .nav-mobile-close:active {
+    background: rgba(16, 41, 35, 0.08);
+  }
+
+  /* Rows: top level links and accordion triggers share one look. */
+  html body .site-header .navbar.navbar.navbar.navbar.navbar .nav > a,
+  html body .site-header .navbar.navbar.navbar.navbar.navbar .nav .nav-dropdown-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 56px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-bottom: 1px solid rgba(16, 41, 35, 0.1);
+    border-radius: 0;
+    background: transparent;
+    color: var(--maris-ink, #12332b);
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    line-height: 1.3;
+    text-align: left;
+    text-transform: uppercase;
+    text-shadow: none;
+    white-space: normal;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html body .site-header .navbar.navbar.navbar.navbar.navbar .nav > a:active,
+  html body .site-header .navbar.navbar.navbar.navbar.navbar .nav .nav-dropdown-trigger:active {
+    background: rgba(16, 41, 35, 0.05);
+  }
+
+  /* Chevron on accordion triggers */
+  html body .site-header .navbar.navbar.navbar.navbar.navbar .nav .nav-dropdown-trigger::after {
+    content: "";
+    display: block;
+    position: static;
+    flex: none;
+    width: 8px;
+    height: 8px;
+    margin: 0 6px 3px 12px;
+    border-width: 0 1.5px 1.5px 0;
+    border-style: solid;
+    border-color: currentColor;
+    background: transparent;
+    opacity: 0.7;
+    transform: rotate(45deg);
+    transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  html body .site-header .nav-item-dropdown.is-expanded > .nav-dropdown-trigger::after {
+    transform: translateY(3px) rotate(-135deg);
+  }
+
+  /* Current page: a slim accent bar, not just a colour change. */
+  html body .site-header .navbar.navbar.navbar.navbar.navbar.navbar .nav > a[aria-current="page"],
+  html body .site-header .navbar.navbar.navbar.navbar.navbar.navbar .nav .nav-item-dropdown.is-current > .nav-dropdown-trigger {
+    box-shadow: inset 3px 0 0 var(--maris-green, #0d4a3b);
+    padding-left: 14px;
+    color: var(--maris-green, #0d4a3b);
+  }
+
+  html body .site-header .navbar.navbar.navbar.navbar.navbar .nav > a::after {
+    display: none;
+  }
+
+  /* Accordion panel: height animates between 0fr and 1fr, so no measuring in JS. */
+  html body .site-header .navbar.navbar.navbar.navbar .nav .nav-item-dropdown {
+    display: block;
+    width: 100%;
+  }
+
+  html body .site-header .navbar.navbar.navbar.navbar .nav .nav-dropdown {
+    position: static;
+    display: grid;
+    grid-template-rows: 0fr;
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    opacity: 1;
+    overflow: hidden;
+    transform: none;
+    pointer-events: auto;
+    transition: grid-template-rows 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  html body .site-header .navbar.navbar.navbar.navbar .nav .nav-item-dropdown.is-expanded > .nav-dropdown {
+    grid-template-rows: 1fr;
+  }
+
+  html body .site-header .navbar.navbar.navbar.navbar .nav .nav-dropdown::before {
+    display: none;
+  }
+
+  html body .site-header .nav-dropdown__inner {
+    display: grid;
+    min-height: 0;
+    overflow: hidden;
+    padding: 0 0 0 14px;
+    background: rgba(16, 41, 35, 0.035);
+  }
+
+  html body .site-header .navbar.navbar.navbar.navbar.navbar .nav .nav-dropdown a {
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 52px;
+    padding: 0 8px 0 0;
+    border-bottom: 1px solid rgba(16, 41, 35, 0.07);
+    background: transparent;
+    color: rgba(16, 41, 35, 0.82);
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+    line-height: 1.35;
+    text-shadow: none;
+    text-transform: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html body .site-header .navbar.navbar.navbar.navbar.navbar .nav .nav-dropdown a:last-child {
+    border-bottom: 0;
+  }
+
+  html body .site-header .navbar.navbar.navbar.navbar.navbar .nav .nav-dropdown a:active {
+    background: rgba(16, 41, 35, 0.06);
+  }
+
+  html body .site-header .navbar.navbar.navbar.navbar.navbar .nav .nav-dropdown a[aria-current="page"] {
+    color: var(--maris-green, #0d4a3b);
+    font-weight: 700;
+  }
+
+  /* Account / wishlist / bag sit at the foot of the drawer. */
+  html body .site-header .nav-mobile-actions.nav-mobile-actions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: auto;
+    padding-top: 28px;
+    border-top: 0;
+  }
+
+  html body .site-header .navbar.navbar.navbar.navbar .nav-mobile-actions.nav-mobile-actions.nav-mobile-actions a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    min-height: 48px;
+    padding: 0 4px;
+    border: 1px solid rgba(16, 41, 35, 0.18);
+    color: var(--maris-ink, #12332b);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0;
+    line-height: 1.2;
+    text-align: center;
+    text-transform: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html body .site-header .nav-mobile-actions.nav-mobile-actions a:active {
+    background: rgba(16, 41, 35, 0.06);
+  }
+
+  /* Keyboard focus stays clearly visible on the cream. */
+  html body .site-header .nav :focus-visible {
+    outline: 2px solid var(--maris-green, #0d4a3b);
+    outline-offset: -2px;
+  }
+}
+
+@keyframes maris-drawer-fade {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 699px) and (prefers-reduced-motion: reduce) {
+  html body .site-header .navbar.navbar.navbar.navbar .nav,
+  html body.is-mobile-menu-open .site-header .navbar.navbar.navbar.navbar .nav,
+  html body .site-header .navbar.navbar.navbar.navbar .nav .nav-dropdown,
+  html body .site-header .navbar.navbar.navbar.navbar.navbar .nav .nav-dropdown-trigger::after {
+    transition-duration: 0.01ms;
+  }
+
+  html body .site-header .mobile-menu-backdrop {
+    animation: none;
+  }
+}
+
+/* The close button only exists for the phone drawer. */
+.site-header .nav-mobile-close {
+  display: none;
+}
