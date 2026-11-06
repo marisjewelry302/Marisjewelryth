@@ -94,11 +94,13 @@ export function JournalArticleView({ slug, locale = "en" }) {
                 {section.paragraphs.map((paragraph) => (
                   <p key={paragraph}>{paragraph}</p>
                 ))}
-                <ul className="journal-bullets">
-                  {section.bullets.map((bullet) => (
-                    <li key={bullet}>{bullet}</li>
-                  ))}
-                </ul>
+                {section.bullets.length ? (
+                  <ul className="journal-bullets">
+                    {section.bullets.map((bullet) => (
+                      <li key={bullet}>{bullet}</li>
+                    ))}
+                  </ul>
+                ) : null}
               </section>
             ))}
           </div>

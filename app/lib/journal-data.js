@@ -10,72 +10,45 @@ export const journalArticles = [
       "en": "Video"
     },
     "title": {
-      "en": "Round diamond solitaire on the finger: 0.5 to 2 carats compared"
+      "en": "Round solitaire on the finger: 0.5 to 2 carats"
     },
     "excerpt": {
-      "en": "Watch a round diamond solitaire engagement ring in four sizes, from 0.5 to 2 carats, and see how each one looks when worn."
+      "en": "Four sizes of a round diamond solitaire, worn side by side."
     },
     "readTime": {
-      "en": "2 min read"
+      "en": "1 min read"
     },
     "facts": {
       "en": [
         [
-          "Sizes shown",
-          "0.5, 1.0, 1.5 and 2.0 carats"
-        ],
-        [
-          "Design",
-          "Round diamond solitaire engagement ring"
-        ],
-        [
-          "Smart tip",
-          "Try the sizes on before you decide"
+          "Sizes in the clip",
+          "0.5 / 1 / 1.5 / 2 carats"
         ]
       ]
     },
     "sections": {
       "en": [
         {
-          "title": "Four sizes, one design",
-          "paragraphs": [
-            "This short video puts the same round diamond solitaire design on the finger in four sizes, so you can compare how the stone looks when it is actually worn rather than on a chart.",
-            "Press play above, or open it on YouTube."
-          ],
+          "title": "How each size looks",
+          "paragraphs": [],
           "bullets": [
-            "0.5 carat: a refined, understated look that is easy to wear every day",
-            "1.0 carat: the diamond starts to stand out while still matching easily with everyday outfits",
-            "1.5 carat: fuller and more luxurious, for those who want the ring to be a focal point of the hand",
-            "2.0 carat: the most striking and full look, a single ring that makes the whole hand feel special"
+            "0.5 carat: neat and refined, easy for every day",
+            "1 carat: starts to stand out, still matches most outfits",
+            "1.5 carat: fuller and more luxurious",
+            "2 carat: the boldest, one ring is enough"
           ]
         },
         {
           "title": "Bigger is not always better",
           "paragraphs": [
-            "The most beautiful size is not necessarily the largest. The proportions of your finger and the design of the setting change how a diamond looks on the hand.",
-            "A setting that lifts the centre stone, for example, can make the ring look elegant at any size."
+            "Finger proportions and the setting change the look a lot. Try the sizes on and see which one suits you."
           ],
-          "bullets": [
-            "Finger proportions affect how large a diamond appears",
-            "The setting design changes the overall look",
-            "Comfort for daily wear matters as much as size"
-          ]
-        },
-        {
-          "title": "Try it on for yourself",
-          "paragraphs": [
-            "The best way to choose is to try the sizes on and see which one feels most like you. Contact Maris Jewelry and we will help you compare sizes and settings."
-          ],
-          "bullets": [
-            "Compare two sizes side by side on the same hand",
-            "Look at the ring from above and from the side",
-            "Ask about the setting that suits your finger"
-          ]
+          "bullets": []
         }
       ]
     },
     "note": {
-      "en": "Not sure which size suits you? Contact Maris Jewelry and we will help you compare and choose."
+      "en": "Want to try them on? Contact Maris Jewelry."
     }
   },
   {
