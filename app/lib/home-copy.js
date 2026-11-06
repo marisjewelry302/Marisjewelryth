@@ -44,7 +44,7 @@ export const homeCopy = {
       { label: "Rings", alt: "Diamond rings arranged on blush pink satin" },
       { label: "Earrings", alt: "Pear-shaped diamond earrings on blush pink satin" },
       { label: "Necklaces & Pendants", alt: "Pear-shaped diamond pendant on blush pink satin" },
-      { label: "Bracelets & Bangles", alt: "Diamond bracelet and rose gold bangle on blush pink satin" }
+      { label: "Bracelets", alt: "Diamond tennis bracelet in a green Maris Jewelry gift box" }
     ],
     catalogueLabel: "New arrival catalogue",
     newArrival: "New arrival",
@@ -119,7 +119,7 @@ export const homeCopy = {
       { label: "แหวน", alt: "แหวนเพชรจัดวางบนผ้าซาตินสีชมพูอ่อน" },
       { label: "ต่างหู", alt: "ต่างหูเพชรทรงหยดน้ำบนผ้าซาตินสีชมพูอ่อน" },
       { label: "สร้อยคอและจี้", alt: "จี้เพชรทรงหยดน้ำบนผ้าซาตินสีชมพูอ่อน" },
-      { label: "สร้อยข้อมือและกำไล", alt: "สร้อยข้อมือเพชรและกำไลโรสโกลด์บนผ้าซาตินสีชมพูอ่อน" }
+      { label: "สร้อยข้อมือ", alt: "สร้อยข้อมือเพชรในกล่อง Maris Jewelry สีเขียว" }
     ],
     catalogueLabel: "แคตตาล็อกสินค้าใหม่",
     newArrival: "สินค้าใหม่",

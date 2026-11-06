@@ -15,7 +15,7 @@ assert.match(
 );
 assert.match(pageSource, /className="shop-category-grid"/);
 
-const expectedLabels = ["Rings", "Earrings", "Necklaces & Pendants", "Bracelets & Bangles"];
+const expectedLabels = ["Rings", "Earrings", "Necklaces & Pendants", "Bracelets"];
 for (const label of expectedLabels) {
   assert.match(pageSource, new RegExp(`label:\\s*"${label}"`), `Missing category label: ${label}`);
 }
