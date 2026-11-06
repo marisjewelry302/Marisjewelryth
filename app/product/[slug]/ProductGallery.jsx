@@ -124,6 +124,9 @@ export default function ProductGallery({ imageSets, coverImageUrl, video, produc
   // a finger pans it and a pinch still works natively. Reset on every new photo.
   const [zoomed, setZoomed] = useState(false);
   const toggleZoom = useCallback(() => setZoomed((current) => !current), []);
+  // If the optimizer cannot produce the large version (quota, timeout), show the
+  // original file from Storage instead of a broken image.
+  const [optimizerFailedSrc, setOptimizerFailedSrc] = useState("");
   useEffect(() => {
     setZoomed(false);
   }, [lightboxIndex]);
@@ -333,7 +336,8 @@ export default function ProductGallery({ imageSets, coverImageUrl, video, produc
               height={1024}
               sizes={zoomed ? "250vw" : "90vw"}
               onClick={toggleZoom}
-              unoptimized={!isOptimizableImageSrc(activeItem.src)}
+              onError={() => setOptimizerFailedSrc(activeItem.src)}
+              unoptimized={!isOptimizableImageSrc(activeItem.src) || optimizerFailedSrc === activeItem.src}
             />
           </div>
 
