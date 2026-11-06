@@ -20,12 +20,10 @@
   /* ---- Header: one-line top bar + 56px bar ----
      !important because the home and inner-page headers each carry their own
      phone overrides in site-header.css. */
+  /* The green announcement strip is not shown on phones; the contact link is
+     still in the menu under About Us. */
   .site-header .top-bar {
-    display: flex !important;
-    justify-content: center;
-    height: 32px !important;
-    min-height: 32px !important;
-    padding: 0 var(--m-gutter) !important;
+    display: none !important;
   }
 
   .site-header .top-socials {
