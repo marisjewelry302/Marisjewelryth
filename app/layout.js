@@ -46,10 +46,6 @@ export const metadata = {
       "Explore Maris Jewelry for engagement rings, wedding bands, fine jewelry, custom design guidance, and atelier-led availability review in Bangkok.",
     path: "/"
   }),
-  icons: {
-    icon: { url: "/assets/images/favicon.png", type: "image/png", sizes: "256x256" },
-    apple: "/assets/images/logo.png"
-  },
   manifest: "/manifest.webmanifest"
 };
 
