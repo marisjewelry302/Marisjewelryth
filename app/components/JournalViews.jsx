@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { THAI_LOCALE, localizePath } from "../lib/i18n";
-import { getJournalArticle, getJournalText, journalArticles } from "../lib/journal-data";
+import { getJournalArticle, getJournalText, getJournalVideoEmbed, journalArticles } from "../lib/journal-data";
 import { uiText } from "../lib/ui-text";
 
 function languageOf(locale) {
@@ -56,6 +56,7 @@ export function JournalArticleView({ slug, locale = "en" }) {
   const copy = uiText[language].journal;
   const text = getJournalText(article, language);
   const link = (path) => localizePath(path, locale);
+  const videoEmbed = getJournalVideoEmbed(article);
 
   return (
     <main id="main-content" className="placeholder-main content-page site-main">
@@ -68,6 +69,18 @@ export function JournalArticleView({ slug, locale = "en" }) {
 
         <div className="journal-article-layout">
           <div className="journal-article-content">
+            {videoEmbed ? (
+              <div className={`journal-video${article.videoFormat === "vertical" ? " journal-video--vertical" : ""}`}>
+                <iframe
+                  src={videoEmbed}
+                  title={text.title}
+                  loading="lazy"
+                  allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  allowFullScreen
+                />
+              </div>
+            ) : null}
             {text.sections.map((section) => (
               <section className="journal-section" key={section.title}>
                 <h2>{section.title}</h2>

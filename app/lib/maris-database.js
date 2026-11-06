@@ -62,3 +62,19 @@ export {
   createAdminProductMediaUploadUrl,
   updateAdminProductMedia
 } from "./maris-database/product-media.js";
+export {
+  WholesaleError,
+  customerUpdateWholesaleOrder,
+  readAdminWholesaleAccounts,
+  readAdminWholesaleOrders,
+  readAdminWholesalePricing,
+  readCustomerWholesaleOrders,
+  readWholesaleAccountForCustomer,
+  readWholesaleCatalogue,
+  readWholesaleOrderById,
+  setAdminProductWholesalePricing,
+  submitWholesaleApplication,
+  submitWholesaleOrder,
+  updateAdminWholesaleAccount,
+  updateAdminWholesaleOrder
+} from "./maris-database/wholesale.js";

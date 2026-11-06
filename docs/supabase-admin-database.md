@@ -55,6 +55,11 @@ The admin database contract expects these Supabase tables:
 - `product_variants`
 - `products`
 - `settings`
+- `wholesale_accounts`
+- `product_wholesale_settings`
+- `product_wholesale_price_breaks`
+- `wholesale_orders`
+- `wholesale_order_items`
 
 The protected API route `/api/admin/database/status` checks each table with a server-side Supabase client and reports whether the table is reachable plus its row count.
 
@@ -93,6 +98,20 @@ npm run test:database:live
 - `/api/catalogue/products` is public, read-only, and returns only safe storefront product fields.
 - The status and catalogue helpers use `SUPABASE_SERVICE_ROLE_KEY` only on the server.
 - If Supabase env is missing, protected admin checks report `Needs env` and the public catalogue API returns an unavailable state instead of falling back to legacy sheet data.
+
+## Wholesale (B2B)
+
+Run `supabase/migrations/20261106000000_create_wholesale_program.sql` after the earlier migrations. It adds the five wholesale tables (RLS on, no public policies) and the server-only functions that price and move purchase orders.
+
+- Partners sign in with their normal Maris customer account and apply at `/wholesale` (`/th/wholesale`).
+- Admin → Wholesale → Accounts: approve, reject or suspend, and set the account discount and payment terms. Needs `catalogue:write` (manager and above).
+- Admin → Wholesale → Pricing & MOQ: switch a product on for wholesale, set its minimum order quantity, case pack, lead time, and price breaks. Needs `catalogue:write`.
+- Unit price = the highest price break whose quantity the line reaches (or the retail `base_price`), minus the account discount. `maris_submit_wholesale_order` computes it in the database; prices sent by the browser are ignored. With no break and no retail price the line is "price on request" and must be quoted.
+- Admin → Wholesale → Purchase orders: send a quote (managers), then confirm → in production → ready → shipped → completed (staff can move status). The partner accepts a quote in the portal, which confirms the order.
+- Wholesale orders are made to order. They never reserve or sell retail stock and never write to `orders` or `payments`; payment is arranged with the partner directly.
+- New applications and purchase orders email the atelier through Resend when `RESEND_API_KEY`, `MARIS_EMAIL_FROM` and `MARIS_ORDER_EMAIL_TO` are set. Partners are not emailed; they follow status in the portal.
+
+Offline check: `npm run test:wholesale`.
 
 ## Operating Notes
 

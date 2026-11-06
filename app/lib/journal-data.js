@@ -2,6 +2,74 @@ import { journalThai } from "./journal-data-th.js";
 
 export const journalArticles = [
   {
+    "slug": "journal-round-diamond-solitaire-video",
+    "url": "/journal/journal-round-diamond-solitaire-video",
+    "video": "https://www.youtube.com/shorts/XqAXJD_EF3M",
+    "videoFormat": "vertical",
+    "category": {
+      "en": "Video"
+    },
+    "title": {
+      "en": "Round diamond solitaire engagement ring: watch it in motion"
+    },
+    "excerpt": {
+      "en": "A short film of our round diamond solitaire engagement ring, plus what to look at when you choose this classic design."
+    },
+    "readTime": {
+      "en": "2 min read"
+    },
+    "facts": {
+      "en": [
+        ["Format", "Short video, watch right here"],
+        ["Design", "Round diamond solitaire engagement ring"],
+        ["Smart tip", "Judge sparkle in motion, not only in photos"]
+      ]
+    },
+    "sections": {
+      "en": [
+        {
+          "title": "What the video shows",
+          "paragraphs": [
+            "This short film presents the Maris round diamond solitaire engagement ring. A single round diamond sits at the centre, so the eye goes straight to the stone and the way it catches light as the ring moves.",
+            "Press play above to see the ring from several angles."
+          ],
+          "bullets": [
+            "One round centre diamond on a clean, simple setting",
+            "The ring shown in motion rather than in a still photo",
+            "A quick way to get a feel for the design before you visit or enquire"
+          ]
+        },
+        {
+          "title": "Why a round solitaire stays a favourite",
+          "paragraphs": [
+            "The round brilliant shape is designed to return a lot of light, and a solitaire keeps the focus on that one stone. It is a timeless design that suits daily wear and pairs easily with a plain or diamond wedding band.",
+            "Because the design is simple, the quality of the diamond and the craftsmanship of the setting matter even more."
+          ],
+          "bullets": [
+            "Classic look that does not date",
+            "Simple setting that keeps the diamond front and centre",
+            "Easy to match with a wedding band later"
+          ]
+        },
+        {
+          "title": "What to look at when you watch",
+          "paragraphs": [
+            "Watch how the diamond sparkles as it turns: lively flashes of white light are a good sign of a well-cut stone. Notice how high the stone sits and how comfortable the proportions look on the finger.",
+            "If you like what you see, contact us to talk about diamond size, metal colour and ring size."
+          ],
+          "bullets": [
+            "Sparkle and brightness as the ring moves",
+            "Proportion of the stone to the band",
+            "Metal colour and overall finish"
+          ]
+        }
+      ]
+    },
+    "note": {
+      "en": "Want to see this design in more detail? Contact Maris Jewelry and we will help you choose the diamond and setting."
+    }
+  },
+  {
     "slug": "journal-diamond-4c-guide",
     "url": "/journal/journal-diamond-4c-guide",
     "category": {
@@ -755,6 +823,36 @@ export const journalArticles = [
 
 export function getJournalArticle(slug) {
   return journalArticles.find((article) => article.slug === slug) || null;
+}
+
+// Optional `video` on an article: a YouTube URL (watch, youtu.be, shorts,
+// embed) or an 11-character video ID. Returns a privacy-friendly embed URL,
+// or null when the article has no valid video.
+export function getJournalVideoEmbed(article) {
+  const raw = typeof article?.video === "string" ? article.video.trim() : "";
+
+  if (!raw) {
+    return null;
+  }
+
+  let id = /^[\w-]{11}$/.test(raw) ? raw : "";
+
+  if (!id) {
+    try {
+      const url = new URL(raw);
+      const host = url.hostname.replace(/^www\.|^m\./, "");
+
+      if (host === "youtu.be") {
+        id = url.pathname.split("/")[1] || "";
+      } else if (host === "youtube.com" || host === "youtube-nocookie.com") {
+        id = url.searchParams.get("v") || url.pathname.match(/^\/(?:embed|shorts|live)\/([\w-]{11})/)?.[1] || "";
+      }
+    } catch {
+      return null;
+    }
+  }
+
+  return /^[\w-]{11}$/.test(id) ? `https://www.youtube-nocookie.com/embed/${id}?rel=0` : null;
 }
 
 export function byLanguage(entry, language = "en") {

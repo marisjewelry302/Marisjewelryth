@@ -32,6 +32,12 @@ const en = {
         ]
       },
       {
+        label: "Wholesale",
+        items: [
+          { href: "/wholesale", label: "Wholesale" }
+        ]
+      },
+      {
         label: "Gift",
         items: [
           { href: "/category/necklaces-pendants", label: "Necklaces & Pendants" },
@@ -44,8 +50,7 @@ const en = {
         label: "Our Expertise",
         items: [
           { href: "/our-service", label: "Our Service" },
-          { href: "/oem-jewelry", label: "OEM Jewelry Service" },
-          { href: "/wholesale-retail", label: "Wholesale & Retail" }
+          { href: "/oem-jewelry", label: "OEM Jewelry Service" }
         ]
       },
       {
@@ -247,6 +252,12 @@ const th = {
         ]
       },
       {
+        label: "ขายส่ง",
+        items: [
+          { href: "/wholesale", label: "ขายส่ง" }
+        ]
+      },
+      {
         label: "ของขวัญ",
         items: [
           { href: "/category/necklaces-pendants", label: "สร้อยคอและจี้" },
@@ -259,8 +270,7 @@ const th = {
         label: "บริการของเรา",
         items: [
           { href: "/our-service", label: "บริการของเรา" },
-          { href: "/oem-jewelry", label: "บริการผลิตเครื่องประดับ OEM" },
-          { href: "/wholesale-retail", label: "ขายส่งและขายปลีก" }
+          { href: "/oem-jewelry", label: "บริการผลิตเครื่องประดับ OEM" }
         ]
       },
       {

@@ -32,10 +32,11 @@ export default async function AdminPage() {
     redirect("/admin/login");
   }
 
-  const [imageGroupParserSrc, gemReportParserSrc, adminPageScriptSrc] = await Promise.all([
+  const [imageGroupParserSrc, gemReportParserSrc, adminPageScriptSrc, adminWholesaleScriptSrc] = await Promise.all([
     buildAdminScriptSrc("/assets/js/admin-image-group-parser.js"),
     buildAdminScriptSrc("/assets/js/admin-gem-report-parser.js"),
-    buildAdminScriptSrc("/assets/js/admin-page.js")
+    buildAdminScriptSrc("/assets/js/admin-page.js"),
+    buildAdminScriptSrc("/assets/js/admin-wholesale.js")
   ]);
 
   return (
@@ -67,6 +68,7 @@ export default async function AdminPage() {
             <button type="button" data-admin-tab="orders">Orders</button>
             <button type="button" data-admin-tab="custom-requests">Custom Requests</button>
             <button type="button" data-admin-tab="inquiries">Inquiries</button>
+            <button type="button" data-admin-tab="wholesale">Wholesale</button>
             <button type="button" data-admin-tab="customers">Customers</button>
             <button type="button" data-admin-tab="database">Database</button>
             <button type="button" data-admin-tab="settings">Settings</button>
@@ -560,6 +562,150 @@ export default async function AdminPage() {
               <section className="custom-request-detail" data-custom-request-detail hidden aria-live="polite"></section>
             </section>
 
+            {/* ── WHOLESALE ── */}
+            <section className="admin-panel" data-admin-panel="wholesale" data-wholesale-root>
+              <div className="admin-panel-head">
+                <div>
+                  <p className="admin-kicker">B2B partners</p>
+                  <h2>Wholesale</h2>
+                </div>
+                <button className="admin-secondary" type="button" data-wholesale-refresh>Refresh</button>
+              </div>
+
+              <p className="admin-note admin-note-wide">
+                Approve partner accounts and set their discount, choose which pieces are sold wholesale with minimum quantities and price breaks,
+                then quote and move purchase orders through production. Wholesale orders are made to order: they never reserve retail stock,
+                and payment is arranged directly with the partner.
+              </p>
+
+              <div className="admin-wholesale-views" role="tablist" aria-label="Wholesale sections">
+                <button type="button" role="tab" aria-selected="true" className="is-active" data-wholesale-view="orders">
+                  Purchase orders <span data-wholesale-badge="orders"></span>
+                </button>
+                <button type="button" role="tab" aria-selected="false" data-wholesale-view="accounts">
+                  Accounts <span data-wholesale-badge="accounts"></span>
+                </button>
+                <button type="button" role="tab" aria-selected="false" data-wholesale-view="pricing">Pricing &amp; MOQ</button>
+              </div>
+
+              <div data-wholesale-section="orders">
+                <div className="custom-request-tools">
+                  <label>
+                    Search orders
+                    <input type="search" placeholder="Order number, company or SKU" data-wholesale-order-search />
+                  </label>
+                  <label>
+                    Status
+                    <select defaultValue="open" data-wholesale-order-status>
+                      <option value="open">Open orders</option>
+                      <option value="all">All statuses</option>
+                      <option value="submitted">Submitted</option>
+                      <option value="quoted">Quoted</option>
+                      <option value="confirmed">Confirmed</option>
+                      <option value="in_production">In production</option>
+                      <option value="ready">Ready to ship</option>
+                      <option value="shipped">Shipped</option>
+                      <option value="completed">Completed</option>
+                      <option value="cancelled">Cancelled</option>
+                    </select>
+                  </label>
+                  <p data-wholesale-order-summary>Open the Wholesale tab to load orders.</p>
+                </div>
+                <div className="admin-table-wrap">
+                  <table className="custom-request-table">
+                    <thead>
+                      <tr>
+                        <th>Order</th>
+                        <th>Partner</th>
+                        <th>Lines</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody data-wholesale-orders-table>
+                      <tr><td colSpan="6">Open the Wholesale tab to load orders.</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <section className="custom-request-detail" data-wholesale-order-detail hidden aria-live="polite"></section>
+              </div>
+
+              <div data-wholesale-section="accounts" hidden>
+                <div className="custom-request-tools">
+                  <label>
+                    Search accounts
+                    <input type="search" placeholder="Company, contact, email or phone" data-wholesale-account-search />
+                  </label>
+                  <label>
+                    Status
+                    <select defaultValue="all" data-wholesale-account-status>
+                      <option value="all">All statuses</option>
+                      <option value="pending">Pending review</option>
+                      <option value="approved">Approved</option>
+                      <option value="rejected">Rejected</option>
+                      <option value="suspended">Suspended</option>
+                    </select>
+                  </label>
+                  <p data-wholesale-account-summary></p>
+                </div>
+                <div className="admin-table-wrap">
+                  <table className="custom-request-table">
+                    <thead>
+                      <tr>
+                        <th>Applied</th>
+                        <th>Company</th>
+                        <th>Contact</th>
+                        <th>Terms</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody data-wholesale-accounts-table>
+                      <tr><td colSpan="6">Open the Wholesale tab to load accounts.</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <section className="custom-request-detail" data-wholesale-account-detail hidden aria-live="polite"></section>
+              </div>
+
+              <div data-wholesale-section="pricing" hidden>
+                <div className="custom-request-tools">
+                  <label>
+                    Search products
+                    <input type="search" placeholder="SKU or name" data-wholesale-pricing-search />
+                  </label>
+                  <label>
+                    Show
+                    <select defaultValue="all" data-wholesale-pricing-filter>
+                      <option value="all">All products</option>
+                      <option value="enabled">Sold wholesale</option>
+                      <option value="disabled">Not sold wholesale</option>
+                    </select>
+                  </label>
+                  <p data-wholesale-pricing-summary></p>
+                </div>
+                <div className="admin-table-wrap">
+                  <table className="custom-request-table">
+                    <thead>
+                      <tr>
+                        <th>Product</th>
+                        <th>Retail price</th>
+                        <th>Wholesale</th>
+                        <th>MOQ / pack</th>
+                        <th>Price breaks</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody data-wholesale-pricing-table>
+                      <tr><td colSpan="6">Open the Wholesale tab to load pricing.</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <section className="custom-request-detail" data-wholesale-pricing-detail hidden aria-live="polite"></section>
+              </div>
+            </section>
+
             {/* ── INQUIRIES ── */}
             <section className="admin-panel" data-admin-panel="inquiries">
               <div className="admin-panel-head">
@@ -756,6 +902,7 @@ export default async function AdminPage() {
         <Script src={imageGroupParserSrc} strategy="afterInteractive" />
         <Script src={gemReportParserSrc} strategy="afterInteractive" />
         <Script src={adminPageScriptSrc} strategy="afterInteractive" />
+        <Script src={adminWholesaleScriptSrc} strategy="afterInteractive" />
       </div>
     </>
   );

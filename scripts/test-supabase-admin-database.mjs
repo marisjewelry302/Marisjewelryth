@@ -31,7 +31,12 @@ const EXPECTED_DATABASE_TABLES = [
   "product_images",
   "product_variants",
   "products",
-  "settings"
+  "settings",
+  "wholesale_accounts",
+  "product_wholesale_settings",
+  "product_wholesale_price_breaks",
+  "wholesale_orders",
+  "wholesale_order_items"
 ];
 
 assert.deepEqual(

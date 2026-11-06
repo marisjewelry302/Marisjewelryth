@@ -8,6 +8,7 @@ export const metadata = buildPageMetadata({
   locale: "th"
 });
 
-export default function ContactUsThaiPage() {
-  return <ContactPageView locale="th" />;
+export default async function ContactUsThaiPage({ searchParams }) {
+  const { service } = await searchParams;
+  return <ContactPageView locale="th" defaultService={typeof service === "string" ? service : undefined} />;
 }

@@ -17,6 +17,7 @@ export const TRANSLATED_ROUTES = [
   "/our-service",
   "/oem-jewelry",
   "/wholesale-retail",
+  "/wholesale",
   "/shipping",
   "/returns",
   "/privacy-policy",

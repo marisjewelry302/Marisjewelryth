@@ -7,6 +7,7 @@ export const metadata = buildPageMetadata({
   path: "/contact-us"
 });
 
-export default function ContactUsPage() {
-  return <ContactPageView />;
+export default async function ContactUsPage({ searchParams }) {
+  const { service } = await searchParams;
+  return <ContactPageView defaultService={typeof service === "string" ? service : undefined} />;
 }

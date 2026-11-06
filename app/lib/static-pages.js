@@ -175,12 +175,14 @@ export const staticPages = {
     aside: {
       title: "Useful details",
       items: [
-        { label: "Categories", value: "Rings, wedding bands, earrings, necklaces, bracelets" },
+        { label: "Categories", value: "Fine jewelry, real gold, real diamonds, real gemstones" },
         { label: "Projects", value: "Capsule collections, custom programs, selective retail" },
-        { label: "Next step", value: "Send a partner inquiry with your preferred quantity and timing" }
+        { label: "Wholesale portal", value: "Approved partners see wholesale prices, minimum quantities, and send purchase orders online" },
+        { label: "Next step", value: "Apply in the wholesale portal, or send a partner inquiry with your preferred quantity and timing" }
       ]
     },
     actions: [
+      { href: "/wholesale", label: "Apply or sign in to the wholesale portal" },
       { href: "/contact-us?service=Wholesale%20%26%20Retail", label: "Start a partner inquiry" },
       { href: "/our-service", label: "View custom process" }
     ]

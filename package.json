@@ -22,6 +22,7 @@
     "test:newsletter-signup": "node scripts/test-newsletter-signup.mjs",
     "test:custom-order": "node scripts/test-custom-order.mjs",
     "test:admin-custom-requests": "node scripts/test-admin-custom-requests.mjs",
+    "test:wholesale": "node scripts/test-wholesale.mjs",
     "test:home-category-showcase": "node scripts/test-home-category-showcase.mjs",
     "test:cookie-consent": "node scripts/test-cookie-consent.mjs",
     "test:marketing-consent": "node scripts/test-marketing-consent.mjs",
@@ -49,6 +50,7 @@
     "test:a11y": "playwright test e2e/accessibility.spec.mjs"
   },
   "dependencies": {
+    "@supabase/server": "^1.9.2",
     "@supabase/supabase-js": "^2.118.0",
     "next": "^16.4.2",
     "react": "^19.3.1",

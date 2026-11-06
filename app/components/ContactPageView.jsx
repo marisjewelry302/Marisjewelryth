@@ -106,7 +106,7 @@ const copy = {
   }
 };
 
-export default function ContactPageView({ locale = "en" }) {
+export default function ContactPageView({ locale = "en", defaultService }) {
   const c = copy[locale === THAI_LOCALE ? "th" : "en"];
   const link = (path) => localizePath(path, locale);
 
@@ -190,7 +190,7 @@ export default function ContactPageView({ locale = "en" }) {
                   </label>
                   <label>
                     <span>{c.interested}</span>
-                    <select name="service" defaultValue="Engagement Rings">
+                    <select name="service" defaultValue={c.services.some(([value]) => value === defaultService) ? defaultService : "Engagement Rings"}>
                       {c.services.map(([value, label]) => (
                         <option value={value} key={value}>{label}</option>
                       ))}

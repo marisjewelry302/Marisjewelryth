@@ -16,7 +16,12 @@ export const MARIS_DATABASE_TABLES = Object.freeze([
   "product_images",
   "product_variants",
   "products",
-  "settings"
+  "settings",
+  "wholesale_accounts",
+  "product_wholesale_settings",
+  "product_wholesale_price_breaks",
+  "wholesale_orders",
+  "wholesale_order_items"
 ]);
 
 const SUPABASE_URL_ENV = "SUPABASE_URL";
