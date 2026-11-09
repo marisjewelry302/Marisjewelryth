@@ -258,10 +258,10 @@ export const shopEn = {
     }
   },
   journal: {
-    metaTitle: "Articles | Maris Jewelry",
+    metaTitle: "Blog | Maris Jewelry",
     metaDescription: "Practical reads for buyers researching diamonds, engagement rings, and fine jewelry with more confidence.",
     eyebrow: "Maris Journal",
-    title: "Articles",
+    title: "Blog",
     lead: "10 practical reads for buyers researching diamonds, engagement rings, and fine jewelry with more confidence.",
     note: "This journal collection focuses on questions real buyers actually ask before choosing a piece.",
     read: "Read article",
@@ -269,7 +269,7 @@ export const shopEn = {
     final: "Final thought",
     viewRings: "View engagement rings",
     contact: "Contact Maris",
-    back: "Back to articles"
+    back: "Back to blog"
   },
   order: {
     metaTitle: "{code} | Contact Maris Jewelry",

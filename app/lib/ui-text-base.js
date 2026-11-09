@@ -58,7 +58,7 @@ const en = {
         items: [
           { href: "/about-us", label: "About Us" },
           { href: "/contact-us", label: "Contact Us" },
-          { href: "/journal", label: "Articles" }
+          { href: "/journal", label: "Blog" }
         ]
       }
     ]
@@ -72,7 +72,7 @@ const en = {
         links: [
           { href: "/about-us", label: "About Us" },
           { href: "/contact-us", label: "Contact Us" },
-          { href: "/journal", label: "Articles" }
+          { href: "/journal", label: "Blog" }
         ]
       },
       {
