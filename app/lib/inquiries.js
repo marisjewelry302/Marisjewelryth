@@ -68,6 +68,8 @@ export function normalizeInquiryInput(input = {}) {
     phoneDigits: digitsOf(phone),
     subject: cleanText(input.subject, 200),
     sourcePage: cleanText(input.sourcePage, 300),
+    // Only picks the language of the confirmation email; it is not stored.
+    locale: input.locale === "th" ? "th" : "en",
     message: cleanText(raw.message ?? input.message, MAX_MESSAGE),
     fields: extras
   };

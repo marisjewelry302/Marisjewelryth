@@ -50,7 +50,7 @@ export default function LeadForm({
   resetOnSuccess = true,
   requireSelectedPieces = false
 }) {
-  const { t, href } = useLocale();
+  const { t, href, locale } = useLocale();
   const copy = t.lead;
   const [status, setStatus] = useState("");
   const [result, setResult] = useState(null);
@@ -95,6 +95,7 @@ export default function LeadForm({
           kind: type === "quote" ? "quote" : "contact",
           subject,
           sourcePage,
+          locale,
           fields: data
         })
       });

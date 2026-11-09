@@ -20,6 +20,7 @@
     "test:customer-collections": "node scripts/test-customer-collections.mjs",
     "test:customer-welcome-email": "node scripts/test-customer-welcome-email.mjs",
     "test:newsletter-signup": "node scripts/test-newsletter-signup.mjs",
+    "test:inquiry-email": "node scripts/test-inquiry-email.mjs",
     "test:custom-order": "node scripts/test-custom-order.mjs",
     "test:admin-custom-requests": "node scripts/test-admin-custom-requests.mjs",
     "test:wholesale": "node scripts/test-wholesale.mjs",

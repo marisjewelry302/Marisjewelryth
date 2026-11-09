@@ -1,8 +1,10 @@
-// Notifies the atelier that a website enquiry arrived.
+// Emails around a website enquiry: a notification to the atelier, and a short
+// acknowledgement to the customer.
 //
-// Deliberately one-way: only the shop is mailed. Replying to the customer needs
-// a verified sending domain on Resend, which this project does not have yet, so
-// promising the customer an email would be a promise the site cannot keep.
+// The acknowledgement only says the message was received and who will reply. It
+// never repeats what the visitor typed, because the form is public and anyone can
+// type any address into it; the per-email throttle in inquiries.js and the
+// same-origin check in the route keep it from being used as a mail relay.
 
 const RESEND_EMAIL_ENDPOINT = "https://api.resend.com/emails";
 const RESEND_API_KEY_ENV = "RESEND_API_KEY";
@@ -92,27 +94,79 @@ export function buildInquiryEmail({ inquiry, inquiryId }) {
   };
 }
 
-export async function sendInquiryEmails(context, { env = process.env, fetchImpl = fetch } = {}) {
-  const config = getInquiryEmailConfig(env);
-
-  if (!config.isConfigured) {
-    return { status: "not_configured", missingEnv: config.missingEnv };
+const ACK_COPY = {
+  en: {
+    subject: "We received your message — Maris Jewelry",
+    greeting: (name) => `Dear ${name},`,
+    title: "Thank you for contacting Maris",
+    lines: [
+      "We have received your message, and the Maris atelier will reply to you personally, usually within one business day.",
+      "If your question is urgent, you can also reach us on LINE or by phone from the contact page.",
+      "This is an automatic confirmation that your enquiry arrived. Availability, pricing and production details are confirmed directly by the atelier."
+    ],
+    reference: "Reference",
+    ignore: "If you did not send this message, you can safely ignore this email.",
+    signoff: "Maris Jewelry · Bangkok"
+  },
+  th: {
+    subject: "เราได้รับข้อความของคุณแล้ว — Maris Jewelry",
+    greeting: (name) => `เรียนคุณ ${name}`,
+    title: "ขอบคุณที่ติดต่อ Maris",
+    lines: [
+      "เราได้รับข้อความของคุณเรียบร้อยแล้ว ทีมงาน Maris จะตอบกลับคุณโดยตรง โดยปกติภายใน 1 วันทำการ",
+      "หากเป็นเรื่องเร่งด่วน สามารถติดต่อเราทาง LINE หรือโทรศัพท์ได้จากหน้าติดต่อเรา",
+      "อีเมลนี้เป็นการยืนยันอัตโนมัติว่าเราได้รับข้อความแล้ว ส่วนความพร้อมของสินค้า ราคา และรายละเอียดการผลิต ทีมงานจะยืนยันกับคุณโดยตรง"
+    ],
+    reference: "เลขอ้างอิง",
+    ignore: "หากคุณไม่ได้เป็นผู้ส่งข้อความนี้ สามารถละเว้นอีเมลฉบับนี้ได้",
+    signoff: "Maris Jewelry · กรุงเทพฯ"
   }
+};
 
-  const message = buildInquiryEmail(context);
+export function buildInquiryAcknowledgementEmail({ inquiry, inquiryId }) {
+  const copy = ACK_COPY[inquiry.locale === "th" ? "th" : "en"];
+  const name = inquiry.fullName || (inquiry.locale === "th" ? "ลูกค้า" : "Maris Client");
+
+  const text = [
+    copy.greeting(name),
+    "",
+    ...copy.lines.flatMap((line) => [line, ""]),
+    `${copy.reference}: ${inquiryId}`,
+    "",
+    copy.ignore,
+    "",
+    copy.signoff
+  ].join("\n");
+
+  const html = `
+    <div style="font-family:Urbanist,Anuphan,system-ui,-apple-system,'Segoe UI',sans-serif;color:#2f2924;line-height:1.7;max-width:560px">
+      <p style="margin:0 0 6px;font-size:13px;letter-spacing:.18em;text-transform:uppercase;color:#9b7c52">Maris Jewelry</p>
+      <h1 style="margin:0 0 18px;font-size:26px;font-weight:400">${escapeHtml(copy.title)}</h1>
+      <p style="margin:0 0 14px">${escapeHtml(copy.greeting(name))}</p>
+      ${copy.lines.map((line) => `<p style="margin:0 0 14px">${escapeHtml(line)}</p>`).join("")}
+      <p style="margin:18px 0 0;color:#7a6f63;font-size:12px">${escapeHtml(copy.reference)}: ${escapeHtml(inquiryId)}</p>
+      <p style="margin:6px 0 0;color:#7a6f63;font-size:12px">${escapeHtml(copy.ignore)}</p>
+      <p style="margin:22px 0 0;color:#7a6f63;font-size:12px">${escapeHtml(copy.signoff)}</p>
+    </div>
+  `;
+
+  return { subject: copy.subject, html, text };
+}
+
+async function postToResend({ config, message, to, replyTo, idempotencyKey, fetchImpl }) {
   const response = await fetchImpl(RESEND_EMAIL_ENDPOINT, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${config.apiKey}`,
       "Content-Type": "application/json",
       "User-Agent": "maris-jewelry/1.0",
-      // Retrying the same enquiry must not mail the atelier twice.
-      "Idempotency-Key": String(context.inquiryId).slice(0, 256)
+      // Retrying the same enquiry must not send the same email twice.
+      "Idempotency-Key": String(idempotencyKey).slice(0, 256)
     },
     body: JSON.stringify({
       from: config.from,
-      to: [config.to],
-      reply_to: context.inquiry.email,
+      to: [to],
+      reply_to: replyTo,
       subject: message.subject,
       html: message.html,
       text: message.text
@@ -125,4 +179,41 @@ export async function sendInquiryEmails(context, { env = process.env, fetchImpl 
 
   const payload = await response.json().catch(() => ({}));
   return { status: "sent", emailId: payload.id || null };
+}
+
+export async function sendInquiryEmails(context, { env = process.env, fetchImpl = fetch } = {}) {
+  const config = getInquiryEmailConfig(env);
+
+  if (!config.isConfigured) {
+    return { status: "not_configured", missingEnv: config.missingEnv };
+  }
+
+  const shop = await postToResend({
+    config,
+    message: buildInquiryEmail(context),
+    to: config.to,
+    replyTo: context.inquiry.email,
+    idempotencyKey: context.inquiryId,
+    fetchImpl
+  });
+
+  // The customer's acknowledgement is a courtesy: whatever happens here must not
+  // change the outcome of the shop notification, so it is attempted separately
+  // and reported on its own.
+  let customer;
+  try {
+    customer = await postToResend({
+      config,
+      message: buildInquiryAcknowledgementEmail(context),
+      to: context.inquiry.email,
+      // A reply goes to the atelier, not to the no-reply style sender address.
+      replyTo: config.to,
+      idempotencyKey: `${context.inquiryId}-customer`,
+      fetchImpl
+    });
+  } catch {
+    customer = { status: "failed" };
+  }
+
+  return { ...shop, customer };
 }
