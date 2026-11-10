@@ -41,6 +41,12 @@ const en = {
         ]
       },
       {
+        label: "Ready to Ship",
+        items: [
+          { href: "/ready-to-ship", label: "Ready to Ship" }
+        ]
+      },
+      {
         label: "Wholesale",
         items: [
           { href: "/wholesale", label: "Wholesale" }
@@ -258,6 +264,12 @@ const th = {
           { href: "/category/bracelets", label: "สร้อยข้อมือ" },
           { href: "/category/earrings", label: "ต่างหู" },
           { href: "/category/rings", label: "แหวน" }
+        ]
+      },
+      {
+        label: "พร้อมส่ง",
+        items: [
+          { href: "/ready-to-ship", label: "พร้อมส่ง" }
         ]
       },
       {

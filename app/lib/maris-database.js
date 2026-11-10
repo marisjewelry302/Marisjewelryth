@@ -18,6 +18,7 @@ export {
   readPublicBestSellerProducts,
   readPublicCatalogueProducts,
   readPublicProductBySlug,
+  readReadyToShipProducts,
   readRelatedPublicProducts,
   updateAdminBestSellerSettings,
   updateAdminProduct

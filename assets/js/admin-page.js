@@ -2928,6 +2928,21 @@
           </label>
         </div>
 
+        <p class="modal-gallery-hint">Ready to Ship · Shown on the Ready to Ship page while Real Stock is above 0. Price above is what the customer pays; enter the full price before discount here to show it struck through.</p>
+        <div class="modal-grid">
+          <label class="modal-label">
+            Price before discount
+            <input class="modal-input" id="modal-field-compare-price" type="text" placeholder="Leave blank for no discount">
+          </label>
+          <label class="modal-label">
+            Ready to Ship
+            <select class="modal-select" id="modal-field-ready-to-ship">
+              <option value="no">No</option>
+              <option value="yes">Yes - list on Ready to Ship page</option>
+            </select>
+          </label>
+        </div>
+
         <p class="modal-gallery-hint">Sample piece specs · Fill in only what you know; blank fields stay hidden on the product page</p>
         <div class="modal-grid">
           ${PRODUCT_SPEC_FIELDS.map(({ modalId, label, placeholder }) => `
@@ -3061,6 +3076,9 @@
       product.basePrice != null ? String(product.basePrice) : (product.price || "");
     document.getElementById("modal-field-status").value = product.status || "Ready";
     document.getElementById("modal-field-stock").value = String(product.stockQty ?? product.totalStock ?? 0);
+    document.getElementById("modal-field-compare-price").value =
+      product.compareAtPrice != null ? String(product.compareAtPrice) : "";
+    document.getElementById("modal-field-ready-to-ship").value = product.readyToShip ? "yes" : "no";
     document.getElementById("modal-field-description").value = product.description || "";
     PRODUCT_SPEC_FIELDS.forEach(({ key, modalId }) => {
       document.getElementById(modalId).value = product.specs?.[key] || "";
@@ -3125,6 +3143,8 @@
       const price = document.getElementById("modal-field-price").value.trim() || "Price on request";
       const status = document.getElementById("modal-field-status").value;
       const stockQty = Math.max(0, Number(document.getElementById("modal-field-stock").value) || 0);
+      const compareAtPrice = document.getElementById("modal-field-compare-price").value.trim();
+      const readyToShip = document.getElementById("modal-field-ready-to-ship").value === "yes";
       const description = document.getElementById("modal-field-description").value.trim();
       const specs = Object.fromEntries(PRODUCT_SPEC_FIELDS.map(({ key, modalId }) => [
         key,
@@ -3154,6 +3174,8 @@
           collection,
           category: getBroadCategoryLabel(collection),
           price,
+          compareAtPrice,
+          readyToShip,
           status,
           stockQty,
           description,

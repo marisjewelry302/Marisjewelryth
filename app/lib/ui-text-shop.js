@@ -21,6 +21,19 @@ export const shopEn = {
     earrings: { title: "Earrings", lead: "Diamond earrings with soft light, wearable scale, and a refined finish." },
     rings: { title: "Rings", lead: "Fine rings for gifting, stacking, and personal milestones." }
   },
+  readyToShip: {
+    title: "Ready to Ship",
+    lead: "Pieces we already hold in stock. Add one to your bag and order now - no waiting for production.",
+    meta: "Maris Jewelry pieces in stock and ready to ship, shown with the price before and after discount.",
+    productsLabel: "Ready to ship products",
+    count: "{count} in stock",
+    wasLabel: "Price before discount",
+    nowLabel: "Price now",
+    off: "-{percent}%",
+    view: "View {code}",
+    note: "Stock is limited and confirmed by the atelier when you order.",
+    empty: "No ready-to-ship pieces are listed right now. Please check back soon or contact Maris Jewelry."
+  },
   categoryMeta: "Browse Maris Jewelry catalogue pieces and contact the atelier to confirm availability or custom details.",
   catalogue: {
     controls: "Catalogue controls",
@@ -334,6 +347,19 @@ export const shopTh = {
     bracelets: { title: "สร้อยข้อมือ", lead: "สร้อยข้อมือเรียวบางและรายละเอียดเพชรที่งดงามบนข้อมือ" },
     earrings: { title: "ต่างหู", lead: "ต่างหูเพชรที่ให้ประกายนุ่มนวล ขนาดสวมใส่ได้จริง และงานตกแต่งที่ประณีต" },
     rings: { title: "แหวน", lead: "แหวนชั้นดีสำหรับมอบเป็นของขวัญ สวมซ้อน และเก็บเป็นที่ระลึกในช่วงสำคัญของชีวิต" }
+  },
+  readyToShip: {
+    title: "พร้อมส่ง",
+    lead: "ชิ้นที่เรามีในสต็อกพร้อมส่ง ใส่ตะกร้าแล้วสั่งซื้อได้เลย ไม่ต้องรอผลิต",
+    meta: "เครื่องประดับ Maris Jewelry ที่มีสต็อกพร้อมส่ง แสดงราคาก่อนลดและราคาปัจจุบัน",
+    productsLabel: "สินค้าพร้อมส่ง",
+    count: "มีสินค้า {count} ชิ้น",
+    wasLabel: "ราคาก่อนลด",
+    nowLabel: "ราคาตอนนี้",
+    off: "-{percent}%",
+    view: "ดู {code}",
+    note: "จำนวนสินค้ามีจำกัด และทางร้านจะยืนยันสต็อกอีกครั้งเมื่อคุณสั่งซื้อ",
+    empty: "ขณะนี้ยังไม่มีสินค้าพร้อมส่ง โปรดกลับมาดูใหม่เร็วๆ นี้ หรือติดต่อ Maris Jewelry"
   },
   categoryMeta: "เลือกชมชิ้นงานในแคตตาล็อก Maris Jewelry และติดต่อห้องทำงานเพื่อยืนยันความพร้อมหรือรายละเอียดงานสั่งทำ",
   catalogue: {

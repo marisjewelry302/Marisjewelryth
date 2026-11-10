@@ -33,6 +33,8 @@ const ADMIN_CATALOGUE_SELECT = `
   gem_report,
   status,
   base_price,
+  compare_at_price,
+  ready_to_ship,
   cover_image_url,
   hover_image_url,
   video_url,
@@ -327,6 +329,8 @@ function normalizeProduct(row) {
     gemReport: normalizeGemReport(row.gem_report),
     status: row.status || "draft",
     basePrice: row.base_price === null || row.base_price === undefined ? null : Number(row.base_price),
+    compareAtPrice: row.compare_at_price === null || row.compare_at_price === undefined ? null : Number(row.compare_at_price),
+    readyToShip: row.ready_to_ship === true,
     stockQuantity: Number(row.stock_quantity) || 0,
     reservedQuantity: Number(row.reserved_quantity) || 0,
     stockQty: Number(row.stock_quantity) || 0,
@@ -490,6 +494,59 @@ export async function readPublicCatalogueProducts({ env = process.env, client, l
     products,
     checkedAt: new Date().toISOString()
   };
+}
+
+// Ready to Ship lists pieces the atelier holds in stock. It reads its own
+// columns (ready_to_ship, compare_at_price, stock) apart from the shared public
+// select, so a database that has not had the ready-to-ship migration yet only
+// loses this page instead of every catalogue listing. A piece appears while it
+// is active, flagged ready to ship, and has at least one unreserved unit.
+const READY_TO_SHIP_SELECT = `
+  ${PUBLIC_CATALOGUE_SELECT},
+  compare_at_price,
+  stock_quantity,
+  reserved_quantity
+`;
+
+export async function readReadyToShipProducts({ env = process.env, client } = {}) {
+  const config = getSupabaseAdminConfig(env);
+
+  if (!config.isConfigured) {
+    return { status: "unavailable", products: [] };
+  }
+
+  const supabase = client || createSupabaseAdminClient(env);
+  const { data, error } = await readCataloguePages(
+    () => supabase
+      .from("products")
+      .select(READY_TO_SHIP_SELECT)
+      .eq("status", "active")
+      .eq("ready_to_ship", true)
+      .gt("stock_quantity", 0)
+      .order("updated_at", { ascending: false })
+      .order("id"),
+    null
+  );
+
+  if (error) {
+    return { status: "unavailable", products: [] };
+  }
+
+  const products = (Array.isArray(data) ? data : [])
+    .map((row) => {
+      const compareAtPrice = row.compare_at_price === null || row.compare_at_price === undefined
+        ? null
+        : Number(row.compare_at_price);
+
+      return {
+        ...normalizePublicProduct(row),
+        compareAtPrice: Number.isFinite(compareAtPrice) ? compareAtPrice : null,
+        availableQuantity: Math.max(0, (Number(row.stock_quantity) || 0) - (Number(row.reserved_quantity) || 0))
+      };
+    })
+    .filter((product) => product.availableQuantity > 0);
+
+  return { status: products.length > 0 ? "ready" : "empty", products };
 }
 
 export async function readAdminBestSellerSettings({ env = process.env, client } = {}) {
@@ -810,6 +867,8 @@ export async function createAdminProduct(product, { env = process.env, client } 
     ...buildProductSpecsPayload(product),
     ...buildGemReportPayload(product),
     base_price: parseMoneyAmount(product.price) ?? null,
+    compare_at_price: parseMoneyAmount(product.compareAtPrice) ?? null,
+    ready_to_ship: product.readyToShip === true,
     status,
     stock_quantity: Number(product.stockQty) || 0,
     reserved_quantity: Number(product.reservedQty) || 0,
@@ -882,6 +941,8 @@ export async function updateAdminProduct(productId, updates, { env = process.env
     ...buildProductSpecsPayload(updates),
     ...buildGemReportPayload(updates),
     base_price: updates.price === undefined ? undefined : parseMoneyAmount(updates.price),
+    compare_at_price: updates.compareAtPrice === undefined ? undefined : parseMoneyAmount(updates.compareAtPrice),
+    ready_to_ship: updates.readyToShip === undefined ? undefined : updates.readyToShip === true,
     status,
     stock_quantity: updates.stockQty !== undefined ? Number(updates.stockQty) : undefined,
     reserved_quantity: updates.reservedQty !== undefined ? Number(updates.reservedQty) : undefined,

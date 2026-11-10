@@ -221,6 +221,8 @@ assert.deepEqual(catalogue.products[0], {
   gemReport: null,
   status: "active",
   basePrice: 12900,
+  compareAtPrice: null,
+  readyToShip: false,
   stockQuantity: 0,
   reservedQuantity: 0,
   stockQty: 0,
