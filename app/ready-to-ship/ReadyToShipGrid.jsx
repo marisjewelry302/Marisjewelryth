@@ -113,7 +113,7 @@ export default function ReadyToShipGrid({ products }) {
         {products.map((product, index) => {
           const code = formatPublicProductCode(product.sku);
           const name = getPublicProductDisplayName(product);
-          const image = String(product.coverImageUrl || product.primaryImageUrl || "").trim() || FALLBACK_IMAGE;
+          const image = String(product.primaryImageUrl || product.coverImageUrl || "").trim() || FALLBACK_IMAGE;
           const percent = getDiscountPercent(product);
           const inBag = bagIds.includes(getBagId(product));
 

@@ -28,7 +28,7 @@ const FALLBACK_IMAGE = "/assets/images/logo.png";
 // hover image simply does not swap. `image` / `hover` are the static
 // catalogue's names for the same two pictures.
 function getCardImages(product) {
-  const primaryImage = String(product.coverImageUrl || product.primaryImageUrl || product.image || "").trim() || FALLBACK_IMAGE;
+  const primaryImage = String(product.primaryImageUrl || product.coverImageUrl || product.image || "").trim() || FALLBACK_IMAGE;
   const hoverImage = String(product.hoverImageUrl || product.hover || "").trim();
 
   return { primaryImage, hoverImage: hoverImage !== primaryImage ? hoverImage : "" };

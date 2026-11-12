@@ -10,6 +10,7 @@ import {
 } from "../product-display.js";
 import { normalizeGemReport, toPublicGemReport } from "../gem-report.js";
 import { normalizeVideoPosition } from "../product-media.js";
+import { getProductImageMetal, getProductImageView, groupProductImagesByMetal } from "../product-display.js";
 import { removeDeletedProductMedia } from "./product-media.js";
 
 const BEST_SELLER_SETTING_KEY = "home_best_sellers";
@@ -291,6 +292,26 @@ function sortImages(left, right) {
 // row (migration 20260921000000). The gallery in product_images is the product
 // page's set of views; a product saved before it had a cover still shows its
 // first gallery image on the card.
+// A piece photographed in several metals shows its first metal on the card
+// (White, then Yellow, then Rose) even when the stored cover was shot in
+// another one: the cover keeps its own view, swapped for the same view there.
+function pickCardImageUrl(coverImageUrl, images) {
+  const sets = groupProductImagesByMetal(images, coverImageUrl);
+  const cover = images.find((image) => image.imageUrl === coverImageUrl);
+  const coverMetal = getProductImageMetal(cover || {});
+
+  if (sets.length < 2 || !coverMetal || coverMetal.key === sets[0].key) {
+    return coverImageUrl || images[0]?.imageUrl || "";
+  }
+
+  const coverView = getProductImageView(cover);
+  const sameView = coverView
+    ? sets[0].images.find((image) => getProductImageView(image)?.key === coverView.key && getProductImageMetal(image))
+    : null;
+
+  return (sameView || sets[0].images[0])?.imageUrl || coverImageUrl;
+}
+
 function normalizeProductMedia(row, images) {
   const coverImageUrl = cleanOptionalText(row.cover_image_url) || "";
   const hoverImageUrl = cleanOptionalText(row.hover_image_url) || "";
@@ -299,7 +320,7 @@ function normalizeProductMedia(row, images) {
   return {
     coverImageUrl,
     hoverImageUrl,
-    primaryImageUrl: coverImageUrl || images[0]?.imageUrl || "",
+    primaryImageUrl: pickCardImageUrl(coverImageUrl, images),
     videoUrl,
     videoPosterUrl: videoUrl ? cleanOptionalText(row.video_poster_url) || "" : "",
     videoPosition: normalizeVideoPosition(row.video_position)
