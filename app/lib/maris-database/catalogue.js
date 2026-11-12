@@ -300,6 +300,12 @@ function pickCardImageUrl(coverImageUrl, images) {
   const cover = images.find((image) => image.imageUrl === coverImageUrl);
   const coverMetal = getProductImageMetal(cover || {});
 
+  // A piece with no cover falls back to its first gallery image, which is
+  // whatever metal was uploaded first - so it takes the first metal's lead too.
+  if (sets.length >= 2 && !cover && !coverImageUrl) {
+    return sets[0].images[0]?.imageUrl || images[0]?.imageUrl || "";
+  }
+
   if (sets.length < 2 || !coverMetal || coverMetal.key === sets[0].key) {
     return coverImageUrl || images[0]?.imageUrl || "";
   }
