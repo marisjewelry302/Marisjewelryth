@@ -168,8 +168,8 @@ export function getPublicProductSeoTitle(product = {}) {
 // the file name), so the alt text is what splits a gallery into metal sets.
 export const PRODUCT_IMAGE_METALS = [
   { key: "white-gold", label: "White Gold", pattern: /\bwhite\s*gold\b/i },
-  { key: "rose-gold", label: "Rose Gold", pattern: /\brose\s*gold\b/i },
-  { key: "yellow-gold", label: "Yellow Gold", pattern: /\byellow\s*gold\b/i }
+  { key: "yellow-gold", label: "Yellow Gold", pattern: /\byellow\s*gold\b/i },
+  { key: "rose-gold", label: "Rose Gold", pattern: /\brose\s*gold\b/i }
 ];
 
 const PRODUCT_IMAGE_VIEWS = [
@@ -222,12 +222,7 @@ export function groupProductImagesByMetal(images = [], coverImageUrl = "") {
     return [{ key: sets[0]?.key || "", label: sets[0]?.label || "", images }];
   }
 
-  // Lead with the metal of the card cover, else of the primary image.
-  const leadImage = images.find((image) => coverImageUrl && image.imageUrl === coverImageUrl)
-    || images.find((image) => image.isPrimary)
-    || images[0];
-  const primaryMetal = getProductImageMetal(leadImage);
-  const leadIndex = Math.max(0, sets.findIndex((set) => set.key === primaryMetal?.key));
-
-  return [sets[leadIndex], ...sets.filter((_, index) => index !== leadIndex)];
+  // Always White Gold, then Yellow Gold, then Rose Gold (PRODUCT_IMAGE_METALS
+  // order), whichever metal the card cover happens to show.
+  return sets;
 }

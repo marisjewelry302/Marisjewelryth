@@ -558,7 +558,7 @@
 
   // The storefront splits a gallery into metal sets by reading the metal and
   // view from each image's alt text, so uploads write both into it.
-  const IMAGE_METAL_LABELS = ["White Gold", "Rose Gold", "Yellow Gold"];
+  const IMAGE_METAL_LABELS = ["White Gold", "Yellow Gold", "Rose Gold"];
   const IMAGE_VIEW_LABELS = [
     ["Hero view", /\b(hero|main|primary)\b/i],
     ["Top view", /\btop\b/i],
@@ -1558,7 +1558,7 @@
 
   // The photos of one metal's set in the order the product page shows them: the
   // views sorted as groupProductImagesByMetal does, with the card cover leading
-  // the set it was shot in. The video's slot counts along this list, and every
+  // its own set when that set is the first metal. The video's slot counts along this list, and every
   // other metal follows the same slot.
   function getModalVideoSlotPhotos() {
     const tagged = modalGalleryImages.map((image) => ({ ...image, ...readImageTag(image.altText) }));
@@ -1576,9 +1576,10 @@
       .filter((set) => set.images.length > shared.length);
     const coverUrl = modalMedia.coverImageUrl;
     const coverImage = tagged.find((image) => coverUrl && image.imageUrl === coverUrl);
+    // The product page always opens on White Gold, then Yellow, then Rose.
     const lead = sets.length < 2
       ? { metal: "", images: tagged }
-      : sets.find((set) => set.metal === (coverImage?.metal || tagged[0]?.metal)) || sets[0];
+      : sets[0];
     const coverLeads = coverUrl && (!coverImage?.metal || coverImage.metal === lead.metal);
     const photos = lead.images.map((image) => image.imageUrl);
 
