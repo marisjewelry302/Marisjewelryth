@@ -841,6 +841,16 @@ function toProductWriteError(error, fallback, sku) {
     return failure;
   }
 
+  const isDuplicateSlug = error?.code === "23505" && /products_slug_key|\(slug\)/i.test(`${error.message} ${error.details || ""}`);
+
+  if (isDuplicateSlug) {
+    const failure = new Error(
+      "Another product already uses this URL slug (it is built from the SKU, so a SKU like \"R 0050\" and \"R-0050\" clash). Change the slug or SKU, or edit the existing product."
+    );
+    failure.status = 409;
+    return failure;
+  }
+
   return new Error(error?.message || fallback);
 }
 
@@ -930,9 +940,26 @@ export async function updateAdminProduct(productId, updates, { env = process.env
     : status === undefined
       ? undefined
       : status === "active";
+  const nextSku = updates.sku === undefined ? undefined : normalizeAdminProductSku(updates.sku);
+  let nextSlug = updates.slug;
+
+  // The slug is built from the SKU, so a changed SKU carries the slug with it
+  // (unless the caller set a slug explicitly). Unchanged SKUs keep their slug.
+  if (nextSku && !cleanOptionalText(nextSlug)) {
+    const { data: current } = await supabase
+      .from("products")
+      .select("sku")
+      .eq("id", productId)
+      .maybeSingle();
+
+    if (current && normalizeAdminProductSku(current.sku) !== nextSku) {
+      nextSlug = nextSku.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    }
+  }
+
   const payload = {
-    sku: updates.sku === undefined ? undefined : normalizeAdminProductSku(updates.sku),
-    slug: updates.slug,
+    sku: nextSku,
+    slug: nextSlug,
     name: updates.name,
     category,
     collection,
