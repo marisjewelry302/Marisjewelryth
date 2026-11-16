@@ -6,8 +6,8 @@ import { useEffect, useRef } from "react";
 // Seasonal decoration. To switch it off after the holidays, remove
 // <SnowfallEffect /> from app/layout.js.
 //
-// Three depth layers (fine and crisp far away, large and softly blurred up
-// close) plus a few champagne glints, so it reads as quiet atmosphere rather
+// Depth layers (fine and crisp far away, large and softly blurred up
+// close) and ice crystals, so it reads as quiet atmosphere rather
 // than a particle demo. Flakes are pre-rendered sprites; nothing uses
 // shadowBlur per frame.
 
@@ -24,7 +24,6 @@ const LAYERS = [
 const CRYSTAL_VARIANTS = 3;
 const MAX_FLAKES = 95;
 const MIN_FLAKES = 24;
-const MAX_GLINTS = 7;
 
 function isAdminPath(pathname) {
   const normalized = (pathname || "/").replace(/\/$/, "") || "/";
@@ -141,31 +140,6 @@ function createFlake(layerIndex, width, height, randomY) {
   };
 }
 
-function createGlint(width, height) {
-  return {
-    x: Math.random() * width,
-    y: Math.random() * height * 0.9,
-    size: 7 + Math.random() * 7,
-    speed: 0.25 + Math.random() * 0.25,
-    phase: Math.random() * Math.PI * 2,
-    phaseSpeed: 0.012 + Math.random() * 0.012
-  };
-}
-
-function drawGlint(ctx, glint, alpha) {
-  const { x, y, size } = glint;
-  const pinch = size * 0.14;
-  ctx.beginPath();
-  ctx.moveTo(x, y - size);
-  ctx.quadraticCurveTo(x + pinch, y - pinch, x + size, y);
-  ctx.quadraticCurveTo(x + pinch, y + pinch, x, y + size);
-  ctx.quadraticCurveTo(x - pinch, y + pinch, x - size, y);
-  ctx.quadraticCurveTo(x - pinch, y - pinch, x, y - size);
-  ctx.closePath();
-  ctx.fillStyle = `rgba(255, 238, 205, ${alpha})`;
-  ctx.fill();
-}
-
 export default function SnowfallEffect() {
   const pathname = usePathname();
   const canvasRef = useRef(null);
@@ -190,7 +164,6 @@ export default function SnowfallEffect() {
     let width = 0;
     let height = 0;
     let flakes = [];
-    let glints = [];
     let wind = 0;
     let time = 0;
     let frameId = 0;
@@ -207,10 +180,6 @@ export default function SnowfallEffect() {
         next.push(...existing);
       });
       flakes = next;
-
-      const glintTarget = width < 700 ? Math.ceil(MAX_GLINTS / 2) : MAX_GLINTS;
-      glints = glints.slice(0, glintTarget);
-      while (glints.length < glintTarget) glints.push(createGlint(width, height));
     }
 
     function resize() {
@@ -264,23 +233,6 @@ export default function SnowfallEffect() {
             flake.size,
             flake.size
           );
-        }
-      }
-
-      for (const glint of glints) {
-        glint.phase += glint.phaseSpeed;
-        glint.y += glint.speed;
-        glint.x += wind * 0.5;
-        // Mostly dark, brief bright pulse, like light catching a facet.
-        const pulse = Math.max(0, Math.sin(glint.phase));
-        const alpha = Math.pow(pulse, 6) * 0.85;
-
-        if (glint.y > height + glint.size || glint.x > width + glint.size) {
-          Object.assign(glint, createGlint(width, height), { y: -glint.size });
-        }
-        if (alpha > 0.02) {
-          ctx.globalAlpha = 1;
-          drawGlint(ctx, glint, alpha);
         }
       }
 
