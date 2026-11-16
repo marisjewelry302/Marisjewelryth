@@ -11,6 +11,7 @@ import "../assets/css/cookie-consent.css";
 import CookieConsent from "./components/CookieConsent";
 import JsonLd from "./components/JsonLd";
 import SiteFooter from "./components/SiteFooter";
+import SnowfallEffect from "./components/SnowfallEffect";
 import SiteHeader from "./components/SiteHeader";
 import {
   buildLocalBusinessJsonLd,
@@ -72,6 +73,7 @@ export default function RootLayout({ children }) {
         {children}
         <SiteFooter />
         <CookieConsent />
+        <SnowfallEffect />
       </body>
     </html>
   );
