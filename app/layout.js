@@ -70,6 +70,17 @@ export default function RootLayout({ children }) {
         <JsonLd data={siteJsonLd} />
         <a className="skip-link" href="#main-content">Skip to main content</a>
         <SiteHeader />
+        {/* The shared layout is prerendered without knowing the route, so the
+            homepage HTML arrives wearing the plain inline header and only
+            switches to the hero header after hydration - a ~0.85 CLS jump.
+            This runs while the HTML is still being parsed, before first paint,
+            and mirrors what SiteHeader's effect does (home is "/" or "/th"). */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              '(function(){var p=location.pathname.replace(/\\/$/,"")||"/";if(p==="/"||p==="/th"){document.body.classList.add("is-home-page");var h=document.querySelector("header.site-header");if(h)h.classList.add("site-header--home")}})()'
+          }}
+        />
         {children}
         <SiteFooter />
         <CookieConsent />
