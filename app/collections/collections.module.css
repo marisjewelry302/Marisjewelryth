@@ -1,0 +1,69 @@
+/* Collections page. Palette and type come from the tokens in assets/css/style.css. */
+
+.jump {
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0 clamp(16px, 4vw, 56px) 28px;
+}
+
+.jump ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.jump a {
+  display: inline-block;
+  padding: 9px 16px;
+  border: 1px solid var(--maris-hairline);
+  color: inherit;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+}
+
+.jump a:hover,
+.jump a:focus-visible {
+  border-color: currentColor;
+}
+
+.group {
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0 clamp(16px, 4vw, 56px) var(--section-rhythm);
+  scroll-margin-top: 96px;
+}
+
+.groupHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px 24px;
+  margin: 0 0 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--maris-hairline);
+}
+
+.groupHeader h2 {
+  margin: 0;
+}
+
+.groupHeader p {
+  margin: 0;
+  color: var(--maris-muted);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+}
+
+.empty {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0 clamp(16px, 4vw, 56px) var(--section-rhythm);
+  color: var(--maris-muted);
+}

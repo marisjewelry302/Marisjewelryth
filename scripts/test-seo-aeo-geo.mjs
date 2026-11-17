@@ -50,6 +50,20 @@ assert.equal(productSchema.url, "https://marisjewelry.com/product/er-001");
 assert.equal(productSchema.offers.priceCurrency, "THB");
 assert.equal(productSchema.offers.seller.name, "Maris Jewelry");
 
+const priceOnRequestSchema = seo.buildProductJsonLd({
+  product: {
+    sku: "SR 0106 WB",
+    slug: "sr-0106",
+    name: "Wedding Band",
+    collection: "wedding-bands",
+    primaryImageUrl: "/assets/images/sample-ring.png"
+  },
+  displayName: "Wedding Band",
+  collectionLabel: "Wedding Bands"
+});
+
+assert.equal(priceOnRequestSchema, null, "products without a price must not emit a Product node (Google requires offers/review/aggregateRating)");
+
 const layout = await readSource("../app/layout.js");
 const homepage = (await readSource("../app/page.js")) + (await readSource("../app/components/HomeView.jsx"));
 const categoryPage = (await readSource("../app/category/[collection]/page.js")) + (await readSource("../app/category/[collection]/category-page.js"));
@@ -73,6 +87,7 @@ assert.match(categoryPage, /path:\s*`\/category\/\$\{collection\.slug\}`/);
 
 assert.match(productPage, /buildProductJsonLd/);
 assert.match(productPage, /buildBreadcrumbJsonLd/);
+assert.match(productPage, /\]\.filter\(Boolean\)/, "product JSON-LD graph must drop null nodes");
 assert.match(productPage, /openGraph/);
 
 assert.match(robots, /SITE_URL/);

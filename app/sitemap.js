@@ -43,6 +43,7 @@ export default async function sitemap() {
     "our-service",
     "oem-jewelry",
     "ready-to-ship",
+    "collections",
     "wholesale-retail",
     "wholesale",
     "newsletter",

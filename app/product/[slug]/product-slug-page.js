@@ -163,7 +163,7 @@ export async function ProductPageView({ params, locale = "en" }) {
         { name: displayName, path: productPath }
       ], locale),
       buildProductJsonLd({ product, displayName, collectionLabel, locale })
-    ]
+    ].filter(Boolean)
   };
 
   return (

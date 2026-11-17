@@ -21,6 +21,14 @@ export const shopEn = {
     earrings: { title: "Earrings", lead: "Diamond earrings with soft light, wearable scale, and a refined finish." },
     rings: { title: "Rings", lead: "Fine rings for gifting, stacking, and personal milestones." }
   },
+  collectionsPage: {
+    title: "Collections",
+    lead: "Explore Maris Jewelry by design line - each collection brings together pieces made to be worn and gifted as a family.",
+    meta: "Browse Maris Jewelry collections and the diamond pieces that belong to each design line.",
+    jumpLabel: "Jump to a collection",
+    count: "{count} pieces",
+    empty: "Collections are being prepared. Please check back soon or contact Maris Jewelry."
+  },
   readyToShip: {
     title: "Ready to Ship",
     lead: "Pieces we already hold in stock. Add one to your bag and order now - no waiting for production.",
@@ -347,6 +355,14 @@ export const shopTh = {
     bracelets: { title: "สร้อยข้อมือ", lead: "สร้อยข้อมือเรียวบางและรายละเอียดเพชรที่งดงามบนข้อมือ" },
     earrings: { title: "ต่างหู", lead: "ต่างหูเพชรที่ให้ประกายนุ่มนวล ขนาดสวมใส่ได้จริง และงานตกแต่งที่ประณีต" },
     rings: { title: "แหวน", lead: "แหวนชั้นดีสำหรับมอบเป็นของขวัญ สวมซ้อน และเก็บเป็นที่ระลึกในช่วงสำคัญของชีวิต" }
+  },
+  collectionsPage: {
+    title: "คอลเลกชัน",
+    lead: "เลือกชมเครื่องประดับ Maris Jewelry ตามไลน์ดีไซน์ แต่ละคอลเลกชันรวมชิ้นงานที่ออกแบบให้เข้ากัน",
+    meta: "เลือกชมคอลเลกชันของ Maris Jewelry และชิ้นงานเพชรในแต่ละไลน์ดีไซน์",
+    jumpLabel: "ไปที่คอลเลกชัน",
+    count: "{count} ชิ้น",
+    empty: "กำลังเตรียมคอลเลกชัน โปรดกลับมาดูใหม่เร็วๆ นี้ หรือติดต่อ Maris Jewelry"
   },
   readyToShip: {
     title: "พร้อมส่ง",

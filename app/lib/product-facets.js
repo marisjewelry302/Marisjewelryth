@@ -77,7 +77,7 @@ function matchPatternFacets(facets, text) {
 
 // "The Infinite Hold Collection", "The Infinite Hold", and "Infinite Hold" are the
 // same line entered three ways; "-" and "" mean the line was never filled in.
-function getCollectionLineFacets(product = {}) {
+export function getCollectionLineFacets(product = {}) {
   const name = getMeaningfulText(product.collectionName)
     .replace(/^the\s+/i, "")
     .replace(/\s+collection$/i, "")

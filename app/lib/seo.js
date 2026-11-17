@@ -235,6 +235,11 @@ export function buildProductJsonLd({ product, displayName, collectionLabel, loca
   const price = Number(product.basePrice);
   const hasPrice = Number.isFinite(price) && price > 0;
 
+  // Google's Product snippet requires offers, review, or aggregateRating. We have no
+  // reviews, and inventing a price would be untruthful, so price-less pieces get no
+  // Product node (the breadcrumb and page metadata still apply).
+  if (!hasPrice) return null;
+
   return {
     "@type": "Product",
     "@id": `${absoluteUrl(productPath)}#product`,
@@ -251,20 +256,18 @@ export function buildProductJsonLd({ product, displayName, collectionLabel, loca
     inLanguage: locale === THAI_LOCALE ? "th-TH" : "en",
     image: [...new Set(imageUrls)],
     url: absoluteUrl(productPath),
-    offers: hasPrice
-      ? {
-          "@type": "Offer",
-          url: absoluteUrl(productPath),
-          priceCurrency: "THB",
-          price,
-          availability: "https://schema.org/LimitedAvailability",
-          itemCondition: "https://schema.org/NewCondition",
-          seller: {
-            "@type": "Organization",
-            name: BRAND_NAME,
-            "@id": `${SITE_URL}/#organization`
-          }
-        }
-      : undefined
+    offers: {
+      "@type": "Offer",
+      url: absoluteUrl(productPath),
+      priceCurrency: "THB",
+      price,
+      availability: "https://schema.org/LimitedAvailability",
+      itemCondition: "https://schema.org/NewCondition",
+      seller: {
+        "@type": "Organization",
+        name: BRAND_NAME,
+        "@id": `${SITE_URL}/#organization`
+      }
+    }
   };
 }
