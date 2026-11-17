@@ -3,6 +3,7 @@
 // hover images live on the product row (see ./product-media.js).
 
 import { createSupabaseAdminClient, getSupabaseAdminConfig } from "./connection.js";
+import { compressProductImage } from "./image-compress.js";
 import {
   PRODUCT_IMAGE_BUCKET,
   getProductMediaFolder,
@@ -83,12 +84,17 @@ export async function uploadAdminProductImage(
   }
 
   const sku = await readProductSku(supabase, productId);
-  const { stem, ext } = splitImageFileName(fileName);
+  const { stem, ext: originalExt } = splitImageFileName(fileName);
+  const compressed = await compressProductImage(buffer, contentType);
+  const ext = compressed.ext || originalExt;
   const folder = `${getProductMediaFolder(sku, productId)}/gallery`;
+  // Gallery names are unique (upsert is off), so the file never changes under
+  // its URL and can be cached for a year.
   const upload = (name) => supabase.storage
     .from(PRODUCT_IMAGE_BUCKET)
-    .upload(`${folder}/${name}.${ext}`, buffer, {
-      contentType: contentType || "image/jpeg",
+    .upload(`${folder}/${name}.${ext}`, compressed.buffer, {
+      contentType: compressed.contentType,
+      cacheControl: "31536000",
       upsert: false
     });
 
