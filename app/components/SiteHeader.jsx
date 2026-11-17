@@ -402,7 +402,7 @@ export default function SiteHeader() {
                 `sizes` must match the widest CSS width (home hero: 342px) or
                 next/image only serves a 128/256px file and the logo blurs. */}
             <Image
-              src="/assets/images/logo.png"
+              src="/assets/images/logo-header.webp"
               alt={t.header.logoAlt}
               width={122}
               height={122}

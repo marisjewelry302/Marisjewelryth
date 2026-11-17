@@ -154,19 +154,9 @@ body {
   opacity: 1;
   transform: translateX(0);
   z-index: 2;
-  animation: hero-drift 5.4s ease-out both;
-}
-
-@keyframes hero-drift {
-  from {
-    background-position: var(--hero-position-start, center);
-    background-size: var(--hero-size-start, 114% auto);
-  }
-
-  to {
-    background-position: var(--hero-position-end, center);
-    background-size: var(--hero-size-end, 108% auto);
-  }
+  /* The old hero-drift animated background-size/position, which cannot run on
+     the compositor (PageSpeed "non-composited animations"). The slide's own
+     transform/opacity transition is kept. */
 }
 
 @media (prefers-reduced-motion: reduce) {
