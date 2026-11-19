@@ -253,7 +253,7 @@ body {
 .hero-slide-dot:hover,
 .hero-slide-dot:focus-visible,
 .hero-slide-dot.is-active {
-  color: var(--maris-gold);
+  color: var(--maris-gold-text);
 }
 
 .hero-slide-dot:hover::after,
@@ -286,7 +286,7 @@ body {
 
 .hero-slide-toggle:hover,
 .hero-slide-toggle:focus-visible {
-  color: var(--maris-gold);
+  color: var(--maris-gold-text);
 }
 
 .hero-slide-toggle:focus-visible {
@@ -318,7 +318,7 @@ body {
 }
 
 .hero-eyebrow {
-  color: var(--maris-gold);
+  color: var(--maris-gold-text);
   font-size: 11px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
@@ -408,7 +408,7 @@ body {
 .hero-secondary:hover {
   background: rgba(255, 255, 255, 0.12);
   border-color: var(--maris-gold);
-  color: var(--maris-gold);
+  color: var(--maris-gold-text);
 }
 
 .bag-count-badge {
@@ -570,7 +570,7 @@ body {
 }
 
 .atelier-product span {
-  color: var(--maris-gold);
+  color: var(--maris-gold-text);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.16em;
@@ -681,7 +681,7 @@ body {
 
 .section-kicker {
   margin-bottom: 12px;
-  color: var(--maris-gold);
+  color: var(--maris-gold-text);
   font-size: 11px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -831,7 +831,7 @@ body {
   display: inline-flex;
   align-items: flex-start;
   justify-content: flex-start;
-  color: var(--maris-gold);
+  color: var(--maris-gold-text);
   font-family: var(--maris-font-sans);
   font-size: clamp(17px, 1.25vw, 22px);
   font-weight: 500;

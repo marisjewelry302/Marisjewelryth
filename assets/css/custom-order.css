@@ -92,7 +92,7 @@
 .custom-order-heading p,
 .custom-order-modal__header p {
   margin: 0;
-  color: var(--maris-gold);
+  color: var(--maris-gold-text);
   font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0;
@@ -214,7 +214,7 @@
 .custom-order-options-trigger:hover,
 .custom-order-segmented button:hover {
   border-color: var(--maris-gold);
-  color: var(--maris-gold);
+  color: var(--maris-gold-text);
 }
 
 .custom-order-selected,
@@ -355,7 +355,7 @@
 }
 
 .custom-order-modal__summary span {
-  color: var(--maris-gold);
+  color: var(--maris-gold-text);
   font-size: 0.74rem;
   font-weight: 700;
   letter-spacing: 0;
