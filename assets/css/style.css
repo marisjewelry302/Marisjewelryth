@@ -2101,6 +2101,27 @@ body {
   object-fit: contain;
 }
 
+.best-seller-caption {
+  display: grid;
+  gap: 4px;
+  margin: 10px 0 0;
+  text-align: center;
+  color: var(--maris-ink);
+}
+
+.best-seller-caption span {
+  color: var(--maris-gold-text);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+}
+
+.best-seller-caption strong {
+  font-size: clamp(15px, 1.1vw, 18px);
+  font-weight: 700;
+  line-height: 1.15;
+}
+
 .best-seller-empty-label {
   color: rgba(16, 41, 35, 0.34);
   font-size: 0.75rem;

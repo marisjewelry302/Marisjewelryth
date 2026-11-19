@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { useLocale } from "./hooks/useLocale";
 import { isOptimizableImageSrc } from "./lib/image-source";
+import { formatPublicProductCode, getPublicProductDisplayName } from "./lib/product-display";
 
 const BEST_SELLER_SLOT_COUNT = 7;
 const FALLBACK_BEST_SELLER_ITEMS = Array.from({ length: BEST_SELLER_SLOT_COUNT }, (_, index) => ({
@@ -34,6 +35,9 @@ function normalizeBestSellerItems(items) {
       return {
         id: item?.id || item?.sku || `best-seller-product-${index + 1}`,
         label: productLabel,
+        // Same two lines as the New Arrival cards: product code, then product type.
+        code: item?.sku ? formatPublicProductCode(item.sku) : "",
+        title: item?.sku ? getPublicProductDisplayName(item) : "",
         imageSrc,
         imageAlt: item?.images?.[0]?.altText || productLabel,
         href: productPath ? `/product/${encodeURIComponent(productPath)}` : ""
@@ -359,6 +363,12 @@ export default function BestSellerSection({ items = [] }) {
                     {cardContent}
                   </div>
                 )}
+                {item.title ? (
+                  <p className="best-seller-caption">
+                    <span>{item.code}</span>
+                    <strong>{item.title}</strong>
+                  </p>
+                ) : null}
               </article>
             );
           })}
