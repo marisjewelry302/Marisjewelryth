@@ -5,12 +5,12 @@ const projectRoot = path.dirname(fileURLToPath(import.meta.url));
 const isProduction = process.env.NODE_ENV === "production";
 const contentSecurityPolicy = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${isProduction ? "" : " 'unsafe-eval'"}`,
+  `script-src 'self' 'unsafe-inline' https://www.googletagmanager.com${isProduction ? "" : " 'unsafe-eval'"}`,
   // next/font self-hosts Urbanist and Anuphan, so no Google Fonts origin is needed.
   "style-src 'self' 'unsafe-inline'",
   "font-src 'self' data:",
-  "img-src 'self' data: blob: https://*.supabase.co",
-  "connect-src 'self' https://*.supabase.co",
+  "img-src 'self' data: blob: https://*.supabase.co https://www.googletagmanager.com https://*.google-analytics.com",
+  "connect-src 'self' https://*.supabase.co https://www.googletagmanager.com https://*.google-analytics.com https://*.google.com",
   // Turntable videos stream from Supabase Storage; admin previews a picked
   // file from a blob: URL before it uploads.
   "media-src 'self' blob: https://*.supabase.co",
