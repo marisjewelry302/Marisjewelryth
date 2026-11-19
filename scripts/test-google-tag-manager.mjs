@@ -7,7 +7,7 @@ function check(condition, message) {
 const source = await readFile(new URL("../app/components/GoogleTagManager.jsx", import.meta.url), "utf8");
 const layout = await readFile(new URL("../app/layout.js", import.meta.url), "utf8");
 const config = await readFile(new URL("../next.config.mjs", import.meta.url), "utf8");
-check(layout.includes("<GoogleTagManager />"), "GTM must be mounted in the shared layout");
+check(layout.includes('process.env.VERCEL_ENV === "production" && <GoogleTagManager />'), "Only Vercel production mounts GTM");
 check(!source.includes("<iframe"), "No consent-bypassing noscript iframe");
 check(config.includes("https://*.google-analytics.com"), "CSP must permit GA collection");
 

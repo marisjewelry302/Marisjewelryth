@@ -58,7 +58,9 @@ This site is launch-ready as a public brand and catalogue website. Supabase back
 
 ## Google Tag Manager and GA4
 
-The shared layout mounts `GoogleTagManager` with container `GTM-M3PZSLMH`.
+The shared layout mounts `GoogleTagManager` with container `GTM-M3PZSLMH`
+only when Vercel sets `VERCEL_ENV=production`. Local and Preview builds do
+not mount the tracker, so they cannot contaminate production reports.
 It waits for analytics opt-in in the existing cookie banner. Necessary-only
 and marketing-only choices do not load it. Consent Mode v2 mirrors analytics
 and marketing choices before container startup and on later updates.

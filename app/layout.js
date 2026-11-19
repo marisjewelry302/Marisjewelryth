@@ -85,7 +85,7 @@ export default function RootLayout({ children }) {
         {children}
         <SiteFooter />
         <CookieConsent />
-        <GoogleTagManager />
+        {process.env.VERCEL_ENV === "production" && <GoogleTagManager />}
         <SnowfallEffect />
       </body>
     </html>
