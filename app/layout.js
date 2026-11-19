@@ -9,6 +9,7 @@ import "../assets/css/mobile.css";
 import "../assets/css/mobile-drawer.css";
 import "../assets/css/cookie-consent.css";
 import CookieConsent from "./components/CookieConsent";
+import GoogleTagManager from "./components/GoogleTagManager";
 import JsonLd from "./components/JsonLd";
 import SiteFooter from "./components/SiteFooter";
 import SnowfallEffect from "./components/SnowfallEffect";
@@ -84,6 +85,7 @@ export default function RootLayout({ children }) {
         {children}
         <SiteFooter />
         <CookieConsent />
+        <GoogleTagManager />
         <SnowfallEffect />
       </body>
     </html>
