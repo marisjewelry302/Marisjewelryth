@@ -3,8 +3,11 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
 
-// Seasonal decoration. To switch it off after the holidays, remove
-// <SnowfallEffect /> from app/layout.js.
+// Seasonal decoration. To switch it off after the holidays, set
+// ENABLE_SEASONAL_SNOW to false (nothing is rendered or animated then).
+// It also stays off for prefers-reduced-motion, pauses while the tab is hidden,
+// and runs at half density below 768px.
+const ENABLE_SEASONAL_SNOW = true;
 //
 // Depth layers (fine and crisp far away, large and softly blurred up
 // close) and ice crystals, so it reads as quiet atmosphere rather
@@ -24,6 +27,7 @@ const LAYERS = [
 const CRYSTAL_VARIANTS = 3;
 const MAX_FLAKES = 95;
 const MIN_FLAKES = 24;
+const SMALL_SCREEN_MAX_WIDTH = 767;
 
 function isAdminPath(pathname) {
   const normalized = (pathname || "/").replace(/\/$/, "") || "/";
@@ -143,7 +147,7 @@ function createFlake(layerIndex, width, height, randomY) {
 export default function SnowfallEffect() {
   const pathname = usePathname();
   const canvasRef = useRef(null);
-  const disabled = isAdminPath(pathname);
+  const disabled = !ENABLE_SEASONAL_SNOW || isAdminPath(pathname);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -169,8 +173,9 @@ export default function SnowfallEffect() {
     let frameId = 0;
 
     function populate() {
+      const density = width <= SMALL_SCREEN_MAX_WIDTH ? 0.5 : 1;
       const target = Math.round(
-        Math.min(MAX_FLAKES, Math.max(MIN_FLAKES, (width * height) / 15000))
+        Math.min(MAX_FLAKES, Math.max(MIN_FLAKES, (width * height) / 15000)) * density
       );
       const next = [];
       LAYERS.forEach((layer, index) => {
