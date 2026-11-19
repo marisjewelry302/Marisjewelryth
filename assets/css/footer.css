@@ -35,7 +35,7 @@ body.not-found-page.has-maris-footer {
 
 /* The four headings used to be as loud as the links under them, which made
    the whole footer read as four competing blocks. They are labels now. */
-.maris-footer__desktop-col h2 {
+.maris-footer__desktop-col .maris-footer__heading {
   margin: 0 0 12px;
   font-size: 12px;
   font-weight: 500;

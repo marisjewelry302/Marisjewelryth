@@ -108,7 +108,7 @@ export default function SiteFooter() {
         <div className="maris-footer__desktop">
           {footerSections.map((section) => (
             <section className="maris-footer__desktop-col" key={section.key}>
-              <h2>{section.title}</h2>
+              <h3 className="maris-footer__heading">{section.title}</h3>
               {section.body && <p>{section.body}</p>}
               {section.links && (
                 <ul>
