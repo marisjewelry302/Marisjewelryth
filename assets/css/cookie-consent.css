@@ -39,7 +39,7 @@
 .cookie-consent__eyebrow {
   margin: 0 0 4px;
   color: var(--maris-gold-text);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -102,7 +102,7 @@
   border-radius: 999px;
   background: rgba(0, 73, 58, 0.08);
   color: var(--maris-teal);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.04em;
 }
@@ -252,7 +252,7 @@
   background: none;
   color: rgba(236, 236, 236, 0.75);
   font-family: inherit;
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.02em;
   text-decoration: underline;
   text-underline-offset: 3px;

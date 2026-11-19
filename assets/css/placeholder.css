@@ -266,7 +266,7 @@ a {
 }
 
 .subpage-info-list dt {
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--maris-gold-text);
@@ -305,7 +305,7 @@ a {
 
 .subpage-step-index,
 .subpage-article-meta {
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--maris-gold-text);
@@ -472,7 +472,7 @@ a {
 
 .wishlist-collection {
   margin-bottom: 10px;
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--maris-gold-text);
@@ -873,7 +873,7 @@ a {
 
 .bag-collection {
   margin-bottom: 10px;
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--maris-gold-text);
@@ -906,7 +906,7 @@ a {
 .bag-controls label {
   display: grid;
   gap: 8px;
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--maris-gold-text);
@@ -1301,7 +1301,7 @@ a {
 
 .selected-piece-collection {
   margin-bottom: 10px;
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--maris-gold-text);
@@ -1327,7 +1327,7 @@ a {
 }
 
 .selected-piece-meta span {
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--maris-gold-text);

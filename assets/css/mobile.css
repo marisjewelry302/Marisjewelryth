@@ -35,7 +35,7 @@
     margin: 0;
     max-width: 100%;
     overflow: hidden;
-    font-size: 11px;
+    font-size: 12px;
     line-height: 32px;
     letter-spacing: 0.02em;
     text-align: center;
@@ -207,7 +207,7 @@
 
   .placeholder-card .eyebrow,
   .section-kicker {
-    font-size: 11px;
+    font-size: 12px;
     letter-spacing: 0.12em;
   }
 
@@ -242,12 +242,12 @@
   .journal-card-number {
     width: 32px;
     height: 32px;
-    font-size: 11px;
+    font-size: 12px;
   }
 
   .subpage-article-meta,
   .journal-card-read-time {
-    font-size: 11px;
+    font-size: 12px;
     letter-spacing: 0.1em;
   }
 
@@ -305,7 +305,7 @@
   }
 
   .home-main .atelier-product:not(.atelier-product--fallback) .atelier-product__meta > span {
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 0.1em;
   }
 
@@ -343,7 +343,7 @@
 
   .home-signup-popup__perks {
     gap: 8px;
-    font-size: 11px;
+    font-size: 12px;
   }
 
   .home-signup-popup__privacy,
@@ -361,7 +361,7 @@
     right: 2px !important;
     min-width: 16px;
     height: 16px;
-    font-size: 9px;
+    font-size: 12px;
   }
 
   /* The ghost button was white on a pale photo; a dark wash keeps it legible. */
@@ -400,7 +400,7 @@
 
   .value-strip .section-kicker {
     color: var(--maris-gold-text);
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
   }
 
@@ -611,7 +611,7 @@
   }
 
   .subpage-step-index {
-    font-size: 11px;
+    font-size: 12px;
   }
 
   .subpage-step-card h3 {
@@ -649,7 +649,7 @@
 
   .subpage-stack h3,
   .subpage-info-list dt {
-    font-size: 11px !important;
+    font-size: 12px !important;
     letter-spacing: 0.1em !important;
   }
 

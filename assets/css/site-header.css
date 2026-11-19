@@ -12,7 +12,7 @@
   background:
     linear-gradient(90deg, rgba(0, 73, 58, 0.98) 0%, rgba(0, 73, 58, 0.9) 62%, rgba(16, 41, 35, 0.96) 100%);
   color: rgba(255, 255, 255, 0.92);
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .top-left,
@@ -120,7 +120,7 @@ body.is-page-scrolled .navbar .logo img {
 
 body.is-page-scrolled .navbar .nav a,
 body.is-page-scrolled .navbar .nav .nav-dropdown-trigger {
-  font-size: 11.5px;
+  font-size: 12px;
 }
 
 .navbar .nav .nav-dropdown-trigger {
@@ -263,7 +263,7 @@ body.is-page-scrolled .icons svg {
   border-radius: 999px;
   background: var(--maris-teal);
   color: var(--maris-white);
-  font-size: 10px;
+  font-size: 12px;
   line-height: 1;
 }
 
@@ -489,7 +489,7 @@ body.is-page-scrolled .icons svg {
 
   .top-bar {
     padding: 7px 12px;
-    font-size: 10px;
+    font-size: 12px;
   }
 
   .top-left {
@@ -548,7 +548,7 @@ body.is-page-scrolled .icons svg {
     right: -10px;
     min-width: 16px;
     height: 16px;
-    font-size: 9px;
+    font-size: 12px;
   }
 }
 
@@ -568,7 +568,7 @@ body.is-page-scrolled .icons svg {
   padding: 5px clamp(24px, 5vw, 58px);
   background:
     linear-gradient(90deg, oklch(27% 0.065 170) 0%, oklch(31% 0.07 170) 54%, oklch(23% 0.045 170) 100%);
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .top-note {
@@ -749,7 +749,7 @@ body.is-page-scrolled .site-header--home .navbar .logo img {
 body.is-page-scrolled .site-header--home .navbar .nav a,
 body.is-page-scrolled .site-header--home .navbar .nav .nav-dropdown-trigger {
   color: rgba(16, 41, 35, 0.98);
-  font-size: clamp(11px, 0.95vw, 14px);
+  font-size: clamp(12px, 0.95vw, 14px);
   font-weight: 800;
   letter-spacing: 0.1em;
   text-shadow: 0 1px 16px rgba(255, 250, 246, 0.62);
@@ -886,7 +886,7 @@ body.is-page-scrolled .site-header--home .navbar .nav .nav-dropdown-trigger {
   max-width: 100%;
   color: inherit;
   overflow: hidden;
-  font-size: clamp(9px, 0.75vw, 11px);
+  font-size: clamp(12px, 0.75vw, 12px);
   font-weight: 600;
   letter-spacing: 0.08em;
   line-height: 1.15;
@@ -1139,7 +1139,7 @@ body:has(.site-header--home) .hero-actions a,
 .is-home-page .hero-actions a {
   min-height: 42px;
   padding-inline: 22px;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.1em;
 }
@@ -1232,7 +1232,7 @@ body:has(.site-header--home) .hero::after,
   }
 
   .top-announcement {
-    font-size: 8.5px;
+    font-size: 12px;
     letter-spacing: 0.055em;
   }
 
@@ -1321,7 +1321,7 @@ body.is-page-scrolled .site-header:not(.site-header--home) .navbar .logo img {
 .site-header:not(.site-header--home) .navbar .nav .nav-dropdown-trigger,
 body.is-page-scrolled .site-header:not(.site-header--home) .navbar .nav a,
 body.is-page-scrolled .site-header:not(.site-header--home) .navbar .nav .nav-dropdown-trigger {
-  font-size: clamp(11px, 0.86vw, 13px);
+  font-size: clamp(12px, 0.86vw, 13px);
   font-weight: 800;
   letter-spacing: 0.075em;
 }
@@ -1358,7 +1358,7 @@ body.is-page-scrolled .site-header:not(.site-header--home) .icons svg {
   .site-header:not(.site-header--home) .navbar .nav .nav-dropdown-trigger,
   body.is-page-scrolled .site-header:not(.site-header--home) .navbar .nav a,
   body.is-page-scrolled .site-header:not(.site-header--home) .navbar .nav .nav-dropdown-trigger {
-    font-size: 11px;
+    font-size: 12px;
     letter-spacing: 0.055em;
   }
 }
@@ -1693,7 +1693,7 @@ body.is-home-header-compact .site-header--home .navbar .logo img {
 body.is-home-header-compact .site-header--home .navbar .nav a,
 body.is-home-header-compact .site-header--home .navbar .nav .nav-dropdown-trigger {
   color: var(--maris-ink);
-  font-size: clamp(11px, 0.9vw, 14px);
+  font-size: clamp(12px, 0.9vw, 14px);
   text-shadow: none;
 }
 
@@ -1942,7 +1942,7 @@ body.is-home-header-compact .site-header--home .icons {
   padding: 0 0 0 clamp(10px, 1.2vw, 16px);
   border-left: 1px solid rgba(255, 250, 246, 0.35);
   font-family: var(--maris-font-sans);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.08em;
   white-space: nowrap;

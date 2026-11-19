@@ -47,7 +47,7 @@ body:has(.site-header--home) .home-main .hero-content,
   padding: 0 18px;
   border: 1px solid var(--maris-teal);
   color: var(--maris-ink);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.12em;
   text-decoration: none;
   text-transform: uppercase;
@@ -71,7 +71,7 @@ body:has(.site-header--home) .home-main .hero-content,
   padding: 8px 10px;
   background: rgba(255, 250, 246, 0.86);
   color: var(--maris-teal);
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -208,7 +208,7 @@ body:has(.site-header--home) .home-main .hero-content,
     gap: 1.8em;
     max-width: none;
     margin-top: calc(var(--hero-h1) * 0.27);
-    font-size: clamp(10px, calc(var(--hero-h1) * 0.15), 18px);
+    font-size: clamp(12px, calc(var(--hero-h1) * 0.15), 18px);
   }
 
   body:has(.site-header--home) .home-main .hero-actions a,

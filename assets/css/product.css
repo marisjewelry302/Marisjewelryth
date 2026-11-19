@@ -112,7 +112,7 @@
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.86);
   color: var(--maris-ink);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1;
   cursor: pointer;
   backdrop-filter: blur(6px);
@@ -185,13 +185,13 @@
   padding: 3px 0;
   background: rgba(16, 41, 35, 0.72);
   color: var(--maris-white);
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.04em;
 }
 
 .product-media-thumb-play {
-  font-size: 8px;
+  font-size: 12px;
 }
 
 .product-media-dots {
@@ -423,7 +423,7 @@
 }
 
 .product-kicker {
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--maris-gold-text);
@@ -467,7 +467,7 @@
 .product-metal-selector legend {
   padding: 0;
   margin-bottom: 12px;
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--maris-muted);
@@ -564,7 +564,7 @@
 }
 
 .product-specs dt {
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   line-height: 1.8;
@@ -593,7 +593,7 @@
 
 .product-gem-table caption {
   padding: 4px 0 8px;
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   text-align: left;
@@ -610,7 +610,7 @@
 
 .product-gem-table th {
   border-top: 1px solid rgba(221, 164, 165, 0.32);
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -679,7 +679,7 @@
   background: transparent;
   color: var(--maris-ink);
   font: inherit;
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.2;
   letter-spacing: 0.1em;
   text-align: center;
@@ -735,7 +735,7 @@
 .also-like h2 {
   margin-bottom: 16px;
   font-family: var(--maris-font-sans);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 400;
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -798,14 +798,14 @@
 
 .also-card span {
   margin-top: 6px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.04em;
 }
 
 .also-card small {
   color: var(--maris-muted);
-  font-size: 10px;
+  font-size: 12px;
   line-height: 1.5;
 }
 
@@ -881,7 +881,7 @@
 
   .also-card span {
     margin-top: 4px;
-    font-size: 11px;
+    font-size: 12px;
   }
 
   /* A two-line cap keeps the four cards the same height whatever the piece is
@@ -892,7 +892,7 @@
     -webkit-line-clamp: 2;
     line-clamp: 2;
     overflow: hidden;
-    font-size: 9px;
+    font-size: 12px;
   }
 
   .product-lightbox {

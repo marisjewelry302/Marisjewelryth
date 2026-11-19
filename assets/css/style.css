@@ -102,7 +102,7 @@ body {
   padding: 11px 24px 10px;
   background: rgba(0, 73, 58, 0.92);
   color: rgba(255, 255, 255, 0.92);
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
 }
@@ -233,7 +233,7 @@ body {
   background: transparent;
   color: rgba(255, 250, 246, 0.68);
   font-family: var(--maris-font-sans);
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.14em;
   cursor: pointer;
@@ -276,7 +276,7 @@ body {
   background: transparent;
   color: rgba(255, 250, 246, 0.68);
   font-family: var(--maris-font-sans);
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -319,7 +319,7 @@ body {
 
 .hero-eyebrow {
   color: var(--maris-gold);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
 }
@@ -363,7 +363,7 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.68);
   color: var(--maris-white);
   text-decoration: none;
-  font-size: 10.5px;
+  font-size: 13px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   overflow: hidden;
@@ -425,7 +425,7 @@ body {
   background: var(--maris-red);
   color: var(--maris-white);
   font-family: var(--maris-font-sans);
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   line-height: 1;
   text-shadow: none;
@@ -571,7 +571,7 @@ body {
 
 .atelier-product span {
   color: var(--maris-gold-text);
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.16em;
   line-height: 1.2;
@@ -614,7 +614,7 @@ body {
   background: rgba(255, 250, 246, 0.58);
   color: rgba(0, 73, 58, 0.66) !important;
   font-family: var(--maris-font-display);
-  font-size: 9px !important;
+  font-size: 12px !important;
   font-weight: 700;
   letter-spacing: 0.2em !important;
   text-transform: uppercase !important;
@@ -682,7 +682,7 @@ body {
 .section-kicker {
   margin-bottom: 12px;
   color: var(--maris-gold-text);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
 }
@@ -1128,7 +1128,7 @@ body {
     max-width: calc(100% - 32px);
     min-height: 26px;
     padding-inline: 10px;
-    font-size: 8px !important;
+    font-size: 12px !important;
     letter-spacing: 0.16em !important;
   }
 
@@ -1145,7 +1145,7 @@ body {
 
   .category-section .section-kicker {
     margin-bottom: 7px;
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 0.18em;
   }
 
@@ -1168,7 +1168,7 @@ body {
     width: calc(100% + 28px);
     margin: 0 -14px;
     padding: 9px 14px;
-    font-size: 8.5px;
+    font-size: 12px;
     letter-spacing: 0.12em;
   }
 
@@ -1209,7 +1209,7 @@ body {
   }
 
   .hero-eyebrow {
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 0.14em;
   }
 
@@ -1240,7 +1240,7 @@ body {
     min-width: 0;
     min-height: 44px;
     padding: 0 8px;
-    font-size: 8.5px;
+    font-size: 12px;
     letter-spacing: 0.1em;
   }
 
@@ -1291,7 +1291,7 @@ body {
   }
 
   .value-card h3 {
-    font-size: 11px;
+    font-size: 12px;
   }
 
   .value-card p {
@@ -1397,7 +1397,7 @@ body {
   .hero-utility-bar {
     gap: 8px;
     padding: 5px 12px;
-    font-size: 7.5px;
+    font-size: 12px;
     letter-spacing: 0.1em;
   }
 
@@ -1437,7 +1437,7 @@ body {
   .hero-actions a {
     min-height: 44px;
     padding-inline: 9px;
-    font-size: 8px;
+    font-size: 12px;
     letter-spacing: 0.08em;
   }
 }
@@ -1566,7 +1566,7 @@ body {
 
 .atelier-product__meta > span {
   color: oklch(73% 0.09 86);
-  font-size: 9px;
+  font-size: 12px;
   letter-spacing: 0.18em;
 }
 
@@ -1698,7 +1698,7 @@ body {
 
 .home-signup-popup__image-brand small {
   font-family: var(--maris-font-body);
-  font-size: 0.48rem;
+  font-size: 0.75rem;
   letter-spacing: 0.42em;
 }
 
@@ -1746,7 +1746,7 @@ body {
 .home-signup-popup__eyebrow {
   margin: 0 0 clamp(0.3rem, 1dvh, 0.55rem);
   color: var(--maris-teal);
-  font-size: 0.66rem;
+  font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.28em;
   text-transform: uppercase;
@@ -1815,13 +1815,13 @@ body {
 
 .home-signup-popup__perks strong {
   color: var(--maris-ink);
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 600;
 }
 
 .home-signup-popup__perks small {
   color: rgba(16, 41, 35, 0.66);
-  font-size: 0.66rem;
+  font-size: 0.75rem;
   line-height: 1.35;
 }
 
@@ -1852,7 +1852,7 @@ body {
   background: var(--maris-teal);
   color: var(--maris-white);
   font: inherit;
-  font-size: 0.74rem;
+  font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   white-space: nowrap;
@@ -1862,14 +1862,14 @@ body {
 .home-signup-popup__message {
   margin-top: 0.55rem;
   color: #9d3131;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
 }
 
 .home-signup-popup__privacy {
   max-width: 420px;
   margin-top: clamp(0.45rem, 1.3dvh, 0.75rem);
   color: rgba(16, 41, 35, 0.62);
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   line-height: 1.45;
 }
 
@@ -1884,7 +1884,7 @@ body {
   gap: 0.45rem;
   margin-top: clamp(0.4rem, 1.2dvh, 0.7rem);
   color: rgba(16, 41, 35, 0.68);
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   line-height: 1.2;
   cursor: pointer;
 }
@@ -1902,7 +1902,7 @@ body {
   border-bottom: 1px solid rgba(0, 73, 58, 0.42);
   background: transparent;
   font: inherit;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   cursor: pointer;
 }
 
@@ -1981,7 +1981,7 @@ body {
 
 .account-offer-notice span {
   color: var(--maris-teal);
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -2103,7 +2103,7 @@ body {
 
 .best-seller-empty-label {
   color: rgba(16, 41, 35, 0.34);
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -2414,7 +2414,7 @@ body {
   border-radius: 999px;
   background: rgb(0, 73, 58);
   color: var(--maris-white);
-  font-size: clamp(11px, 0.9vw, 13px);
+  font-size: clamp(12px, 0.9vw, 13px);
   font-weight: 400;
   letter-spacing: 0;
   line-height: 1;
@@ -2544,7 +2544,7 @@ body:has(.site-header--home) .hero-utility-bar,
   padding: 0;
   background: transparent;
   color: rgba(255, 250, 246, 0.78);
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.2em;
   line-height: 1.25;
@@ -2578,7 +2578,7 @@ body:has(.site-header--home) .hero-utility-bar__divider,
     justify-content: center;
     align-items: center;
     gap: 8px;
-    font-size: 7.5px;
+    font-size: 12px;
     letter-spacing: 0.11em;
     text-align: center;
   }
@@ -2901,7 +2901,7 @@ body:has(.site-header--home) .hero-utility-bar__divider,
 
 @media (min-width: 641px) {
   .home-main .atelier-product:not(.atelier-product--fallback) .atelier-product__meta > span {
-    font-size: 11px;
+    font-size: 12px;
   }
 }
 
@@ -2944,7 +2944,7 @@ html {
 
   .hero a,
   .hero-actions a {
-    font-size: 11.5px;
+    font-size: 13px;
     letter-spacing: 0.08em;
   }
 }
