@@ -1967,3 +1967,38 @@ body.is-home-header-compact .site-header--home .icons {
     display: none;
   }
 }
+
+/* Desktop tap targets. The visible glyphs stay as drawn; an invisible ::before
+   grows each control's hit box to 44px. Mobile (<=768px) already uses real 44px
+   boxes above, so this is desktop only. Selectors are scoped to .site-header or
+   the hero slide index so nothing else on the page is touched. */
+@media (min-width: 769px) {
+  .site-header .icons a::before,
+  .site-header .nav-search::before,
+  .site-header .top-socials a::before,
+  .site-header .top-announcement a::before,
+  .site-header .navbar .nav .nav-single-link::before,
+  .site-header .navbar .nav .nav-dropdown-trigger::before,
+  .hero-slide-dot::before,
+  .hero-slide-toggle::before {
+    content: "";
+    position: absolute;
+    inset: var(--tap-inset-y, -14px) var(--tap-inset-x, -10px);
+  }
+
+  .site-header .top-socials a,
+  .site-header .top-announcement a,
+  .site-header .navbar .nav .nav-single-link,
+  .hero-slide-dot,
+  .hero-slide-toggle {
+    position: relative;
+  }
+
+  .site-header .nav-search { --tap-inset-y: -8px; --tap-inset-x: -8px; }
+  .site-header .top-socials a { --tap-inset-y: -11px; --tap-inset-x: -4px; }
+  .site-header .top-announcement a { --tap-inset-y: -17px; --tap-inset-x: -8px; }
+  .site-header .navbar .nav .nav-single-link,
+  .site-header .navbar .nav .nav-dropdown-trigger { --tap-inset-y: -15px; --tap-inset-x: -6px; }
+  .hero-slide-dot { --tap-inset-y: -11px; --tap-inset-x: -4px; }
+  .hero-slide-toggle { --tap-inset-y: -10px; --tap-inset-x: -4px; }
+}
