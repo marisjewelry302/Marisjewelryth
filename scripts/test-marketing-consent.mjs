@@ -144,9 +144,14 @@ assert.match(account, /\/api\/account\/delete/, "the account page can delete the
 assert.match(account, /name="deletePassword"/, "deleting asks for the password");
 
 const popup = await read("app/HomeSignupPopup.jsx");
-assert.match(popup, /agreeMarketing/, "the pop-up has its own marketing checkbox");
-assert.match(popup, /if \(!agreeMarketing\)/, "the pop-up refuses to continue without it");
-assert.doesNotMatch(popup, /By continuing, you agree to receive/, "consent must not be implied by pressing the button");
+// Owner decision (2026-11-23): the pop-up has no checkbox; a notice under the
+// button says submitting signs up for emails. The account form keeps its own box.
+assert.doesNotMatch(popup, /agreeMarketing/, "the pop-up no longer has a marketing checkbox");
+assert.match(popup, /copy\.signupNotice/, "the pop-up shows the sign-up notice");
+assert.match(popup, /aria-describedby=\{message \? `\$\{noticeId\}/, "the email field is described by the notice");
+const uiText = await read("app/lib/ui-text-base.js");
+assert.match(uiText, /signupNotice: "By completing this form you are signing up to receive our emails and can unsubscribe any time\."/);
+assert.match(uiText, /signupNotice: "เมื่อกรอกแบบฟอร์มนี้/);
 
 const deleteRoute = await read("app/api/account/delete/route.js");
 assert.match(deleteRoute, /isSameOriginRequest/);

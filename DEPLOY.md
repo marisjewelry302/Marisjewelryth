@@ -55,3 +55,55 @@ If this Windows machine cannot find `npm` or `node`, use:
 ## Important Note
 
 This site is launch-ready as a public brand and catalogue website. Supabase backs the admin catalogue, inventory, image uploads, and order records. Public account persistence, checkout, payment capture, and automated form delivery still need production services before the site should be described as full ecommerce.
+
+## Google Tag Manager and GA4
+
+The shared layout mounts `GoogleTagManager` with container `GTM-M3PZSLMH`
+only when Vercel sets `VERCEL_ENV=production`. Local and Preview builds do
+not mount the tracker, so they cannot contaminate production reports.
+It waits for analytics opt-in in the existing cookie banner. Necessary-only
+and marketing-only choices do not load it. Consent Mode v2 mirrors analytics
+and marketing choices before container startup and on later updates.
+Revoking analytics reloads the document to unload running tags. Admin routes
+never start the container; entering admin with active tags reloads once.
+
+No noscript iframe is included because it could bypass cookie consent.
+The CSP permits the Google hosts required for GA4 without Ads features.
+Additional tags need their own consent checks and explicit CSP review.
+
+### Required Tag Manager setup
+
+Installing the container alone does not create a Google Analytics property.
+In Tag Manager, open `GTM-M3PZSLMH`, add a Google tag using the actual GA4
+Measurement ID (`G-...`) from the website's web data stream, set the trigger
+to Initialization - All Pages, and publish the container. Keep Google tag
+built-in consent checks enabled.
+
+**Both trackers are installed (owner decision, 2026-11-23).** The layout also
+mounts `GoogleAnalytics`, a direct GA4 tag that loads when
+`NEXT_PUBLIC_GA_MEASUREMENT_ID` is set and analytics is allowed. If the GTM
+container fires a Google tag with the same `G-...` ID, every page view is
+counted twice. To avoid it, either leave GA4 out of the container or unset
+`NEXT_PUBLIC_GA_MEASUREMENT_ID` in Vercel.
+
+The CSP does not allow `https://*.google.com` (a Google ad origin, see
+`scripts/test-security-hardening.mjs`). Check the console for CSP errors after
+publishing any GTM tag that needs it.
+
+For App Router navigation, enable GA4 Enhanced Measurement page views based
+on browser history changes. Avoid a second history-based page_view tag.
+
+### Verify after deployment
+
+1. Run `node scripts/test-google-tag-manager.mjs` and `npm run build`.
+2. On a fresh visit, verify there is no `gtm.js` request before consent or
+   after Necessary only.
+3. Accept analytics and verify exactly one request for the configured GTM
+   container, then verify a page_view in GA4 DebugView/Realtime.
+4. Navigate between English/Thai/category pages and check one page_view per
+   navigation; check browser console/network for CSP errors.
+5. Revoke analytics in Cookie settings: the page reloads and GTM stays off.
+6. Open `/admin/login` with saved analytics consent: GTM must stay off.
+
+GA4 event delivery requires a published Google tag in the container and
+cannot be verified from repository source alone.

@@ -10,6 +10,7 @@ import "../assets/css/mobile-drawer.css";
 import "../assets/css/cookie-consent.css";
 import CookieConsent from "./components/CookieConsent";
 import GoogleAnalytics from "./components/GoogleAnalytics";
+import GoogleTagManager from "./components/GoogleTagManager";
 import JsonLd from "./components/JsonLd";
 import SiteFooter from "./components/SiteFooter";
 import SkipLink from "./components/SkipLink";
@@ -90,6 +91,9 @@ export default function RootLayout({ children }) {
         />
         {children}
         <SiteFooter />
+        {/* Owner's call: GTM runs alongside the direct GA4 tag above. If the GTM
+            container also fires GA4 with the same ID, page views count twice. */}
+        {process.env.VERCEL_ENV === "production" && <GoogleTagManager />}
         <SnowfallEffect />
       </body>
     </html>
