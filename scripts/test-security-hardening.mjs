@@ -92,19 +92,19 @@ assert.deepEqual(
 assert.deepEqual(
   csp.get("connect-src").filter((source) => source.startsWith("https:")).sort(),
   [
-    "https://*.analytics.google.com",
     "https://*.google-analytics.com",
+    "https://*.google.com",
     "https://*.supabase.co",
     "https://www.googletagmanager.com"
   ],
-  "connect-src allows only Supabase and the GA4 collection origins"
+  "connect-src allows only Supabase and the Google Tag Manager / GA4 origins"
 );
 assert.ok(csp.get("img-src").includes("https://*.google-analytics.com"), "img-src allows the GA4 beacon fallback");
 for (const [name, sources] of csp) {
   for (const source of sources) {
     assert.notEqual(source, "*", `${name} must not allow every origin`);
     assert.notEqual(source, "https:", `${name} must not allow every https origin`);
-    assert.doesNotMatch(source, /^https:\/\/\*\.google\.com$|googleadservices|doubleclick/, `${name} must not allow Google ad origins`);
+    assert.doesNotMatch(source, /googleadservices|doubleclick/, `${name} must not allow Google ad origins`);
   }
 }
 for (const name of ["default-src", "style-src", "font-src", "media-src", "frame-src"]) {

@@ -9,7 +9,7 @@ import "../assets/css/mobile.css";
 import "../assets/css/mobile-drawer.css";
 import "../assets/css/cookie-consent.css";
 import CookieConsent from "./components/CookieConsent";
-import GoogleAnalytics from "./components/GoogleAnalytics";
+import GoogleTagManager from "./components/GoogleTagManager";
 import JsonLd from "./components/JsonLd";
 import SiteFooter from "./components/SiteFooter";
 import SkipLink from "./components/SkipLink";
@@ -74,8 +74,6 @@ export default function RootLayout({ children }) {
         {/* Fixed-position, so it sits here without changing the layout; keyboard and
             screen-reader users reach a first-visit banner right after the skip link. */}
         <CookieConsent />
-        {/* Renders nothing until the visitor allows analytics and a valid GA ID is set. */}
-        <GoogleAnalytics />
         <SiteHeader />
         {/* The shared layout is prerendered without knowing the route, so the
             homepage HTML arrives wearing the plain inline header and only
@@ -90,6 +88,7 @@ export default function RootLayout({ children }) {
         />
         {children}
         <SiteFooter />
+        {process.env.VERCEL_ENV === "production" && <GoogleTagManager />}
         <SnowfallEffect />
       </body>
     </html>
