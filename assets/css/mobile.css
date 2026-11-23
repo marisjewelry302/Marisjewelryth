@@ -347,10 +347,6 @@
     font-size: 12px;
   }
 
-  .home-signup-popup__decline {
-    min-height: 44px;
-  }
-
   /* Cart count sits inside the icon box so the screen edge never clips it. */
   .site-header .bag-count-badge {
     top: 2px !important;
