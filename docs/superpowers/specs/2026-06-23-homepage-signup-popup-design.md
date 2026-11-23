@@ -17,8 +17,8 @@ Add a premium homepage-only signup popup that collects an email address, sends t
 - Wait 3 seconds after homepage load before opening the popup.
 - Apply a dark blurred overlay behind the modal.
 - Lock page scroll while the popup is open.
-- Close by clicking `X`, clicking `No, thank you`, clicking the overlay, or pressing `Esc`.
-- After closing without submitting, suppress the popup for 1 day in the same browser.
+- Close by clicking `X`, clicking the overlay, or pressing `Esc`. There is no separate decline link (`No, thank you` was removed).
+- After closing without submitting, suppress the popup for 7 days in the same browser, or for 1 day when `Don't show again today` is ticked.
 - After submitting a valid email, suppress the popup for 30 days in the same browser.
 - Validate email with both `type="email"` browser validation and an inline popup message.
 - Submit button text is `GET 10% OFF`.
@@ -67,7 +67,7 @@ Add a premium homepage-only signup popup that collects an email address, sends t
 - Browser check homepage:
   - popup appears after 3 seconds.
   - scroll locks while open.
-  - close buttons suppress for 1 day.
+  - closing (`X`, overlay, `Esc`) suppresses for 7 days, or 1 day with `Don't show again today` ticked.
   - invalid email stays in popup with an inline message.
   - valid email redirects to `/account?email=...&source=popup`.
 - Browser check account:
