@@ -2157,41 +2157,6 @@ body {
   line-height: 1.15;
 }
 
-/* Prev / Pause / Next under the track: 44px targets in the section's quiet style. */
-.best-seller-controls {
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-  padding: 4px var(--best-seller-side) 0;
-}
-
-.best-seller-control {
-  min-width: 44px;
-  min-height: 44px;
-  padding: 0 18px;
-  border: 1px solid rgba(0, 73, 58, 0.32);
-  background: transparent;
-  color: var(--maris-teal);
-  font-family: var(--maris-font-sans);
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: background 0.24s ease, color 0.24s ease, border-color 0.24s ease;
-}
-
-.best-seller-control:hover {
-  background: var(--maris-teal);
-  border-color: var(--maris-teal);
-  color: #fffaf6;
-}
-
-.best-seller-control:focus-visible {
-  outline: 2px solid var(--maris-teal);
-  outline-offset: 3px;
-}
-
 .best-seller-empty-label {
   color: rgba(16, 41, 35, 0.34);
   font-size: 0.75rem;

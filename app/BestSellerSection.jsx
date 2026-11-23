@@ -56,8 +56,6 @@ export default function BestSellerSection({ items = [] }) {
   const [dragOffset, setDragOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
-  // Set by the Pause button, so touch visitors (no hover) can stop the motion.
-  const [isUserPaused, setIsUserPaused] = useState(false);
   const [isPageHidden, setIsPageHidden] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const dragRef = useRef(null);
@@ -126,7 +124,6 @@ export default function BestSellerSection({ items = [] }) {
   // drag restarts the full delay instead of jumping again right after release.
   const canAutoplay = bestSellerItems.length > 1
     && !isPaused
-    && !isUserPaused
     && !isDragging
     && !isPageHidden
     && !prefersReducedMotion;
@@ -264,11 +261,6 @@ export default function BestSellerSection({ items = [] }) {
     }
   }
 
-  function moveByButton(delta) {
-    setWithTransition(true);
-    setSlideIndex((currentIndex) => currentIndex + delta);
-  }
-
   // Keyboard tabbing may land on a card that is off-centre; bring it into view.
   // Mouse presses also focus the link, so only :focus-visible moves the track.
   function handleCardFocus(event, index) {
@@ -319,8 +311,6 @@ export default function BestSellerSection({ items = [] }) {
   if (!bestSellerItems.length) {
     return null;
   }
-
-  const canNavigate = bestSellerItems.length > 1;
 
   return (
     <section className="best-seller-section" aria-labelledby="best-seller-heading">
@@ -403,28 +393,6 @@ export default function BestSellerSection({ items = [] }) {
           })}
         </div>
       </div>
-
-      {canNavigate ? (
-        <div className="best-seller-controls" role="group" aria-label={t.bestSeller.controlsLabel}>
-          <button type="button" className="best-seller-control" aria-label={t.bestSeller.previous} onClick={() => moveByButton(-1)}>
-            {t.bestSeller.previousShort}
-          </button>
-          {!prefersReducedMotion ? (
-            <button
-              type="button"
-              className="best-seller-control"
-              aria-pressed={isUserPaused}
-              aria-label={isUserPaused ? t.bestSeller.play : t.bestSeller.pause}
-              onClick={() => setIsUserPaused((paused) => !paused)}
-            >
-              {isUserPaused ? t.bestSeller.playShort : t.bestSeller.pauseShort}
-            </button>
-          ) : null}
-          <button type="button" className="best-seller-control" aria-label={t.bestSeller.next} onClick={() => moveByButton(1)}>
-            {t.bestSeller.nextShort}
-          </button>
-        </div>
-      ) : null}
     </section>
   );
 }

@@ -275,16 +275,7 @@ const en = {
   bestSeller: {
     heading: "Best Seller",
     label: "Best Seller",
-    listLabel: "Best seller products",
-    controlsLabel: "Best seller carousel controls",
-    previous: "Previous best seller",
-    next: "Next best seller",
-    pause: "Pause best seller slideshow",
-    play: "Play best seller slideshow",
-    previousShort: "Prev",
-    nextShort: "Next",
-    pauseShort: "Pause",
-    playShort: "Play"
+    listLabel: "Best seller products"
   }
 };
 
@@ -557,16 +548,7 @@ const th = {
   bestSeller: {
     heading: "สินค้าขายดี",
     label: "สินค้าขายดี",
-    listLabel: "สินค้าขายดี",
-    controlsLabel: "ปุ่มควบคุมสินค้าขายดี",
-    previous: "สินค้าขายดีก่อนหน้า",
-    next: "สินค้าขายดีถัดไป",
-    pause: "หยุดการเลื่อนสินค้าขายดี",
-    play: "เล่นการเลื่อนสินค้าขายดี",
-    previousShort: "ก่อนหน้า",
-    nextShort: "ถัดไป",
-    pauseShort: "หยุด",
-    playShort: "เล่น"
+    listLabel: "สินค้าขายดี"
   }
 };
 
