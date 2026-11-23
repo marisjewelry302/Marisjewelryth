@@ -1,5 +1,6 @@
 import { THAI_LOCALE, hasThaiVersion, localizePath } from "./i18n.js";
 import { getPublicProductPath } from "./product-display.js";
+import { SOCIAL_LINKS } from "./social-links.js";
 
 export const SITE_URL = "https://marisjewelry.com";
 export const BRAND_NAME = "Maris Jewelry";
@@ -16,11 +17,7 @@ export const BRAND_CONTACT = {
     postalCode: "10500",
     addressCountry: "TH"
   },
-  sameAs: [
-    "https://www.instagram.com/maris_jewelry_th",
-    "https://www.facebook.com/share/1JH2idcjPM/",
-    "https://pin.it/5pKmV7MKf"
-  ]
+  sameAs: SOCIAL_LINKS.map((item) => item.href)
 };
 
 export const HOME_FAQS = [

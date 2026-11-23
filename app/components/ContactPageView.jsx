@@ -2,6 +2,7 @@ import ContactMethodFields from "./ContactMethodFields";
 import LeadForm from "./LeadForm";
 import { baseText } from "../lib/ui-text-base";
 import { THAI_LOCALE, localizePath } from "../lib/i18n";
+import { SOCIAL_LINKS } from "../lib/social-links";
 
 // Option values are what the atelier receives in the inquiry email, so they stay
 // in English for both languages; only the visible labels are translated.
@@ -164,10 +165,9 @@ export default function ContactPageView({ locale = "en", defaultService }) {
               </div>
 
               <div className="contact-social">
-                <a href="https://lin.ee/tFg8osD" target="_blank" rel="noopener noreferrer">LINE</a>
-                <a href="https://www.instagram.com/maris_jewelry_th?igsh=MXNoeHpxN2VkaTU0NA==" target="_blank" rel="noopener noreferrer">Instagram</a>
-                <a href="https://www.facebook.com/share/1JH2idcjPM/" target="_blank" rel="noopener noreferrer">Facebook</a>
-                <a href="https://pin.it/5pKmV7MKf" target="_blank" rel="noopener noreferrer">Pinterest</a>
+                {SOCIAL_LINKS.map((item) => (
+                  <a key={item.key} href={item.href} target="_blank" rel="noopener noreferrer">{item.label}</a>
+                ))}
               </div>
             </section>
           </div>

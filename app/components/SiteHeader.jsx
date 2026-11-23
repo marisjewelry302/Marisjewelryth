@@ -7,14 +7,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useLocale } from "../hooks/useLocale";
 import { THAI_LOCALE, hasThaiVersion, localizePath, stripLocale } from "../lib/i18n";
+import { SOCIAL_LINKS } from "../lib/social-links";
 
 const BAG_KEY = "marisShoppingBag";
 
-const socialNav = [
-  { href: "https://www.facebook.com/share/1JH2idcjPM/", label: "Facebook", icon: "facebook" },
-  { href: "https://www.instagram.com/maris_jewelry_th?igsh=MXNoeHpxN2VkaTU0NA==", label: "Instagram", icon: "instagram" },
-  { href: "https://pin.it/5pKmV7MKf", label: "Pinterest", icon: "pinterest" }
-];
+const socialNav = SOCIAL_LINKS.map((item) => ({ ...item, icon: item.key }));
 
 function readJsonArray(key) {
   try {
@@ -92,6 +89,14 @@ function SocialIcon({ name }) {
     return (
       <svg {...commonProps}>
         <path d="M13.8 21v-8h2.7l.5-3h-3.2V8.1c0-.9.4-1.5 1.7-1.5H17V3.9c-.8-.1-1.7-.2-2.5-.2-2.6 0-4.4 1.6-4.4 4.5V10H7.2v3h2.9v8h3.7Z" />
+      </svg>
+    );
+  }
+
+  if (name === "line") {
+    return (
+      <svg {...commonProps}>
+        <path d="M12 3.4c-5 0-9.1 3.3-9.1 7.3 0 3.6 3.2 6.6 7.5 7.2.3.1.7.2.8.4.1.2.1.6 0 .8l-.1.8c0 .2-.2.9.8.5 1-.4 5.4-3.2 7.4-5.4 1.4-1.5 2-3 2-4.6 0-4-4.1-7.3-9.1-7.3Z" />
       </svg>
     );
   }

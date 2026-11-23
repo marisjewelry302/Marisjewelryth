@@ -8,6 +8,7 @@ import { fill } from "../lib/i18n";
 import { isOptimizableImageSrc } from "../lib/image-source";
 import { trackEvent } from "../lib/track";
 import { getPublicProductPath } from "../lib/product-display.js";
+import { getSocialLink } from "../lib/social-links";
 import { wholesaleEn, wholesaleTh } from "../lib/ui-text-wholesale";
 import {
   WHOLESALE_BUSINESS_TYPES,
@@ -20,9 +21,9 @@ import {
 } from "../lib/wholesale";
 import styles from "./wholesale.module.css";
 
-const LINE_URL = "https://lin.ee/tFg8osD";
-const FACEBOOK_URL = "https://www.facebook.com/share/1JH2idcjPM/";
-const INSTAGRAM_URL = "https://www.instagram.com/maris_jewelry_th?igsh=MXNoeHpxN2VkaTU0NA==";
+const LINE_URL = getSocialLink("line").href;
+const FACEBOOK_URL = getSocialLink("facebook").href;
+const INSTAGRAM_URL = getSocialLink("instagram").href;
 const CART_KEY = "marisWholesaleCart";
 const FALLBACK_IMAGE = "/assets/images/logo.png";
 

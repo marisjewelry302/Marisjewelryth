@@ -8,6 +8,7 @@ import { useLocale } from "../hooks/useLocale";
 import { openCookieSettings } from "../lib/cookie-consent";
 import { stripLocale } from "../lib/i18n";
 import { BRAND_CONTACT } from "../lib/seo";
+import { SOCIAL_LINKS } from "../lib/social-links";
 import NewsletterSignup from "./NewsletterSignup";
 
 function SocialIcon({ label }) {
@@ -16,6 +17,14 @@ function SocialIcon({ label }) {
     fill: "currentColor",
     viewBox: "0 0 24 24"
   };
+
+  if (label === "LINE") {
+    return (
+      <svg {...commonProps}>
+        <path d="M12 3.4c-5 0-9.1 3.3-9.1 7.3 0 3.6 3.2 6.6 7.5 7.2.3.1.7.2.8.4.1.2.1.6 0 .8l-.1.8c0 .2-.2.9.8.5 1-.4 5.4-3.2 7.4-5.4 1.4-1.5 2-3 2-4.6 0-4-4.1-7.3-9.1-7.3Z" />
+      </svg>
+    );
+  }
 
   if (label === "Facebook") {
     return (
@@ -41,13 +50,7 @@ function SocialIcon({ label }) {
 }
 
 function SocialLinks() {
-  const links = [
-    { href: "https://www.instagram.com/maris_jewelry_th?igsh=MXNoeHpxN2VkaTU0NA==", label: "Instagram" },
-    { href: "https://www.facebook.com/share/1JH2idcjPM/", label: "Facebook" },
-    { href: "https://pin.it/5pKmV7MKf", label: "Pinterest" }
-  ];
-
-  return links.map((item) => (
+  return SOCIAL_LINKS.map((item) => (
     <a key={item.label} href={item.href} aria-label={item.label} target="_blank" rel="noopener noreferrer">
       <SocialIcon label={item.label} />
     </a>
