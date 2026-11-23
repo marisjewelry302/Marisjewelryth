@@ -204,31 +204,12 @@ export default function HomeSignupPopup() {
             &times;
           </button>
 
-          <p className="home-signup-popup__eyebrow">{copy.welcome}</p>
           <Image className="home-signup-popup__logo" src="/assets/images/home/popup/maris-popup-logo.png" alt="Maris Jewelry" width={1321} height={740} sizes="220px" />
           <span className="home-signup-popup__rule" aria-hidden="true" />
 
           <p className="home-signup-popup__intro">{copy.intro}</p>
           <p className="home-signup-popup__offer">{copy.offer}</p>
           <p className="home-signup-popup__suboffer">{copy.subOffer}</p>
-
-          <div className="home-signup-popup__perks" aria-label={copy.perksLabel}>
-            <div>
-              <Image src="/assets/images/home/popup/popup-icon-tag.png" alt="" aria-hidden={true} width={355} height={369} sizes="23px" />
-              <strong>{copy.perks[0].title}</strong>
-              <small>{copy.perks[0].text}</small>
-            </div>
-            <div>
-              <Image src="/assets/images/home/popup/popup-icon-clock-v2.png" alt="" aria-hidden={true} width={371} height={397} sizes="23px" />
-              <strong>{copy.perks[1].title}</strong>
-              <small>{copy.perks[1].text}</small>
-            </div>
-            <div>
-              <Image src="/assets/images/home/popup/popup-icon-gift.png" alt="" aria-hidden={true} width={405} height={388} sizes="23px" />
-              <strong>{copy.perks[2].title}</strong>
-              <small>{copy.perks[2].text}</small>
-            </div>
-          </div>
 
           <form className="home-signup-popup__signup" onSubmit={handleSubmit} noValidate>
             {/* The consent is required, so it comes before the button that submits it. */}

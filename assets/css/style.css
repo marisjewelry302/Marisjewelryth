@@ -1844,43 +1844,9 @@ body {
 }
 
 .home-signup-popup__suboffer {
+  margin-bottom: clamp(0.8rem, 2.4dvh, 1.4rem);
   color: rgba(16, 41, 35, 0.74);
   font-size: clamp(0.82rem, 1vw, 0.98rem);
-}
-
-.home-signup-popup__perks {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.65rem;
-  width: 100%;
-  margin: clamp(0.6rem, 2dvh, 1.15rem) 0 clamp(0.5rem, 1.6dvh, 0.95rem);
-  padding-bottom: clamp(0.5rem, 1.4dvh, 0.85rem);
-  border-bottom: 1px solid rgba(0, 73, 58, 0.12);
-}
-
-.home-signup-popup__perks div {
-  display: grid;
-  gap: 0.3rem;
-  color: var(--maris-teal);
-}
-
-.home-signup-popup__perks img {
-  justify-self: center;
-  width: 1.395rem;
-  height: 1.395rem;
-  object-fit: contain;
-}
-
-.home-signup-popup__perks strong {
-  color: var(--maris-ink);
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-
-.home-signup-popup__perks small {
-  color: rgba(16, 41, 35, 0.66);
-  font-size: 0.75rem;
-  line-height: 1.35;
 }
 
 .home-signup-popup__form {
@@ -2028,21 +1994,7 @@ body {
   }
 }
 
-/* On short screens the perk row is the first thing to step aside: its first perk
-   repeats the offer right above it, and the form must stay in view. The narrow
-   single column wraps more, so it gives the row up sooner. */
-@media (max-height: 440px), (max-width: 640px) and (max-height: 520px) {
-  .home-signup-popup__perks {
-    display: none;
-  }
-
-  .home-signup-popup__suboffer {
-    margin-bottom: clamp(0.6rem, 2dvh, 1rem);
-  }
-}
-
 @media (max-height: 380px) {
-  .home-signup-popup__eyebrow,
   .home-signup-popup__rule {
     display: none;
   }
@@ -2929,7 +2881,6 @@ body:has(.site-header--home) .hero-utility-bar__divider,
   html body .journal-fact-label,
   html body dt,
   html body .maris-footer__copyright,
-  html body .home-signup-popup__eyebrow,
   html body .home-signup-popup__privacy,
   html body .home-signup-popup__privacy a,
   html body .home-signup-popup__remember span,

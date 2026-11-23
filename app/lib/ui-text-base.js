@@ -251,16 +251,9 @@ const en = {
     needConsent: "Please tick the box to receive marketing emails and your 10% offer.",
     join: "Join Maris Jewelry",
     close: "Close signup popup",
-    welcome: "Welcome to",
     intro: "Create your Maris account and enjoy",
     offer: "10% OFF",
     subOffer: "your first confirmed order",
-    perksLabel: "Member benefits",
-    perks: [
-      { title: "10% OFF", text: "your first confirmed order" },
-      { title: "Early access", text: "to new Maris pieces" },
-      { title: "Private offers", text: "for Maris members" }
-    ],
     emailAddress: "Email address",
     emailPlaceholder: "Enter your email",
     submit: "Get 10% Off",
@@ -543,16 +536,9 @@ const th = {
     needConsent: "โปรดติ๊กช่องเพื่อรับอีเมลการตลาดและส่วนลด 10% ของคุณ",
     join: "เข้าร่วม Maris Jewelry",
     close: "ปิดหน้าต่างสมัครสมาชิก",
-    welcome: "ยินดีต้อนรับสู่",
     intro: "สร้างบัญชี Maris ของคุณ แล้วรับส่วนลด",
     offer: "ลด 10%",
     subOffer: "สำหรับคำสั่งซื้อแรกที่ยืนยันแล้ว",
-    perksLabel: "สิทธิพิเศษสำหรับสมาชิก",
-    perks: [
-      { title: "ลด 10%", text: "สำหรับคำสั่งซื้อแรกที่ยืนยันแล้ว" },
-      { title: "เข้าถึงก่อนใคร", text: "ผลงานใหม่จาก Maris" },
-      { title: "ข้อเสนอพิเศษ", text: "สำหรับสมาชิก Maris" }
-    ],
     emailAddress: "อีเมล",
     emailPlaceholder: "กรอกอีเมลของคุณ",
     submit: "รับส่วนลด 10%",

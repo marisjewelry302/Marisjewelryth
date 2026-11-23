@@ -342,11 +342,6 @@
     width: auto;
   }
 
-  .home-signup-popup__perks {
-    gap: 8px;
-    font-size: 12px;
-  }
-
   .home-signup-popup__privacy,
   .home-signup-popup__remember {
     font-size: 12px;
