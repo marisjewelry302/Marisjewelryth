@@ -77,19 +77,8 @@ Installing the container alone does not create a Google Analytics property.
 In Tag Manager, open `GTM-M3PZSLMH`, add a Google tag using the actual GA4
 Measurement ID (`G-...`) from the website's web data stream, set the trigger
 to Initialization - All Pages, and publish the container. Keep Google tag
-built-in consent checks enabled.
-
-**Both trackers are installed (owner decision, 2026-11-23).** The layout also
-mounts `GoogleAnalytics`, a direct GA4 tag that loads when
-`NEXT_PUBLIC_GA_MEASUREMENT_ID` is set and analytics is allowed. If the GTM
-container fires a Google tag with the same `G-...` ID, every page view is
-counted twice. To avoid it, either leave GA4 out of the container or unset
-`NEXT_PUBLIC_GA_MEASUREMENT_ID` in Vercel.
-
-`connect-src` allows the hosts both trackers use: `*.google-analytics.com`,
-`*.analytics.google.com`, `www.googletagmanager.com` and `*.google.com`.
-`googleadservices` and `doubleclick` stay blocked
-(`scripts/test-security-hardening.mjs`).
+built-in consent checks enabled. Do not install another direct GA4 snippet
+alongside this container, which could double-count visits.
 
 For App Router navigation, enable GA4 Enhanced Measurement page views based
 on browser history changes. Avoid a second history-based page_view tag.

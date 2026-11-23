@@ -76,75 +76,8 @@ check(consent.readCookieConsent() === null, "an answer from an older consent ver
 jar.set(consent.COOKIE_CONSENT_NAME, "not-json%");
 check(consent.readCookieConsent() === null, "a corrupt cookie is treated as no answer");
 
-// --- Google Analytics 4 gating and the hidden marketing category ---------------
-const [gaComponent, analytics, uiText, envExample] = await Promise.all([
-  readFile("app/components/GoogleAnalytics.jsx", "utf8"),
-  readFile("app/lib/analytics.js", "utf8"),
-  readFile("app/lib/ui-text-base.js", "utf8"),
-  readFile(".env.example", "utf8")
-]);
-const ga = await import("../app/lib/analytics.js");
-
-// No script without a valid ID or without analytics consent.
-check(ga.normalizeGaMeasurementId("G-ABC123XYZ") === "G-ABC123XYZ", "a well-formed GA4 ID is accepted");
-for (const bad of [undefined, null, "", "UA-12345-1", "g-abc123", "G-abc123", "G-", "G-ABC 123", "G-ABC123;alert(1)", "https://x.test"]) {
-  check(ga.normalizeGaMeasurementId(bad) === "", `invalid GA ID ${JSON.stringify(bad)} loads nothing`);
-}
-check(/process\.env\.NEXT_PUBLIC_GA_MEASUREMENT_ID/.test(gaComponent), "GA ID is read from NEXT_PUBLIC_GA_MEASUREMENT_ID");
-check(!/G-[A-Z0-9]{6,}/.test(gaComponent + analytics), "no measurement ID is hard-coded");
-check(/MEASUREMENT_ID = normalizeGaMeasurementId\(/.test(gaComponent), "GA ID is validated before use");
-check(/if \(!enabled \|\| !granted \|\| !scriptRequested\) return null;/.test(gaComponent), "GA renders nothing without an ID, consent, or off /admin");
-check((gaComponent.match(/<Script/g) || []).length === 1 && gaComponent.indexOf("<Script") > gaComponent.indexOf("return null;"), "the only gtag.js <Script> sits behind the consent guard");
-check(/hasCookieConsent\("analytics"\)/.test(gaComponent) && /onCookieConsentChange/.test(gaComponent), "GA follows the analytics category and later changes");
-check(/useSearchParams/.test(gaComponent) && /<Suspense/.test(gaComponent), "page views use useSearchParams inside Suspense");
-check(/send_page_view: false/.test(analytics), "gtag config does not send its own page_view");
-
-// Admin routes are excluded.
-check(ga.isAnalyticsExcludedPath("/admin") && ga.isAnalyticsExcludedPath("/admin/products") && ga.isAnalyticsExcludedPath("/admin/"), "admin routes are excluded");
-check(!ga.isAnalyticsExcludedPath("/") && !ga.isAnalyticsExcludedPath("/administration") && !ga.isAnalyticsExcludedPath("/th"), "storefront routes are not excluded");
-
-// Consent Mode v2: everything denied by default; only analytics_storage can be granted.
-const fakeWindow = {};
-ga.initGoogleAnalytics(fakeWindow, "G-TEST123");
-ga.initGoogleAnalytics(fakeWindow, "G-TEST123");
-const queued = fakeWindow.dataLayer.map((entry) => [...entry]);
-const consentDefault = queued.filter((entry) => entry[0] === "consent" && entry[1] === "default");
-check(consentDefault.length === 1, "consent default is queued exactly once");
-check(
-  ["analytics_storage", "ad_storage", "ad_user_data", "ad_personalization"].every((key) => consentDefault[0]?.[2]?.[key] === "denied"),
-  "consent default denies analytics_storage, ad_storage, ad_user_data and ad_personalization"
-);
-check(queued.findIndex((entry) => entry[0] === "consent") < queued.findIndex((entry) => entry[0] === "config"), "consent default is queued before the config");
-check(queued.filter((entry) => entry[0] === "config").length === 1 && queued.find((entry) => entry[0] === "config")[2].send_page_view === false, "config is queued once with send_page_view off");
-check(!queued.some((entry) => entry[0] === "event"), "initialising sends no events");
-ga.setAnalyticsConsent(fakeWindow, "G-TEST123", true);
-let update = [...fakeWindow.dataLayer.at(-1)];
-check(update[1] === "update" && update[2].analytics_storage === "granted", "accepting analytics grants analytics_storage");
-check(["ad_storage", "ad_user_data", "ad_personalization"].every((key) => update[2][key] === "denied"), "ad signals stay denied when analytics is granted");
-check(fakeWindow["ga-disable-G-TEST123"] === false, "collection is enabled while consent is granted");
-ga.setAnalyticsConsent(fakeWindow, "G-TEST123", false);
-update = [...fakeWindow.dataLayer.at(-1)];
-check(update[2].analytics_storage === "denied" && fakeWindow["ga-disable-G-TEST123"] === true, "withdrawing consent denies storage and disables collection");
-
-// Withdrawal deletes _ga and _ga_<ID> on this host and its parent domains.
-const writes = [];
-ga.deleteGoogleAnalyticsCookies(
-  {
-    get cookie() { return "maris_cookie_consent=x; _ga=GA1.1.1; _ga_ABC123=GS1; _gat=1; other=2"; },
-    set cookie(text) { writes.push(text); }
-  },
-  "www.shop.example.com"
-);
-check(writes.some((text) => text.startsWith("_ga=;") && !text.includes("Domain=")), "_ga is cleared on the current host");
-check(writes.some((text) => text.startsWith("_ga_ABC123=;") && text.includes("Domain=.shop.example.com")), "_ga_<ID> is cleared on a parent domain");
-check(writes.some((text) => text.startsWith("_ga=;") && text.includes("Domain=.example.com")), "_ga is cleared on the registrable parent domain");
-check(writes.every((text) => text.includes("Max-Age=0")), "cookies are expired");
-check(!writes.some((text) => /^(maris_cookie_consent|other|_gat)=/.test(text)), "other cookies are left alone");
-
-// Page-view paths never carry tokens or personal details.
-check(ga.buildAnalyticsPagePath("/unsubscribe", new URLSearchParams("token=abc")) === "/unsubscribe", "unsubscribe tokens are not sent");
-check(ga.buildAnalyticsPagePath("/th/account/reset-password", new URLSearchParams("token=abc")) === "/th/account/reset-password", "reset tokens are not sent");
-check(ga.buildAnalyticsPagePath("/category/rings", new URLSearchParams("metal=gold&email=a@b.c")) === "/category/rings?metal=gold", "personal query parameters are dropped");
+// --- Hidden marketing category and analytics copy (GTM loads GA4; see GoogleTagManager.jsx) ---
+const uiText = await readFile("app/lib/ui-text-base.js", "utf8");
 
 // Marketing category: hidden while the flag is off, code path kept.
 check(consent.MARKETING_COOKIES_ENABLED === false, "marketing cookies are off");
@@ -162,10 +95,9 @@ check(consent.readCookieConsent() === null, "a version 1 answer is asked again")
 check(/We use Google Analytics to understand how visitors use the site, only if you allow it\./.test(uiText), "English banner describes Google Analytics");
 check(/Google Analytics เพื่อทำความเข้าใจว่าผู้เข้าชมใช้งานเว็บไซต์อย่างไร ก็ต่อเมื่อคุณอนุญาตเท่านั้น/.test(uiText), "Thai banner describes Google Analytics");
 check(!/more relevant Maris pieces elsewhere|ตรงใจคุณมากขึ้นบนเว็บไซต์อื่น/.test(uiText), "the untrue marketing promise is gone");
-check(/^# NEXT_PUBLIC_GA_MEASUREMENT_ID=G-X+/m.test(envExample), ".env.example documents the GA measurement ID, commented out");
 
 if (failures > 0) {
   process.exit(1);
 }
 
-console.log("PASS: Cookie consent banner, footer link, popup coordination, consent storage, Google Analytics gating, and hidden marketing category.");
+console.log("PASS: Cookie consent banner, footer link, popup coordination, consent storage, analytics copy, and hidden marketing category.");

@@ -92,7 +92,6 @@ assert.deepEqual(
 assert.deepEqual(
   csp.get("connect-src").filter((source) => source.startsWith("https:")).sort(),
   [
-    "https://*.analytics.google.com",
     "https://*.google-analytics.com",
     "https://*.google.com",
     "https://*.supabase.co",

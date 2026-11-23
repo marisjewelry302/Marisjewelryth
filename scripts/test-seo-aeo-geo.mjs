@@ -117,6 +117,6 @@ for (const [file, locale] of [["../app/lib/static-pages.js", "en"], ["../app/lib
 }
 assert.match(await readSource("../app/lib/static-pages.js"), /effectiveDate: "20 November 2026"/);
 assert.match(await readSource("../app/lib/static-pages-th.js"), /effectiveDate: "20 พฤศจิกายน 2569"/);
-assert.match(layout, /<GoogleAnalytics \/>/, "layout mounts GoogleAnalytics, which renders nothing without consent");
+assert.match(layout, /<GoogleTagManager \/>/, "layout mounts the consent-aware GoogleTagManager");
 
 console.log("SEO/AEO/GEO contract passed.");
