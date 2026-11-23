@@ -8,6 +8,7 @@ import "./react-migration.css";
 import "../assets/css/mobile.css";
 import "../assets/css/mobile-drawer.css";
 import "../assets/css/cookie-consent.css";
+import ContactClickTracker from "./components/ContactClickTracker";
 import CookieConsent from "./components/CookieConsent";
 import GoogleTagManager from "./components/GoogleTagManager";
 import JsonLd from "./components/JsonLd";
@@ -89,6 +90,7 @@ export default function RootLayout({ children }) {
         {children}
         <SiteFooter />
         {process.env.VERCEL_ENV === "production" && <GoogleTagManager />}
+        {process.env.VERCEL_ENV === "production" && <ContactClickTracker />}
         <SnowfallEffect />
       </body>
     </html>

@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useShopLocale } from "../hooks/useShopLocale";
 import { fill } from "../lib/i18n";
 import { isOptimizableImageSrc } from "../lib/image-source";
+import { trackEvent } from "../lib/track";
 import { getPublicProductPath } from "../lib/product-display.js";
 import { wholesaleEn, wholesaleTh } from "../lib/ui-text-wholesale";
 import {
@@ -251,6 +252,7 @@ function ApplicationForm({ w, account, customer, onCancel, onSaved }) {
       return;
     }
 
+    trackEvent("generate_lead", { form_type: "wholesale" });
     onSaved(payload.account);
   }
 

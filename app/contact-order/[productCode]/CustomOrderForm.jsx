@@ -6,6 +6,7 @@ import { useShopLocale } from "../../hooks/useShopLocale";
 import { isOptimizableImageSrc } from "../../lib/image-source";
 import { fill } from "../../lib/i18n";
 import { formatPublicProductCode } from "../../lib/product-display";
+import { trackEvent } from "../../lib/track";
 import { THAI_MAX, THAI_MIN, US_MAX, US_MIN, isValidThaiSize, isValidUsSize, thaiToUs, usToThai } from "../../lib/ring-size";
 
 const METALS = ["WG", "YG", "RG", "PN", "Pd"];
@@ -343,6 +344,7 @@ export default function CustomOrderForm({ productCode, productImage = null, prod
         setStatusTone("success");
         setStatusMessage(o.received);
         setIsSubmitted(true);
+        trackEvent("generate_lead", { form_type: "custom_order", item_id: formatPublicProductCode(productCode) });
         return;
       }
 

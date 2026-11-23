@@ -3,6 +3,7 @@
 import { useId, useState } from "react";
 
 import { useLocale } from "../hooks/useLocale";
+import { trackEvent } from "../lib/track";
 
 const INQUIRY_ENDPOINT = "/api/inquiries";
 
@@ -152,6 +153,7 @@ export default function LeadForm({
         setStatusType("success");
         setResult(copy.messages[type]);
         setFailed(false);
+        trackEvent("generate_lead", { form_type: type === "quote" ? "quote" : "contact" });
 
         if (resetOnSuccess) {
           form.reset();

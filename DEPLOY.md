@@ -83,6 +83,51 @@ alongside this container, which could double-count visits.
 For App Router navigation, enable GA4 Enhanced Measurement page views based
 on browser history changes. Avoid a second history-based page_view tag.
 
+### Analytics events
+
+`app/lib/track.js` pushes these events to the GTM `dataLayer`. Each one is
+sent only after analytics consent, never on `/admin`, and only after the
+server confirms success (a 2xx response), never on submit-click or failure.
+Every event also carries `locale` (`th` or `en`, read from the URL path).
+
+| Event | Fires when | Params |
+| --- | --- | --- |
+| `generate_lead` | Contact form (LeadForm, `/contact-us`) succeeds | `form_type=contact` |
+| `generate_lead` | `/request-quote` form succeeds | `form_type=quote` |
+| `generate_lead` | `/contact-order/<code>` custom order succeeds (created or duplicate) | `form_type=custom_order`, `item_id` = product code, e.g. `SR 0092 ER` |
+| `generate_lead` | Wholesale application is saved (`/wholesale`) | `form_type=wholesale` |
+| `sign_up` | Customer account is created (`/account`) | `method=email` |
+| `newsletter_signup` | Footer or `/newsletter` subscribe succeeds | none |
+| `contact_click` | Click on a LINE, WhatsApp, `tel:` or `mailto:` link anywhere | `contact_method=line|whatsapp|phone|email` |
+
+The home signup popup only sends visitors to account sign-up, so it fires
+nothing itself; the resulting account fires `sign_up`. Wholesale orders are not
+tracked.
+
+No personal data is sent. The helper allowlists event names and the parameter
+keys `form_type`, `method`, `contact_method`, `locale`, `page_type` and
+`item_id`, validates every value, and drops anything that looks like an email,
+phone number or URL with a query string. Names, emails, phone numbers, LINE IDs,
+messages, addresses and product notes are never passed in.
+
+#### Tag Manager setup for events
+
+In `GTM-M3PZSLMH`:
+
+1. Variables: create five **Data Layer Variable** variables (Version 2), one per
+   key, each named after and reading its key: `form_type`, `method`,
+   `contact_method`, `item_id` and `locale`.
+2. Trigger: type **Custom Event**, event name
+   `^(generate_lead|sign_up|newsletter_signup|contact_click)$`, with **Use regex
+   matching** ticked, fires on All Custom Events.
+3. Tag: type **Google Analytics: GA4 Event**, Measurement ID `G-RHYS2LTPGZ`, event
+   name `{{Event}}`, event parameters `form_type`, `method`, `contact_method`,
+   `item_id`, `locale` each set to the Data Layer Variable of the same name.
+   Attach the trigger above, keep built-in consent checks enabled, and publish.
+4. In GA4 (Admin > Events) mark `generate_lead`, `sign_up`,
+   `newsletter_signup` and `contact_click` as key events. Register `form_type`
+   and `contact_method` as custom dimensions if you want to report on them.
+
 ### Verify after deployment
 
 1. Run `node scripts/test-google-tag-manager.mjs` and `npm run build`.

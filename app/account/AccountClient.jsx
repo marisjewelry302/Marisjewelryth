@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useShopLocale } from "../hooks/useShopLocale";
 import { clearLocalBag, clearLocalWishlist } from "../lib/bag-store";
 import { fill } from "../lib/i18n";
+import { trackEvent } from "../lib/track";
 
 // Keep localStorage keys for wishlist/bag counts until those surfaces are migrated.
 const WISHLIST_KEY = "marisWishlist";
@@ -409,6 +410,7 @@ export default function AccountClient() {
 
       setCustomer(data.customer);
       setWelcomeMessage(success(a.msg.created));
+      trackEvent("sign_up", { method: "email" });
 
       // Marketing email is opt-in: only a ticked box subscribes the address.
       if (wantsMarketing) {

@@ -3,6 +3,7 @@
 import { useId, useState } from "react";
 
 import { useLocale } from "../hooks/useLocale";
+import { trackEvent } from "../lib/track";
 
 const NEWSLETTER_ENDPOINT = "/api/newsletter";
 
@@ -47,6 +48,7 @@ export default function NewsletterSignup({
 
       if (response.ok) {
         report(copy.success, "success");
+        trackEvent("newsletter_signup");
         setEmail("");
         return;
       }
