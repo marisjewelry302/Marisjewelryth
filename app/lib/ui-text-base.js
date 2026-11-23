@@ -259,8 +259,7 @@ const en = {
     signupNotice: "By completing this form you are signing up to receive our emails and can unsubscribe any time.",
     privacyBefore: "See how we use your details in our",
     privacyPolicy: "Privacy Policy",
-    hideToday: "Don't show again today",
-    decline: "No, thank you"
+    hideToday: "Don't show again today"
   },
   hero: {
     next: "Next slide",
@@ -542,8 +541,7 @@ const th = {
     signupNotice: "เมื่อกรอกแบบฟอร์มนี้ แสดงว่าคุณสมัครรับอีเมลจากเรา และสามารถยกเลิกการรับได้ทุกเมื่อ",
     privacyBefore: "ดูว่าเราใช้ข้อมูลของคุณอย่างไรใน",
     privacyPolicy: "นโยบายความเป็นส่วนตัว",
-    hideToday: "ไม่ต้องแสดงอีกในวันนี้",
-    decline: "ไม่ ขอบคุณ"
+    hideToday: "ไม่ต้องแสดงอีกในวันนี้"
   },
   hero: {
     next: "สไลด์ถัดไป",

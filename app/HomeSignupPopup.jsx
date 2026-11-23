@@ -105,7 +105,7 @@ export default function HomeSignupPopup() {
 
     function handleKeyDown(event) {
       if (event.key === "Escape") {
-        closePopup(false);
+        closePopup();
         return;
       }
 
@@ -133,16 +133,10 @@ export default function HomeSignupPopup() {
     };
   }, [isOpen]);
 
-  // An explicit "No, thank you" is a firm answer (30 days). Closing with the
-  // x, Escape or the backdrop may be a slip, so the popup returns sooner (7 days),
-  // or after one day when "Don't show again today" is ticked.
-  function closePopup(declined) {
-    if (declined) {
-      suppressPopup(THIRTY_DAYS_MS);
-    } else {
-      suppressPopup(hideTodayRef.current ? ONE_DAY_MS : SEVEN_DAYS_MS);
-    }
-
+  // Closing with the x, Escape or the backdrop brings the popup back after
+  // 7 days, or after one day when "Don't show again today" is ticked.
+  function closePopup() {
+    suppressPopup(hideTodayRef.current ? ONE_DAY_MS : SEVEN_DAYS_MS);
     setIsOpen(false);
   }
 
@@ -167,7 +161,7 @@ export default function HomeSignupPopup() {
 
   return (
     <div className="home-signup-popup" role="presentation">
-      <button className="home-signup-popup__backdrop" type="button" tabIndex={-1} aria-hidden="true" onClick={() => closePopup(false)} />
+      <button className="home-signup-popup__backdrop" type="button" tabIndex={-1} aria-hidden="true" onClick={() => closePopup()} />
       <section
         className="home-signup-popup__dialog"
         role="dialog"
@@ -186,7 +180,7 @@ export default function HomeSignupPopup() {
         </div>
 
         <div className="home-signup-popup__content">
-          <button className="home-signup-popup__close" type="button" aria-label={copy.close} onClick={() => closePopup(false)}>
+          <button className="home-signup-popup__close" type="button" aria-label={copy.close} onClick={() => closePopup()}>
             &times;
           </button>
 
@@ -240,8 +234,6 @@ export default function HomeSignupPopup() {
             />
             <span>{copy.hideToday}</span>
           </label>
-
-          <button className="home-signup-popup__decline" type="button" onClick={() => closePopup(true)}>{copy.decline}</button>
         </div>
       </section>
     </div>

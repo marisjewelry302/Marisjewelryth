@@ -1918,8 +1918,7 @@ body {
   line-height: 1.45;
 }
 
-.home-signup-popup__privacy a,
-.home-signup-popup__decline {
+.home-signup-popup__privacy a {
   color: var(--maris-teal);
 }
 
@@ -1941,15 +1940,6 @@ body {
   accent-color: var(--maris-teal);
 }
 
-.home-signup-popup__decline {
-  margin-top: clamp(0.35rem, 1.1dvh, 0.65rem);
-  border: 0;
-  border-bottom: 1px solid rgba(0, 73, 58, 0.42);
-  background: transparent;
-  font: inherit;
-  font-size: 0.75rem;
-  cursor: pointer;
-}
 
 @keyframes popup-fade {
   from { opacity: 0; }
@@ -2886,8 +2876,7 @@ body:has(.site-header--home) .hero-utility-bar__divider,
   html body .home-signup-popup__remember span,
   html body .home-signup-popup small,
   html body .home-signup-popup strong,
-  html body .home-signup-popup__form button,
-  html body .home-signup-popup__decline {
+  html body .home-signup-popup__form button {
     font-size: 12px;
   }
 
@@ -2931,10 +2920,6 @@ body:has(.site-header--home) .hero-utility-bar__divider,
 
   html body .maris-footer__email-box button {
     min-width: 44px;
-  }
-
-  html body .home-signup-popup__decline {
-    min-height: 44px;
   }
 }
 
