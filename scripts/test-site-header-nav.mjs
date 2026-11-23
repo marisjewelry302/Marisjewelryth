@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-const source = (await readFile(new URL("../app/components/SiteHeader.jsx", import.meta.url), "utf8")) + (await readFile(new URL("../app/lib/ui-text-base.js", import.meta.url), "utf8"));
+const source = ((await readFile(new URL("../app/components/SiteHeader.jsx", import.meta.url), "utf8")) + (await readFile(new URL("../app/lib/ui-text-base.js", import.meta.url), "utf8"))).replace(/\r\n/g, "\n");
 
 // The navigation lives in lib/ui-text-base.js, English first; the first match is the English menu.
 function extractNav(pattern, name) {

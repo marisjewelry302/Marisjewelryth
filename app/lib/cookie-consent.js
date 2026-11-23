@@ -6,7 +6,8 @@
 // admin/customer sessions) never wait for consent; only the optional
 // categories below do.
 //
-// Gate any tracker on the choice (GoogleAnalytics.jsx does this for GA4):
+// Gate any tracker on the choice (GoogleAnalytics.jsx does this for GA4,
+// GoogleTagManager.jsx for GTM):
 //
 //   import { hasCookieConsent, onCookieConsentChange } from "../lib/cookie-consent";
 //   if (hasCookieConsent("analytics")) loadAnalytics();

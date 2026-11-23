@@ -86,9 +86,10 @@ container fires a Google tag with the same `G-...` ID, every page view is
 counted twice. To avoid it, either leave GA4 out of the container or unset
 `NEXT_PUBLIC_GA_MEASUREMENT_ID` in Vercel.
 
-The CSP does not allow `https://*.google.com` (a Google ad origin, see
-`scripts/test-security-hardening.mjs`). Check the console for CSP errors after
-publishing any GTM tag that needs it.
+`connect-src` allows the hosts both trackers use: `*.google-analytics.com`,
+`*.analytics.google.com`, `www.googletagmanager.com` and `*.google.com`.
+`googleadservices` and `doubleclick` stay blocked
+(`scripts/test-security-hardening.mjs`).
 
 For App Router navigation, enable GA4 Enhanced Measurement page views based
 on browser history changes. Avoid a second history-based page_view tag.
