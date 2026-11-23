@@ -1,5 +1,12 @@
 (() => {
+  // Text and formats come from the server-injected dictionary
+  // (app/lib/admin-i18n.js -> window.MARIS_ADMIN_I18N, window.marisAdminT).
+  const t = window.marisAdminT || ((key) => key);
+  const tp = window.marisAdminT?.plural || ((key) => key);
+  const adminLocale = window.MARIS_ADMIN_I18N?.locale || "en-GB";
   const fallbackCollectionMeta = {
+    // The English titles are stored data (a product's category); they are not
+    // shown directly. getCollectionLabel() shows the translated name.
     "engagement-ring": { title: "Engagement Rings", href: "/category/engagement-ring" },
     "wedding-set": { title: "Wedding Set", href: "/category/wedding-set" },
     "wedding-bands": { title: "Wedding Bands", href: "/category/wedding-bands" },
@@ -20,10 +27,6 @@
     Bracelets: "bracelets",
     "Necklaces & Pendants": "necklaces-pendants"
   };
-  const settingsState = {
-    lowStockThreshold: 2
-  };
-
   const elements = {
     panels: Array.from(document.querySelectorAll("[data-admin-panel]")),
     tabs: Array.from(document.querySelectorAll("[data-admin-tab]")),
@@ -32,11 +35,9 @@
     bestSellerForm: document.querySelector("[data-best-seller-form]"),
     inventoryForm: document.querySelector("[data-inventory-form]"),
     orderForm: document.querySelector("[data-order-form]"),
-    settingsForm: document.querySelector("[data-settings-form]"),
     productsTable: document.querySelector("[data-products-table]"),
     productsPagination: document.querySelector("[data-products-pagination]"),
     productsPageSummary: document.querySelector("[data-products-page-summary]"),
-    catalogueDraftTable: document.querySelector("[data-catalogue-draft-table]"),
     logsTable: document.querySelector("[data-inventory-log-table]"),
     ordersTable: document.querySelector("[data-orders-table]"),
     customRequestsTable: document.querySelector("[data-custom-requests-table]"),
@@ -49,22 +50,25 @@
     inquiriesTable: document.querySelector("[data-inquiries-table]"),
     inquiryDetail: document.querySelector("[data-inquiry-detail]"),
     inquiryListSummary: document.querySelector("[data-inquiry-list-summary]"),
+    inquirySearch: document.querySelector("[data-inquiry-search]"),
+    inquiryStatus: document.querySelector("[data-inquiry-status]"),
     inquiryStatusFilters: Array.from(document.querySelectorAll("[data-inquiry-status-filter]")),
     inquiryCounts: Array.from(document.querySelectorAll("[data-inquiry-count]")),
     productSelect: document.querySelector("[data-product-select]"),
     orderProductSelect: document.querySelector("[data-order-product-select]"),
+    productDatalist: document.querySelector("[data-product-datalist]"),
+    orderProductDatalist: document.querySelector("[data-order-product-datalist]"),
     message: document.querySelector("[data-admin-message]"),
     resetDemo: document.querySelector("[data-reset-demo]"),
-    catalogueDraftCount: document.querySelector("[data-catalogue-draft-count]"),
-    sheetStatus: document.querySelector("[data-sheet-status]"),
-    sheetProductCount: document.querySelector("[data-sheet-product-count]"),
-    sheetProductCountInline: document.querySelector("[data-sheet-product-count-inline]"),
-    sheetLastSync: document.querySelector("[data-sheet-last-sync]"),
-    sheetFeedLinks: Array.from(document.querySelectorAll("[data-sheet-feed-link], [data-sheet-feed-link-inline]")),
-    sheetCatalogueTable: document.querySelector("[data-sheet-catalogue-table]"),
+    catalogueStatus: document.querySelector("[data-catalogue-status]"),
+    catalogueLiveCount: document.querySelector("[data-catalogue-live-count]"),
+    catalogueLastLoaded: document.querySelector("[data-catalogue-last-loaded]"),
     bestSellerSlots: document.querySelector("[data-best-seller-slots]"),
     bestSellerCount: document.querySelector("[data-best-seller-count]"),
     bestSellerDirty: document.querySelector("[data-best-seller-dirty]"),
+    bestSellerDiscard: document.querySelector("[data-best-seller-discard]"),
+    bestSellerRemoveUnavailable: document.querySelector("[data-best-seller-remove-unavailable]"),
+    bestSellerUnavailableNote: document.querySelector("[data-best-seller-unavailable-note]"),
     bestSellerSearch: document.querySelector("[data-best-seller-search]"),
     bestSellerCollection: document.querySelector("[data-best-seller-collection]"),
     bestSellerResults: document.querySelector("[data-best-seller-results]"),
@@ -78,8 +82,7 @@
     databaseProductsTable: document.querySelector("[data-database-products-table]"),
     totalProducts: document.querySelector("[data-total-products]"),
     totalStock: document.querySelector("[data-total-stock]"),
-    totalReserved: document.querySelector("[data-total-reserved]"),
-    lowStock: document.querySelector("[data-low-stock]")
+    totalReserved: document.querySelector("[data-total-reserved]")
   };
 
   let databaseStatusState = {
@@ -105,6 +108,80 @@
       .replaceAll("'", "&#039;");
   }
 
+  const SEARCH_DEBOUNCE_MS = 150;
+
+  // Runs `fn` once typing pauses, so a search box does not redraw on every key.
+  function debounce(fn, waitMs) {
+    let timer = null;
+
+    return (...args) => {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => fn(...args), waitMs);
+    };
+  }
+
+  // ── PERMISSIONS ─────────────────────────────────────────────────────────────
+  // The server renders the signed-in role's permissions on the page shell. A
+  // control tagged data-requires="<permission>" is disabled, with the reason as
+  // its tooltip, when the role cannot use it. The API still enforces every
+  // permission; this only stops people filling in a form that would be refused.
+  const adminShell = document.querySelector(".admin-page-shell");
+  const adminPermissionsKnown = Boolean(adminShell && adminShell.dataset.adminPermissions !== undefined);
+  const adminPermissions = new Set(String(adminShell?.dataset.adminPermissions || "").split(/\s+/).filter(Boolean));
+  const adminRoleLabel = adminShell?.dataset.adminRoleLabel || t("perm.roleFallback");
+  const KNOWN_PERMISSION_REASONS = new Set([
+    "catalogue:write",
+    "catalogue:delete",
+    "operations:write",
+    "settings:write",
+    "personal-data:export",
+    "payments:write"
+  ]);
+
+  function adminCan(permission) {
+    return !adminPermissionsKnown || adminPermissions.has(permission);
+  }
+
+  function describePermissionDenied(permission) {
+    return t(KNOWN_PERMISSION_REASONS.has(permission) ? `perm.denied.${permission}` : "perm.denied.default", { role: adminRoleLabel });
+  }
+
+  function applyAdminPermissions(root = document) {
+    root.querySelectorAll("[data-requires]").forEach((control) => {
+      const permission = control.dataset.requires;
+      const allowed = adminCan(permission);
+
+      control.classList.toggle("is-permission-locked", !allowed);
+
+      if (allowed) {
+        if (control.dataset.lockedByRole === "true") {
+          delete control.dataset.lockedByRole;
+          control.removeAttribute("aria-disabled");
+          control.removeAttribute("title");
+          if ("disabled" in control) control.disabled = false;
+        }
+        return;
+      }
+
+      control.dataset.lockedByRole = "true";
+      control.setAttribute("aria-disabled", "true");
+      control.title = describePermissionDenied(permission);
+      if ("disabled" in control) control.disabled = true;
+    });
+  }
+
+  // For submit handlers: false (with a message) when the role cannot do this.
+  function ensureAdminCan(permission) {
+    if (adminCan(permission)) {
+      return true;
+    }
+
+    setMessage(describePermissionDenied(permission), true);
+    return false;
+  }
+
+  window.MARIS_ADMIN_PERMISSIONS = { can: adminCan, apply: applyAdminPermissions, describe: describePermissionDenied };
+
   const ADMIN_API_PREFIX = "/api/admin";
   const ADMIN_PRODUCT_IMAGES_PATH = "/product-images";
   // The catalogue card's two images, and the limits the media routes enforce
@@ -114,6 +191,11 @@
   const CARD_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
   const MEGABYTE = 1024 * 1024;
   const CARD_IMAGE_MAX_BYTES = 10 * MEGABYTE;
+  // Gallery limits mirror app/lib/maris-database/product-images.js.
+  const GALLERY_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/avif", "image/gif"];
+  const GALLERY_IMAGE_MAX_BYTES = 5 * MEGABYTE;
+  const CARD_IMAGE_HINT = t("hint.cardImages");
+  const GALLERY_IMAGE_HINT = t("hint.galleryImages");
   const VIDEO_MAX_BYTES = 20 * MEGABYTE;
   const SQUARE_TOLERANCE = 0.02;
   const POSTER_MAX_EDGE = 1080;
@@ -122,6 +204,7 @@
   // "Last, whatever the length": the storefront clamps it to each metal's set.
   const VIDEO_POSITION_LAST = 99;
   const BEST_SELLER_SLOT_COUNT = 7;
+  const BEST_SELLER_RESULTS_PAGE_SIZE = 24;
   const PRODUCT_LIST_PAGE_SIZE = 5;
   const adminCache = {
     products: [],
@@ -132,20 +215,56 @@
     logs: [],
     isLoading: true,
     isReady: false,
-    error: ""
+    error: "",
+    // When the product list was last loaded from the server.
+    productsLoadedAt: "",
+    // One message per data set ("" = loaded fine), so one failing endpoint only
+    // affects the tables and actions that need it.
+    errors: {}
+  };
+  const ADMIN_DATASETS = {
+    products: { path: "/products", label: t("dataset.products"), apply: (payload) => {
+      adminCache.products = Array.isArray(payload.products) ? payload.products : [];
+      adminCache.productsLoadedAt = new Date().toISOString();
+      rememberProductSkus(adminCache.products);
+    } },
+    orders: { path: "/orders", label: t("dataset.orders"), apply: (payload) => {
+      adminCache.orders = Array.isArray(payload.orders) ? payload.orders : [];
+    } },
+    logs: { path: "/inventory-logs", label: t("dataset.logs"), apply: (payload) => {
+      adminCache.logs = Array.isArray(payload.logs) ? payload.logs : [];
+    } },
+    customRequests: { path: "/api/admin/custom-order-requests", label: t("dataset.customRequests"), apply: (payload) => {
+      adminCache.customRequests = Array.isArray(payload.requests) ? payload.requests : [];
+    } },
+    bestSellers: { path: "/best-sellers", label: t("dataset.bestSellers"), apply: (payload) => {
+      // The unsaved slot order (bestSellerState.draftIds) is deliberately kept:
+      // it is cleared only by a successful save or the Discard button.
+      adminCache.bestSellerProductIds = Array.isArray(payload.productIds) ? payload.productIds : [];
+    } },
+    inquiries: { path: "/api/admin/inquiries", label: t("dataset.inquiries"), apply: (payload) => {
+      adminCache.inquiries = Array.isArray(payload.inquiries) ? payload.inquiries : [];
+    } }
   };
   const productListState = {
     searchTerm: "",
     status: "all",
-    page: 1
+    page: 1,
+    // Empty sortKey keeps the server order (most recently changed first).
+    sortKey: "",
+    sortDir: "asc"
   };
   // draftIds stays null until the manager edits the slots, so a reload or a
   // save falls back to the saved Supabase order.
   const bestSellerState = {
     draftIds: null,
     searchTerm: "",
-    collection: ""
+    collection: "",
+    visibleCount: BEST_SELLER_RESULTS_PAGE_SIZE
   };
+  // SKUs seen for every product id, so a slot whose product was deleted or
+  // hidden can still say which product it was.
+  const productSkuMemory = new Map();
   const customRequestListState = {
     searchTerm: "",
     status: "all",
@@ -153,17 +272,17 @@
   };
   const customRequestStatuses = ["pending", "contacted", "completed", "cancelled"];
   const customRequestStatusLabels = {
-    pending: "New",
-    contacted: "In progress",
-    completed: "Completed",
-    cancelled: "Cancelled"
+    pending: t("status.request.pending"),
+    contacted: t("status.request.contacted"),
+    completed: t("status.request.completed"),
+    cancelled: t("status.request.cancelled")
   };
   const customRequestMetalLabels = {
-    WG: "White Gold",
-    YG: "Yellow Gold",
-    RG: "Rose Gold",
-    PN: "Platinum",
-    Pd: "Palladium"
+    WG: t("metal.WG"),
+    YG: t("metal.YG"),
+    RG: t("metal.RG"),
+    PN: t("metal.PN"),
+    Pd: t("metal.Pd")
   };
   let modalGalleryImages = [];
   let modalMedia = {
@@ -179,6 +298,34 @@
   let modalVideoUploading = false;
   let modalGemReport = null;
   let modalGalleryDragIndex = null;
+
+  // 401: the session has ended. Show a persistent banner with a sign-in link that
+  // opens in a new tab, so nothing typed on this page is lost.
+  // 403: the signed-in role is not allowed to do this.
+  const SESSION_ENDED_MESSAGE = t("error.sessionEnded");
+  const FORBIDDEN_MESSAGE = t("error.forbidden");
+
+  function showSessionBanner() {
+    const banner = document.querySelector("[data-admin-session-banner]");
+    if (!banner) return;
+    const target = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    const link = banner.querySelector("[data-admin-session-banner-link]");
+    const text = banner.querySelector("[data-admin-session-banner-text]");
+    if (link) link.href = `/admin/login?next=${encodeURIComponent(target)}`;
+    if (text) text.textContent = SESSION_ENDED_MESSAGE;
+    banner.hidden = false;
+  }
+
+  function describeAuthFailure(status) {
+    if (status === 401) {
+      showSessionBanner();
+      return SESSION_ENDED_MESSAGE;
+    }
+    if (status === 403) {
+      return FORBIDDEN_MESSAGE;
+    }
+    return "";
+  }
 
   async function fetchAdminApi(path, options = {}) {
     const url = path.startsWith(ADMIN_API_PREFIX) ? path : `${ADMIN_API_PREFIX}${path}`;
@@ -197,7 +344,7 @@
     const payload = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      const error = new Error(payload.error || `API request failed with HTTP ${response.status}.`);
+      const error = new Error(describeAuthFailure(response.status) || payload.error || t("error.server", { status: response.status }));
       error.status = response.status;
       error.payload = payload;
       throw error;
@@ -206,47 +353,43 @@
     return payload;
   }
 
-  async function loadAdminBackendData() {
+  function refreshAdminCacheSummary() {
+    const messages = Object.values(adminCache.errors).filter(Boolean);
+    adminCache.isReady = !adminCache.errors.products;
+    adminCache.error = messages[0] || "";
+  }
+
+  // Loads the named data sets (default: all). A failed one keeps what was
+  // already on screen and records its own error; the others still load.
+  async function loadAdminBackendData(names = Object.keys(ADMIN_DATASETS)) {
     adminCache.isLoading = true;
-    adminCache.error = "";
 
     try {
-      const [
-        productsPayload,
-        ordersPayload,
-        logsPayload,
-        customRequestsPayload,
-        bestSellersPayload,
-        inquiriesPayload
-      ] = await Promise.all([
-        fetchAdminApi("/products"),
-        fetchAdminApi("/orders"),
-        fetchAdminApi("/inventory-logs"),
-        fetchAdminApi("/api/admin/custom-order-requests"),
-        fetchAdminApi("/best-sellers"),
-        fetchAdminApi("/api/admin/inquiries")
-      ]);
+      const results = await Promise.allSettled(names.map((name) => fetchAdminApi(ADMIN_DATASETS[name].path)));
 
-      adminCache.products = Array.isArray(productsPayload.products) ? productsPayload.products : [];
-      adminCache.bestSellerProductIds = Array.isArray(bestSellersPayload.productIds) ? bestSellersPayload.productIds : [];
-      bestSellerState.draftIds = null;
-      adminCache.orders = Array.isArray(ordersPayload.orders) ? ordersPayload.orders : [];
-      adminCache.logs = Array.isArray(logsPayload.logs) ? logsPayload.logs : [];
-      adminCache.customRequests = Array.isArray(customRequestsPayload.requests) ? customRequestsPayload.requests : [];
-      adminCache.inquiries = Array.isArray(inquiriesPayload.inquiries) ? inquiriesPayload.inquiries : [];
-      adminCache.isReady = true;
-    } catch (error) {
-      adminCache.products = [];
-      adminCache.bestSellerProductIds = [];
-      adminCache.orders = [];
-      adminCache.logs = [];
-      adminCache.customRequests = [];
-      adminCache.inquiries = [];
-      adminCache.isReady = false;
-      adminCache.error = error instanceof Error ? error.message : "Supabase admin data could not be loaded.";
+      results.forEach((result, index) => {
+        const name = names[index];
+
+        if (result.status === "fulfilled") {
+          ADMIN_DATASETS[name].apply(result.value);
+          adminCache.errors[name] = "";
+        } else {
+          const reason = result.reason;
+          adminCache.errors[name] = reason instanceof Error && reason.message
+            ? reason.message
+            : t("error.couldNotLoad", { label: ADMIN_DATASETS[name].label });
+        }
+      });
     } finally {
       adminCache.isLoading = false;
+      refreshAdminCacheSummary();
     }
+  }
+
+  // A table cell for a data set that failed to load, with its own Retry button.
+  function datasetErrorCell(name, colspan, fallbackMessage) {
+    const message = adminCache.errors[name] || fallbackMessage;
+    return `<tr><td colspan="${colspan}">${escapeHtml(t("error.couldNotLoadWhy", { label: ADMIN_DATASETS[name].label, message }))} <button type="button" class="admin-secondary" data-retry-dataset="${name}">${escapeHtml(t("common.retry"))}</button></td></tr>`;
   }
 
   function getCachedProducts() {
@@ -293,7 +436,7 @@
       return "-";
     }
 
-    return date.toLocaleString("en-GB", {
+    return date.toLocaleString(adminLocale, {
       day: "2-digit",
       month: "short",
       year: "numeric",
@@ -312,15 +455,15 @@
     const elapsedHours = Math.max(0, Math.floor((Date.now() - createdAt.getTime()) / (60 * 60 * 1000)));
 
     if (elapsedHours < 1) {
-      return { label: "Just received", isOverdue: false };
+      return { label: t("time.justReceived"), isOverdue: false };
     }
 
     if (elapsedHours < 24) {
-      return { label: `${elapsedHours}h ago`, isOverdue: elapsedHours >= 4 };
+      return { label: t("time.hoursAgo", { n: elapsedHours }), isOverdue: elapsedHours >= 4 };
     }
 
     const days = Math.floor(elapsedHours / 24);
-    return { label: `${days}d ago`, isOverdue: true };
+    return { label: t("time.daysAgo", { n: days }), isOverdue: true };
   }
 
   function getCustomRequestHistory(request) {
@@ -370,18 +513,10 @@
       ringDesign.style,
       ringDesign.setting,
       metal,
-      request.ringSize ? `Size ${request.ringSize}` : "",
+      request.ringSize ? t("request.size", { size: request.ringSizeLabel || `US ${request.ringSize}` }) : "",
       request.origin,
       stone
-    ].filter(Boolean).join(" · ") || request.metadata?.optionSummary || "Preferences not specified";
-  }
-
-  function getStoredSettings() {
-    return { ...settingsState };
-  }
-
-  function getSettings() {
-    return { ...settingsState };
+    ].filter(Boolean).join(" · ") || request.metadata?.optionSummary || t("request.noPreferences");
   }
 
   let messageHideTimer = null;
@@ -392,6 +527,7 @@
     }
 
     window.clearTimeout(messageHideTimer);
+    elements.message.classList.remove("has-action");
     elements.message.textContent = message;
     elements.message.classList.toggle("is-error", isError);
     elements.message.classList.toggle("is-visible", Boolean(message));
@@ -407,14 +543,83 @@
     }, isError ? 8000 : 4000);
   }
 
-  function ensureAdminDataReady() {
-    if (adminCache.isReady) {
+  // Runs `task` once at a time for `lockElement` (a form or button): a second
+  // click/submit while it is running is ignored, the button shows `busyLabel`,
+  // and everything is restored in `finally`. Returns true when the task ran.
+  async function withSubmitLock(lockElement, button, busyLabel, task) {
+    if (!lockElement || lockElement.dataset.submitting === "true") {
+      return false;
+    }
+
+    const previousLabel = button ? button.textContent : "";
+    lockElement.dataset.submitting = "true";
+    if (button) {
+      button.disabled = true;
+      if (busyLabel) {
+        button.textContent = busyLabel;
+      }
+    }
+
+    try {
+      await task();
+    } finally {
+      delete lockElement.dataset.submitting;
+      if (button) {
+        button.disabled = false;
+        if (busyLabel) {
+          button.textContent = previousLabel;
+        }
+      }
+    }
+
+    return true;
+  }
+
+  // Blocks an action only when a data set it needs failed to load.
+  // A confirmation toast with one action button (for example Undo) that stays
+  // for `duration` ms.
+  function setMessageWithAction(message, actionLabel, onAction, duration = 8000) {
+    if (!elements.message) {
+      return;
+    }
+
+    window.clearTimeout(messageHideTimer);
+    elements.message.classList.remove("is-error");
+    elements.message.textContent = "";
+
+    const text = document.createElement("span");
+    text.textContent = message;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "admin-message-action";
+    button.textContent = actionLabel;
+    button.addEventListener("click", async () => {
+      button.disabled = true;
+      await onAction();
+    });
+
+    elements.message.append(text, button);
+    elements.message.classList.add("is-visible", "has-action");
+    messageHideTimer = window.setTimeout(() => setMessage(""), duration);
+  }
+
+  function ensureAdminDataReady(...names) {
+    const needed = names.length ? names : ["products"];
+    const failed = needed.find((name) => adminCache.errors[name]);
+
+    if (!failed && !adminCache.isLoading) {
       return true;
     }
 
-    const message = adminCache.error
-      || "Connect Supabase before saving admin products, inventory, or orders.";
-    setMessage(message, true);
+    setMessage(
+      failed
+        ? t("error.datasetFailed", {
+          label: `${ADMIN_DATASETS[failed].label[0].toUpperCase()}${ADMIN_DATASETS[failed].label.slice(1)}`,
+          message: adminCache.errors[failed]
+        })
+        : t("error.stillLoading"),
+      true
+    );
     return false;
   }
 
@@ -434,10 +639,6 @@
     return getCachedCustomRequests();
   }
 
-  function readCatalogueDrafts() {
-    return [];
-  }
-
   function getProductSearchText(product) {
     return [
       getProductSku(product),
@@ -446,9 +647,58 @@
       getProductCollectionName(product),
       getProductPrice(product),
       product?.status,
+      getProductStatusLabel(product?.status),
       product?.slug,
       product?.description
     ].filter(Boolean).join(" ").toLowerCase();
+  }
+
+  const PRODUCT_STATUS_ORDER = { active: 0, draft: 1, archived: 2 };
+
+  function getProductImageCount(product) {
+    return Array.isArray(product.images) ? product.images.length : (Number(product.imageCount) || 0);
+  }
+
+  function getProductPriceValue(product) {
+    const amount = Number(product.basePrice ?? product.priceAmount);
+
+    if (Number.isFinite(amount)) {
+      return amount;
+    }
+
+    const parsed = Number(String(product.price || "").replace(/[^0-9.]/g, ""));
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : -1;
+  }
+
+  // What each sortable column sorts by.
+  const PRODUCT_SORTERS = {
+    sku: (product) => getProductSku(product),
+    name: (product) => getProductName(product),
+    collection: (product) => getCollectionLabel(product.collection),
+    price: getProductPriceValue,
+    available: (product) => getAvailable(product),
+    images: getProductImageCount,
+    status: (product) => PRODUCT_STATUS_ORDER[normalizeProductStatus(product.status)]
+  };
+
+  function sortProducts(products, key, direction) {
+    const read = PRODUCT_SORTERS[key];
+
+    if (!read) {
+      return products;
+    }
+
+    const factor = direction === "desc" ? -1 : 1;
+
+    return [...products].sort((left, right) => {
+      const a = read(left);
+      const b = read(right);
+      const result = typeof a === "number" && typeof b === "number"
+        ? a - b
+        : String(a).localeCompare(String(b), undefined, { numeric: true, sensitivity: "base" });
+
+      return result * factor;
+    });
   }
 
   function getProductListView() {
@@ -458,23 +708,27 @@
     const statusFilter = productListState.status;
     const statusProducts = statusFilter === "all"
       ? products
-      : products.filter((product) => (product.status === "active" ? "active" : "draft") === statusFilter);
-    const filteredProducts = query
+      : products.filter((product) => normalizeProductStatus(product.status) === statusFilter);
+    const matchingProducts = query
       ? statusProducts.filter((product) => getProductSearchText(product).includes(query))
       : statusProducts;
+    const filteredProducts = sortProducts(matchingProducts, productListState.sortKey, productListState.sortDir);
     const pageCount = Math.max(1, Math.ceil(filteredProducts.length / PRODUCT_LIST_PAGE_SIZE));
     const currentPage = Math.min(Math.max(Number(productListState.page) || 1, 1), pageCount);
     const startIndex = (currentPage - 1) * PRODUCT_LIST_PAGE_SIZE;
 
     productListState.page = currentPage;
 
-    const activeCount = products.filter((product) => product.status === "active").length;
+    const statusCounts = { all: products.length, active: 0, draft: 0, archived: 0 };
+    products.forEach((product) => {
+      statusCounts[normalizeProductStatus(product.status)] += 1;
+    });
 
     return {
       query,
       searchLabel,
       statusFilter,
-      statusCounts: { all: products.length, active: activeCount, draft: products.length - activeCount },
+      statusCounts,
       totalProducts: products.length,
       filteredProducts,
       filteredCount: filteredProducts.length,
@@ -493,20 +747,27 @@
     document.querySelectorAll("[data-products-status-count]").forEach((count) => {
       count.textContent = String(view.statusCounts[count.dataset.productsStatusCount] ?? 0);
     });
+    document.querySelectorAll("[data-products-sort]").forEach((button) => {
+      const isSorted = productListState.sortKey === button.dataset.productsSort;
+      const direction = productListState.sortDir === "desc" ? "descending" : "ascending";
+
+      button.closest("th")?.setAttribute("aria-sort", isSorted ? direction : "none");
+      button.dataset.sortDirection = isSorted ? productListState.sortDir : "";
+    });
 
     if (elements.productsPageSummary) {
       if (adminCache.isLoading) {
-        elements.productsPageSummary.textContent = "Loading Supabase products...";
-      } else if (!adminCache.isReady) {
-        elements.productsPageSummary.textContent = adminCache.error || "Connect Supabase before managing admin products.";
+        elements.productsPageSummary.textContent = t("products.loading");
+      } else if (adminCache.errors.products) {
+        elements.productsPageSummary.textContent = t("products.loadError", { message: adminCache.errors.products });
       } else if (!view.filteredCount && view.query) {
-        elements.productsPageSummary.textContent = `No products match "${view.searchLabel}".`;
+        elements.productsPageSummary.textContent = t("products.noMatch", { query: view.searchLabel });
       } else if (!view.filteredCount) {
-        elements.productsPageSummary.textContent = "No Supabase products yet.";
+        elements.productsPageSummary.textContent = t("products.none");
       } else if (view.query) {
-        elements.productsPageSummary.textContent = `Showing ${view.startItem}-${view.endItem} of ${view.filteredCount} matches for "${view.searchLabel}" (${view.totalProducts} total).`;
+        elements.productsPageSummary.textContent = t("products.showingMatches", { start: view.startItem, end: view.endItem, count: view.filteredCount, query: view.searchLabel, total: view.totalProducts });
       } else {
-        elements.productsPageSummary.textContent = `Showing ${view.startItem}-${view.endItem} of ${view.filteredCount} products.`;
+        elements.productsPageSummary.textContent = t("products.showing", { start: view.startItem, end: view.endItem, count: view.filteredCount });
       }
     }
 
@@ -514,7 +775,7 @@
       return;
     }
 
-    if (adminCache.isLoading || !adminCache.isReady || view.pageCount <= 1) {
+    if (adminCache.isLoading || adminCache.errors.products || view.pageCount <= 1) {
       elements.productsPagination.innerHTML = "";
       return;
     }
@@ -526,9 +787,9 @@
     }).join("");
 
     elements.productsPagination.innerHTML = `
-      <button type="button" data-products-page="${Math.max(1, view.currentPage - 1)}"${view.currentPage === 1 ? " disabled" : ""}>Prev</button>
+      <button type="button" data-products-page="${Math.max(1, view.currentPage - 1)}"${view.currentPage === 1 ? " disabled" : ""}>${escapeHtml(t("common.prev"))}</button>
       ${pageButtons}
-      <button type="button" data-products-page="${Math.min(view.pageCount, view.currentPage + 1)}"${view.currentPage === view.pageCount ? " disabled" : ""}>Next</button>
+      <button type="button" data-products-page="${Math.min(view.pageCount, view.currentPage + 1)}"${view.currentPage === view.pageCount ? " disabled" : ""}>${escapeHtml(t("common.next"))}</button>
     `;
   }
 
@@ -545,20 +806,100 @@
   }
 
   function getProductCategory(product) {
-    return product.category || getCollectionLabel(product.collection) || "Fine Jewelry";
+    return product.category || getCollectionDataLabel(product.collection) || "Fine Jewelry";
+  }
+
+  // One set of words for a product's stored status, used everywhere it is shown.
+  const PRODUCT_STATUS_LABELS = {
+    active: t("status.product.active"),
+    draft: t("status.product.draft"),
+    archived: t("status.product.archived")
+  };
+
+  function normalizeProductStatus(value) {
+    const status = String(value ?? "").trim().toLowerCase();
+    return Object.hasOwn(PRODUCT_STATUS_LABELS, status) ? status : "draft";
+  }
+
+  function getProductStatusLabel(value) {
+    return PRODUCT_STATUS_LABELS[normalizeProductStatus(value)];
+  }
+
+  // Badges say the same thing for products, orders and payments: green is
+  // good, amber is waiting, grey is closed or off.
+  const STATUS_TONES = {
+    active: "good", draft: "pending", archived: "muted",
+    paid: "good", completed: "good", shipped: "good", ready: "good", confirmed: "good",
+    quoted: "pending", making: "pending", pending: "pending", unpaid: "pending",
+    cancelled: "muted", failed: "muted", refunded: "muted"
+  };
+
+  function renderStatusBadge(label, statusKey) {
+    const tone = STATUS_TONES[String(statusKey || "").toLowerCase()] || "pending";
+    return `<span class="admin-status-badge is-${tone}">${escapeHtml(label)}</span>`;
+  }
+
+  function renderProductStatusBadge(value) {
+    const status = normalizeProductStatus(value);
+    return renderStatusBadge(PRODUCT_STATUS_LABELS[status], status);
+  }
+
+  // Order and payment statuses as stored, in plain words.
+  const ORDER_STATUS_LABELS = {
+    draft: t("status.order.draft"),
+    pending: t("status.order.pending"),
+    quoted: t("status.order.quoted"),
+    confirmed: t("status.order.confirmed"),
+    paid: t("status.order.paid"),
+    making: t("status.order.making"),
+    ready: t("status.order.ready"),
+    shipped: t("status.order.shipped"),
+    completed: t("status.order.completed"),
+    cancelled: t("status.order.cancelled")
+  };
+  const PAYMENT_STATUS_LABELS = {
+    unpaid: t("status.payment.unpaid"),
+    pending: t("status.payment.pending"),
+    paid: t("status.payment.paid"),
+    failed: t("status.payment.failed"),
+    refunded: t("status.payment.refunded"),
+    cancelled: t("status.payment.cancelled")
+  };
+
+  function formatStatusLabel(labels, value) {
+    const key = String(value ?? "").trim().toLowerCase();
+
+    if (Object.hasOwn(labels, key)) {
+      return labels[key];
+    }
+
+    return key ? key.replace(/[_-]+/g, " ").replace(/^./, (letter) => letter.toUpperCase()) : "-";
   }
 
   // Sample-piece specs shown on the product page; the key doubles as the
   // create-form field name and the modal renders one input per entry.
   const PRODUCT_SPEC_FIELDS = [
-    { key: "caratWeight", modalId: "modal-field-carat-weight", label: "Carat Weight", placeholder: "0.50 ct" },
-    { key: "stoneType", modalId: "modal-field-stone-type", label: "Stone Type", placeholder: "Natural Diamond" },
-    { key: "stoneShape", modalId: "modal-field-stone-shape", label: "Shape", placeholder: "Round Brilliant" }
+    { key: "caratWeight", modalId: "modal-field-carat-weight", label: t("spec.caratWeight"), placeholder: "0.50 ct" },
+    { key: "stoneType", modalId: "modal-field-stone-type", label: t("spec.stoneType"), placeholder: "Natural Diamond" },
+    { key: "stoneShape", modalId: "modal-field-stone-shape", label: t("spec.stoneShape"), placeholder: "Round Brilliant" }
   ];
 
   // The storefront splits a gallery into metal sets by reading the metal and
   // view from each image's alt text, so uploads write both into it.
+  // These English words are stored data, not display text: show them through
+  // displayImageMetal() / displayImageView().
   const IMAGE_METAL_LABELS = ["White Gold", "Yellow Gold", "Rose Gold"];
+  const IMAGE_METAL_CODES = { "White Gold": "WG", "Yellow Gold": "YG", "Rose Gold": "RG" };
+  const IMAGE_VIEW_CODES = { "Hero view": "hero", "Top view": "top", "Front view": "front", "Side view": "side", "Back view": "back" };
+
+  function displayImageMetal(label) {
+    return IMAGE_METAL_CODES[label] ? t(`metal.${IMAGE_METAL_CODES[label]}`) : label;
+  }
+
+  function displayImageView(label) {
+    return IMAGE_VIEW_CODES[label] ? t(`imageView.${IMAGE_VIEW_CODES[label]}`) : label;
+  }
+
   const IMAGE_VIEW_LABELS = [
     ["Hero view", /\b(hero|main|primary)\b/i],
     ["Top view", /\btop\b/i],
@@ -599,7 +940,7 @@
   }
 
   function renderImageTagOptions(labels, selected, emptyLabel) {
-    return [["", emptyLabel], ...labels.map((label) => [label, label.replace(" view", "")])]
+    return [["", emptyLabel], ...labels.map((label) => [label, IMAGE_METAL_CODES[label] ? displayImageMetal(label) : displayImageView(label)])]
       .map(([value, label]) => `<option value="${escapeHtml(value)}"${value === selected ? " selected" : ""}>${escapeHtml(label)}</option>`)
       .join("");
   }
@@ -640,32 +981,49 @@
       return product.price;
     }
 
-    if (product.priceAmount === null || product.priceAmount === undefined) {
-      return "Price on request";
+    // Product rows from /api/admin/products carry basePrice; the database
+    // catalogue rows carry priceAmount.
+    const rawAmount = product.priceAmount ?? product.basePrice;
+
+    if (rawAmount === null || rawAmount === undefined) {
+      return t("product.priceOnRequest");
     }
 
-    const amount = Number(product.priceAmount);
-    const formattedAmount = Number.isFinite(amount) ? amount.toLocaleString() : String(product.priceAmount);
+    const amount = Number(rawAmount);
+    const formattedAmount = Number.isFinite(amount) ? amount.toLocaleString(adminLocale) : String(rawAmount);
     return `${formattedAmount} ${product.currency || "THB"}`;
   }
 
   function getMovementLabel(type) {
     const labels = {
-      receive: "+ real stock",
-      reserve: "+ reserved",
-      release: "- reserved",
-      sale: "- real / - reserved",
-      damage: "- real stock",
-      return: "+ real stock"
+      receive: t("movement.receive"),
+      reserve: t("movement.reserve"),
+      release: t("movement.release"),
+      sale: t("movement.sale"),
+      damage: t("movement.damage"),
+      return: t("movement.return")
     };
 
     return labels[type] || type;
   }
 
-  function getCollectionLabel(collectionKey) {
+  // The stored (English) collection title: what is saved as a product's category.
+  function getCollectionDataLabel(collectionKey) {
     return collectionMeta[collectionKey]?.title || collectionKey || "Unassigned";
   }
 
+  // The collection name as shown on screen, in the active language.
+  function getCollectionLabel(collectionKey) {
+    const translated = collectionKey ? t(`collection.${collectionKey}`) : "";
+
+    if (translated && translated !== `collection.${collectionKey}`) {
+      return translated;
+    }
+
+    return collectionMeta[collectionKey]?.title || collectionKey || t("common.unassigned");
+  }
+
+  // Stored category values, not display text.
   function getBroadCategoryLabel(collectionKey, fallbackCategory = "") {
     if (collectionKey === "wedding-set") {
       return "Wedding Set";
@@ -675,7 +1033,7 @@
       return "Rings";
     }
 
-    return getCollectionLabel(collectionKey) || fallbackCategory || "Unassigned";
+    return getCollectionDataLabel(collectionKey) || fallbackCategory || "Unassigned";
   }
 
   function getProductFormCollectionKey(category, ringType) {
@@ -781,15 +1139,15 @@
     const parser = getGemReportParser();
 
     if (!parser) {
-      throw new Error("The gem report reader did not load. Refresh the page and try again.");
+      throw new Error(t("gem.readerMissing"));
     }
 
     if (/\.(xlsx?|xlsm|numbers|pdf)$/i.test(file.name)) {
-      throw new Error("Save the gem report as CSV first (File > Save As > CSV), then choose that file.");
+      throw new Error(t("gem.notCsv"));
     }
 
     if (file.size > GEM_REPORT_MAX_BYTES) {
-      throw new Error("This file is larger than a gem report should be (2 MB).");
+      throw new Error(t("gem.tooLarge"));
     }
 
     return parser.decodeGemReportBytes(await file.arrayBuffer());
@@ -812,18 +1170,18 @@
         <table>
           <thead>
             <tr>
-              <th scope="col">Stone</th>
-              <th scope="col">Shape</th>
-              <th scope="col">Size</th>
-              <th scope="col" class="is-number">Qty</th>
-              <th scope="col" class="is-number">Ct each</th>
-              <th scope="col" class="is-number">Ct total</th>
+              <th scope="col">${escapeHtml(t("gem.col.stone"))}</th>
+              <th scope="col">${escapeHtml(t("gem.col.shape"))}</th>
+              <th scope="col">${escapeHtml(t("gem.col.size"))}</th>
+              <th scope="col" class="is-number">${escapeHtml(t("gem.col.qty"))}</th>
+              <th scope="col" class="is-number">${escapeHtml(t("gem.col.ctEach"))}</th>
+              <th scope="col" class="is-number">${escapeHtml(t("gem.col.ctTotal"))}</th>
             </tr>
           </thead>
           <tbody>${rows}</tbody>
           <tfoot>
             <tr>
-              <td colspan="3">Total</td>
+              <td colspan="3">${escapeHtml(t("gem.col.total"))}</td>
               <td class="is-number">${escapeHtml(report.totalQuantity)}</td>
               <td></td>
               <td class="is-number">${escapeHtml(formatGemReportCarat(report.totalCarat))}</td>
@@ -855,23 +1213,23 @@
       const source = [
         report.fileName,
         result
-          ? "not saved yet"
-          : report.importedAt ? `imported ${new Date(report.importedAt).toLocaleDateString()}` : ""
+          ? t("gem.notSavedYet")
+          : report.importedAt ? t("gem.imported", { date: new Date(report.importedAt).toLocaleDateString(adminLocale) }) : ""
       ].filter(Boolean).join(" · ");
 
       parts.push(`
         <p class="admin-gem-report-summary">
-          <strong>${report.totalQuantity} stone${report.totalQuantity === 1 ? "" : "s"}${report.totalCarat === null ? "" : ` · ${escapeHtml(formatGemReportCarat(report.totalCarat))} ct total`}</strong>
-          <span>${lineCount} line${lineCount === 1 ? "" : "s"}${source ? ` · ${escapeHtml(source)}` : ""}</span>
+          <strong>${escapeHtml(tp("gem.stones", report.totalQuantity, { n: report.totalQuantity }))}${report.totalCarat === null ? "" : ` · ${escapeHtml(t("gem.ctTotal", { carat: formatGemReportCarat(report.totalCarat) }))}`}</strong>
+          <span>${escapeHtml(tp("gem.lines", lineCount, { n: lineCount }))}${source ? ` · ${escapeHtml(source)}` : ""}</span>
         </p>`);
 
       if (result?.needsCaratMode) {
         parts.push(`
           <label class="admin-gem-report-mode">
-            <span>The one carat column, “${escapeHtml(result.columns.carat || "Carat")}”, holds</span>
+            <span>${escapeHtml(t("gem.caratColumn", { column: result.columns.carat || "Carat" }))}</span>
             <select data-gem-report-carat-mode>
-              <option value="total"${result.caratMode === "total" ? " selected" : ""}>the weight of the whole line</option>
-              <option value="each"${result.caratMode === "each" ? " selected" : ""}>the weight of each stone</option>
+              <option value="total"${result.caratMode === "total" ? " selected" : ""}>${escapeHtml(t("gem.caratModeTotal"))}</option>
+              <option value="each"${result.caratMode === "each" ? " selected" : ""}>${escapeHtml(t("gem.caratModeEach"))}</option>
             </select>
           </label>`);
       }
@@ -881,20 +1239,20 @@
       const notes = [];
       if (result) {
         const filled = PRODUCT_SPEC_FIELDS.filter(({ key }) => result.specs?.[key]).map(({ label }) => label);
-        if (filled.length) notes.push(`Filled ${filled.join(", ")} from the report; edit them if needed.`);
+        if (filled.length) notes.push(t("gem.filled", { fields: filled.join(", ") }));
         if (result.needsCaratMode && result.caratModeSource === "default") {
-          notes.push("The sizes could not tell whether the carat column is per stone or per line. Check the totals above.");
+          notes.push(t("gem.caratUnsure"));
         }
         if (result.skippedRows) {
-          notes.push(`${result.skippedRows} total or note line${result.skippedRows === 1 ? " was" : "s were"} left out.`);
+          notes.push(tp("gem.skipped", result.skippedRows, { n: result.skippedRows }));
         }
-        if (result.truncated) notes.push("Only the first 200 stone lines are kept.");
+        if (result.truncated) notes.push(t("gem.truncated"));
       }
       if (notes.length) {
         parts.push(`<p class="admin-gem-report-note">${notes.map(escapeHtml).join(" ")}</p>`);
       }
 
-      parts.push(`<button class="admin-secondary" type="button" data-gem-report-remove>Remove gem report</button>`);
+      parts.push(`<button class="admin-secondary" type="button" data-gem-report-remove>${escapeHtml(t("gem.remove"))}</button>`);
       preview.innerHTML = parts.join("");
     }
 
@@ -924,7 +1282,7 @@
         render();
       } catch (error) {
         input.value = "";
-        render(`${file.name}: ${error instanceof Error ? error.message : "The gem report could not be read."}`);
+        render(`${file.name}: ${error instanceof Error ? error.message : t("gem.unreadable")}`);
       }
     });
 
@@ -979,7 +1337,7 @@
     }
 
     if (!group) {
-      summary.textContent = "No product images selected.";
+      summary.textContent = t("images.noneSelected");
       return;
     }
 
@@ -988,7 +1346,7 @@
       .join("<br>");
 
     summary.innerHTML = `
-      <strong>${escapeHtml(group.summary || "Image group ready")}</strong>
+      <strong>${escapeHtml(group.summary || t("images.groupReady"))}</strong>
       <span>${orderedNames}</span>
     `;
   }
@@ -1032,7 +1390,7 @@
           return null;
         }
 
-        const label = srcPart ? labelPart || `View ${index + 1}` : `View ${index + 1}`;
+        const label = srcPart ? labelPart || t("images.view", { n: index + 1 }) : t("images.view", { n: index + 1 });
         const alt = altPart || `${fallbackName} ${label}`;
 
         return { label, src, alt };
@@ -1047,7 +1405,7 @@
 
     if (fallbackImage) {
       fallbackGallery.push({
-        label: "Primary View",
+        label: t("images.primaryView"),
         src: fallbackImage,
         alt: `${fallbackName} primary view`
       });
@@ -1055,7 +1413,7 @@
 
     if (fallbackHover && fallbackHover !== fallbackImage) {
       fallbackGallery.push({
-        label: "Alternate View",
+        label: t("images.alternateView"),
         src: fallbackHover,
         alt: `${fallbackName} alternate view`
       });
@@ -1094,39 +1452,61 @@
     });
   }
 
-  async function uploadProductImages(product, result) {
-    const productName = result.product.name || result.product.code;
-    const cardFiles = (result.coverImageFiles || []).filter(isSelectedFile);
-    const files = [result.mainImageFile, ...result.galleryImageFiles].filter(isSelectedFile);
+  // One entry per file to upload; each can be run again on its own if it fails.
+  function buildProductImageUploadTasks(product, draft, productName) {
+    const tasks = [];
+    const cardFiles = (draft.coverImageFiles || []).filter(isSelectedFile);
+    const galleryFiles = [draft.mainImageFile, ...(draft.galleryImageFiles || [])].filter(isSelectedFile);
 
-    for (const file of cardFiles) {
-      const problem = validateCardImageFile(file);
+    // Cover first, hover second - each straight to storage, then onto the row.
+    cardFiles.forEach((file, index) => {
+      const slot = CARD_IMAGE_SLOTS[index];
 
-      if (problem) {
-        throw new Error(problem);
+      if (!slot) {
+        return;
+      }
+
+      tasks.push({
+        name: file.name,
+        run: async () => {
+          const path = await uploadProductMediaFile(product.id, slot, file);
+          await saveProductMedia(product.id, { [slot]: { path } });
+        }
+      });
+    });
+
+    galleryFiles.forEach((file, index) => {
+      const smartImage = findSmartImageMetadata(file, draft.smartGroup);
+
+      tasks.push({
+        name: file.name,
+        run: () => uploadProductImage(product.id, file, {
+          altText: smartImage?.altText || `${productName} gallery image ${index + 1}`,
+          sortOrder: index,
+          isPrimary: index === 0
+        })
+      });
+    });
+
+    return tasks;
+  }
+
+  // Runs tasks one after another and never throws: returns the ones that failed
+  // so the admin can retry just those. `onProgress(done, total)` drives the button label.
+  async function runProductImageUploadTasks(tasks, onProgress) {
+    const failed = [];
+
+    for (const [index, task] of tasks.entries()) {
+      onProgress?.(index + 1, tasks.length);
+
+      try {
+        await task.run();
+      } catch (error) {
+        failed.push({ task, message: error instanceof Error ? error.message : t("upload.failed") });
       }
     }
 
-    // Cover first, hover second - each straight to storage, then onto the row.
-    const cardChanges = {};
-
-    for (const [index, file] of cardFiles.entries()) {
-      const slot = CARD_IMAGE_SLOTS[index];
-      cardChanges[slot] = { path: await uploadProductMediaFile(product.id, slot, file) };
-    }
-
-    if (Object.keys(cardChanges).length) {
-      await saveProductMedia(product.id, cardChanges);
-    }
-
-    for (const [index, file] of files.entries()) {
-      const smartImage = findSmartImageMetadata(file, result.smartGroup);
-      await uploadProductImage(product.id, file, {
-        altText: smartImage?.altText || `${productName} gallery image ${index + 1}`,
-        sortOrder: index,
-        isPrimary: index === 0
-      });
-    }
+    return failed;
   }
 
   function getModalProductId() {
@@ -1211,9 +1591,9 @@
           message = "";
         }
 
-        reject(new Error(message || `Upload failed (${request.status}).`));
+        reject(new Error(message || t("upload.failedStatus", { status: request.status })));
       });
-      request.addEventListener("error", () => reject(new Error("Upload failed. Check the connection and try again.")));
+      request.addEventListener("error", () => reject(new Error(t("upload.failedConnection"))));
       request.send(body);
     });
   }
@@ -1237,13 +1617,38 @@
     });
   }
 
-  function validateCardImageFile(file) {
+  function validateCardImageFile(file, asPoster = false) {
     if (!CARD_IMAGE_TYPES.includes(file.type)) {
-      return "Card images must be JPG, PNG or WebP.";
+      return t(asPoster ? "upload.posterType" : "upload.cardType");
     }
 
     if (file.size > CARD_IMAGE_MAX_BYTES) {
-      return `Card images must be ${CARD_IMAGE_MAX_BYTES / MEGABYTE} MB or smaller.`;
+      return t(asPoster ? "upload.posterSize" : "upload.cardSize", { mb: CARD_IMAGE_MAX_BYTES / MEGABYTE });
+    }
+
+    return "";
+  }
+
+  function validateGalleryImageFile(file) {
+    if (!GALLERY_IMAGE_TYPES.includes(file.type)) {
+      return t("upload.galleryType");
+    }
+
+    if (file.size > GALLERY_IMAGE_MAX_BYTES) {
+      return t("upload.gallerySize", { mb: GALLERY_IMAGE_MAX_BYTES / MEGABYTE, actual: (file.size / MEGABYTE).toFixed(1) });
+    }
+
+    return "";
+  }
+
+  // First problem across a list of files, naming the file, or "".
+  function findImageFileProblem(files, validate) {
+    for (const file of files) {
+      const problem = validate(file);
+
+      if (problem) {
+        return `${file.name}: ${problem}`;
+      }
     }
 
     return "";
@@ -1253,7 +1658,7 @@
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
         cleanup();
-        reject(new Error("The video took too long to read."));
+        reject(new Error(t("video.tookTooLong")));
       }, timeoutMs);
       const handleEvent = () => {
         cleanup();
@@ -1261,7 +1666,7 @@
       };
       const handleError = () => {
         cleanup();
-        reject(new Error("This browser cannot read the video. Export it as MP4 (H.264)."));
+        reject(new Error(t("video.browserCannotRead")));
       };
       function cleanup() {
         clearTimeout(timer);
@@ -1293,7 +1698,7 @@
       const duration = Number.isFinite(video.duration) ? video.duration : 0;
 
       if (!width || !height) {
-        throw new Error("This file has no video picture. Export it as MP4 (H.264).");
+        throw new Error(t("video.noPicture"));
       }
 
       if (duration > 0.2) {
@@ -1325,11 +1730,11 @@
   // stops it; a non-square video is uploaded with a warning.
   async function inspectTurntableFile(file) {
     if (file.type !== "video/mp4") {
-      return { error: "The turntable must be an MP4 file (H.264)." };
+      return { error: t("video.mustBeMp4") };
     }
 
     if (file.size > VIDEO_MAX_BYTES) {
-      return { error: `The turntable must be ${VIDEO_MAX_BYTES / MEGABYTE} MB or smaller (this one is ${(file.size / MEGABYTE).toFixed(1)} MB).` };
+      return { error: t("video.tooLarge", { mb: VIDEO_MAX_BYTES / MEGABYTE, actual: (file.size / MEGABYTE).toFixed(1) }) };
     }
 
     try {
@@ -1338,12 +1743,12 @@
       const warnings = [];
 
       if (Math.abs(ratio - 1) > SQUARE_TOLERANCE) {
-        warnings.push(`It is ${details.width}×${details.height}, not square (1:1). It will be cropped to fill the square frame.`);
+        warnings.push(t("video.notSquare", { width: details.width, height: details.height }));
       }
 
       return { ...details, warnings };
     } catch (error) {
-      return { error: error instanceof Error ? error.message : "The video could not be read." };
+      return { error: error instanceof Error ? error.message : t("video.unreadable") };
     }
   }
 
@@ -1377,11 +1782,12 @@
 
     grid.innerHTML = CARD_IMAGE_SLOTS.map((slot) => {
       const url = slot === "cover" ? modalMedia.coverImageUrl : modalMedia.hoverImageUrl;
-      const label = slot === "cover" ? "Cover" : "Hover";
-      const note = slot === "cover" ? "Shown on the catalogue card" : "Replaces the cover when a desktop pointer hovers";
+      const label = slot === "cover" ? t("card.cover") : t("card.hover");
+      const slotName = t(`card.slot.${slot}`);
+      const note = slot === "cover" ? t("card.coverNote") : t("card.hoverNote");
       const image = url
-        ? `<img src="${escapeHtml(url)}" alt="${label} image">`
-        : `<div class="modal-image-placeholder">${slot === "cover" && modalGalleryImages.length ? "Not set - the card uses the first gallery image" : "Not set"}</div>`;
+        ? `<img src="${escapeHtml(url)}" alt="${escapeHtml(slotName)}">`
+        : `<div class="modal-image-placeholder">${escapeHtml(slot === "cover" && modalGalleryImages.length ? t("card.notSetUsesGallery") : t("card.notSet"))}</div>`;
 
       return `
         <div class="modal-card-slot" data-card-slot="${slot}">
@@ -1390,15 +1796,15 @@
           <p class="modal-slot-note">${note}</p>
           <div class="modal-chip-row">
             <label class="modal-chip-btn">
-              ${url ? "Replace" : "Upload"}
+              ${escapeHtml(url ? t("common.replace") : t("common.upload"))}
               <input class="modal-hidden-input" type="file" accept="${CARD_IMAGE_TYPES.join(",")}" data-card-upload="${slot}">
             </label>
-            <button class="modal-chip-btn" type="button" data-card-pick="${slot}" ${modalGalleryImages.length ? "" : "disabled"}>Choose from gallery</button>
-            ${url ? `<button class="modal-chip-btn is-danger" type="button" data-card-remove="${slot}">Remove</button>` : ""}
+            <button class="modal-chip-btn" type="button" data-card-pick="${slot}" ${modalGalleryImages.length ? "" : "disabled"}>${escapeHtml(t("card.chooseFromGallery"))}</button>
+            ${url ? `<button class="modal-chip-btn is-danger" type="button" data-card-remove="${slot}">${escapeHtml(t("common.remove"))}</button>` : ""}
           </div>
           <div class="modal-card-picker" data-card-picker="${slot}" hidden>
             ${modalGalleryImages.map((galleryImage) => `
-              <button type="button" data-card-choose="${slot}" data-image-id="${escapeHtml(galleryImage.id)}" aria-label="Use this gallery image as the ${label.toLowerCase()} image">
+              <button type="button" data-card-choose="${slot}" data-image-id="${escapeHtml(galleryImage.id)}" aria-label="${escapeHtml(t("card.useGalleryImageAs", { slot: slotName }))}">
                 <img src="${escapeHtml(galleryImage.imageUrl)}" alt="">
               </button>
             `).join("")}
@@ -1413,13 +1819,13 @@
     preview.innerHTML = cardCover
       ? `
         <span class="modal-card-preview-frame${cardHover ? " has-hover" : ""}">
-          <img class="is-cover" src="${escapeHtml(cardCover)}" alt="Card preview">
+          <img class="is-cover" src="${escapeHtml(cardCover)}" alt="${escapeHtml(t("card.previewAlt"))}">
           ${cardHover ? `<img class="is-hover" src="${escapeHtml(cardHover)}" alt="">` : ""}
         </span>
         <span class="modal-card-preview-code">${escapeHtml(document.getElementById("maris-edit-modal")?.dataset.productCode || "")}</span>
-        <span class="modal-slot-note">${cardHover ? "Point at the card to see the hover image" : "No hover image - the card does not swap"}</span>
+        <span class="modal-slot-note">${escapeHtml(cardHover ? t("card.previewHover") : t("card.previewNoHover"))}</span>
       `
-      : `<span class="modal-slot-note">The card preview appears once there is a cover or a gallery image.</span>`;
+      : `<span class="modal-slot-note">${escapeHtml(t("card.previewEmpty"))}</span>`;
   }
 
   async function commitModalMedia(changes, pendingText, doneText) {
@@ -1431,12 +1837,12 @@
     try {
       const result = await saveProductMedia(productId, changes);
       modalMedia = getModalProductMedia(result.media);
-      await reloadEditModalProduct(productId);
+      await refreshChangedProduct(productId, result.product);
       setModalMessage(doneText);
       return true;
     } catch (error) {
-      await reloadEditModalProduct(productId).catch(() => {});
-      setModalMessage(error instanceof Error ? error.message : "Could not save the media.", true);
+      await refreshChangedProduct(productId).catch(() => {});
+      setModalMessage(error instanceof Error ? error.message : t("media.saveFailed"), true);
       return false;
     }
   }
@@ -1444,7 +1850,7 @@
   async function uploadModalCardImage(slot, file) {
     const productId = getModalProductId();
     const problem = validateCardImageFile(file);
-    const label = slot === "cover" ? "cover" : "hover image";
+    const label = t(`card.slot.${slot}`);
 
     if (!productId) return;
 
@@ -1455,11 +1861,11 @@
 
     try {
       const path = await uploadProductMediaFile(productId, slot, file, (fraction) => {
-        setModalMessage(`Uploading the ${label}... ${Math.round(fraction * 100)}%`, false);
+        setModalMessage(t("card.uploading", { slot: label, percent: Math.round(fraction * 100) }), false);
       });
-      await commitModalMedia({ [slot]: { path } }, `Saving the ${label}...`, `The ${label} is updated.`);
+      await commitModalMedia({ [slot]: { path } }, t("card.saving", { slot: label }), t("card.updated", { slot: label }));
     } catch (error) {
-      setModalMessage(error instanceof Error ? error.message : `Could not upload the ${label}.`, true);
+      setModalMessage(error instanceof Error ? error.message : t("card.uploadFailed", { slot: label }), true);
     }
   }
 
@@ -1476,8 +1882,8 @@
       const slot = chooseBtn.dataset.cardChoose;
       commitModalMedia(
         { [slot]: { imageId: chooseBtn.dataset.imageId } },
-        `Using the gallery image as the ${slot} image...`,
-        `The ${slot} image is updated.`
+        t("card.usingGallery", { slot: t(`card.slot.${slot}`) }),
+        t("card.updated", { slot: t(`card.slot.${slot}`) })
       );
       return;
     }
@@ -1486,8 +1892,8 @@
     if (removeBtn) {
       const slot = removeBtn.dataset.cardRemove;
 
-      if (confirm(`Remove the ${slot} image from the card? Gallery images are not affected.`)) {
-        commitModalMedia({ [slot]: null }, `Removing the ${slot} image...`, `The ${slot} image is removed.`);
+      if (confirm(t("card.confirmRemove", { slot: t(`card.slot.${slot}`) }))) {
+        commitModalMedia({ [slot]: null }, t("card.removing", { slot: t(`card.slot.${slot}`) }), t("card.removed", { slot: t(`card.slot.${slot}`) }));
       }
     }
   }
@@ -1514,29 +1920,29 @@
           <video src="${escapeHtml(modalMedia.videoUrl)}" ${modalMedia.videoPosterUrl ? `poster="${escapeHtml(modalMedia.videoPosterUrl)}"` : ""} muted loop playsinline preload="metadata" controls></video>
           <div class="modal-chip-row">
             <label class="modal-chip-btn">
-              ${modalMedia.videoPosterUrl ? "Replace poster" : "Upload poster"}
+              ${escapeHtml(modalMedia.videoPosterUrl ? t("video.replacePoster") : t("video.uploadPoster"))}
               <input class="modal-hidden-input" type="file" accept="${CARD_IMAGE_TYPES.join(",")}" data-video-poster-upload>
             </label>
-            <button class="modal-chip-btn is-danger" type="button" data-video-remove>Remove video</button>
+            <button class="modal-chip-btn is-danger" type="button" data-video-remove>${escapeHtml(t("video.remove"))}</button>
           </div>
         </div>
       `
-      : `<p class="modal-slot-note">No turntable yet. The product page shows photographs only.</p>`;
+      : `<p class="modal-slot-note">${escapeHtml(t("video.none"))}</p>`;
     const pending = draft
       ? `
         <div class="modal-video-draft">
-          ${draft.posterPreviewUrl ? `<img src="${draft.posterPreviewUrl}" alt="Poster from the first frame">` : ""}
+          ${draft.posterPreviewUrl ? `<img src="${draft.posterPreviewUrl}" alt="${escapeHtml(t("video.posterAlt"))}">` : ""}
           <div>
             <p class="modal-slot-note"><strong>${escapeHtml(draft.file.name)}</strong> · ${(draft.file.size / MEGABYTE).toFixed(1)} MB · ${draft.width}×${draft.height}${draft.duration ? ` · ${draft.duration.toFixed(1)} s` : ""}</p>
             ${draft.warnings.map((warning) => `<p class="modal-video-warning">⚠ ${escapeHtml(warning)}</p>`).join("")}
             <label class="modal-chip-btn">
-              ${draft.customPoster ? "Change poster" : "Use my own poster"}
+              ${escapeHtml(draft.customPoster ? t("video.changePoster") : t("video.useOwnPoster"))}
               <input class="modal-hidden-input" type="file" accept="${CARD_IMAGE_TYPES.join(",")}" data-video-draft-poster>
             </label>
-            <p class="modal-slot-note">${draft.customPoster ? `Poster: ${escapeHtml(draft.customPoster.name)}` : "Poster: the first frame, made automatically"}</p>
+            <p class="modal-slot-note">${draft.customPoster ? escapeHtml(t("video.posterName", { name: draft.customPoster.name })) : escapeHtml(t("video.posterAuto"))}</p>
             <div class="modal-chip-row">
-              <button class="admin-primary" type="button" data-video-upload ${modalVideoUploading ? "disabled" : ""}>${modalMedia.videoUrl ? "Upload and replace" : "Upload video"}</button>
-              <button class="admin-secondary" type="button" data-video-cancel ${modalVideoUploading ? "disabled" : ""}>Cancel</button>
+              <button class="admin-primary" type="button" data-video-upload ${modalVideoUploading ? "disabled" : ""}>${escapeHtml(modalMedia.videoUrl ? t("video.uploadReplace") : t("video.upload"))}</button>
+              <button class="admin-secondary" type="button" data-video-cancel ${modalVideoUploading ? "disabled" : ""}>${escapeHtml(t("common.cancel"))}</button>
             </div>
           </div>
         </div>
@@ -1546,7 +1952,7 @@
     block.innerHTML = `
       ${current}
       <label class="modal-label">
-        ${modalMedia.videoUrl ? "Replace video" : "Add video"} (MP4 · H.264 · square 1:1 · up to ${VIDEO_MAX_BYTES / MEGABYTE} MB)
+        ${escapeHtml(t(modalMedia.videoUrl ? "video.fileLabelReplace" : "video.fileLabelAdd", { mb: VIDEO_MAX_BYTES / MEGABYTE }))}
         <input class="modal-file-input" type="file" accept="video/mp4" data-video-file ${modalVideoUploading ? "disabled" : ""}>
       </label>
       ${pending}
@@ -1604,15 +2010,15 @@
       .map((url, index) => {
         if (index === videoIndex) {
           return `
-            <div class="modal-slot-tile is-video" draggable="true" data-video-tile title="Drag onto another slide to move the video there">
+            <div class="modal-slot-tile is-video" draggable="true" data-video-tile title="${escapeHtml(t("videoSlot.dragTitle"))}">
               ${modalMedia.videoPosterUrl ? `<img src="${escapeHtml(modalMedia.videoPosterUrl)}" alt="">` : ""}
-              <span class="modal-slot-badge">${index + 1} · Video</span>
+              <span class="modal-slot-badge">${escapeHtml(t("videoSlot.badge", { n: index + 1 }))}</span>
             </div>
           `;
         }
 
         return `
-          <button class="modal-slot-tile" type="button" data-video-slot="${index}" title="Move the video here">
+          <button class="modal-slot-tile" type="button" data-video-slot="${index}" title="${escapeHtml(t("videoSlot.moveHere"))}">
             <img src="${escapeHtml(url)}" alt="">
             <span class="modal-slot-badge">${index + 1}</span>
           </button>
@@ -1622,13 +2028,13 @@
 
     return `
       <div class="modal-video-position" id="modal-video-slots">
-        <p class="modal-cover-label">Position in the product page gallery · slide ${videoIndex + 1} of ${slots.length}${videoIndex === lastIndex ? " (last)" : ""}</p>
+        <p class="modal-cover-label">${escapeHtml(t("videoSlot.position", { n: videoIndex + 1, total: slots.length }))}${videoIndex === lastIndex ? escapeHtml(` ${t("videoSlot.last")}`) : ""}</p>
         <div class="modal-slot-strip">${tiles}</div>
         <div class="modal-chip-row">
-          <button class="modal-chip-btn" type="button" data-video-nudge="-1" ${videoIndex === 0 ? "disabled" : ""}>&larr; Earlier</button>
-          <button class="modal-chip-btn" type="button" data-video-nudge="1" ${videoIndex === lastIndex ? "disabled" : ""}>Later &rarr;</button>
+          <button class="modal-chip-btn" type="button" data-video-nudge="-1" ${videoIndex === 0 ? "disabled" : ""}>&larr; ${escapeHtml(t("videoSlot.earlier"))}</button>
+          <button class="modal-chip-btn" type="button" data-video-nudge="1" ${videoIndex === lastIndex ? "disabled" : ""}>${escapeHtml(t("videoSlot.later"))} &rarr;</button>
         </div>
-        <p class="modal-slot-note">Shown for one metal's photos. Each metal on the product page uses the same slide number.</p>
+        <p class="modal-slot-note">${escapeHtml(t("videoSlot.note"))}</p>
       </div>
     `;
   }
@@ -1641,13 +2047,13 @@
 
     if (videoPosition === modalMedia.videoPosition) return;
 
-    commitModalMedia({ videoPosition }, "Saving the video position...", "Video position saved.");
+    commitModalMedia({ videoPosition }, t("video.savingPosition"), t("video.positionSaved"));
   }
 
   async function prepareModalVideo(file) {
     revokeModalVideoDraftUrls();
     modalVideoDraft = null;
-    setModalMessage("Checking the video...", false);
+    setModalMessage(t("video.checking"), false);
 
     const inspection = await inspectTurntableFile(file);
 
@@ -1668,7 +2074,7 @@
       posterPreviewUrl: inspection.poster ? URL.createObjectURL(inspection.poster) : ""
     };
     renderModalVideo();
-    setModalMessage(inspection.warnings.length ? "Check the warning, then upload." : "Ready to upload.", false);
+    setModalMessage(inspection.warnings.length ? t("video.checkWarning") : t("video.ready"), false);
   }
 
   async function uploadModalVideo() {
@@ -1683,16 +2089,16 @@
     try {
       setModalVideoProgress(0);
       const videoPath = await uploadProductMediaFile(productId, "video", draft.file, (fraction) => {
-        setModalVideoProgress(fraction, `Uploading video... ${Math.round(fraction * 100)}%`);
+        setModalVideoProgress(fraction, t("video.uploading", { percent: Math.round(fraction * 100) }));
       });
       let posterPath = "";
 
       if (poster) {
-        setModalVideoProgress(1, "Uploading poster...");
+        setModalVideoProgress(1, t("video.uploadingPoster"));
         posterPath = await uploadProductMediaFile(productId, "poster", poster);
       }
 
-      setModalVideoProgress(1, "Saving...");
+      setModalVideoProgress(1, t("common.saving"));
       revokeModalVideoDraftUrls();
       modalVideoDraft = null;
       modalVideoUploading = false;
@@ -1702,13 +2108,13 @@
           poster: posterPath ? { path: posterPath } : null,
           videoPosition: modalMedia.videoPosition
         },
-        "Saving the turntable...",
-        "Turntable video saved."
+        t("video.savingTurntable"),
+        t("video.turntableSaved")
       );
     } catch (error) {
       modalVideoUploading = false;
       renderModalVideo();
-      setModalMessage(error instanceof Error ? error.message : "Could not upload the video.", true);
+      setModalMessage(error instanceof Error ? error.message : t("video.uploadFailed"), true);
     } finally {
       modalVideoUploading = false;
       setModalVideoProgress(null);
@@ -1717,21 +2123,21 @@
 
   async function uploadModalVideoPoster(file) {
     const productId = getModalProductId();
-    const problem = validateCardImageFile(file);
+    const problem = validateCardImageFile(file, true);
     if (!productId) return;
 
     if (problem) {
-      setModalMessage(problem.replace("Card images", "The poster"), true);
+      setModalMessage(problem, true);
       return;
     }
 
     try {
       const path = await uploadProductMediaFile(productId, "poster", file, (fraction) => {
-        setModalMessage(`Uploading the poster... ${Math.round(fraction * 100)}%`, false);
+        setModalMessage(t("poster.uploading", { percent: Math.round(fraction * 100) }), false);
       });
-      await commitModalMedia({ poster: { path } }, "Saving the poster...", "Poster updated.");
+      await commitModalMedia({ poster: { path } }, t("poster.saving"), t("poster.updated"));
     } catch (error) {
-      setModalMessage(error instanceof Error ? error.message : "Could not upload the poster.", true);
+      setModalMessage(error instanceof Error ? error.message : t("poster.uploadFailed"), true);
     }
   }
 
@@ -1793,8 +2199,8 @@
     }
 
     if (event.target.closest("[data-video-remove]")) {
-      if (confirm("Remove the turntable video and its poster? The files are deleted from storage.")) {
-        commitModalMedia({ video: null }, "Removing the turntable...", "Turntable video removed.");
+      if (confirm(t("video.confirmRemove"))) {
+        commitModalMedia({ video: null }, t("video.removing"), t("video.removed"));
       }
     }
   }
@@ -1808,10 +2214,10 @@
     }
 
     if (input.matches("[data-video-draft-poster]") && input.files?.[0] && modalVideoDraft) {
-      const problem = validateCardImageFile(input.files[0]);
+      const problem = validateCardImageFile(input.files[0], true);
 
       if (problem) {
-        setModalMessage(problem.replace("Card images", "The poster"), true);
+        setModalMessage(problem, true);
         return;
       }
 
@@ -1834,7 +2240,7 @@
 
     const galleryCount = modalGalleryImages.length;
     galleryCountEl.textContent =
-      galleryCount ? `${galleryCount} image${galleryCount > 1 ? "s" : ""} in the gallery` : "No gallery images yet";
+      galleryCount ? tp("gallery.count", galleryCount, { n: galleryCount }) : t("gallery.none");
   }
 
   function renderModalGalleryImages(images = modalGalleryImages) {
@@ -1845,24 +2251,26 @@
     updateModalGalleryCount();
 
     if (!modalGalleryImages.length) {
-      grid.innerHTML = `<p class="modal-gallery-empty">No gallery images to manage.</p>`;
+      grid.innerHTML = `<p class="modal-gallery-empty">${escapeHtml(t("gallery.noneToManage"))}</p>`;
       return;
     }
 
     grid.innerHTML = modalGalleryImages
       .map((image, index) => `
         <div class="modal-gallery-item" draggable="true" data-gallery-index="${index}" data-image-id="${escapeHtml(image.id)}">
-          <img src="${escapeHtml(image.imageUrl)}" alt="${escapeHtml(image.altText || `Gallery image ${index + 1}`)}">
+          <img src="${escapeHtml(image.imageUrl)}" alt="${escapeHtml(image.altText || t("gallery.imageAlt", { n: index + 1 }))}">
           <span class="gallery-badge">${index + 1}</span>
           <div class="gallery-tag">
-            <select aria-label="Metal for image ${index + 1}" data-gallery-metal="${escapeHtml(image.id)}">
-              ${renderImageTagOptions(IMAGE_METAL_LABELS, readImageTag(image.altText).metal, "All metals")}
+            <select aria-label="${escapeHtml(t("gallery.metalFor", { n: index + 1 }))}" data-gallery-metal="${escapeHtml(image.id)}">
+              ${renderImageTagOptions(IMAGE_METAL_LABELS, readImageTag(image.altText).metal, t("gallery.allMetals"))}
             </select>
-            <select aria-label="View for image ${index + 1}" data-gallery-view="${escapeHtml(image.id)}">
-              ${renderImageTagOptions(IMAGE_VIEW_LABELS.map(([label]) => label), readImageTag(image.altText).view, "Other view")}
+            <select aria-label="${escapeHtml(t("gallery.viewFor", { n: index + 1 }))}" data-gallery-view="${escapeHtml(image.id)}">
+              ${renderImageTagOptions(IMAGE_VIEW_LABELS.map(([label]) => label), readImageTag(image.altText).view, t("gallery.otherView"))}
             </select>
           </div>
-          <button class="modal-gallery-delete" type="button" data-gallery-delete="${escapeHtml(image.id)}" aria-label="Delete image">&times;</button>
+          <button class="modal-gallery-move" type="button" data-gallery-move="-1" aria-label="${escapeHtml(t("gallery.moveEarlier", { n: index + 1 }))}"${index === 0 ? " disabled" : ""}>&larr;</button>
+          <button class="modal-gallery-move" type="button" data-gallery-move="1" aria-label="${escapeHtml(t("gallery.moveLater", { n: index + 1 }))}"${index === modalGalleryImages.length - 1 ? " disabled" : ""}>&rarr;</button>
+          <button class="modal-gallery-delete" type="button" data-gallery-delete="${escapeHtml(image.id)}" aria-label="${escapeHtml(t("gallery.deleteImage"))}">&times;</button>
         </div>
       `)
       .join("");
@@ -1876,14 +2284,46 @@
     renderModalVideo();
   }
 
-  async function reloadEditModalProduct(productId) {
-    await loadAdminBackendData();
-    loadDatabaseCatalogue();
-    renderAll();
+  // Puts one changed product into the loaded data (or adds it).
+  function patchCachedProduct(product) {
+    if (!product?.id) {
+      return;
+    }
 
-    const updatedProduct = getCachedProducts().find((product) => product.id === productId);
-    if (updatedProduct) {
-      renderModalProductImages(updatedProduct);
+    const exists = getCachedProducts().some((item) => item.id === product.id);
+    adminCache.products = exists
+      ? getCachedProducts().map((item) => (item.id === product.id ? product : item))
+      : [product, ...getCachedProducts()];
+    rememberProductSkus([product]);
+  }
+
+  // After a gallery, card image or video change: patch just that product into
+  // the loaded data and redraw only the product list, the stat cards and the
+  // open modal - not every data set and every tab. The media routes hand the
+  // updated product back; if one did not, it is fetched on its own.
+  async function refreshChangedProduct(productId, knownProduct = null) {
+    let product = knownProduct;
+
+    if (!product) {
+      try {
+        product = (await fetchAdminApi(`/products?id=${encodeURIComponent(productId)}`)).product || null;
+      } catch {
+        product = null;
+      }
+    }
+
+    if (product) {
+      patchCachedProduct(product);
+    } else {
+      await loadAdminBackendData(["products"]);
+      product = getCachedProducts().find((item) => item.id === productId) || null;
+    }
+
+    renderStats();
+    renderProductTables();
+
+    if (product && getModalProductId() === productId) {
+      renderModalProductImages(product);
     }
   }
 
@@ -1891,20 +2331,20 @@
     const productId = getModalProductId();
     if (!productId || !imageId) return;
 
-    if (!confirm("Delete this gallery image? Its file is removed too, unless the card still uses it.")) {
+    if (!confirm(t("gallery.confirmDelete"))) {
       return;
     }
 
-    setModalMessage("Deleting image...", false);
+    setModalMessage(t("gallery.deleting"), false);
 
     try {
-      await fetchAdminApi(`${ADMIN_PRODUCT_IMAGES_PATH}?productId=${encodeURIComponent(productId)}&imageId=${encodeURIComponent(imageId)}`, {
+      const result = await fetchAdminApi(`${ADMIN_PRODUCT_IMAGES_PATH}?productId=${encodeURIComponent(productId)}&imageId=${encodeURIComponent(imageId)}`, {
         method: "DELETE"
       });
-      await reloadEditModalProduct(productId);
-      setModalMessage("Image deleted.");
+      await refreshChangedProduct(productId, result.product);
+      setModalMessage(t("gallery.deleted"));
     } catch (error) {
-      setModalMessage(error instanceof Error ? error.message : "Could not delete image.", true);
+      setModalMessage(error instanceof Error ? error.message : t("gallery.deleteFailed"), true);
     }
   }
 
@@ -1919,18 +2359,18 @@
     const productName = document.getElementById("modal-field-name")?.value.trim() || "Product";
     const altText = retagImageAltText(image.altText, metal, view, productName);
 
-    setModalMessage("Saving image tag...", false);
+    setModalMessage(t("gallery.savingTag"), false);
 
     try {
-      await fetchAdminApi(ADMIN_PRODUCT_IMAGES_PATH, {
+      const result = await fetchAdminApi(ADMIN_PRODUCT_IMAGES_PATH, {
         method: "PATCH",
         body: JSON.stringify({ productId, imageId, altText })
       });
-      await reloadEditModalProduct(productId);
-      setModalMessage(`Image tagged ${metal || "All metals"} · ${view.replace(" view", "") || "Other view"}.`);
+      await refreshChangedProduct(productId, result.product);
+      setModalMessage(t("gallery.tagged", { metal: metal ? displayImageMetal(metal) : t("gallery.allMetals"), view: view ? displayImageView(view) : t("gallery.otherView") }));
     } catch (error) {
-      await reloadEditModalProduct(productId).catch(() => {});
-      setModalMessage(error instanceof Error ? error.message : "Could not update image tag.", true);
+      await refreshChangedProduct(productId).catch(() => {});
+      setModalMessage(error instanceof Error ? error.message : t("gallery.tagFailed"), true);
     }
   }
 
@@ -1954,25 +2394,36 @@
       isPrimary: index === 0
     }));
     renderModalGalleryImages(modalGalleryImages);
-    setModalMessage("Saving image order...", false);
+    setModalMessage(t("gallery.savingOrder"), false);
 
     try {
-      await fetchAdminApi(ADMIN_PRODUCT_IMAGES_PATH, {
+      const result = await fetchAdminApi(ADMIN_PRODUCT_IMAGES_PATH, {
         method: "PATCH",
         body: JSON.stringify({
           productId,
           imageIds: modalGalleryImages.map((image) => image.id)
         })
       });
-      await reloadEditModalProduct(productId);
-      setModalMessage("Image order updated.");
+      await refreshChangedProduct(productId, result.product);
+      setModalMessage(t("gallery.orderUpdated"));
     } catch (error) {
-      await reloadEditModalProduct(productId).catch(() => {});
-      setModalMessage(error instanceof Error ? error.message : "Could not update image order.", true);
+      await refreshChangedProduct(productId).catch(() => {});
+      setModalMessage(error instanceof Error ? error.message : t("gallery.orderFailed"), true);
     }
   }
 
   function handleModalGalleryClick(event) {
+    const moveBtn = event.target.closest("[data-gallery-move]");
+    if (moveBtn) {
+      const index = Number(moveBtn.closest(".modal-gallery-item")?.dataset.galleryIndex);
+      const target = index + Number(moveBtn.dataset.galleryMove);
+
+      if (Number.isInteger(index) && target >= 0 && target < modalGalleryImages.length) {
+        reorderModalGalleryImages(index, target);
+      }
+      return;
+    }
+
     const deleteBtn = event.target.closest("[data-gallery-delete]");
     if (!deleteBtn) return;
 
@@ -2029,114 +2480,97 @@
 
   function renderStats() {
     const products = readProducts();
-    const settings = getSettings();
     const totalStock = products.reduce((sum, product) => sum + Number(product.stockQty), 0);
     const totalReserved = products.reduce((sum, product) => sum + Number(product.reservedQty), 0);
-    const lowStock = products.filter((product) => getAvailable(product) <= settings.lowStockThreshold).length;
 
     elements.totalProducts.textContent = String(products.length);
     elements.totalStock.textContent = String(totalStock);
     elements.totalReserved.textContent = String(totalReserved);
-    elements.lowStock.textContent = String(lowStock);
   }
 
+  function getProductPickerLabel(product) {
+    return `${getProductSku(product)} - ${getProductName(product)}`;
+  }
+
+  // Fills the searchable product lists ("SKU - Name"). Nothing is pre-selected:
+  // the admin has to pick a product on purpose.
   function renderSelects() {
-    const products = readProducts();
-    const options = products
-      .map((product) => `<option value="${escapeHtml(product.id)}">${escapeHtml(getProductSku(product))} - ${escapeHtml(getProductName(product))} (${getAvailable(product)} available)</option>`)
+    const options = readProducts()
+      .map((product) => `<option value="${escapeHtml(getProductPickerLabel(product))}" label="${escapeHtml(t("products.availableCount", { n: getAvailable(product) }))}"></option>`)
       .join("");
-    const fallback = adminCache.isLoading
-      ? `<option value="">Loading Supabase products...</option>`
-      : `<option value="">No Supabase products available</option>`;
 
-    if (elements.productSelect) {
-      elements.productSelect.innerHTML = options || fallback;
-    }
-
-    if (elements.orderProductSelect) {
-      elements.orderProductSelect.innerHTML = options || fallback;
+    for (const list of [elements.productDatalist, elements.orderProductDatalist]) {
+      if (list) {
+        list.innerHTML = options;
+      }
     }
   }
 
+  // The product the admin typed or picked: an exact "SKU - Name" or a SKU.
+  function resolvePickedProduct(value) {
+    const text = String(value || "").trim().toLowerCase();
+
+    if (!text) {
+      return null;
+    }
+
+    const products = readProducts();
+
+    return products.find((product) => getProductPickerLabel(product).toLowerCase() === text)
+      || products.find((product) => getProductSku(product).toLowerCase() === text)
+      || null;
+  }
+
+  // One table for the catalogue: what an admin scans (SKU, name, price, how
+  // many are available, whether images and status are in order) and what they
+  // do (Edit, Preview, and a menu for the less common Set Draft and Delete).
   function renderProductsTable() {
-    const settings = getSettings();
     const view = getProductListView();
     renderProductListControls(view);
 
     if (adminCache.isLoading) {
-      elements.productsTable.innerHTML = `<tr><td colspan="8">Loading Supabase products...</td></tr>`;
+      elements.productsTable.innerHTML = `<tr><td colspan="8">${escapeHtml(t("products.loading"))}</td></tr>`;
       return;
     }
 
-    if (!adminCache.isReady) {
-      elements.productsTable.innerHTML = `<tr><td colspan="8">${escapeHtml(adminCache.error || "Connect Supabase before managing admin products.")}</td></tr>`;
+    if (adminCache.errors.products) {
+      elements.productsTable.innerHTML = datasetErrorCell("products", 8);
       return;
     }
 
+    // Roles that cannot delete do not see the item at all; the server refuses them too.
+    const canDelete = adminCan("catalogue:delete");
     const rows = view.pageProducts
       .map((product) => {
+        const code = getProductSku(product);
+        const productId = product.id || "";
         const available = getAvailable(product);
-        const stockClass = available <= settings.lowStockThreshold ? "stock-low" : "stock-ok";
-        const isActive = product.status === "active";
-        const toggleLabel = isActive ? "Set Draft" : "Set Active";
-        const statusClass = isActive ? "status-active" : "status-draft";
+        const status = normalizeProductStatus(product.status);
+        const isLive = status === "active";
+        const imageCount = getProductImageCount(product);
+        const href = getProductPreviewHref(product.slug || code);
+        const stockTitle = t("products.stockTitle", { real: Number(product.stockQty) || 0, reserved: Number(product.reservedQty) || 0 });
 
         return `
           <tr>
-            <td><strong>${escapeHtml(getProductSku(product))}</strong></td>
+            <td class="admin-sku-cell"><strong>${escapeHtml(code)}</strong></td>
             <td>${escapeHtml(getProductName(product))}</td>
-            <td>${escapeHtml(getProductCategory(product))}</td>
+            <td>${escapeHtml(getCollectionLabel(product.collection))}</td>
             <td>${escapeHtml(getProductPrice(product))}</td>
-            <td>${product.stockQty}</td>
-            <td>${product.reservedQty}</td>
-            <td class="${stockClass}">${available}</td>
-            <td>
-              <span class="${statusClass}">${escapeHtml(product.status)}</span>
-              <button class="admin-status-toggle" type="button"
-                data-toggle-status="${escapeHtml(product.id || "")}"
-                data-current-status="${escapeHtml(product.status)}">${toggleLabel}</button>
-            </td>
-          </tr>
-        `;
-      })
-      .join("");
-
-    const emptyMessage = view.query
-      ? `No products match "${view.searchLabel}".`
-      : "No Supabase products yet.";
-    elements.productsTable.innerHTML = rows || `<tr><td colspan="8">${escapeHtml(emptyMessage)}</td></tr>`;
-  }
-
-  function renderCatalogueDraftTable() {
-    if (!elements.catalogueDraftTable) {
-      return;
-    }
-
-    const catalogueDrafts = readCatalogueDrafts();
-
-    if (elements.catalogueDraftCount) {
-      elements.catalogueDraftCount.textContent = String(catalogueDrafts.length);
-    }
-
-    const rows = catalogueDrafts
-      .map((product) => {
-        const href = getProductPreviewHref(product.code);
-
-        return `
-          <tr>
-            <td><strong>${escapeHtml(product.code)}</strong></td>
-            <td>${escapeHtml(getCollectionLabel(product.collectionKey))}</td>
-            <td>
-              <strong>${escapeHtml(product.name || product.title || product.code)}</strong>
-              <div>${escapeHtml(product.price || "Price on request")}</div>
-            </td>
-            <td>${escapeHtml(product.image || "-")}</td>
-            <td>${Array.isArray(product.gallery) ? product.gallery.length : 0}</td>
-            <td>
+            <td title="${escapeHtml(stockTitle)}">${available}</td>
+            <td>${imageCount ? imageCount : `<span class="admin-warn" title="${escapeHtml(t("products.noImagesYet"))}">0</span>`}</td>
+            <td>${renderProductStatusBadge(status)}</td>
+            <td class="admin-actions-cell">
               <div class="admin-row-actions">
-                <button type="button" data-catalogue-draft-edit="${escapeHtml(product.code)}">Edit</button>
-                <button type="button" data-catalogue-draft-delete="${escapeHtml(product.code)}">Remove Draft</button>
-                <a class="admin-secondary" href="${href}" target="_blank" rel="noopener noreferrer">Preview</a>
+                <button type="button" data-catalogue-edit="${escapeHtml(code)}" data-product-id="${escapeHtml(productId)}" data-requires="catalogue:write">${escapeHtml(t("common.edit"))}</button>
+                <a class="admin-secondary" href="${href}" target="_blank" rel="noopener noreferrer">${escapeHtml(t("common.preview"))}</a>
+                <details class="admin-row-menu">
+                  <summary aria-label="${escapeHtml(t("products.moreActions", { sku: code }))}"><span aria-hidden="true">⋯</span></summary>
+                  <div class="admin-row-menu-list">
+                    <button type="button" data-toggle-status="${escapeHtml(productId)}" data-current-status="${escapeHtml(status)}" data-requires="catalogue:write">${escapeHtml(isLive ? t("products.setDraft") : t("products.makeLive"))}</button>
+                    ${canDelete ? `<button class="admin-danger" type="button" data-catalogue-delete="${escapeHtml(code)}" data-product-id="${escapeHtml(productId)}">${escapeHtml(t("products.deleteEllipsis"))}</button>` : ""}
+                  </div>
+                </details>
               </div>
             </td>
           </tr>
@@ -2144,132 +2578,96 @@
       })
       .join("");
 
-    elements.catalogueDraftTable.innerHTML = rows || `<tr><td colspan="6">Browser-local catalogue drafts have been retired. Use Supabase product saving instead.</td></tr>`;
+    const emptyMessage = view.query
+      ? t("products.noMatch", { query: view.searchLabel })
+      : view.statusFilter !== "all"
+        ? t("products.noneWithStatus", { status: PRODUCT_STATUS_LABELS[view.statusFilter].toLowerCase() })
+        : t("products.noneYet");
+    elements.productsTable.innerHTML = rows || `<tr><td colspan="8">${escapeHtml(emptyMessage)}</td></tr>`;
+    applyAdminPermissions(elements.productsTable);
   }
 
   function formatSyncTimestamp(value) {
     if (!value) {
-      return "Waiting...";
+      return t("common.waiting");
     }
 
     const parsed = new Date(value);
-    return Number.isNaN(parsed.getTime()) ? "Waiting..." : parsed.toLocaleString();
+    return Number.isNaN(parsed.getTime()) ? t("common.waiting") : parsed.toLocaleString(adminLocale);
   }
 
-  function renderSheetFeed() {
-    const sheetStatus = window.MARIS_SHEET_STATUS || {};
-    const statusLabel = {
-      loading: "Loading catalogue...",
-      ready: "Connected",
-      empty: "No products",
-      error: "Catalogue unavailable"
-    }[sheetStatus.status] || "Waiting...";
-    const storefrontProducts = Array.isArray(window.MARIS_PRODUCTS) ? window.MARIS_PRODUCTS : [];
-    const sheetCount = Number.isFinite(Number(sheetStatus.productCount))
-      ? Number(sheetStatus.productCount)
-      : storefrontProducts.length;
-    const feedUrl = "/api/catalogue/products";
-
-    if (elements.sheetStatus) {
-      elements.sheetStatus.textContent = statusLabel;
-      elements.sheetStatus.dataset.sheetState = sheetStatus.status || "loading";
-    }
-
-    if (elements.sheetProductCount) {
-      elements.sheetProductCount.textContent = String(sheetCount);
-    }
-
-    if (elements.sheetProductCountInline) {
-      elements.sheetProductCountInline.textContent = String(sheetCount);
-    }
-
-    if (elements.sheetLastSync) {
-      elements.sheetLastSync.textContent = formatSyncTimestamp(sheetStatus.updatedAt);
-    }
-
-    elements.sheetFeedLinks.forEach((link) => {
-      if (!link) {
-        return;
-      }
-
-      link.href = feedUrl || "#";
-      link.setAttribute("aria-disabled", feedUrl ? "false" : "true");
-      link.classList.toggle("is-disabled", !feedUrl);
+  // The Dashboard's catalogue card reads the products this page has loaded,
+  // not a global that nothing sets.
+  function renderCatalogueOverview() {
+    const products = getCachedProducts();
+    const counts = { active: 0, draft: 0, archived: 0 };
+    products.forEach((product) => {
+      counts[normalizeProductStatus(product.status)] += 1;
     });
-  }
 
-  function renderSheetProductsTable() {
-    if (!elements.sheetCatalogueTable) {
-      return;
-    }
+    let state = "ready";
+    let statusText = tp("catalogue.loaded", products.length, { n: products.length, draft: counts.draft, archived: counts.archived });
 
     if (adminCache.isLoading) {
-      elements.sheetCatalogueTable.innerHTML = `<tr><td colspan="6">Loading Supabase products...</td></tr>`;
-      return;
+      state = "loading";
+      statusText = t("common.loading");
+    } else if (adminCache.errors.products) {
+      state = "error";
+      statusText = t("catalogue.couldNotLoad");
+    } else if (!products.length) {
+      state = "loading";
+      statusText = t("products.noneYetShort");
     }
 
-    const view = getProductListView();
-    const sheetProducts = view.pageProducts;
-
-    if (!adminCache.isReady || !getCachedProducts().length) {
-      const emptyMessage = !adminCache.isReady
-        ? (adminCache.error || "Supabase catalogue is unavailable right now. No catalogue products can be loaded.")
-        : "No Supabase catalogue products are available yet.";
-      elements.sheetCatalogueTable.innerHTML = `<tr><td colspan="6">${escapeHtml(emptyMessage)}</td></tr>`;
-      return;
+    if (elements.catalogueStatus) {
+      elements.catalogueStatus.textContent = statusText;
+      elements.catalogueStatus.dataset.catalogueState = state;
     }
 
-    const rows = sheetProducts
-      .map((product) => {
-        const code = getProductSku(product);
-        const collectionKey = product.collection || "";
-        const href = getProductPreviewHref(product.slug || code);
-        const galleryCount = Array.isArray(product.images) ? product.images.length : (Number(product.imageCount) || 0);
-        const imageLabel = product.primaryImageUrl
-          ? `<a class="admin-link-inline" href="${escapeHtml(product.primaryImageUrl)}" target="_blank" rel="noopener noreferrer">Open image</a>`
-          : "-";
-        const isActive = product.status === "active";
-        const toggleLabel = isActive ? "Set Draft" : "Set Active";
-        const statusClass = isActive ? "status-active" : "status-draft";
+    if (elements.catalogueLiveCount) {
+      elements.catalogueLiveCount.textContent = String(counts.active);
+    }
 
-        return `
-          <tr>
-            <td><strong>${escapeHtml(code)}</strong></td>
-            <td>${escapeHtml(getCollectionLabel(collectionKey))}</td>
-            <td>
-              <strong>${escapeHtml(getProductName(product))}</strong>
-              <div>${escapeHtml(getProductPrice(product))}</div>
-            </td>
-            <td>${imageLabel}</td>
-            <td>${galleryCount}</td>
-            <td>
-              <div class="admin-row-actions">
-                <span class="${statusClass}">${escapeHtml(product.status)}</span>
-                <button class="admin-status-toggle" type="button"
-                  data-toggle-status="${escapeHtml(product.id || "")}"
-                  data-current-status="${escapeHtml(product.status)}">${toggleLabel}</button>
-                <button type="button" data-catalogue-edit="${escapeHtml(code)}" data-product-id="${escapeHtml(product.id || "")}">Edit</button>
-                <button type="button" data-catalogue-delete="${escapeHtml(code)}" data-product-id="${escapeHtml(product.id || "")}">Delete</button>
-                <a class="admin-secondary" href="${href}" target="_blank" rel="noopener noreferrer">Preview</a>
-              </div>
-            </td>
-          </tr>
-        `;
-      })
-      .join("");
-
-    const emptyMessage = view.query
-      ? `No catalogue products match "${view.searchLabel}".`
-      : "No Supabase catalogue products are available yet.";
-    elements.sheetCatalogueTable.innerHTML = rows || `<tr><td colspan="6">${escapeHtml(emptyMessage)}</td></tr>`;
+    if (elements.catalogueLastLoaded) {
+      elements.catalogueLastLoaded.textContent = formatSyncTimestamp(adminCache.productsLoadedAt);
+    }
   }
 
   function getActiveProducts() {
     return readProducts().filter((product) => product.status === "active");
   }
 
+  function rememberProductSkus(products) {
+    products.forEach((product) => {
+      if (product?.id) {
+        productSkuMemory.set(String(product.id), getProductSku(product));
+      }
+    });
+  }
+
   function getBestSellerDraftIds() {
     return Array.isArray(bestSellerState.draftIds) ? bestSellerState.draftIds : getBestSellerProductIds();
+  }
+
+  function isBestSellerDirty() {
+    return getBestSellerDraftIds().join("|") !== getBestSellerProductIds().join("|");
+  }
+
+  // What a slot holds: the product, its SKU (kept even when the product is no
+  // longer live), and whether it can appear on the homepage.
+  function describeBestSellerSlot(productId) {
+    const product = readProducts().find((item) => item.id === productId);
+    const sku = product ? getProductSku(product) : (productSkuMemory.get(String(productId)) || "");
+    const isLive = Boolean(product && product.status === "active");
+    let reason = "";
+
+    if (!isLive) {
+      reason = product
+        ? t("bestSeller.hiddenUntilLive", { status: getProductStatusLabel(product.status) })
+        : t("bestSeller.deleted");
+    }
+
+    return { product, sku, isLive, reason };
   }
 
   function setBestSellerDraftIds(productIds) {
@@ -2278,23 +2676,47 @@
     renderBestSellerResults();
   }
 
+  function discardBestSellerDraft() {
+    bestSellerState.draftIds = null;
+    renderBestSellerSlots();
+    renderBestSellerResults();
+  }
+
   function buildBestSellerThumb(product) {
     return product?.primaryImageUrl
       ? `<img src="${escapeHtml(product.primaryImageUrl)}" alt="" loading="lazy">`
-      : `<span class="best-seller-admin-image-fallback">No image</span>`;
+      : `<span class="best-seller-admin-image-fallback">${escapeHtml(t("common.noImage"))}</span>`;
   }
 
   function renderBestSellerSlots() {
-    const activeProducts = getActiveProducts();
     const draftIds = getBestSellerDraftIds();
-    const savedIds = getBestSellerProductIds();
+    const slots = draftIds.map((productId) => describeBestSellerSlot(productId));
+    const liveCount = slots.filter((slot) => slot.isLive).length;
+    const unavailableCount = slots.length - liveCount;
 
     if (elements.bestSellerCount) {
-      elements.bestSellerCount.textContent = String(draftIds.length);
+      elements.bestSellerCount.textContent = String(liveCount);
     }
 
+    if (elements.bestSellerUnavailableNote) {
+      elements.bestSellerUnavailableNote.hidden = unavailableCount === 0;
+      elements.bestSellerUnavailableNote.textContent = unavailableCount
+        ? `· ${t("bestSeller.unavailableNote", { n: unavailableCount })}`
+        : "";
+    }
+
+    if (elements.bestSellerRemoveUnavailable) {
+      elements.bestSellerRemoveUnavailable.hidden = unavailableCount === 0;
+    }
+
+    const isDirty = isBestSellerDirty();
+
     if (elements.bestSellerDirty) {
-      elements.bestSellerDirty.hidden = draftIds.join("|") === savedIds.join("|");
+      elements.bestSellerDirty.hidden = !isDirty;
+    }
+
+    if (elements.bestSellerDiscard) {
+      elements.bestSellerDiscard.hidden = !isDirty;
     }
 
     elements.bestSellerSlots.innerHTML = Array.from({ length: BEST_SELLER_SLOT_COUNT }, (_, index) => {
@@ -2305,17 +2727,17 @@
         return `
           <li class="best-seller-admin-slot is-empty" data-best-seller-slot="${index}">
             <span class="best-seller-admin-slot-number">${number}</span>
-            <span class="best-seller-admin-slot-empty">Empty slot</span>
+            <span class="best-seller-admin-slot-empty">${escapeHtml(t("bestSeller.emptySlot"))}</span>
           </li>
         `;
       }
 
-      const product = activeProducts.find((item) => item.id === productId);
-      const sku = product ? getProductSku(product) : "Unavailable";
-      const name = product ? getProductName(product) : "Inactive or deleted product - hidden on the storefront";
+      const { product, sku: storedSku, isLive, reason } = slots[index];
+      const sku = storedSku || t("bestSeller.unknownProduct");
+      const name = isLive ? getProductName(product) : reason;
 
       return `
-        <li class="best-seller-admin-slot${product ? "" : " is-unavailable"}" data-best-seller-slot="${index}">
+        <li class="best-seller-admin-slot${isLive ? "" : " is-unavailable"}" data-best-seller-slot="${index}">
           <span class="best-seller-admin-slot-number">${number}</span>
           ${buildBestSellerThumb(product)}
           <div class="best-seller-admin-slot-body">
@@ -2323,9 +2745,9 @@
             <strong>${escapeHtml(name)}</strong>
           </div>
           <div class="best-seller-admin-slot-actions">
-            <button type="button" data-best-seller-move="-1" data-index="${index}" aria-label="Move ${escapeHtml(sku)} up"${index === 0 ? " disabled" : ""}>&uarr;</button>
-            <button type="button" data-best-seller-move="1" data-index="${index}" aria-label="Move ${escapeHtml(sku)} down"${index === draftIds.length - 1 ? " disabled" : ""}>&darr;</button>
-            <button type="button" data-best-seller-remove="${index}" aria-label="Remove ${escapeHtml(sku)}">&times;</button>
+            <button type="button" data-best-seller-move="-1" data-index="${index}" aria-label="${escapeHtml(t("bestSeller.moveUp", { sku }))}"${index === 0 ? " disabled" : ""}>&uarr;</button>
+            <button type="button" data-best-seller-move="1" data-index="${index}" aria-label="${escapeHtml(t("bestSeller.moveDown", { sku }))}"${index === draftIds.length - 1 ? " disabled" : ""}>&darr;</button>
+            <button type="button" data-best-seller-remove="${index}" aria-label="${escapeHtml(t("bestSeller.removeItem", { sku }))}">&times;</button>
           </div>
         </li>
       `;
@@ -2349,7 +2771,7 @@
     }
 
     elements.bestSellerCollection.innerHTML = `
-      <option value="">All collections</option>
+      <option value="">${escapeHtml(t("common.allCollections"))}</option>
       ${Array.from(collections).map(([key, label]) => {
         const selected = key === bestSellerState.collection ? " selected" : "";
         return `<option value="${escapeHtml(key)}"${selected}>${escapeHtml(label)}</option>`;
@@ -2357,6 +2779,8 @@
     `;
   }
 
+  // Only the first page of matches is drawn (each card carries an image); "Show
+  // more" draws the next page.
   function renderBestSellerResults() {
     if (!elements.bestSellerResults) {
       return;
@@ -2369,32 +2793,41 @@
       (!bestSellerState.collection || product.collection === bestSellerState.collection)
       && (!query || getProductSearchText(product).includes(query))
     ));
+    const visible = matches.slice(0, bestSellerState.visibleCount);
+    const truncated = visible.length < matches.length;
 
     if (elements.bestSellerResultsSummary) {
-      elements.bestSellerResultsSummary.textContent = matches.length === activeProducts.length
-        ? `${activeProducts.length} active products`
-        : `${matches.length} of ${activeProducts.length} active products`;
+      const base = matches.length === activeProducts.length
+        ? t("bestSeller.liveCount", { count: activeProducts.length })
+        : t("bestSeller.liveCountOf", { matches: matches.length, count: activeProducts.length });
+      elements.bestSellerResultsSummary.textContent = truncated ? t("bestSeller.showingN", { base, n: visible.length }) : base;
     }
 
-    elements.bestSellerResults.innerHTML = matches.length
-      ? matches.map((product) => {
-        const slotIndex = draftIds.indexOf(product.id);
-        const isSelected = slotIndex !== -1;
-        const badge = isSelected ? `Slot ${slotIndex + 1}` : "+ Add";
+    const cards = visible.map((product) => {
+      const slotIndex = draftIds.indexOf(product.id);
+      const isSelected = slotIndex !== -1;
+      const badge = isSelected ? t("bestSeller.slotN", { n: slotIndex + 1 }) : t("bestSeller.addBadge");
 
-        return `
-          <button class="best-seller-picker-card${isSelected ? " is-selected" : ""}" type="button" data-best-seller-pick="${escapeHtml(product.id)}" aria-pressed="${isSelected}">
-            ${buildBestSellerThumb(product)}
-            <span class="best-seller-picker-badge">${badge}</span>
-            <span class="best-seller-picker-body">
-              <span>${escapeHtml(getProductSku(product))}</span>
-              <strong>${escapeHtml(getProductName(product))}</strong>
-              <small>${escapeHtml(getProductCollectionName(product) || getCollectionLabel(product.collection))}</small>
-            </span>
-          </button>
-        `;
-      }).join("")
-      : `<p class="admin-note">No active products match this search.</p>`;
+      return `
+        <button class="best-seller-picker-card${isSelected ? " is-selected" : ""}" type="button" data-best-seller-pick="${escapeHtml(product.id)}" aria-pressed="${isSelected}">
+          ${buildBestSellerThumb(product)}
+          <span class="best-seller-picker-badge">${escapeHtml(badge)}</span>
+          <span class="best-seller-picker-body">
+            <span>${escapeHtml(getProductSku(product))}</span>
+            <strong>${escapeHtml(getProductName(product))}</strong>
+            <small>${escapeHtml(getProductCollectionName(product) || getCollectionLabel(product.collection))}</small>
+          </span>
+        </button>
+      `;
+    }).join("");
+    const remaining = matches.length - visible.length;
+    const showMore = remaining > 0
+      ? `<button class="admin-secondary best-seller-show-more" type="button" data-best-seller-show-more>${escapeHtml(t("bestSeller.showMore", { n: remaining }))}</button>`
+      : "";
+
+    elements.bestSellerResults.innerHTML = matches.length
+      ? `${cards}${showMore}`
+      : `<p class="admin-note">${escapeHtml(t("bestSeller.noMatch"))}</p>`;
   }
 
   function renderBestSellerSettings() {
@@ -2402,10 +2835,13 @@
       return;
     }
 
-    if (adminCache.isLoading || !adminCache.isReady) {
+    const bestSellerError = adminCache.errors.products || adminCache.errors.bestSellers;
+    const bestSellerErrorName = adminCache.errors.products ? "products" : "bestSellers";
+
+    if (adminCache.isLoading || bestSellerError) {
       const message = adminCache.isLoading
-        ? "Loading Best Seller products..."
-        : escapeHtml(adminCache.error || "Connect Supabase before managing Best Seller products.");
+        ? escapeHtml(t("bestSeller.loading"))
+        : `${escapeHtml(t("error.couldNotLoadWhy", { label: ADMIN_DATASETS[bestSellerErrorName].label, message: bestSellerError }))} <button type="button" class="admin-secondary" data-retry-dataset="${bestSellerErrorName}">${escapeHtml(t("common.retry"))}</button>`;
       elements.bestSellerSlots.innerHTML = `<li class="admin-note">${message}</li>`;
       if (elements.bestSellerResults) {
         elements.bestSellerResults.innerHTML = `<p class="admin-note">${message}</p>`;
@@ -2456,7 +2892,7 @@
       }
       .modal-kicker {
         display: block;
-        color: #b9933a;
+        color: var(--maris-gold-text, #856a22);
         font-size: 11px;
         letter-spacing: 0.16em;
         text-transform: uppercase;
@@ -2560,7 +2996,7 @@
         position: absolute;
         top: 4px;
         left: 4px;
-        background: #b9933a;
+        background: var(--maris-gold-text, #856a22);
         color: #fff;
         font-size: 9px;
         letter-spacing: 0.1em;
@@ -2790,7 +3226,7 @@
         position: absolute;
         top: 4px;
         left: 4px;
-        background: #b9933a;
+        background: var(--maris-gold-text, #856a22);
         color: #fff;
         font-size: 9px;
         letter-spacing: 0.1em;
@@ -2809,7 +3245,7 @@
         padding: 12px 0;
       }
       .modal-gallery-hint {
-        color: #b9933a;
+        color: var(--maris-gold-text, #856a22);
         font-size: 11px;
         letter-spacing: 0.08em;
         margin-bottom: 10px;
@@ -2818,9 +3254,46 @@
       .modal-actions {
         display: flex;
         gap: 10px;
-        margin-top: 28px;
         flex-wrap: wrap;
       }
+      /* Save / Close stay in view however far the form is scrolled. */
+      .modal-footer {
+        position: sticky;
+        bottom: 0;
+        z-index: 3;
+        margin: 28px -36px -36px;
+        padding: 14px 36px 18px;
+        background: #fffaf6;
+        border-top: 1px solid rgba(221,164,165,0.38);
+      }
+      .modal-footer .modal-message { margin: 0 0 10px; }
+      .modal-saves-now {
+        display: inline-block;
+        margin-left: 8px;
+        padding: 2px 8px;
+        border: 1px solid #00493a;
+        color: #00493a;
+        font-size: 10px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        vertical-align: middle;
+      }
+      .modal-gallery-move {
+        position: absolute;
+        bottom: 4px;
+        width: 26px;
+        height: 26px;
+        border: 1px solid rgba(0,73,58,0.4);
+        background: rgba(255,250,246,0.94);
+        color: #00493a;
+        font-size: 14px;
+        line-height: 1;
+        cursor: pointer;
+      }
+      .modal-gallery-move[data-gallery-move="-1"] { left: 4px; }
+      .modal-gallery-move[data-gallery-move="1"] { right: 4px; }
+      .modal-gallery-move:disabled { opacity: 0.35; cursor: default; }
+      #maris-edit-modal-title:focus { outline: none; }
       .modal-close-btn {
         position: absolute;
         top: 16px;
@@ -2866,85 +3339,85 @@
 
     const modal = document.createElement("div");
     modal.id = "maris-edit-modal";
+    modal.lang = window.MARIS_ADMIN_I18N?.lang || "en";
     modal.setAttribute("role", "dialog");
     modal.setAttribute("aria-modal", "true");
     modal.setAttribute("aria-labelledby", "maris-edit-modal-title");
     modal.innerHTML = `
       <div id="maris-edit-modal-box">
-        <button class="modal-close-btn" id="maris-edit-modal-close" aria-label="Close">&#x2715;</button>
-        <span class="modal-kicker">Editing product</span>
-        <h2 id="maris-edit-modal-title">Edit Product</h2>
+        <button class="modal-close-btn" id="maris-edit-modal-close" aria-label="${escapeHtml(t("common.close"))}">&#x2715;</button>
+        <span class="modal-kicker">${escapeHtml(t("modal.editing"))}</span>
+        <h2 id="maris-edit-modal-title" tabindex="-1">${escapeHtml(t("modal.title"))}</h2>
 
         <div class="modal-grid">
           <label class="modal-label">
-            SKU / Code
+            ${escapeHtml(t("modal.skuCode"))}
             <input class="modal-input" id="modal-field-sku" type="text">
           </label>
           <label class="modal-label">
-            Collection / Ring Type
+            ${escapeHtml(t("modal.collectionRingType"))}
             <select class="modal-select" id="modal-field-collection">
-              <option value="engagement-ring">Engagement Rings</option>
-              <option value="wedding-bands">Wedding Bands</option>
-              <option value="mens-wedding-bands">Men's Wedding Bands</option>
-              <option value="rings">Rings</option>
-              <option value="wedding-set">Wedding Set</option>
-              <option value="earrings">Earrings</option>
-              <option value="bracelets">Bracelets</option>
-              <option value="necklaces-pendants">Necklaces &amp; Pendants</option>
+              <option value="engagement-ring">${escapeHtml(t("collection.engagement-ring"))}</option>
+              <option value="wedding-bands">${escapeHtml(t("collection.wedding-bands"))}</option>
+              <option value="mens-wedding-bands">${escapeHtml(t("collection.mens-wedding-bands"))}</option>
+              <option value="rings">${escapeHtml(t("collection.rings"))}</option>
+              <option value="wedding-set">${escapeHtml(t("collection.wedding-set"))}</option>
+              <option value="earrings">${escapeHtml(t("collection.earrings"))}</option>
+              <option value="bracelets">${escapeHtml(t("collection.bracelets"))}</option>
+              <option value="necklaces-pendants">${escapeHtml(t("collection.necklaces-pendants"))}</option>
             </select>
           </label>
         </div>
 
         <div class="modal-grid">
           <label class="modal-label">
-            Product Name
-            <input class="modal-input" id="modal-field-name" type="text" placeholder="Product name">
+            ${escapeHtml(t("form.productName"))}
+            <input class="modal-input" id="modal-field-name" type="text" placeholder="${escapeHtml(t("modal.productNamePlaceholder"))}">
           </label>
           <label class="modal-label">
-            Price
-            <input class="modal-input" id="modal-field-price" type="text" placeholder="Price on request">
+            ${escapeHtml(t("form.price"))}
+            <input class="modal-input" id="modal-field-price" type="text" placeholder="${escapeHtml(t("product.priceOnRequest"))}">
           </label>
         </div>
 
         <div class="modal-grid modal-full">
           <label class="modal-label">
-            Collection Name
+            ${escapeHtml(t("form.collectionName"))}
             <input class="modal-input" id="modal-field-collection-name" type="text" placeholder="The One Aura Collection">
           </label>
         </div>
 
         <div class="modal-grid">
           <label class="modal-label">
-            Status
+            ${escapeHtml(t("form.status"))}
             <select class="modal-select" id="modal-field-status">
-              <option value="Ready">Ready</option>
-              <option value="Sold Out">Sold Out</option>
-              <option value="Preorder">Preorder</option>
-              <option value="Hidden">Hidden</option>
+              <option value="active">${escapeHtml(t("modal.statusLive"))}</option>
+              <option value="draft">${escapeHtml(t("modal.statusDraft"))}</option>
+              <option value="archived">${escapeHtml(t("status.product.archived"))}</option>
             </select>
           </label>
           <label class="modal-label">
-            Real Stock
+            ${escapeHtml(t("form.realStock"))}
             <input class="modal-input" id="modal-field-stock" type="number" min="0">
           </label>
         </div>
 
-        <p class="modal-gallery-hint">Ready to Ship · Shown on the Ready to Ship page while Real Stock is above 0. Price above is what the customer pays; enter the full price before discount here to show it struck through.</p>
+        <p class="modal-gallery-hint">${escapeHtml(t("modal.readyToShipHint"))}</p>
         <div class="modal-grid">
           <label class="modal-label">
-            Price before discount
-            <input class="modal-input" id="modal-field-compare-price" type="text" placeholder="Leave blank for no discount">
+            ${escapeHtml(t("modal.priceBeforeDiscount"))}
+            <input class="modal-input" id="modal-field-compare-price" type="text" placeholder="${escapeHtml(t("modal.priceBeforeDiscountPlaceholder"))}">
           </label>
           <label class="modal-label">
-            Ready to Ship
+            ${escapeHtml(t("modal.readyToShip"))}
             <select class="modal-select" id="modal-field-ready-to-ship">
-              <option value="no">No</option>
-              <option value="yes">Yes - list on Ready to Ship page</option>
+              <option value="no">${escapeHtml(t("common.no"))}</option>
+              <option value="yes">${escapeHtml(t("modal.readyToShipYes"))}</option>
             </select>
           </label>
         </div>
 
-        <p class="modal-gallery-hint">Sample piece specs · Fill in only what you know; blank fields stay hidden on the product page</p>
+        <p class="modal-gallery-hint">${escapeHtml(t("modal.specsHint"))}</p>
         <div class="modal-grid">
           ${PRODUCT_SPEC_FIELDS.map(({ modalId, label, placeholder }) => `
           <label class="modal-label">
@@ -2954,7 +3427,7 @@
         </div>
         <div class="modal-grid modal-full">
           <label class="modal-label">
-            Gem report (CSV from CAD)
+            ${escapeHtml(t("form.gemReport"))}
             <input class="modal-file-input" id="modal-field-gem-report" type="file" accept="${GEM_REPORT_FILE_ACCEPT}" aria-describedby="modal-gem-report-preview">
           </label>
           <div class="admin-gem-report" id="modal-gem-report-preview" aria-live="polite"></div>
@@ -2962,76 +3435,90 @@
 
         <div class="modal-grid modal-full">
           <label class="modal-label">
-            Description
-            <textarea class="modal-input" id="modal-field-description" rows="4" placeholder="Describe the piece for the product page."></textarea>
+            ${escapeHtml(t("form.description"))}
+            <textarea class="modal-input" id="modal-field-description" rows="4" placeholder="${escapeHtml(t("form.descriptionPlaceholder"))}"></textarea>
           </label>
         </div>
 
         <hr class="modal-divider">
-        <span class="modal-kicker">1 · Card images (Cover &amp; Hover)</span>
-        <p class="modal-gallery-hint" style="margin-top:6px">The catalogue card only · Saved as soon as you upload, choose or remove · Not part of the product page gallery</p>
+        <span class="modal-kicker">${escapeHtml(t("modal.step1"))}<span class="modal-saves-now">${escapeHtml(t("modal.savesImmediately"))}</span></span>
+        <p class="modal-gallery-hint" style="margin-top:6px">${escapeHtml(t("modal.step1Hint"))}</p>
         <div class="modal-card-layout">
           <div id="modal-card-grid"></div>
-          <div id="modal-card-preview" class="modal-card-preview" aria-label="Catalogue card preview"></div>
+          <div id="modal-card-preview" class="modal-card-preview" aria-label="${escapeHtml(t("modal.cardPreviewLabel"))}"></div>
         </div>
 
         <hr class="modal-divider">
-        <span class="modal-kicker">2 · Turntable video (360°)</span>
-        <p class="modal-gallery-hint" style="margin-top:6px">Plays in the product page gallery · Uploads straight to storage, so large files are fine · Saved as soon as it uploads</p>
+        <span class="modal-kicker">${escapeHtml(t("modal.step2"))}<span class="modal-saves-now">${escapeHtml(t("modal.savesImmediately"))}</span></span>
+        <p class="modal-gallery-hint" style="margin-top:6px">${escapeHtml(t("modal.step2Hint"))}</p>
         <div id="modal-video-block"></div>
 
         <hr class="modal-divider">
-        <span class="modal-kicker">3 · Product page gallery</span>
-        <p id="modal-gallery-count" class="modal-gallery-count">No gallery images yet</p>
-        <p class="modal-gallery-hint" style="margin-top:6px">These views appear on the product page, one set per metal, with the video in the slot chosen in step 2 · Set each image's metal and view under it · Drag to reorder · ✕ deletes</p>
+        <span class="modal-kicker">${escapeHtml(t("modal.step3"))}<span class="modal-saves-now">${escapeHtml(t("modal.step3Saves"))}</span></span>
+        <p id="modal-gallery-count" class="modal-gallery-count">${escapeHtml(t("gallery.none"))}</p>
+        <p class="modal-gallery-hint" style="margin-top:6px">${escapeHtml(t("modal.step3Hint"))}</p>
         <div id="modal-gallery-grid"></div>
         <label class="modal-label" style="margin-top:4px">
-          Add gallery images (uploaded when you press Save Changes)
-          <input class="modal-file-input" id="modal-field-gallery" type="file" accept="image/*" multiple>
+          ${escapeHtml(t("modal.addGallery"))}
+          <input class="modal-file-input" id="modal-field-gallery" type="file" accept="${GALLERY_IMAGE_TYPES.join(",")}" multiple aria-describedby="modal-gallery-file-hint">
+          <span class="admin-file-hint" id="modal-gallery-file-hint">${escapeHtml(GALLERY_IMAGE_HINT)}</span>
         </label>
-        <p class="modal-gallery-hint" style="margin-top:6px">Metal and view for the images you add. Auto reads them from each file name (e.g. "SR 0058 white gold top.png").</p>
+        <p class="modal-gallery-hint" style="margin-top:6px">${escapeHtml(t("modal.tagHint"))}</p>
         <div class="modal-grid">
           <label class="modal-label">
-            Metal
+            ${escapeHtml(t("modal.metal"))}
             <select class="modal-select" id="modal-field-image-metal">
-              <option value="">Auto from file name</option>
-              <option value="White Gold">White Gold</option>
-              <option value="Rose Gold">Rose Gold</option>
-              <option value="Yellow Gold">Yellow Gold</option>
+              <option value="">${escapeHtml(t("modal.autoFromFileName"))}</option>
+              <option value="White Gold">${escapeHtml(t("metal.WG"))}</option>
+              <option value="Rose Gold">${escapeHtml(t("metal.RG"))}</option>
+              <option value="Yellow Gold">${escapeHtml(t("metal.YG"))}</option>
             </select>
           </label>
           <label class="modal-label">
-            View
+            ${escapeHtml(t("modal.view"))}
             <select class="modal-select" id="modal-field-image-view">
-              <option value="">Auto from file name</option>
-              <option value="Hero view">Main</option>
-              <option value="Top view">Top</option>
-              <option value="Front view">Front</option>
-              <option value="Side view">Side</option>
-              <option value="Back view">Back</option>
+              <option value="">${escapeHtml(t("modal.autoFromFileName"))}</option>
+              <option value="Hero view">${escapeHtml(t("imageView.heroOption"))}</option>
+              <option value="Top view">${escapeHtml(t("imageView.top"))}</option>
+              <option value="Front view">${escapeHtml(t("imageView.front"))}</option>
+              <option value="Side view">${escapeHtml(t("imageView.side"))}</option>
+              <option value="Back view">${escapeHtml(t("imageView.back"))}</option>
             </select>
           </label>
         </div>
 
-        <div class="modal-actions">
-          <button class="admin-primary" id="modal-save-btn" type="button">Save Changes</button>
-          <button class="admin-secondary" id="maris-edit-modal-cancel" type="button">Cancel</button>
+        <div class="modal-footer">
+          <p class="modal-message" id="modal-message" role="status" aria-live="polite"></p>
+          <div class="modal-actions">
+            <button class="admin-primary" id="modal-save-btn" type="button" data-requires="catalogue:write">${escapeHtml(t("modal.saveText"))}</button>
+            <button class="admin-secondary" id="maris-edit-modal-cancel" type="button">${escapeHtml(t("common.close"))}</button>
+          </div>
         </div>
-        <p class="modal-message" id="modal-message"></p>
       </div>
     `;
     document.body.appendChild(modal);
 
-    document.getElementById("maris-edit-modal-close").addEventListener("click", closeEditModal);
-    document.getElementById("maris-edit-modal-cancel").addEventListener("click", closeEditModal);
+    document.getElementById("maris-edit-modal-close").addEventListener("click", () => closeEditModal());
+    document.getElementById("maris-edit-modal-cancel").addEventListener("click", () => closeEditModal());
     modal.addEventListener("click", (e) => { if (e.target === modal) closeEditModal(); });
-    document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeEditModal(); });
+    document.addEventListener("keydown", (e) => {
+      if (!modal.classList.contains("is-open")) return;
+
+      if (e.key === "Escape") {
+        closeEditModal();
+        return;
+      }
+
+      if (e.key === "Tab") {
+        trapModalTab(e, modal);
+      }
+    });
     document.getElementById("modal-save-btn").addEventListener("click", saveEditModal);
     modalGemReport = createGemReportControl({
       input: document.getElementById("modal-field-gem-report"),
       preview: document.getElementById("modal-gem-report-preview"),
-      emptyText: "No gem report yet. Choose the CSV to fill the specs above and list every stone on the product page.",
-      removedText: "The gem report will be removed when you press Save Changes.",
+      emptyText: t("gem.emptyModal"),
+      removedText: t("gem.removedModal"),
       setSpecField: (key, value) => {
         const field = PRODUCT_SPEC_FIELDS.find((spec) => spec.key === key);
         if (field) document.getElementById(field.modalId).value = value;
@@ -3047,6 +3534,17 @@
     videoBlock.addEventListener("dragover", handleModalVideoDragOver);
     videoBlock.addEventListener("dragleave", handleModalVideoDragLeave);
     videoBlock.addEventListener("drop", handleModalVideoDrop);
+    const galleryFileInput = document.getElementById("modal-field-gallery");
+    galleryFileInput.addEventListener("change", () => {
+      const problem = findImageFileProblem(Array.from(galleryFileInput.files || []), validateGalleryImageFile);
+
+      galleryFileInput.setAttribute("aria-invalid", problem ? "true" : "false");
+
+      if (problem) {
+        setModalMessage(problem, true);
+      }
+    });
+
     const galleryGrid = document.getElementById("modal-gallery-grid");
     galleryGrid.addEventListener("click", handleModalGalleryClick);
     galleryGrid.addEventListener("change", handleModalGalleryTagChange);
@@ -3057,7 +3555,63 @@
     galleryGrid.addEventListener("dragend", handleModalGalleryDragEnd);
   }
 
-  function openEditModal(product) {
+  function normalizeModalProductStatus(value) {
+    const status = String(value ?? "").trim().toLowerCase();
+    if (status === "active" || status === "ready" || status === "preorder" || status === "sold out") return "active";
+    if (status === "archived" || status === "hidden") return "archived";
+    return "draft";
+  }
+
+  // Text the admin can lose by closing: the fields that wait for Save, plus
+  // files picked for upload. Media actions save on their own and are not part of it.
+  let modalSnapshot = "";
+  let modalOpener = null;
+
+  function captureModalFormState() {
+    const modal = document.getElementById("maris-edit-modal");
+    if (!modal) return "";
+
+    const values = Array.from(modal.querySelectorAll("[id^='modal-field-']"))
+      .map((field) => (field.type === "file"
+        ? `${field.id}:${Array.from(field.files || []).map((file) => `${file.name}/${file.size}`).join(",")}`
+        : `${field.id}:${field.value}`));
+
+    try {
+      values.push(`gem:${JSON.stringify(modalGemReport?.getPayload() ?? null)}`);
+    } catch {
+      // The gem report control is optional for this comparison.
+    }
+
+    return values.join("|");
+  }
+
+  function isModalDirty() {
+    return captureModalFormState() !== modalSnapshot;
+  }
+
+  function trapModalTab(event, modal) {
+    const focusable = Array.from(modal.querySelectorAll(
+      "a[href], button, input, select, textarea, [tabindex]:not([tabindex='-1'])"
+    )).filter((element) => !element.disabled && element.type !== "hidden" && element.offsetParent !== null);
+
+    if (!focusable.length) return;
+
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+
+    if (!modal.contains(document.activeElement)) {
+      event.preventDefault();
+      first.focus();
+    } else if (event.shiftKey && (document.activeElement === first || document.activeElement.id === "maris-edit-modal-title")) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
+
+  function openEditModal(product, opener) {
     buildEditModal();
 
     const modal = document.getElementById("maris-edit-modal");
@@ -3075,7 +3629,11 @@
     document.getElementById("modal-field-collection-name").value = getProductCollectionName(product);
     document.getElementById("modal-field-price").value =
       product.basePrice != null ? String(product.basePrice) : (product.price || "");
-    document.getElementById("modal-field-status").value = product.status || "Ready";
+    // Map legacy values so the select is never blank, and remember the opening
+    // value so Save only sends `status` when the admin actually changed it.
+    const initialStatus = normalizeModalProductStatus(product.status);
+    document.getElementById("modal-field-status").value = initialStatus;
+    modal.dataset.initialStatus = initialStatus;
     document.getElementById("modal-field-stock").value = String(product.stockQty ?? product.totalStock ?? 0);
     document.getElementById("modal-field-compare-price").value =
       product.compareAtPrice != null ? String(product.compareAtPrice) : "";
@@ -3087,7 +3645,7 @@
     modalGemReport.reset(product.gemReport || null);
 
     // Title
-    title.textContent = `Edit — ${getProductSku(product)}`;
+    title.textContent = t("modal.titleWithSku", { sku: getProductSku(product) });
 
     revokeModalVideoDraftUrls();
     modalVideoDraft = null;
@@ -3100,22 +3658,38 @@
     document.getElementById("modal-field-image-view").value = "";
     setModalMessage("", false);
 
+    applyAdminPermissions(modal);
+    modalOpener = opener || (document.activeElement !== document.body ? document.activeElement : null);
     modal.classList.add("is-open");
     document.body.style.overflow = "hidden";
+    modalSnapshot = captureModalFormState();
+    document.getElementById("maris-edit-modal-title").focus();
   }
 
-  function closeEditModal() {
+  function closeEditModal(force = false) {
     const modal = document.getElementById("maris-edit-modal");
     if (!modal) return;
 
-    if (modalVideoUploading && !confirm("The video is still uploading. Close anyway?")) {
+    if (force !== true && isModalDirty() && !confirm(t("modal.confirmDiscard"))) {
+      return;
+    }
+
+    if (modalVideoUploading && !confirm(t("modal.confirmCloseUploading"))) {
       return;
     }
 
     revokeModalVideoDraftUrls();
     modalVideoDraft = null;
+    const productId = modal.dataset.productId;
     modal.classList.remove("is-open");
     document.body.style.overflow = "";
+
+    // Back to the Edit button that opened it (the table may have been redrawn since).
+    const returnTo = modalOpener && modalOpener.isConnected
+      ? modalOpener
+      : document.querySelector(`[data-catalogue-edit][data-product-id="${CSS.escape(productId || "")}"]`);
+    modalOpener = null;
+    returnTo?.focus();
   }
 
   function setModalMessage(text, isError = false) {
@@ -3128,11 +3702,11 @@
   async function saveEditModal() {
     const modal = document.getElementById("maris-edit-modal");
     const productId = modal?.dataset.productId;
-    if (!productId) return;
+    if (!productId || !ensureAdminCan("catalogue:write")) return;
 
     const saveBtn = document.getElementById("modal-save-btn");
     saveBtn.disabled = true;
-    saveBtn.innerHTML = `<span class="modal-spinner"></span>Saving...`;
+    saveBtn.innerHTML = `<span class="modal-spinner"></span>${escapeHtml(t("common.saving"))}`;
     setModalMessage("", false);
 
     try {
@@ -3142,7 +3716,8 @@
       const collectionName = document.getElementById("modal-field-collection-name").value.trim();
       const collection = document.getElementById("modal-field-collection").value;
       const price = document.getElementById("modal-field-price").value.trim() || "Price on request";
-      const status = document.getElementById("modal-field-status").value;
+      const statusValue = document.getElementById("modal-field-status").value;
+      const statusChanged = Boolean(statusValue) && statusValue !== modal.dataset.initialStatus;
       const stockQty = Math.max(0, Number(document.getElementById("modal-field-stock").value) || 0);
       const compareAtPrice = document.getElementById("modal-field-compare-price").value.trim();
       const readyToShip = document.getElementById("modal-field-ready-to-ship").value === "yes";
@@ -3157,12 +3732,20 @@
       );
 
       if (!sku || !name) {
-        setModalMessage("SKU and product name are required.", true);
+        setModalMessage(t("modal.skuNameRequired"), true);
         return;
       }
 
       if (getCachedProducts().some((item) => item.id !== productId && getProductSku(item).toLowerCase() === sku.toLowerCase())) {
-        setModalMessage(`SKU "${sku}" already exists on another product.`, true);
+        setModalMessage(t("modal.skuExists", { sku }), true);
+        return;
+      }
+
+      const pendingGalleryFiles = Array.from(document.getElementById("modal-field-gallery").files);
+      const galleryProblem = findImageFileProblem(pendingGalleryFiles, validateGalleryImageFile);
+
+      if (galleryProblem) {
+        setModalMessage(galleryProblem, true);
         return;
       }
 
@@ -3177,7 +3760,7 @@
           price,
           compareAtPrice,
           readyToShip,
-          status,
+          ...(statusChanged ? { status: statusValue } : {}),
           stockQty,
           description,
           specs,
@@ -3201,18 +3784,19 @@
         ));
       }
 
-      setModalMessage("Saved successfully.");
+      setModalMessage(t("modal.saved"));
       await loadAdminBackendData();
       loadDatabaseCatalogue();
       renderAll();
 
-      setTimeout(closeEditModal, 800);
+      modalSnapshot = captureModalFormState();
+      setTimeout(() => closeEditModal(true), 800);
 
     } catch (error) {
-      setModalMessage(error instanceof Error ? error.message : "Could not save changes.", true);
+      setModalMessage(error instanceof Error ? error.message : t("modal.saveFailed"), true);
     } finally {
       saveBtn.disabled = false;
-      saveBtn.textContent = "Save Changes";
+      saveBtn.textContent = t("modal.saveText");
     }
   }
 
@@ -3222,13 +3806,17 @@
     const editBtn = event.target.closest("[data-catalogue-edit]");
     const deleteBtn = event.target.closest("[data-catalogue-delete]");
 
+    if (editBtn || deleteBtn) {
+      closeRowMenus();
+    }
+
     if (editBtn) {
       const productId = editBtn.dataset.productId;
       const product = getCachedProducts().find((p) => p.id === productId);
       if (product) {
-        openEditModal(product);
+        openEditModal(product, editBtn);
       } else {
-        setMessage("Product data not found. Try refreshing.", true);
+        setMessage(t("products.notFound"), true);
       }
       return;
     }
@@ -3236,55 +3824,108 @@
     if (deleteBtn) {
       const code = deleteBtn.dataset.catalogueDelete;
       const productId = deleteBtn.dataset.productId;
+      if (!ensureAdminCan("catalogue:delete")) {
+        return;
+      }
       if (!productId) {
-        alert("Product ID not found. Cannot delete.");
+        setMessage(t("products.idNotFound"), true);
         return;
       }
-      if (!confirm(`Delete product ${code}? This cannot be undone.`)) {
-        return;
-      }
-      deleteSupabaseProduct(productId, code);
+      const product = getCachedProducts().find((item) => item.id === productId);
+      confirmProductDeletion(code, product ? getProductName(product) : "", () => deleteSupabaseProduct(productId, code, deleteBtn));
     }
   }
 
-  async function deleteSupabaseProduct(productId, code) {
-    try {
-      const response = await fetch(`/api/admin/products?id=${encodeURIComponent(productId)}`, {
-        method: "DELETE",
-        credentials: "same-origin"
-      });
+  // Deleting is permanent, so the owner types the product's SKU first. Spaces and
+  // letter case are ignored. The server separately allows only owners and admins.
+  function normalizeTypedSku(value) {
+    return String(value || "").replace(/\s+/g, "").toLowerCase();
+  }
 
-      if (response.ok) {
-        alert(`Product ${code} deleted.`);
+  function confirmProductDeletion(code, name, onConfirm) {
+    const dialog = document.querySelector("[data-delete-dialog]");
+
+    if (!dialog || typeof dialog.showModal !== "function") {
+      setMessage(t("products.deleteDialogFailed"), true);
+      return;
+    }
+
+    const input = dialog.querySelector("[data-delete-input]");
+    const confirmButton = dialog.querySelector("[data-delete-confirm]");
+    const cancelButton = dialog.querySelector("[data-delete-cancel]");
+
+    dialog.querySelectorAll("[data-delete-sku]").forEach((node) => {
+      node.textContent = code;
+    });
+    dialog.querySelector("[data-delete-product]").textContent = name ? `${code} (${name})` : code;
+    input.value = "";
+    confirmButton.disabled = true;
+
+    const update = () => {
+      const expected = normalizeTypedSku(code);
+      confirmButton.disabled = !expected || normalizeTypedSku(input.value) !== expected;
+    };
+    const cleanup = () => {
+      input.removeEventListener("input", update);
+      confirmButton.removeEventListener("click", accept);
+      cancelButton.removeEventListener("click", cancel);
+      form.removeEventListener("submit", submit);
+      dialog.removeEventListener("close", cleanup);
+    };
+    const accept = () => {
+      update();
+      if (confirmButton.disabled) return;
+      dialog.close("confirmed");
+      onConfirm();
+    };
+    const cancel = () => dialog.close("cancelled");
+    const form = dialog.querySelector("form");
+    // Enter in the box confirms only when the SKU matches; it never just closes the dialog.
+    const submit = (event) => {
+      event.preventDefault();
+      accept();
+    };
+
+    form.addEventListener("submit", submit);
+    input.addEventListener("input", update);
+    confirmButton.addEventListener("click", accept);
+    cancelButton.addEventListener("click", cancel);
+    dialog.addEventListener("close", cleanup);
+    dialog.showModal();
+    input.focus();
+  }
+
+  async function deleteSupabaseProduct(productId, code, button) {
+    await withSubmitLock(button, button, t("products.deleting"), async () => {
+      try {
+        await fetchAdminApi(`/products?id=${encodeURIComponent(productId)}`, { method: "DELETE" });
         await loadAdminBackendData();
         loadDatabaseCatalogue();
         renderAll();
-      } else {
-        const payload = await response.json().catch(() => ({}));
-        alert(`Delete failed: ${payload.error || response.statusText}`);
+        setMessage(t("products.deleted", { code }));
+      } catch (error) {
+        setMessage(t("products.deleteFailed", { code, message: error instanceof Error ? error.message : t("common.unknownError") }), true);
       }
-    } catch (error) {
-      alert(`Delete error: ${error.message}`);
-    }
+    });
   }
 
   function getDatabaseStatusLabel() {
     if (databaseStatusState.isLoading) {
-      return "Checking...";
+      return t("system.checking");
     }
 
     if (databaseStatusState.error) {
-      return "Check failed";
+      return t("system.checkFailed");
     }
 
     if (!databaseStatusState.isConfigured) {
-      return "Needs env";
+      return t("system.needsEnv");
     }
 
     const tables = Array.isArray(databaseStatusState.tables) ? databaseStatusState.tables : [];
     const hasTableErrors = tables.some((table) => !table.isReachable);
 
-    return hasTableErrors ? "Partial access" : "Connected";
+    return hasTableErrors ? t("system.partialAccess") : t("system.connected");
   }
 
   function renderDatabaseStatus() {
@@ -3316,18 +3957,18 @@
 
     if (elements.databaseSummary) {
       if (databaseStatusState.isLoading) {
-        elements.databaseSummary.textContent = "Checking Supabase through the protected admin API.";
+        elements.databaseSummary.textContent = t("system.summaryChecking");
       } else if (databaseStatusState.error) {
         elements.databaseSummary.textContent = databaseStatusState.error;
       } else if (!databaseStatusState.isConfigured) {
-        elements.databaseSummary.textContent = `Set ${missingEnv.join(" and ")} before using the shared database.`;
+        elements.databaseSummary.textContent = t("system.summarySetEnv", { names: missingEnv.join(t("common.andJoin")) });
       } else {
-        elements.databaseSummary.textContent = "Server-side Supabase connection is available for the next CRUD step.";
+        elements.databaseSummary.textContent = t("system.summaryOk");
       }
     }
 
     if (databaseStatusState.isLoading) {
-      elements.databaseTableStatus.innerHTML = `<tr><td colspan="4">Checking database tables...</td></tr>`;
+      elements.databaseTableStatus.innerHTML = `<tr><td colspan="4">${escapeHtml(t("system.tablesChecking"))}</td></tr>`;
       return;
     }
 
@@ -3337,7 +3978,7 @@
     }
 
     if (!databaseStatusState.isConfigured) {
-      elements.databaseTableStatus.innerHTML = `<tr><td colspan="4">Missing environment variables: ${escapeHtml(missingEnv.join(", "))}</td></tr>`;
+      elements.databaseTableStatus.innerHTML = `<tr><td colspan="4">${escapeHtml(t("system.missingEnv", { names: missingEnv.join(", ") }))}</td></tr>`;
       return;
     }
 
@@ -3345,9 +3986,9 @@
       .map((table) => `
         <tr>
           <td><strong>${escapeHtml(table.name)}</strong></td>
-          <td class="${table.isReachable ? "stock-ok" : "stock-low"}">${table.isReachable ? "Reachable" : "Needs attention"}</td>
+          <td class="${table.isReachable ? "stock-ok" : "stock-low"}">${escapeHtml(table.isReachable ? t("system.reachable") : t("system.needsAttention"))}</td>
           <td>${table.rowCount === null || table.rowCount === undefined ? "-" : escapeHtml(table.rowCount)}</td>
-          <td>${escapeHtml(table.error || "Ready for server-side admin workflows")}</td>
+          <td>${escapeHtml(table.error || t("system.tableReady"))}</td>
         </tr>
       `)
       .join("");
@@ -3373,7 +4014,7 @@
         isLoading: false,
         ...payload,
         error: !response.ok && response.status !== 503
-          ? (payload.error || `Database status request failed with HTTP ${response.status}.`)
+          ? (payload.error || t("system.statusRequestHttp", { status: response.status }))
           : null
       };
     } catch (error) {
@@ -3382,7 +4023,7 @@
         isConfigured: false,
         missingEnv: [],
         tables: [],
-        error: error instanceof Error ? error.message : "Database status request failed."
+        error: error instanceof Error ? error.message : t("system.statusRequestFailed")
       };
     }
 
@@ -3391,11 +4032,11 @@
 
   function formatDatabasePrice(product) {
     if (product.priceAmount === null || product.priceAmount === undefined) {
-      return "Price on request";
+      return t("product.priceOnRequest");
     }
 
     const amount = Number(product.priceAmount);
-    const formattedAmount = Number.isFinite(amount) ? amount.toLocaleString() : String(product.priceAmount);
+    const formattedAmount = Number.isFinite(amount) ? amount.toLocaleString(adminLocale) : String(product.priceAmount);
 
     return `${formattedAmount} ${product.currency || "THB"}`;
   }
@@ -3410,18 +4051,18 @@
 
     if (elements.databaseProductsSummary) {
       if (databaseCatalogueState.isLoading) {
-        elements.databaseProductsSummary.textContent = "Checking Supabase products through the protected admin API.";
+        elements.databaseProductsSummary.textContent = t("system.productsChecking");
       } else if (databaseCatalogueState.error) {
         elements.databaseProductsSummary.textContent = databaseCatalogueState.error;
       } else if (!databaseCatalogueState.isConfigured) {
-        elements.databaseProductsSummary.textContent = `Set ${missingEnv.join(" and ")} before reading products from Supabase.`;
+        elements.databaseProductsSummary.textContent = t("system.productsSetEnv", { names: missingEnv.join(t("common.andJoin")) });
       } else {
-        elements.databaseProductsSummary.textContent = `${products.length} Supabase products loaded. Supabase drives the live storefront catalogue.`;
+        elements.databaseProductsSummary.textContent = t("system.productsLoaded", { n: products.length });
       }
     }
 
     if (databaseCatalogueState.isLoading) {
-      elements.databaseProductsTable.innerHTML = `<tr><td colspan="8">Checking Supabase products...</td></tr>`;
+      elements.databaseProductsTable.innerHTML = `<tr><td colspan="8">${escapeHtml(t("system.productsCheckingRow"))}</td></tr>`;
       return;
     }
 
@@ -3431,14 +4072,14 @@
     }
 
     if (!databaseCatalogueState.isConfigured) {
-      elements.databaseProductsTable.innerHTML = `<tr><td colspan="8">Missing environment variables: ${escapeHtml(missingEnv.join(", "))}</td></tr>`;
+      elements.databaseProductsTable.innerHTML = `<tr><td colspan="8">${escapeHtml(t("system.missingEnv", { names: missingEnv.join(", ") }))}</td></tr>`;
       return;
     }
 
     const rows = products
       .map((product) => {
         const imageLink = product.primaryImageUrl
-          ? `<a class="admin-link-inline" href="${escapeHtml(product.primaryImageUrl)}" target="_blank" rel="noopener noreferrer">Open image</a>`
+          ? `<a class="admin-link-inline" href="${escapeHtml(product.primaryImageUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(t("system.openImage"))}</a>`
           : "-";
 
         return `
@@ -3448,7 +4089,7 @@
               <strong>${escapeHtml(product.nameEn || product.productCode)}</strong>
               <div>${escapeHtml(product.category || "-")}</div>
             </td>
-            <td class="${product.isActive ? "stock-ok" : "stock-low"}">${escapeHtml(product.status || "draft")}</td>
+            <td>${renderProductStatusBadge(product.status)}</td>
             <td>${escapeHtml(formatDatabasePrice(product))}</td>
             <td>${escapeHtml(product.variantCount || 0)}</td>
             <td>${escapeHtml(product.imageCount || 0)}</td>
@@ -3459,7 +4100,7 @@
       })
       .join("");
 
-    elements.databaseProductsTable.innerHTML = rows || `<tr><td colspan="8">No Supabase products found yet.</td></tr>`;
+    elements.databaseProductsTable.innerHTML = rows || `<tr><td colspan="8">${escapeHtml(t("system.productsNone"))}</td></tr>`;
   }
 
   async function loadDatabaseCatalogue() {
@@ -3482,7 +4123,7 @@
         isLoading: false,
         ...payload,
         error: !response.ok && response.status !== 503
-          ? (payload.error || `Supabase catalogue request failed with HTTP ${response.status}.`)
+          ? (payload.error || t("system.catalogueRequestHttp", { status: response.status }))
           : null
       };
     } catch (error) {
@@ -3491,7 +4132,7 @@
         isConfigured: false,
         missingEnv: [],
         products: [],
-        error: error instanceof Error ? error.message : "Supabase catalogue request failed."
+        error: error instanceof Error ? error.message : t("system.catalogueRequestFailed")
       };
     }
 
@@ -3500,18 +4141,18 @@
 
   function renderLogsTable() {
     if (adminCache.isLoading) {
-      elements.logsTable.innerHTML = `<tr><td colspan="5">Loading Supabase inventory logs...</td></tr>`;
+      elements.logsTable.innerHTML = `<tr><td colspan="5">${escapeHtml(t("inventory.loading"))}</td></tr>`;
       return;
     }
 
-    if (!adminCache.isReady) {
-      elements.logsTable.innerHTML = `<tr><td colspan="5">${escapeHtml(adminCache.error || "Connect Supabase before managing inventory.")}</td></tr>`;
+    if (adminCache.errors.logs) {
+      elements.logsTable.innerHTML = datasetErrorCell("logs", 5);
       return;
     }
 
     const rows = readLogs()
       .map((log) => {
-        const createdAt = log.createdAt ? new Date(log.createdAt).toLocaleString() : "-";
+        const createdAt = log.createdAt ? new Date(log.createdAt).toLocaleString(adminLocale) : "-";
         const movementType = log.type || log.changeType;
         const quantity = log.qty ?? log.quantity ?? 0;
 
@@ -3527,7 +4168,7 @@
       })
       .join("");
 
-    elements.logsTable.innerHTML = rows || `<tr><td colspan="5">No stock movement yet.</td></tr>`;
+    elements.logsTable.innerHTML = rows || `<tr><td colspan="5">${escapeHtml(t("inventory.none"))}</td></tr>`;
   }
 
   function renderOrdersTable() {
@@ -3535,12 +4176,12 @@
     const productById = new Map(products.map((product) => [product.id, product]));
 
     if (adminCache.isLoading) {
-      elements.ordersTable.innerHTML = `<tr><td colspan="7">Loading Supabase orders...</td></tr>`;
+      elements.ordersTable.innerHTML = `<tr><td colspan="7">${escapeHtml(t("orders.loading"))}</td></tr>`;
       return;
     }
 
-    if (!adminCache.isReady) {
-      elements.ordersTable.innerHTML = `<tr><td colspan="7">${escapeHtml(adminCache.error || "Connect Supabase before managing orders.")}</td></tr>`;
+    if (adminCache.errors.orders) {
+      elements.ordersTable.innerHTML = datasetErrorCell("orders", 7);
       return;
     }
 
@@ -3553,14 +4194,14 @@
         return `
           <tr>
             <td><strong>${escapeHtml(order.orderNumber || order.id)}</strong></td>
-            <td>${escapeHtml(order.customerName || "Guest")}</td>
+            <td>${escapeHtml(order.customerName || t("orders.guest"))}</td>
             <td>${escapeHtml(product ? getProductSku(product) : (order.productCode || order.productId))}</td>
             <td>${order.qty}</td>
-            <td>${escapeHtml(orderStatus)}</td>
-            <td>${escapeHtml(order.paymentStatus || order.payment_status || "unpaid")}</td>
+            <td>${renderStatusBadge(formatStatusLabel(ORDER_STATUS_LABELS, orderStatus), orderStatus)}</td>
+            <td>${renderStatusBadge(formatStatusLabel(PAYMENT_STATUS_LABELS, order.paymentStatus || order.payment_status || "unpaid"), order.paymentStatus || order.payment_status || "unpaid")}</td>
             <td>
               <div class="admin-row-actions">
-                <button type="button" data-order-cancel="${escapeHtml(order.id)}" ${canCancel ? "" : "disabled"}>Cancel</button>
+                <button type="button" data-order-cancel="${escapeHtml(order.id)}" data-requires="operations:write" ${canCancel ? "" : "disabled"}>${escapeHtml(t("common.cancel"))}</button>
               </div>
             </td>
           </tr>
@@ -3568,7 +4209,7 @@
       })
       .join("");
 
-    elements.ordersTable.innerHTML = rows || `<tr><td colspan="7">No orders yet.</td></tr>`;
+    elements.ordersTable.innerHTML = rows || `<tr><td colspan="7">${escapeHtml(t("orders.none"))}</td></tr>`;
   }
 
   function renderCustomRequestSummary() {
@@ -3614,15 +4255,15 @@
     const ringDesign = request.ringDesign || {};
     const history = getCustomRequestHistory(request).slice().reverse();
     const details = [
-      ["Product / request", `${request.productCode || "-"} · ${request.id || "-"}`],
-      ["Metal", [request.metalPurity, customRequestMetalLabels[request.metal] || request.metal].filter(Boolean).join(" ") || "Not specified"],
-      ["Ring size", request.ringSize ?? "Not specified"],
-      ["Style", ringDesign.style || "Not specified"],
-      ["Stone shape", ringDesign.stoneShape || "Not specified"],
-      ["Setting", ringDesign.setting || "Not specified"],
-      ["Stone", [request.stoneCarat ? `${request.stoneCarat} ct` : "", request.stoneColor, request.stoneClarity, request.stoneCut].filter(Boolean).join(" ") || "Not specified"],
-      ["Origin", request.origin || "Not specified"],
-      ["Engraving", ringDesign.engravingEnabled ? (ringDesign.engravingText || "Requested") : "None"]
+      [t("request.productRequest"), `${request.productCode || "-"} · ${request.id || "-"}`],
+      [t("request.metal"), [request.metalPurity, customRequestMetalLabels[request.metal] || request.metal].filter(Boolean).join(" ") || t("common.notSpecified")],
+      [t("request.ringSize"), request.ringSizeLabel || (request.ringSize ? `US ${request.ringSize}` : t("common.notSpecified"))],
+      [t("request.style"), ringDesign.style || t("common.notSpecified")],
+      [t("request.stoneShape"), ringDesign.stoneShape || t("common.notSpecified")],
+      [t("request.setting"), ringDesign.setting || t("common.notSpecified")],
+      [t("request.stone"), [request.stoneCarat ? `${request.stoneCarat} ct` : "", request.stoneColor, request.stoneClarity, request.stoneCut].filter(Boolean).join(" ") || t("common.notSpecified")],
+      [t("request.origin"), request.origin || t("common.notSpecified")],
+      [t("request.engraving"), ringDesign.engravingEnabled ? (ringDesign.engravingText || t("request.engravingRequested")) : t("common.none")]
     ];
     const statusOptions = customRequestStatuses.map((value) => (
       `<option value="${value}" ${value === status ? "selected" : ""}>${escapeHtml(getCustomRequestStatusLabel(value))}</option>`
@@ -3632,33 +4273,33 @@
           const fromStatus = getCustomRequestStatusLabel(event.fromStatus);
           const toStatus = getCustomRequestStatusLabel(event.toStatus);
           const action = event.fromStatus === event.toStatus
-            ? "Follow-up note"
-            : `${fromStatus} to ${toStatus}`;
+            ? t("request.followUpNote")
+            : t("request.statusChange", { from: fromStatus, to: toStatus });
 
           return `
             <li>
               <strong>${escapeHtml(action)}</strong>
-              <span>${escapeHtml(formatCustomRequestDate(event.at))} · ${escapeHtml(event.actor || "admin")}</span>
+              <span>${escapeHtml(formatCustomRequestDate(event.at))} · ${escapeHtml(event.actor || t("common.adminActor"))}</span>
               ${event.note ? `<p>${escapeHtml(event.note)}</p>` : ""}
             </li>
           `;
         }).join("")
-      : `<li class="is-empty"><p>No follow-up has been recorded yet.</p></li>`;
+      : `<li class="is-empty"><p>${escapeHtml(t("request.noFollowUp"))}</p></li>`;
 
     elements.customRequestDetail.hidden = false;
     elements.customRequestDetail.innerHTML = `
       <div class="custom-request-detail-head">
         <div>
-          <p class="admin-kicker">Active request</p>
-          <h3>${escapeHtml(request.customerName || request.fullName || "Maris Client")}</h3>
-          <p>Received ${escapeHtml(formatCustomRequestDate(request.createdAt))}</p>
+          <p class="admin-kicker">${escapeHtml(t("request.activeRequest"))}</p>
+          <h3>${escapeHtml(request.customerName || request.fullName || t("request.clientFallback"))}</h3>
+          <p>${escapeHtml(t("request.received", { date: formatCustomRequestDate(request.createdAt) }))}</p>
         </div>
-        <button type="button" class="admin-secondary" data-custom-request-close>Close detail</button>
+        <button type="button" class="admin-secondary" data-custom-request-close>${escapeHtml(t("request.closeDetail"))}</button>
       </div>
 
       <div class="custom-request-contact-actions">
-        ${email ? `<a href="mailto:${encodeURIComponent(email)}">Email ${escapeHtml(email)}</a>` : ""}
-        ${phoneHref ? `<a href="tel:${escapeHtml(phoneHref)}">Call ${escapeHtml(phone)}</a>` : ""}
+        ${email ? `<a href="mailto:${encodeURIComponent(email)}">${escapeHtml(t("request.email", { email }))}</a>` : ""}
+        ${phoneHref ? `<a href="tel:${escapeHtml(phoneHref)}">${escapeHtml(t("request.call", { phone }))}</a>` : ""}
       </div>
 
       <dl class="custom-request-specs">
@@ -3673,44 +4314,46 @@
       <div class="custom-request-workflow">
         <form data-custom-request-update data-request-id="${escapeHtml(request.id)}">
           <div>
-            <p class="admin-kicker">Next action</p>
-            <h4>Update follow-up</h4>
+            <p class="admin-kicker">${escapeHtml(t("request.nextAction"))}</p>
+            <h4>${escapeHtml(t("request.updateFollowUp"))}</h4>
           </div>
           <label>
-            Workflow status
+            ${escapeHtml(t("request.workflowStatus"))}
             <select name="status">${statusOptions}</select>
           </label>
           <label class="custom-request-note-field">
-            Follow-up note
-            <textarea name="note" maxLength="1000" placeholder="Example: Called client, consultation booked for Friday."></textarea>
+            ${escapeHtml(t("request.followUpNoteLabel"))}
+            <textarea name="note" maxLength="1000" placeholder="${escapeHtml(t("request.notePlaceholder"))}"></textarea>
           </label>
-          <button class="admin-primary" type="submit">Save update</button>
+          <button class="admin-primary" type="submit" data-requires="operations:write">${escapeHtml(t("request.saveUpdate"))}</button>
         </form>
 
         <div class="custom-request-history">
           <div>
-            <p class="admin-kicker">Audit trail</p>
-            <h4>Follow-up history</h4>
+            <p class="admin-kicker">${escapeHtml(t("request.auditTrail"))}</p>
+            <h4>${escapeHtml(t("request.followUpHistory"))}</h4>
           </div>
           <ol>${historyMarkup}</ol>
         </div>
       </div>
     `;
+    applyAdminPermissions(elements.customRequestDetail);
   }
 
   function renderCustomRequestsTable() {
+    renderAttention();
     renderCustomRequestSummary();
 
     if (adminCache.isLoading) {
-      elements.customRequestsTable.innerHTML = `<tr><td colspan="6">Loading custom requests...</td></tr>`;
-      elements.customRequestListSummary.textContent = "Loading custom requests...";
+      elements.customRequestsTable.innerHTML = `<tr><td colspan="6">${escapeHtml(t("request.loading"))}</td></tr>`;
+      elements.customRequestListSummary.textContent = t("request.loading");
       renderCustomRequestDetail();
       return;
     }
 
-    if (!adminCache.isReady) {
-      elements.customRequestsTable.innerHTML = `<tr><td colspan="6">${escapeHtml(adminCache.error || "Connect Supabase before reviewing custom requests.")}</td></tr>`;
-      elements.customRequestListSummary.textContent = "Custom requests are unavailable.";
+    if (adminCache.errors.customRequests) {
+      elements.customRequestsTable.innerHTML = datasetErrorCell("customRequests", 6);
+      elements.customRequestListSummary.textContent = t("request.unavailable");
       renderCustomRequestDetail();
       return;
     }
@@ -3728,10 +4371,10 @@
           <tr data-custom-request-row="${escapeHtml(request.id)}">
             <td>
               <strong>${escapeHtml(formatCustomRequestDate(request.createdAt))}</strong><br>
-              <span class="custom-request-age ${needsFollowUp ? "is-overdue" : ""}">${escapeHtml(needsFollowUp ? `Needs follow-up · ${age.label}` : age.label)}</span>
+              <span class="custom-request-age ${needsFollowUp ? "is-overdue" : ""}">${escapeHtml(needsFollowUp ? t("request.needsFollowUp", { age: age.label }) : age.label)}</span>
             </td>
             <td>
-              <strong>${escapeHtml(request.customerName || request.fullName || "Maris Client")}</strong><br>
+              <strong>${escapeHtml(request.customerName || request.fullName || t("request.clientFallback"))}</strong><br>
               <span>${escapeHtml(request.customerEmail || request.email || "-")}</span><br>
               <span>${escapeHtml(request.customerPhone || request.contactNumber || "-")}</span>
             </td>
@@ -3742,12 +4385,12 @@
             <td>${escapeHtml(buildCustomRequestDesignSummary(request))}</td>
             <td>
               <span class="custom-request-status" data-status="${escapeHtml(status)}">${escapeHtml(getCustomRequestStatusLabel(status))}</span><br>
-              <span>${history.length > 0 ? `${history.length} action${history.length === 1 ? "" : "s"}` : "No action yet"}</span>
+              <span>${escapeHtml(history.length > 0 ? tp("request.actions", history.length, { n: history.length }) : t("request.noActionYet"))}</span>
               ${lastAction && history.length > 0 ? `<br><span>${escapeHtml(formatCustomRequestDate(lastAction))}</span>` : ""}
             </td>
             <td>
               <div class="admin-row-actions">
-                <button type="button" data-custom-request-open="${escapeHtml(request.id)}">Open</button>
+                <button type="button" data-custom-request-open="${escapeHtml(request.id)}">${escapeHtml(t("common.open"))}</button>
               </div>
             </td>
           </tr>
@@ -3756,64 +4399,86 @@
       .join("");
 
     const hasFilters = Boolean(customRequestListState.searchTerm.trim()) || customRequestListState.status !== "all";
-    elements.customRequestsTable.innerHTML = rows || `<tr><td colspan="6">${hasFilters ? "No requests match these filters." : "No custom requests yet."}</td></tr>`;
-    elements.customRequestListSummary.textContent = `Showing ${filteredRequests.length} of ${getCachedCustomRequests().length} requests`;
+    elements.customRequestsTable.innerHTML = rows || `<tr><td colspan="6">${escapeHtml(hasFilters ? t("request.noMatch") : t("request.none"))}</td></tr>`;
+    elements.customRequestListSummary.textContent = t("request.showing", { shown: filteredRequests.length, total: getCachedCustomRequests().length });
     renderCustomRequestDetail();
-  }
-
-  function renderSettings() {
-    const settings = getSettings();
-    const input = elements.settingsForm?.elements.lowStockThreshold;
-
-    if (input) {
-      input.value = String(settings.lowStockThreshold);
-    }
   }
 
   // ── Inquiries (Contact Us / Request a Quote) ──────────────────────────────
   const INQUIRY_STATUSES = ["new", "read", "replied", "closed"];
   const INQUIRY_STATUS_LABELS = {
-    new: "New",
-    read: "Read",
-    replied: "Replied",
-    closed: "Closed"
+    new: t("status.inquiry.new"),
+    read: t("status.inquiry.read"),
+    replied: t("status.inquiry.replied"),
+    closed: t("status.inquiry.closed")
   };
-  const inquiryListState = { status: "all" };
+  const inquiryListState = { status: "all", searchTerm: "", selectedId: "" };
 
   function getCachedInquiries() {
     return Array.isArray(adminCache.inquiries) ? adminCache.inquiries : [];
   }
 
+  function getInquiryStatus(inquiry) {
+    return INQUIRY_STATUSES.includes(inquiry?.status) ? inquiry.status : "new";
+  }
+
   function getFilteredInquiries() {
-    const all = getCachedInquiries();
-    return inquiryListState.status === "all"
-      ? all
-      : all.filter((item) => (item.status || "new") === inquiryListState.status);
+    const searchTerm = inquiryListState.searchTerm.trim().toLowerCase();
+
+    return getCachedInquiries().filter((inquiry) => {
+      if (inquiryListState.status !== "all" && getInquiryStatus(inquiry) !== inquiryListState.status) {
+        return false;
+      }
+
+      if (!searchTerm) {
+        return true;
+      }
+
+      return [
+        inquiry.fullName,
+        inquiry.email,
+        inquiry.phone,
+        inquiry.message,
+        inquiry.sourcePage,
+        ...Object.values(inquiry.fields || {})
+      ].some((value) => String(value || "").toLowerCase().includes(searchTerm));
+    });
   }
 
   function renderInquiryCounts() {
     const all = getCachedInquiries();
     elements.inquiryCounts.forEach((node) => {
       const status = node.dataset.inquiryCount;
-      node.textContent = String(all.filter((item) => (item.status || "new") === status).length);
+      node.textContent = String(all.filter((item) => getInquiryStatus(item) === status).length);
     });
     elements.inquiryStatusFilters.forEach((button) => {
-      button.classList.toggle("is-active", button.dataset.inquiryStatusFilter === inquiryListState.status);
+      const isActive = button.dataset.inquiryStatusFilter === inquiryListState.status;
+      button.classList.toggle("is-active", isActive);
+      button.setAttribute("aria-pressed", String(isActive));
     });
+
+    if (elements.inquiryStatus) {
+      elements.inquiryStatus.value = inquiryListState.status;
+    }
   }
 
   function renderInquiriesTable() {
+    renderAttention();
+
     if (!elements.inquiriesTable) {
       return;
     }
 
     if (adminCache.isLoading) {
-      elements.inquiriesTable.innerHTML = `<tr><td colspan="6">Loading inquiries...</td></tr>`;
+      elements.inquiriesTable.innerHTML = `<tr><td colspan="6">${escapeHtml(t("inquiry.loading"))}</td></tr>`;
       return;
     }
 
-    if (!adminCache.isReady) {
-      elements.inquiriesTable.innerHTML = `<tr><td colspan="6">${escapeHtml(adminCache.error || "Connect Supabase before reviewing inquiries.")}</td></tr>`;
+    if (adminCache.errors.inquiries) {
+      elements.inquiriesTable.innerHTML = datasetErrorCell("inquiries", 6);
+      if (elements.inquiryListSummary) {
+        elements.inquiryListSummary.textContent = t("inquiry.unavailable");
+      }
       return;
     }
 
@@ -3821,38 +4486,38 @@
 
     const filtered = getFilteredInquiries();
     const rows = filtered.map((inquiry) => {
-      const status = inquiry.status || "new";
+      const status = getInquiryStatus(inquiry);
       const message = inquiry.message || Object.values(inquiry.fields || {})[0] || "-";
 
       return `
         <tr data-inquiry-row="${escapeHtml(inquiry.id)}">
           <td><strong>${escapeHtml(formatCustomRequestDate(inquiry.createdAt))}</strong></td>
           <td>
-            <strong>${escapeHtml(inquiry.fullName || "Maris Client")}</strong><br>
+            <strong>${escapeHtml(inquiry.fullName || t("request.clientFallback"))}</strong><br>
             <span>${escapeHtml(inquiry.email || "-")}</span><br>
             <span>${escapeHtml(inquiry.phone || "-")}</span>
           </td>
           <td>
-            <strong>${escapeHtml(inquiry.kind === "quote" ? "Quote request" : "Contact")}</strong><br>
+            <strong>${escapeHtml(inquiry.kind === "quote" ? t("inquiry.typeQuote") : t("inquiry.typeContact"))}</strong><br>
             <span class="custom-request-id">${escapeHtml(inquiry.sourcePage || "-")}</span>
           </td>
           <td>${escapeHtml(String(message).slice(0, 120))}</td>
-          <td><span class="custom-request-status" data-status="${escapeHtml(status)}">${escapeHtml(INQUIRY_STATUS_LABELS[status] || status)}</span></td>
+          <td><span class="custom-request-status" data-status="${escapeHtml(status)}">${escapeHtml(INQUIRY_STATUS_LABELS[status])}</span></td>
           <td>
             <div class="admin-row-actions">
-              <button type="button" data-inquiry-open="${escapeHtml(inquiry.id)}">Open</button>
+              <button type="button" data-inquiry-open="${escapeHtml(inquiry.id)}">${escapeHtml(t("common.open"))}</button>
             </div>
           </td>
         </tr>
       `;
     }).join("");
 
-    const filtering = inquiryListState.status !== "all";
+    const isFiltering = inquiryListState.status !== "all" || Boolean(inquiryListState.searchTerm.trim());
     elements.inquiriesTable.innerHTML = rows
-      || `<tr><td colspan="6">${filtering ? "No inquiries with this status." : "No inquiries yet."}</td></tr>`;
+      || `<tr><td colspan="6">${escapeHtml(isFiltering ? t("inquiry.noMatch") : t("inquiry.none"))}</td></tr>`;
 
     if (elements.inquiryListSummary) {
-      elements.inquiryListSummary.textContent = `Showing ${filtered.length} of ${getCachedInquiries().length} inquiries`;
+      elements.inquiryListSummary.textContent = t("inquiry.showing", { shown: filtered.length, total: getCachedInquiries().length });
     }
   }
 
@@ -3863,29 +4528,32 @@
     const inquiry = getCachedInquiries().find((item) => item.id === inquiryId);
 
     if (!inquiry) {
+      inquiryListState.selectedId = "";
       detail.hidden = true;
       detail.innerHTML = "";
       return;
     }
 
     const entries = [
-      ["Received", formatCustomRequestDate(inquiry.createdAt)],
-      ["Type", inquiry.kind === "quote" ? "Quote request" : "Contact inquiry"],
-      ["Name", inquiry.fullName],
-      ["Email", inquiry.email],
-      ["Phone", inquiry.phone],
-      ["Page", inquiry.sourcePage],
+      [t("inquiry.received"), formatCustomRequestDate(inquiry.createdAt)],
+      [t("inquiry.type"), inquiry.kind === "quote" ? t("inquiry.typeQuote") : t("inquiry.typeContactInquiry")],
+      [t("inquiry.name"), inquiry.fullName],
+      [t("inquiry.email"), inquiry.email],
+      [t("inquiry.phone"), inquiry.phone],
+      [t("inquiry.page"), inquiry.sourcePage],
       ...Object.entries(inquiry.fields || {})
     ].filter(([, value]) => Boolean(value));
+    const currentStatus = getInquiryStatus(inquiry);
+    const email = String(inquiry.email || "").trim();
 
     detail.hidden = false;
     detail.innerHTML = `
       <div class="admin-panel-head">
         <div>
-          <p class="admin-kicker">Inquiry</p>
-          <h3>${escapeHtml(inquiry.fullName || "Maris Client")}</h3>
+          <p class="admin-kicker">${escapeHtml(t("inquiry.kicker"))}</p>
+          <h3>${escapeHtml(inquiry.fullName || t("request.clientFallback"))}</h3>
         </div>
-        <button type="button" data-inquiry-close>Close</button>
+        <button type="button" data-inquiry-close>${escapeHtml(t("common.close"))}</button>
       </div>
       <dl class="custom-request-detail-grid">
         ${entries.map(([label, value]) => `
@@ -3895,13 +4563,58 @@
       ${inquiry.message ? `<p class="admin-note admin-note-wide">${escapeHtml(inquiry.message)}</p>` : ""}
       <div class="admin-row-actions">
         ${INQUIRY_STATUSES.map((status) => `
-          <button type="button" data-inquiry-set-status="${escapeHtml(status)}" data-inquiry-id="${escapeHtml(inquiry.id)}"${status === (inquiry.status || "new") ? " disabled" : ""}>
-            ${escapeHtml(INQUIRY_STATUS_LABELS[status])}
+          <button type="button" data-inquiry-set-status="${escapeHtml(status)}" data-inquiry-id="${escapeHtml(inquiry.id)}" data-requires="operations:write"${status === currentStatus ? " disabled" : ""}>
+            ${escapeHtml(t("inquiry.markAs", { status: INQUIRY_STATUS_LABELS[status] }))}
           </button>
         `).join("")}
-        <a href="mailto:${escapeHtml(inquiry.email)}">Reply by email</a>
+        ${email ? `<a class="admin-secondary" href="mailto:${escapeHtml(email)}">${escapeHtml(t("inquiry.replyByEmail"))}</a>` : ""}
       </div>
     `;
+    applyAdminPermissions(detail);
+  }
+
+  function scrollIntoViewGently(element) {
+    const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    element?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+  }
+
+  // Saves a new status and puts the saved inquiry back into the list.
+  async function saveInquiryStatus(inquiryId, status) {
+    const payload = await fetchAdminApi(`/api/admin/inquiries?id=${encodeURIComponent(inquiryId)}`, {
+      method: "PATCH",
+      body: JSON.stringify({ status })
+    });
+
+    if (payload.inquiry) {
+      adminCache.inquiries = getCachedInquiries().map((item) => (item.id === inquiryId ? payload.inquiry : item));
+      renderInquiriesTable();
+    }
+
+    return payload.inquiry || null;
+  }
+
+  // Opening a New inquiry marks it Read, so the New count and the badge in the
+  // menu mean "not looked at yet".
+  async function openInquiry(inquiryId) {
+    inquiryListState.selectedId = inquiryId;
+    renderInquiryDetail(inquiryId);
+    scrollIntoViewGently(elements.inquiryDetail);
+
+    const inquiry = getCachedInquiries().find((item) => item.id === inquiryId);
+
+    if (!inquiry || getInquiryStatus(inquiry) !== "new" || !adminCan("operations:write")) {
+      return;
+    }
+
+    try {
+      await saveInquiryStatus(inquiryId, "read");
+
+      if (inquiryListState.selectedId === inquiryId) {
+        renderInquiryDetail(inquiryId);
+      }
+    } catch (error) {
+      setMessage(t("inquiry.markReadFailed", { message: error instanceof Error ? error.message : t("common.tryAgain") }), true);
+    }
   }
 
   elements.inquiryStatusFilters.forEach((button) => {
@@ -3912,75 +4625,250 @@
     });
   });
 
+  elements.inquiryStatus?.addEventListener("change", (event) => {
+    inquiryListState.status = String(event.currentTarget.value || "all");
+    renderInquiriesTable();
+  });
+
+  elements.inquirySearch?.addEventListener("input", debounce((event) => {
+    inquiryListState.searchTerm = String(event.target.value || "");
+    renderInquiriesTable();
+  }, SEARCH_DEBOUNCE_MS));
+
   elements.inquiriesTable?.addEventListener("click", (event) => {
     const open = event.target.closest("[data-inquiry-open]");
-    if (open) renderInquiryDetail(open.dataset.inquiryOpen);
+    if (open) openInquiry(open.dataset.inquiryOpen);
   });
 
   elements.inquiryDetail?.addEventListener("click", async (event) => {
     if (event.target.closest("[data-inquiry-close]")) {
+      inquiryListState.selectedId = "";
       elements.inquiryDetail.hidden = true;
       elements.inquiryDetail.innerHTML = "";
       return;
     }
 
     const setStatus = event.target.closest("[data-inquiry-set-status]");
-    if (!setStatus) return;
+    if (!setStatus || !ensureAdminCan("operations:write")) return;
 
     const inquiryId = setStatus.dataset.inquiryId;
     const status = setStatus.dataset.inquirySetStatus;
-    setStatus.disabled = true;
 
-    try {
-      const payload = await fetchAdminApi(`/api/admin/inquiries?id=${encodeURIComponent(inquiryId)}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status })
-      });
-
-      if (payload.inquiry) {
-        adminCache.inquiries = getCachedInquiries().map((item) => (item.id === inquiryId ? payload.inquiry : item));
-        renderInquiriesTable();
+    await withSubmitLock(setStatus, setStatus, t("common.saving"), async () => {
+      try {
+        await saveInquiryStatus(inquiryId, status);
         renderInquiryDetail(inquiryId);
+        setMessage(t("inquiry.marked", { status: INQUIRY_STATUS_LABELS[status] }));
+      } catch (error) {
+        setMessage(error instanceof Error ? error.message : t("inquiry.updateFailed"), true);
       }
-    } catch (error) {
-      setStatus.disabled = false;
-      window.alert(error instanceof Error ? error.message : "Inquiry could not be updated.");
-    }
+    });
   });
+
+  // ── Needs attention (Dashboard) and the counts on the menu ───────────────
+  // Waiting items only count once their data set has loaded; "-" means unknown.
+  function renderAttention() {
+    const requestsKnown = !adminCache.isLoading && !adminCache.errors.customRequests;
+    const inquiriesKnown = !adminCache.isLoading && !adminCache.errors.inquiries;
+    const pendingRequests = requestsKnown
+      ? getCachedCustomRequests().filter((request) => getCustomRequestStatus(request) === "pending")
+      : [];
+    const counts = {
+      newRequests: requestsKnown ? pendingRequests.length : null,
+      overdueRequests: requestsKnown
+        ? pendingRequests.filter((request) => getCustomRequestAge(request.createdAt).isOverdue).length
+        : null,
+      newInquiries: inquiriesKnown
+        ? getCachedInquiries().filter((inquiry) => getInquiryStatus(inquiry) === "new").length
+        : null
+    };
+
+    document.querySelectorAll("[data-attention-count]").forEach((node) => {
+      const value = counts[node.dataset.attentionCount];
+      node.textContent = value === null || value === undefined ? "-" : String(value);
+      node.closest("li")?.classList.toggle("has-items", Number(value) > 0);
+    });
+
+    [["custom-requests", counts.newRequests], ["inquiries", counts.newInquiries]].forEach(([tab, count]) => {
+      const badge = document.querySelector(`[data-nav-badge="${tab}"]`);
+
+      if (!badge) {
+        return;
+      }
+
+      badge.hidden = !(count > 0);
+      badge.innerHTML = count > 0 ? `${count}<span class="admin-sr-only"> ${escapeHtml(t("common.newSr"))}</span>` : "";
+    });
+
+    const clear = document.querySelector("[data-attention-clear]");
+
+    if (clear) {
+      clear.hidden = !(requestsKnown && inquiriesKnown && Object.values(counts).every((value) => value === 0));
+    }
+  }
+
+  document.addEventListener("click", (event) => {
+    const link = event.target.closest("[data-attention-link]");
+
+    if (!link) {
+      return;
+    }
+
+    event.preventDefault();
+
+    if (link.dataset.attentionLink === "custom-requests") {
+      customRequestListState.status = link.dataset.attentionFilter || "all";
+      renderCustomRequestsTable();
+    } else if (link.dataset.attentionLink === "inquiries") {
+      inquiryListState.status = link.dataset.attentionFilter || "all";
+      renderInquiriesTable();
+    }
+
+    navigateToPanel(link.dataset.attentionLink);
+  });
+
+  // The product list is the only thing that shows these; filters, sorting,
+  // paging and a single changed product redraw it without touching other tabs.
+  function renderProductTables() {
+    renderProductsTable();
+    renderCatalogueOverview();
+  }
 
   function renderAll() {
     renderStats();
     renderSelects();
     renderProductsTable();
-    renderSheetFeed();
-    renderSheetProductsTable();
+    renderCatalogueOverview();
     renderBestSellerSettings();
-    renderCatalogueDraftTable();
     renderDatabaseStatus();
     renderDatabaseProducts();
     renderLogsTable();
     renderOrdersTable();
     renderCustomRequestsTable();
     renderInquiriesTable();
-    renderSettings();
+    renderAttention();
+    applyAdminPermissions();
   }
 
-  function activatePanel(name) {
+  // ── PANELS, ADDRESS AND SCROLL HINTS ─────────────────────────────────────────
+  // The open tab lives in location.hash (#products), so a reload or Back returns
+  // to it and a link can point straight at it. Old links to #database now reach
+  // System status, which moved under Settings.
+  const PANEL_ALIASES = { database: "settings", "system-status": "settings" };
+  const panelNames = new Set(elements.panels.map((panel) => panel.dataset.adminPanel));
+
+  function resolvePanelName(raw) {
+    const name = String(raw || "").replace(/^#/, "").trim().toLowerCase();
+    const mapped = PANEL_ALIASES[name] || name;
+    return panelNames.has(mapped) ? mapped : "";
+  }
+
+  // Each panel heading can take focus when its tab is chosen.
+  elements.panels.forEach((panel) => {
+    panel.querySelector(":scope > .admin-panel-head h2")?.setAttribute("tabindex", "-1");
+  });
+
+  function activatePanel(name, { focus = false } = {}) {
     elements.tabs.forEach((button) => {
-      button.classList.toggle("is-active", button.dataset.adminTab === name);
+      const isActive = button.dataset.adminTab === name;
+      button.classList.toggle("is-active", isActive);
+
+      if (isActive) {
+        button.setAttribute("aria-current", "page");
+      } else {
+        button.removeAttribute("aria-current");
+      }
     });
 
     elements.panels.forEach((panel) => {
       panel.classList.toggle("is-active", panel.dataset.adminPanel === name);
     });
+
+    if (name === "best-seller") {
+      // Images may have changed on the Products tab since this was drawn.
+      renderBestSellerSettings();
+    }
+
+    const panel = elements.panels.find((item) => item.dataset.adminPanel === name);
+    window.dispatchEvent(new CustomEvent("maris:admin-panel-shown", { detail: { name } }));
+
+    if (!focus || !panel) {
+      return;
+    }
+
+    // System status is a section of Settings: go straight to it when asked.
+    const wantsSystemStatus = /^#(database|system-status)$/i.test(window.location.hash);
+    const heading = wantsSystemStatus
+      ? panel.querySelector("#admin-system-status-title")
+      : panel.querySelector(":scope > .admin-panel-head h2");
+
+    scrollIntoViewGently(wantsSystemStatus ? panel.querySelector("#admin-system-status") : panel);
+    heading?.focus({ preventScroll: true });
   }
+
+  // Changes the address, which activates the panel; Back and Forward then work.
+  function navigateToPanel(name) {
+    const target = resolvePanelName(name) || "dashboard";
+
+    if (window.location.hash === `#${target}`) {
+      activatePanel(target, { focus: true });
+      return;
+    }
+
+    window.location.hash = target;
+  }
+
+  window.addEventListener("hashchange", () => {
+    activatePanel(resolvePanelName(window.location.hash) || "dashboard", { focus: true });
+  });
 
   elements.tabs.forEach((button) => {
     button.addEventListener("click", () => {
-      activatePanel(button.dataset.adminTab);
+      navigateToPanel(button.dataset.adminTab);
     });
   });
+
+  // A tab named in the address opens on load (without moving focus).
+  {
+    const initialPanel = resolvePanelName(window.location.hash);
+
+    if (initialPanel) {
+      activatePanel(initialPanel);
+    }
+  }
+
+  // Tables wider than their box scroll sideways; say so, and drop the hint once
+  // the right-hand edge is reached.
+  function setupTableScrollHints() {
+    document.querySelectorAll(".admin-table-wrap").forEach((wrap) => {
+      const hint = document.createElement("p");
+      hint.className = "admin-scroll-hint";
+      hint.setAttribute("aria-hidden", "true");
+      hint.hidden = true;
+      hint.textContent = t("table.scrollHint");
+      wrap.before(hint);
+
+      const update = () => {
+        hint.hidden = !(wrap.scrollWidth > wrap.clientWidth + 2
+          && wrap.scrollLeft + wrap.clientWidth < wrap.scrollWidth - 2);
+      };
+
+      wrap.addEventListener("scroll", update, { passive: true });
+
+      if (typeof ResizeObserver === "function") {
+        const observer = new ResizeObserver(update);
+        observer.observe(wrap);
+        const table = wrap.querySelector("table");
+        if (table) observer.observe(table);
+      } else {
+        window.addEventListener("resize", update);
+      }
+
+      update();
+    });
+  }
+
+  setupTableScrollHints();
 
   elements.customRequestSearch?.addEventListener("input", (event) => {
     customRequestListState.searchTerm = String(event.currentTarget.value || "");
@@ -4031,7 +4919,7 @@
 
     event.preventDefault();
 
-    if (!ensureAdminDataReady()) {
+    if (!ensureAdminCan("operations:write") || !ensureAdminDataReady("customRequests")) {
       return;
     }
 
@@ -4042,14 +4930,14 @@
     const note = String(formData.get("note") || "").trim();
 
     if (currentRequest && getCustomRequestStatus(currentRequest) === status && !note) {
-      setMessage("Change the status or add a follow-up note before saving.", true);
+      setMessage(t("request.changeOrNote"), true);
       return;
     }
 
     const submitButton = form.querySelector("button[type='submit']");
     submitButton.disabled = true;
-    submitButton.textContent = "Saving...";
-    setMessage("Saving custom request follow-up...");
+    submitButton.textContent = t("common.saving");
+    setMessage(t("request.savingFollowUp"));
 
     try {
       const payload = await fetchAdminApi(`/custom-order-requests?id=${encodeURIComponent(requestId)}`, {
@@ -4060,11 +4948,12 @@
         request.id === payload.request?.id ? payload.request : request
       ));
       renderCustomRequestsTable();
-      setMessage("Custom request follow-up saved in Supabase.");
+      renderAttention();
+      setMessage(t("request.followUpSaved"));
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Could not update the custom request.", true);
+      setMessage(error instanceof Error ? error.message : t("request.updateFailed"), true);
       submitButton.disabled = false;
-      submitButton.textContent = "Save update";
+      submitButton.textContent = t("request.saveUpdate");
     }
   });
 
@@ -4092,6 +4981,76 @@
     })
     : null;
 
+  // A product whose images did not all upload. Pressing Add Product again (or
+  // "Retry failed images") re-sends only those files instead of failing on
+  // "This SKU already exists".
+  let productCreateRetry = null;
+  const productCreateRetryPanel = elements.productForm?.querySelector("[data-product-create-retry]");
+
+  function hideProductCreateRetry() {
+    productCreateRetry = null;
+
+    if (productCreateRetryPanel) {
+      productCreateRetryPanel.hidden = true;
+    }
+  }
+
+  function showProductCreateRetry() {
+    if (!productCreateRetryPanel || !productCreateRetry) {
+      return;
+    }
+
+    const { sku, failed, total } = productCreateRetry;
+    const names = failed.map(({ task }) => task.name).join(", ");
+    const text = productCreateRetryPanel.querySelector("[data-product-create-retry-text]");
+
+    if (text) {
+      text.textContent = t("create.partialDetail", { sku, failed: failed.length, total, names, message: failed[0].message });
+    }
+
+    productCreateRetryPanel.hidden = false;
+    setProductFormOpen(true);
+  }
+
+  function resetProductForm(form) {
+    hideProductCreateRetry();
+    form.reset();
+    updateImageGroupSummary(form, null);
+    productFormGemReport?.reset();
+    syncRingTypeFieldVisibility(form);
+  }
+
+  async function retryProductCreateUploads(form, submitButton) {
+    const state = productCreateRetry;
+
+    if (!state) {
+      return;
+    }
+
+    await withSubmitLock(form, submitButton, t("create.retrying"), async () => {
+      const failed = await runProductImageUploadTasks(
+        state.failed.map(({ task }) => task),
+        (done, total) => {
+          submitButton.textContent = t("create.uploadingImage", { done, total });
+        }
+      );
+
+      await loadAdminBackendData();
+      renderAll();
+
+      if (failed.length) {
+        state.failed = failed;
+        showProductCreateRetry();
+        setMessage(tp("create.stillFailed", failed.length, { n: failed.length, sku: state.sku }), true);
+        return;
+      }
+
+      resetProductForm(form);
+      setProductFormOpen(false);
+      setMessage(t("create.savedAllImages", { sku: state.sku }));
+    });
+  }
+
   elements.productForm?.addEventListener("submit", async (event) => {
     event.preventDefault();
     const form = event.currentTarget;
@@ -4101,16 +5060,26 @@
       return;
     }
 
-    if (!ensureAdminDataReady()) {
+    if (!ensureAdminCan("catalogue:write") || !ensureAdminDataReady("products")) {
       return;
     }
 
     const formData = new FormData(form);
     const sku = String(formData.get("sku")).trim().toUpperCase();
+    const submitButton = form.querySelector("button[type='submit']");
+
+    if (productCreateRetry && productCreateRetry.sku === sku) {
+      await retryProductCreateUploads(form, submitButton);
+      return;
+    }
+
+    // The admin moved on to a different product; the earlier one stays in the list.
+    hideProductCreateRetry();
+
     const name = String(formData.get("name")).trim();
-    const collectionName = String(formData.get("collectionName")).trim();
-    const category = String(formData.get("category")).trim();
-    const ringType = String(formData.get("ringType")).trim();
+    const collectionName = String(formData.get("collectionName") || "").trim();
+    const category = String(formData.get("category"));
+    const ringType = String(formData.get("ringType") || "");
     const stockQty = Math.max(0, Number(formData.get("stockQty")) || 0);
     const reservedQty = Math.max(0, Number(formData.get("reservedQty")) || 0);
     const imageUploadDraft = buildProductImageUploadDraft(formData, { code: sku, name });
@@ -4119,17 +5088,27 @@
     const products = readProducts();
 
     if (!sku || !name) {
-      setMessage("SKU and product name are required.", true);
+      setMessage(t("modal.skuNameRequired"), true);
       return;
     }
 
     if (products.some((product) => getProductSku(product).toLowerCase() === sku.toLowerCase())) {
-      setMessage("This SKU already exists.", true);
+      setMessage(t("create.skuExists"), true);
       return;
     }
 
     if (reservedQty > stockQty) {
-      setMessage("Reserved stock cannot be more than real stock.", true);
+      setMessage(t("create.reservedTooHigh"), true);
+      return;
+    }
+
+    // Turn a wrong file away before the product exists, not halfway through saving it.
+    const galleryFiles = [imageUploadDraft.mainImageFile, ...imageUploadDraft.galleryImageFiles].filter(isSelectedFile);
+    const fileProblem = findImageFileProblem(imageUploadDraft.coverImageFiles, validateCardImageFile)
+      || findImageFileProblem(galleryFiles, validateGalleryImageFile);
+
+    if (fileProblem) {
+      setMessage(fileProblem, true);
       return;
     }
 
@@ -4153,43 +5132,81 @@
       createdAt: new Date().toISOString()
     };
 
-    const submitButton = form.querySelector("button[type='submit']");
-    form.dataset.submitting = "true";
-    if (submitButton) {
-      submitButton.disabled = true;
-    }
+    await withSubmitLock(form, submitButton, t("create.creating"), async () => {
+      try {
+        const payload = await fetchAdminApi("/products", {
+          method: "POST",
+          body: JSON.stringify(product)
+        });
+        const tasks = buildProductImageUploadTasks(payload.product, imageUploadDraft, name || sku);
+        const failed = await runProductImageUploadTasks(tasks, (done, total) => {
+          submitButton.textContent = t("create.uploadingImage", { done, total });
+        });
 
-    try {
-      const payload = await fetchAdminApi("/products", {
-        method: "POST",
-        body: JSON.stringify(product)
-      });
-      await uploadProductImages(payload.product, imageUploadDraft);
-      await loadAdminBackendData();
-      form.reset();
-      updateImageGroupSummary(form, null);
-      productFormGemReport?.reset();
-      syncRingTypeFieldVisibility(form);
-      renderAll();
-      setMessage(
-        imageUploadDraft.mainImageFile || imageUploadDraft.coverImageFiles.length
-          ? "Product and images saved in Supabase."
-          : "Product saved in Supabase."
-      );
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Unable to save product and images in Supabase.", true);
-    } finally {
-      delete form.dataset.submitting;
-      if (submitButton) {
-        submitButton.disabled = false;
+        await loadAdminBackendData();
+        renderAll();
+
+        if (failed.length) {
+          productCreateRetry = { sku, product: payload.product, failed, total: tasks.length };
+          showProductCreateRetry();
+          setMessage(t("create.partial", { sku, failed: failed.length, total: tasks.length }), true);
+          return;
+        }
+
+        resetProductForm(form);
+        setProductFormOpen(false);
+        setMessage(
+          tasks.length
+            ? tp("create.addedWithImages", tasks.length, { sku, n: tasks.length })
+            : t("create.added", { sku })
+        );
+      } catch (error) {
+        setMessage(error instanceof Error ? error.message : t("create.failed"), true);
       }
+    });
+  });
+
+  productCreateRetryPanel?.querySelector("[data-product-create-retry-run]")?.addEventListener("click", () => {
+    retryProductCreateUploads(elements.productForm, elements.productForm.querySelector("button[type='submit']"));
+  });
+
+  productCreateRetryPanel?.querySelector("[data-product-create-open]")?.addEventListener("click", (event) => {
+    const productId = productCreateRetry?.product?.id;
+    const product = getCachedProducts().find((item) => item.id === productId);
+
+    if (product) {
+      openEditModal(product, event.currentTarget);
+    } else {
+      setMessage(t("products.notFoundShort"), true);
     }
+  });
+
+  productCreateRetryPanel?.querySelector("[data-product-create-dismiss]")?.addEventListener("click", () => {
+    resetProductForm(elements.productForm);
+  });
+
+  // Say what is wrong with a picked file straight away.
+  [
+    ["coverImageFiles", validateCardImageFile],
+    ["imageGroupFiles", validateGalleryImageFile]
+  ].forEach(([fieldName, validate]) => {
+    const input = elements.productForm?.elements?.namedItem(fieldName);
+
+    input?.addEventListener("change", () => {
+      const problem = findImageFileProblem(Array.from(input.files || []).filter(isSelectedFile), validate);
+
+      input.setAttribute("aria-invalid", problem ? "true" : "false");
+
+      if (problem) {
+        setMessage(problem, true);
+      }
+    });
   });
 
   elements.bestSellerForm?.addEventListener("submit", async (event) => {
     event.preventDefault();
 
-    if (!ensureAdminDataReady()) {
+    if (event.currentTarget.dataset.submitting === "true" || !ensureAdminCan("settings:write") || !ensureAdminDataReady("products", "bestSellers")) {
       return;
     }
 
@@ -4199,27 +5216,35 @@
     const uniqueProductIds = Array.from(new Set(productIds));
 
     if (uniqueProductIds.length !== productIds.length) {
-      setMessage("Choose each Best Seller product only once.", true);
+      setMessage(t("bestSeller.onlyOnce"), true);
       return;
     }
 
-    setMessage("Saving Best Seller products...");
+    await withSubmitLock(event.currentTarget, event.currentTarget.querySelector("button[type='submit']"), t("common.saving"), async () => {
+      setMessage(t("bestSeller.saving"));
 
-    try {
-      const payload = await fetchAdminApi("/best-sellers", {
-        method: "PATCH",
-        body: JSON.stringify({ productIds: uniqueProductIds })
-      });
-      adminCache.bestSellerProductIds = Array.isArray(payload.productIds) ? payload.productIds : [];
-      bestSellerState.draftIds = null;
-      renderAll();
-      setMessage("Best Seller carousel updated.");
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Unable to save Best Seller products.", true);
-    }
+      try {
+        const payload = await fetchAdminApi("/best-sellers", {
+          method: "PATCH",
+          body: JSON.stringify({ productIds: uniqueProductIds })
+        });
+        adminCache.bestSellerProductIds = Array.isArray(payload.productIds) ? payload.productIds : [];
+        bestSellerState.draftIds = null;
+        renderAll();
+        setMessage(t("bestSeller.saved"));
+      } catch (error) {
+        setMessage(error instanceof Error ? error.message : t("bestSeller.saveFailed"), true);
+      }
+    });
   });
 
   elements.bestSellerResults?.addEventListener("click", (event) => {
+    if (event.target.closest("[data-best-seller-show-more]")) {
+      bestSellerState.visibleCount += BEST_SELLER_RESULTS_PAGE_SIZE;
+      renderBestSellerResults();
+      return;
+    }
+
     const card = event.target.closest("[data-best-seller-pick]");
     if (!card) {
       return;
@@ -4264,67 +5289,91 @@
     }
   });
 
-  elements.bestSellerSearch?.addEventListener("input", (event) => {
-    bestSellerState.searchTerm = String(event.currentTarget.value || "");
+  elements.bestSellerSearch?.addEventListener("input", debounce((event) => {
+    bestSellerState.searchTerm = String(event.target.value || "");
+    bestSellerState.visibleCount = BEST_SELLER_RESULTS_PAGE_SIZE;
     renderBestSellerResults();
-  });
+  }, SEARCH_DEBOUNCE_MS));
 
   elements.bestSellerCollection?.addEventListener("change", (event) => {
     bestSellerState.collection = String(event.currentTarget.value || "");
+    bestSellerState.visibleCount = BEST_SELLER_RESULTS_PAGE_SIZE;
     renderBestSellerResults();
+  });
+
+  elements.bestSellerDiscard?.addEventListener("click", () => {
+    discardBestSellerDraft();
+    setMessage(t("bestSeller.discarded"));
+  });
+
+  elements.bestSellerRemoveUnavailable?.addEventListener("click", () => {
+    const liveIds = getBestSellerDraftIds().filter((productId) => describeBestSellerSlot(productId).isLive);
+    setBestSellerDraftIds(liveIds);
+    setMessage(t("bestSeller.unavailableRemoved"));
   });
 
   elements.inventoryForm?.addEventListener("submit", async (event) => {
     event.preventDefault();
 
-    if (!ensureAdminDataReady()) {
+    if (event.currentTarget.dataset.submitting === "true" || !ensureAdminCan("operations:write") || !ensureAdminDataReady("products")) {
       return;
     }
 
-    const formData = new FormData(event.currentTarget);
-    const productId = String(formData.get("productId"));
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    const pickedProduct = resolvePickedProduct(formData.get("productPick"));
+    const productId = pickedProduct?.id || "";
+    const pickedSku = pickedProduct ? getProductSku(pickedProduct) : "";
     const type = String(formData.get("type"));
     const qty = Number(formData.get("qty"));
     const note = String(formData.get("note")).trim();
 
     if (!productId || !qty || qty < 1) {
-      setMessage("Please choose a product and valid quantity.", true);
+      setMessage(
+        productId ? t("inventory.invalidQty") : t("inventory.chooseProduct"),
+        true
+      );
       return;
     }
 
-    try {
-      await fetchAdminApi("/inventory-logs", {
-        method: "POST",
-        body: JSON.stringify({
-          productId,
-          movementType: type,
-          quantity: qty,
-          note
-        })
-      });
-      await loadAdminBackendData();
-      event.currentTarget.elements.note.value = "";
-      renderAll();
-      setMessage("Inventory movement saved in Supabase.");
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Unable to save inventory movement in Supabase.", true);
-    }
+    await withSubmitLock(form, form.querySelector("button[type='submit']"), t("common.saving"), async () => {
+      try {
+        await fetchAdminApi("/inventory-logs", {
+          method: "POST",
+          body: JSON.stringify({
+            productId,
+            movementType: type,
+            quantity: qty,
+            note
+          })
+        });
+        await loadAdminBackendData();
+        form.elements.note.value = "";
+        form.elements.productPick.value = "";
+        renderAll();
+        setMessage(t("inventory.saved", { sku: pickedSku }));
+      } catch (error) {
+        setMessage(error instanceof Error ? error.message : t("inventory.saveFailed"), true);
+      }
+    });
   });
 
   elements.orderForm?.addEventListener("submit", async (event) => {
     event.preventDefault();
     const form = event.currentTarget;
 
-    if (!ensureAdminDataReady()) {
+    if (form.dataset.submitting === "true" || !ensureAdminCan("operations:write") || !ensureAdminDataReady("products")) {
       return;
     }
 
     const formData = new FormData(form);
-    const productId = String(formData.get("productId"));
+    const pickedProduct = resolvePickedProduct(formData.get("productPick"));
+    const productId = pickedProduct?.id || "";
+    const pickedSku = pickedProduct ? getProductSku(pickedProduct) : "";
     const qty = Math.max(1, Number(formData.get("qty")) || 1);
 
     if (!productId) {
-      setMessage("Please choose a product before creating an order.", true);
+      setMessage(t("orders.chooseProduct"), true);
       return;
     }
 
@@ -4337,18 +5386,20 @@
       createdAt: new Date().toISOString()
     };
 
-    try {
-      await fetchAdminApi("/orders", {
-        method: "POST",
-        body: JSON.stringify(newOrder)
-      });
-      await loadAdminBackendData();
-      form.reset();
-      renderAll();
-      setMessage("Reserved order created in Supabase.");
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Unable to save order in Supabase.", true);
-    }
+    await withSubmitLock(form, form.querySelector("button[type='submit']"), t("create.creating"), async () => {
+      try {
+        await fetchAdminApi("/orders", {
+          method: "POST",
+          body: JSON.stringify(newOrder)
+        });
+        await loadAdminBackendData();
+        form.reset();
+        renderAll();
+        setMessage(t("orders.created", { sku: pickedSku, qty }));
+      } catch (error) {
+        setMessage(error instanceof Error ? error.message : t("orders.createFailed"), true);
+      }
+    });
   });
 
   elements.ordersTable?.addEventListener("click", async (event) => {
@@ -4359,7 +5410,7 @@
       return;
     }
 
-    if (!ensureAdminDataReady()) {
+    if (!ensureAdminCan("operations:write") || !ensureAdminDataReady("orders")) {
       return;
     }
 
@@ -4371,38 +5422,133 @@
       return;
     }
 
-    try {
-      await fetchAdminApi(`/orders?id=${encodeURIComponent(orderId)}`, {
-        method: "PATCH",
-        body: JSON.stringify({ status: "cancelled", paymentStatus: "cancelled" })
-      });
-      await loadAdminBackendData();
-      renderAll();
-      setMessage("Order cancelled in Supabase.");
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Could not cancel order in Supabase.", true);
+    const orderLabel = order.orderNumber || order.id;
+    const releasedQty = Number(order.qty) || 0;
+
+    if (!confirm(tp("orders.confirmCancel", releasedQty, { order: orderLabel, n: releasedQty }))) {
+      return;
+    }
+
+    await withSubmitLock(cancelButton, cancelButton, t("orders.cancelling"), async () => {
+      try {
+        await fetchAdminApi(`/orders?id=${encodeURIComponent(orderId)}`, {
+          method: "PATCH",
+          body: JSON.stringify({ status: "cancelled", paymentStatus: "cancelled" })
+        });
+        await loadAdminBackendData();
+        renderAll();
+        setMessage(t("orders.cancelled", { order: orderLabel, n: releasedQty }));
+      } catch (error) {
+        setMessage(error instanceof Error ? error.message : t("orders.cancelFailed"), true);
+      }
+    });
+  });
+
+  // Column sorting: first click sorts ascending, a second click descending.
+  document.querySelectorAll("[data-products-sort]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const key = button.dataset.productsSort;
+
+      if (productListState.sortKey === key) {
+        productListState.sortDir = productListState.sortDir === "asc" ? "desc" : "asc";
+      } else {
+        productListState.sortKey = key;
+        productListState.sortDir = "asc";
+      }
+
+      productListState.page = 1;
+      renderProductTables();
+    });
+  });
+
+  // The "..." menu on each product row. The list is fixed-positioned so the
+  // table's sideways scrolling cannot clip it.
+  function closeRowMenus(except = null) {
+    document.querySelectorAll("details.admin-row-menu[open]").forEach((menu) => {
+      if (menu !== except) {
+        menu.open = false;
+      }
+    });
+  }
+
+  function positionRowMenu(menu) {
+    const summary = menu.querySelector("summary");
+    const list = menu.querySelector(".admin-row-menu-list");
+
+    if (!summary || !list) {
+      return;
+    }
+
+    const rect = summary.getBoundingClientRect();
+    const height = list.offsetHeight;
+    const below = rect.bottom + 4;
+    const fitsBelow = below + height <= window.innerHeight;
+
+    list.style.top = `${Math.round(fitsBelow || rect.top - 4 - height < 0 ? below : rect.top - 4 - height)}px`;
+    list.style.right = `${Math.max(8, Math.round(window.innerWidth - rect.right))}px`;
+  }
+
+  document.addEventListener("toggle", (event) => {
+    const menu = event.target;
+
+    if (menu instanceof HTMLDetailsElement && menu.classList.contains("admin-row-menu") && menu.open) {
+      closeRowMenus(menu);
+      positionRowMenu(menu);
+    }
+  }, true);
+
+  document.addEventListener("click", (event) => {
+    if (!event.target.closest("details.admin-row-menu")) {
+      closeRowMenus();
     }
   });
 
-  elements.settingsForm?.addEventListener("submit", (event) => {
-    event.preventDefault();
-    const lowStockThreshold = Math.max(0, Number(new FormData(event.currentTarget).get("lowStockThreshold")) || 0);
-    settingsState.lowStockThreshold = lowStockThreshold;
-    renderAll();
-    setMessage("Settings applied for this admin view.");
+  document.addEventListener("keydown", (event) => {
+    const openMenu = event.key === "Escape" ? document.querySelector("details.admin-row-menu[open]") : null;
+
+    if (openMenu) {
+      openMenu.open = false;
+      openMenu.querySelector("summary")?.focus();
+    }
   });
 
-  elements.productSearch?.addEventListener("input", (event) => {
-    productListState.searchTerm = String(event.currentTarget.value || "");
-    productListState.page = 1;
-    renderAll();
+  window.addEventListener("scroll", () => closeRowMenus(), true);
+  window.addEventListener("resize", () => closeRowMenus());
+
+  // The Add product form starts collapsed behind its button.
+  const productFormPanel = document.querySelector("[data-product-form-panel]");
+  const productFormToggle = document.querySelector("[data-product-form-toggle]");
+
+  function setProductFormOpen(open, { focus = false } = {}) {
+    if (!productFormPanel || !productFormToggle) {
+      return;
+    }
+
+    productFormPanel.hidden = !open;
+    productFormToggle.setAttribute("aria-expanded", String(open));
+    productFormToggle.textContent = open ? t("form.hideForm") : t("products.addProduct");
+
+    if (open && focus) {
+      elements.productForm?.elements?.namedItem("sku")?.focus();
+    }
+  }
+
+  productFormToggle?.addEventListener("click", () => {
+    setProductFormOpen(productFormPanel.hidden, { focus: true });
   });
+
+  // Typing only redraws the product list, and only once typing pauses.
+  elements.productSearch?.addEventListener("input", debounce((event) => {
+    productListState.searchTerm = String(event.target.value || "");
+    productListState.page = 1;
+    renderProductTables();
+  }, SEARCH_DEBOUNCE_MS));
 
   document.querySelectorAll("[data-products-status]").forEach((button) => {
     button.addEventListener("click", () => {
       productListState.status = button.dataset.productsStatus || "all";
       productListState.page = 1;
-      renderAll();
+      renderProductTables();
     });
   });
 
@@ -4413,30 +5559,73 @@
     }
 
     productListState.page = Number(button.dataset.productsPage) || 1;
-    renderAll();
+    renderProductTables();
   });
 
   elements.resetDemo?.addEventListener("click", async () => {
     await loadAdminBackendData();
     renderAll();
-    setMessage(adminCache.isReady ? "Supabase admin data refreshed." : (adminCache.error || "Supabase admin data could not be refreshed."), !adminCache.isReady);
+    setMessage(adminCache.error ? t("data.refreshPartial", { message: adminCache.error }) : t("data.refreshed"), Boolean(adminCache.error));
   });
 
-  async function handleToggleStatus(productId, currentStatus) {
-    if (!productId) return;
-    const nextStatus = currentStatus === "active" ? "draft" : "active";
-    setMessage("Updating status...");
-    try {
-      await fetchAdminApi(`/products?id=${encodeURIComponent(productId)}`, {
-        method: "PATCH",
-        body: JSON.stringify({ status: nextStatus })
-      });
-      await loadAdminBackendData();
-      renderAll();
-      setMessage(`Product set to ${nextStatus}.`);
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Could not update status.", true);
+  // Retry button inside a failed table: reload just that data set.
+  document.addEventListener("click", async (event) => {
+    const retry = event.target.closest("[data-retry-dataset]");
+    const name = retry?.dataset.retryDataset;
+
+    if (!name || !ADMIN_DATASETS[name]) {
+      return;
     }
+
+    retry.disabled = true;
+    await loadAdminBackendData([name]);
+    renderAll();
+    setMessage(
+      adminCache.errors[name] ? t("data.stillFailed", { label: ADMIN_DATASETS[name].label, message: adminCache.errors[name] }) : t("data.loaded", { label: ADMIN_DATASETS[name].label }),
+      Boolean(adminCache.errors[name])
+    );
+  });
+
+  async function setProductStatus(productId, nextStatus) {
+    await fetchAdminApi(`/products?id=${encodeURIComponent(productId)}`, {
+      method: "PATCH",
+      body: JSON.stringify({ status: nextStatus })
+    });
+    await loadAdminBackendData();
+    renderAll();
+  }
+
+  async function handleToggleStatus(productId, currentStatus, button) {
+    if (!productId || !ensureAdminCan("catalogue:write")) return;
+    const nextStatus = currentStatus === "active" ? "draft" : "active";
+    const product = getCachedProducts().find((item) => item.id === productId);
+    const sku = product ? getProductSku(product) : t("products.thisProduct");
+
+    if (nextStatus === "draft" && !confirm(t("products.confirmHide", { sku }))) {
+      return;
+    }
+
+    await withSubmitLock(button, button, t("products.updating"), async () => {
+      setMessage(t("products.updatingStatus"));
+      try {
+        await setProductStatus(productId, nextStatus);
+
+        if (nextStatus === "draft") {
+          setMessageWithAction(t("products.nowDraft", { sku }), t("common.undo"), async () => {
+            try {
+              await setProductStatus(productId, currentStatus);
+              setMessage(t("products.liveAgain", { sku }));
+            } catch (error) {
+              setMessage(error instanceof Error ? error.message : t("products.undoFailed"), true);
+            }
+          });
+        } else {
+          setMessage(t("products.nowLive", { sku }));
+        }
+      } catch (error) {
+        setMessage(error instanceof Error ? error.message : t("products.statusFailed"), true);
+      }
+    });
   }
 
   document.addEventListener("click", async (event) => {
@@ -4444,12 +5633,32 @@
     if (!btn) return;
     const productId = btn.dataset.toggleStatus;
     const currentStatus = btn.dataset.currentStatus;
-    await handleToggleStatus(productId, currentStatus);
+    closeRowMenus();
+    await handleToggleStatus(productId, currentStatus, btn);
   });
 
-  if (elements.sheetCatalogueTable) {
-    elements.sheetCatalogueTable.addEventListener("click", handleCatalogueTableActions);
+  if (elements.productsTable) {
+    elements.productsTable.addEventListener("click", handleCatalogueTableActions);
   }
+
+  // Anything typed but not saved: the Best Seller order, the edit modal's text
+  // fields, or a turntable that is picked or still uploading.
+  function hasUnsavedAdminWork() {
+    const modal = document.getElementById("maris-edit-modal");
+    const modalIsOpen = Boolean(modal?.classList.contains("is-open"));
+
+    return isBestSellerDirty()
+      || (modalIsOpen && (isModalDirty() || modalVideoUploading || Boolean(modalVideoDraft)));
+  }
+
+  window.addEventListener("beforeunload", (event) => {
+    if (!hasUnsavedAdminWork()) {
+      return;
+    }
+
+    event.preventDefault();
+    event.returnValue = "";
+  });
 
   window.addEventListener("maris:catalogue-data-updated", () => {
     renderAll();

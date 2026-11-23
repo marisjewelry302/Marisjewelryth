@@ -7,13 +7,6 @@ import { isOptimizableImageSrc } from "./lib/image-source";
 import { formatPublicProductCode, getPublicProductDisplayName } from "./lib/product-display";
 
 const BEST_SELLER_SLOT_COUNT = 7;
-const FALLBACK_BEST_SELLER_ITEMS = Array.from({ length: BEST_SELLER_SLOT_COUNT }, (_, index) => ({
-  id: `best-seller-${index + 1}`,
-  label: `Best Seller ${index + 1}`,
-  imageSrc: "",
-  imageAlt: "",
-  href: ""
-}));
 
 const LOOP_SET_COUNT = 3;
 // Only cards this close to the focused card render an <Image>; the other loop clones stay
@@ -29,7 +22,7 @@ function normalizeBestSellerItems(items) {
   const normalizedItems = (Array.isArray(items) ? items : [])
     .map((item, index) => {
       const productPath = item?.slug || item?.sku || "";
-      const productLabel = item?.name || item?.sku || `Best Seller ${index + 1}`;
+      const productLabel = item?.name || item?.sku || "";
       const imageSrc = item?.primaryImageUrl || item?.images?.[0]?.imageUrl || "";
 
       return {
@@ -45,13 +38,12 @@ function normalizeBestSellerItems(items) {
     })
     .filter((item) => item.id);
 
-  return normalizedItems.length
-    ? normalizedItems.slice(0, BEST_SELLER_SLOT_COUNT)
-    : FALLBACK_BEST_SELLER_ITEMS;
+  // No placeholder cards: with nothing to show the section is not rendered at all.
+  return normalizedItems.slice(0, BEST_SELLER_SLOT_COUNT);
 }
 
 export default function BestSellerSection({ items = [] }) {
-  const { t } = useLocale();
+  const { t, href: localHref } = useLocale();
   const trackRef = useRef(null);
   const carouselRef = useRef(null);
   const bestSellerItems = useMemo(() => normalizeBestSellerItems(items), [items]);
@@ -64,6 +56,8 @@ export default function BestSellerSection({ items = [] }) {
   const [dragOffset, setDragOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+  // Set by the Pause button, so touch visitors (no hover) can stop the motion.
+  const [isUserPaused, setIsUserPaused] = useState(false);
   const [isPageHidden, setIsPageHidden] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const dragRef = useRef(null);
@@ -132,6 +126,7 @@ export default function BestSellerSection({ items = [] }) {
   // drag restarts the full delay instead of jumping again right after release.
   const canAutoplay = bestSellerItems.length > 1
     && !isPaused
+    && !isUserPaused
     && !isDragging
     && !isPageHidden
     && !prefersReducedMotion;
@@ -269,6 +264,30 @@ export default function BestSellerSection({ items = [] }) {
     }
   }
 
+  function moveByButton(delta) {
+    setWithTransition(true);
+    setSlideIndex((currentIndex) => currentIndex + delta);
+  }
+
+  // Keyboard tabbing may land on a card that is off-centre; bring it into view.
+  // Mouse presses also focus the link, so only :focus-visible moves the track.
+  function handleCardFocus(event, index) {
+    if (!event.currentTarget.matches(":focus-visible")) {
+      return;
+    }
+
+    setWithTransition(true);
+    setSlideIndex(index);
+  }
+
+  // The clipped carousel should never scroll, but if focus or find-in-page
+  // forces it to, snap back so it cannot drift from the transform.
+  function handleCarouselScroll(event) {
+    if (event.currentTarget.scrollLeft !== 0) {
+      event.currentTarget.scrollLeft = 0;
+    }
+  }
+
   function handleBlur(event) {
     if (!event.currentTarget.contains(event.relatedTarget)) {
       setIsPaused(false);
@@ -297,6 +316,12 @@ export default function BestSellerSection({ items = [] }) {
   // While dragging, the card under the viewport centre leads the image window.
   const imageCenterIndex = isDragging && slideStep ? Math.round(slideIndex - dragOffset / slideStep) : slideIndex;
 
+  if (!bestSellerItems.length) {
+    return null;
+  }
+
+  const canNavigate = bestSellerItems.length > 1;
+
   return (
     <section className="best-seller-section" aria-labelledby="best-seller-heading">
       <div className="best-seller-head">
@@ -306,8 +331,11 @@ export default function BestSellerSection({ items = [] }) {
 
       <div
         className={`best-seller-carousel${isDragging ? " is-dragging" : ""}`}
+        role="region"
+        aria-roledescription="carousel"
         aria-label={t.bestSeller.listLabel}
         ref={carouselRef}
+        onScroll={handleCarouselScroll}
         onPointerDown={handlePointerDown}
         onClickCapture={handleClickCapture}
         onDragStart={(event) => event.preventDefault()}
@@ -352,9 +380,10 @@ export default function BestSellerSection({ items = [] }) {
                 {item.href ? (
                   <a
                     className="best-seller-image-frame"
-                    href={item.href}
-                    aria-label={item.label}
+                    href={localHref(item.href)}
+                    aria-label={item.title ? `${item.code} ${item.title}` : item.label || t.bestSeller.heading}
                     tabIndex={isClone ? -1 : undefined}
+                    onFocus={isClone ? undefined : (event) => handleCardFocus(event, index)}
                   >
                     {cardContent}
                   </a>
@@ -374,6 +403,28 @@ export default function BestSellerSection({ items = [] }) {
           })}
         </div>
       </div>
+
+      {canNavigate ? (
+        <div className="best-seller-controls" role="group" aria-label={t.bestSeller.controlsLabel}>
+          <button type="button" className="best-seller-control" aria-label={t.bestSeller.previous} onClick={() => moveByButton(-1)}>
+            {t.bestSeller.previousShort}
+          </button>
+          {!prefersReducedMotion ? (
+            <button
+              type="button"
+              className="best-seller-control"
+              aria-pressed={isUserPaused}
+              aria-label={isUserPaused ? t.bestSeller.play : t.bestSeller.pause}
+              onClick={() => setIsUserPaused((paused) => !paused)}
+            >
+              {isUserPaused ? t.bestSeller.playShort : t.bestSeller.pauseShort}
+            </button>
+          ) : null}
+          <button type="button" className="best-seller-control" aria-label={t.bestSeller.next} onClick={() => moveByButton(1)}>
+            {t.bestSeller.nextShort}
+          </button>
+        </div>
+      ) : null}
     </section>
   );
 }

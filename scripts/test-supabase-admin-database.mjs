@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { readdir, readFile } from "node:fs/promises";
+import { readAdminSource } from "./lib/admin-i18n-source.mjs";
 
 const {
   MARIS_DATABASE_TABLES,
@@ -533,6 +534,18 @@ function createProductMutationClient() {
               }
             };
           },
+          // updateAdminProduct looks up the current SKU when a SKU is sent.
+          select() {
+            return {
+              eq() {
+                return {
+                  async maybeSingle() {
+                    return { data: { sku: "OLD-SKU" }, error: null };
+                  }
+                };
+              }
+            };
+          },
           update(payload) {
             state.updates.push(payload);
 
@@ -626,6 +639,15 @@ assert.equal(editableSkuProductClient.state.updates[0].category, "Rings");
 assert.equal(editableSkuProductClient.state.updates[0].collection, "mens-wedding-bands");
 assert.equal(editableSkuProductClient.state.updates[0].collection_name, "The Men Classic Collection");
 assert.deepEqual(editableSkuProductClient.state.updateFilters[0], ["id", "product-1"]);
+
+// A missing or blank status on update must never turn into draft.
+const noStatusClient = createProductMutationClient();
+await updateAdminProduct("product-1", { name: "Typo fix" }, { env: productMutationEnv, client: noStatusClient });
+assert.equal("status" in noStatusClient.state.updates[0] && noStatusClient.state.updates[0].status !== undefined, false);
+const blankStatusClient = createProductMutationClient();
+await updateAdminProduct("product-1", { name: "Typo fix", status: "" }, { env: productMutationEnv, client: blankStatusClient });
+assert.equal(blankStatusClient.state.updates[0].status, undefined, "blank status is left unchanged");
+assert.equal(blankStatusClient.state.updates[0].is_active, undefined);
 
 function createProductImageUploadClient() {
   const state = {
@@ -997,8 +1019,8 @@ assert.equal(inventoryLog.productCode, "ER1001");
 assert.equal(inventoryLog.stockQuantity, 5);
 assert.equal(inventoryLog.reservedQuantity, 3);
 
-const adminHtml = await readFile(new URL("../app/admin/page.js", import.meta.url), "utf8");
-const adminJs = await readFile(new URL("../assets/js/admin-page.js", import.meta.url), "utf8");
+const adminHtml = await readAdminSource("app/admin/page.js");
+const adminJs = await readAdminSource("assets/js/admin-page.js");
 const envExample = await readFile(new URL("../.env.example", import.meta.url), "utf8");
 const docsReadme = await readFile(new URL("../docs/README.md", import.meta.url), "utf8");
 const databaseGuide = await readFile(new URL("../docs/supabase-admin-database.md", import.meta.url), "utf8");
@@ -1023,9 +1045,12 @@ const allMigrations = await Promise.all(migrationFiles.map((fileName) => (
 )));
 const additiveSchema = allMigrations.join("\n\n");
 
-assert.match(adminHtml, /data-admin-panel="database"/, "Admin should expose a database status panel");
-assert.match(adminHtml, /data-database-table-status/, "Database panel should render table status rows");
-assert.match(adminHtml, /data-database-products-table/, "Database panel should render Supabase product rows");
+// E-17: the old Database tab is now "System status" inside Settings.
+assert.doesNotMatch(adminHtml, /data-admin-tab="database"/, "The Database tab is no longer in the main navigation");
+assert.match(adminHtml, /data-admin-section="system-status"/, "Admin should expose a System status section under Settings");
+assert.match(adminHtml, />System status</, "The section is titled System status");
+assert.match(adminHtml, /data-database-table-status/, "System status should render table status rows");
+assert.match(adminHtml, /data-database-products-table/, "System status should render Supabase product rows");
 assert.match(adminJs, /\/api\/admin\/database\/status/, "Admin JavaScript should load database status through the protected API route");
 assert.match(adminJs, /\/api\/admin\/database\/catalogue/, "Admin JavaScript should load Supabase catalogue data through the protected API route");
 assert.match(envExample, /^SUPABASE_URL=/m, ".env.example should include the Supabase project URL");

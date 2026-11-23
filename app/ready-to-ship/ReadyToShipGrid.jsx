@@ -4,7 +4,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { useCustomerSession } from "../hooks/useCustomerSession";
 import { useShopLocale } from "../hooks/useShopLocale";
+import { BAG_CHANGE_EVENT, createBagItem, getBagIdForProduct, readBag, updateBag } from "../lib/bag-store";
 import { formatProductPrice } from "../lib/collections";
 import { fill } from "../lib/i18n";
 import { isOptimizableImageSrc } from "../lib/image-source";
@@ -14,36 +16,13 @@ import {
   getPublicProductDisplayName,
   getPublicProductPath
 } from "../lib/product-display";
+import { shopEn } from "../lib/ui-text-shop";
+import CatalogueEmptyLinks from "../components/CatalogueEmptyLinks";
 import styles from "./ready-to-ship.module.css";
 
-const BAG_KEY = "marisShoppingBag";
 const FALLBACK_IMAGE = "/assets/images/logo.png";
 // The first row is the only part that can sit in the opening viewport.
 const ABOVE_FOLD_COUNT = 4;
-
-function readBag() {
-  try {
-    const value = JSON.parse(localStorage.getItem(BAG_KEY));
-    return Array.isArray(value) ? value : [];
-  } catch (error) {
-    return [];
-  }
-}
-
-function writeBag(items) {
-  try {
-    localStorage.setItem(BAG_KEY, JSON.stringify(items));
-    window.dispatchEvent(new CustomEvent("maris:bagchange"));
-    return true;
-  } catch (error) {
-    return false;
-  }
-}
-
-// Same id the product page uses, so a piece added here shows as added there too.
-function getBagId(product) {
-  return `${product.collection}:${product.sku}`;
-}
 
 function getDiscountPercent(product) {
   const now = Number(product.basePrice);
@@ -56,9 +35,10 @@ function getDiscountPercent(product) {
   return Math.round(((was - now) / was) * 100);
 }
 
-export default function ReadyToShipGrid({ products }) {
+export default function ReadyToShipGrid({ products, loadFailed = false }) {
   const { locale, t, href: localHref } = useShopLocale();
   const copy = t.readyToShip;
+  const { customer } = useCustomerSession();
   const [bagIds, setBagIds] = useState([]);
 
   // The bag lives in the browser, so it is read after mount and re-read when it changes elsewhere.
@@ -66,41 +46,38 @@ export default function ReadyToShipGrid({ products }) {
     const sync = () => setBagIds(readBag().map((item) => item.id));
     sync();
     window.addEventListener("storage", sync);
-    window.addEventListener("maris:bagchange", sync);
+    window.addEventListener(BAG_CHANGE_EVENT, sync);
     return () => {
       window.removeEventListener("storage", sync);
-      window.removeEventListener("maris:bagchange", sync);
+      window.removeEventListener(BAG_CHANGE_EVENT, sync);
     };
   }, []);
 
   function toggleBag(product) {
-    const id = getBagId(product);
-    const bag = readBag();
+    const id = getBagIdForProduct(product);
 
-    if (bag.some((item) => item.id === id)) {
-      writeBag(bag.filter((item) => item.id !== id));
-      return;
-    }
-
-    writeBag([
-      {
-        id,
-        title: product.sku,
-        details: [getPublicProductDisplayName(product)],
-        image: product.primaryImageUrl,
-        href: getPublicProductPath(product),
-        collection: copy.title,
-        // The bag and order flow read base_price, which is the price after discount.
-        priceLabel: product.basePrice === null ? "Price on request" : `${Number(product.basePrice).toLocaleString()} THB`,
-        quantity: 1,
-        addedAt: new Date().toISOString()
-      },
-      ...bag
-    ]);
+    // The bag and order flow read base_price, which is the price after discount.
+    // The collection is stored in English so it reads the same in either language.
+    updateBag((bag) => (
+      bag.some((item) => item.id === id)
+        ? bag.filter((item) => item.id !== id)
+        : [createBagItem(product, shopEn.readyToShip.title), ...bag]
+    ), { customerId: customer?.id || "" });
   }
 
   if (!products.length) {
-    return <p className={styles.empty}>{copy.empty}</p>;
+    return (
+      <div className={styles.empty}>
+        <p>{loadFailed ? copy.unavailable : copy.empty}</p>
+        <CatalogueEmptyLinks
+          links={[
+            { href: "/collections", label: t.catalogue.emptyLinks.collections },
+            { href: "/category/engagement-ring", label: t.catalogue.emptyLinks.engagementRings },
+            { href: "/contact-us", label: t.catalogue.emptyLinks.contact }
+          ]}
+        />
+      </div>
+    );
   }
 
   return (
@@ -112,10 +89,10 @@ export default function ReadyToShipGrid({ products }) {
       <ul className={styles.grid}>
         {products.map((product, index) => {
           const code = formatPublicProductCode(product.sku);
-          const name = getPublicProductDisplayName(product);
+          const name = getPublicProductDisplayName(product, t.bag.kinds);
           const image = String(product.primaryImageUrl || product.coverImageUrl || "").trim() || FALLBACK_IMAGE;
           const percent = getDiscountPercent(product);
-          const inBag = bagIds.includes(getBagId(product));
+          const inBag = bagIds.includes(getBagIdForProduct(product));
 
           return (
             <li key={product.id || product.sku} className={styles.card}>
@@ -127,7 +104,7 @@ export default function ReadyToShipGrid({ products }) {
                 <Image
                   className={styles.image}
                   src={image}
-                  alt={getPublicProductAltText(product)}
+                  alt={getPublicProductAltText(product, t.bag.kinds)}
                   width={1024}
                   height={1024}
                   sizes="(max-width: 700px) 50vw, (max-width: 1100px) 33vw, 25vw"

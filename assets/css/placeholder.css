@@ -102,11 +102,128 @@ a {
   line-height: 1;
 }
 
-.policy-section p {
-  max-width: 760px;
-  font-size: 15px;
+.policy-section {
+  /* Anchor targets stop below the sticky header instead of under it. */
+  scroll-margin-top: 136px;
+}
+
+@media (max-width: 768px) {
+  .policy-section {
+    scroll-margin-top: 88px;
+  }
+}
+
+.policy-section p,
+.policy-list {
+  max-width: 68ch;
+  font-size: 16px;
   line-height: 1.85;
   color: var(--maris-muted);
+}
+
+.policy-section p + .policy-list,
+.policy-list + p {
+  margin-top: 12px;
+}
+
+.policy-list {
+  margin: 0;
+  padding-left: 1.25em;
+}
+
+.policy-list li + li {
+  margin-top: 6px;
+}
+
+.policy-list strong {
+  color: var(--maris-ink);
+  font-weight: 600;
+}
+
+.policy-section a,
+.policy-inline-button {
+  color: var(--maris-teal);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.policy-inline-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+}
+
+.policy-section a:focus-visible,
+.policy-inline-button:focus-visible {
+  outline: 2px solid var(--maris-teal);
+  outline-offset: 2px;
+}
+
+.policy-toc {
+  margin-top: 28px;
+  padding: 18px 22px;
+  border: 1px solid rgba(221, 164, 165, 0.32);
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.policy-toc__title {
+  margin-bottom: 8px;
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--maris-gold-text);
+}
+
+.policy-toc ol {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 0 28px;
+  margin: 0;
+  padding-left: 1.4em;
+}
+
+.policy-toc a {
+  display: inline-block;
+  padding: 9px 0;
+  color: var(--maris-ink);
+  font-size: 15px;
+  text-underline-offset: 3px;
+}
+
+.policy-toc a:hover {
+  color: var(--maris-teal);
+}
+
+.not-found-links {
+  margin-top: 34px;
+  padding-top: 22px;
+  border-top: 1px solid rgba(221, 164, 165, 0.34);
+}
+
+.not-found-links__label {
+  margin-bottom: 8px;
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--maris-gold-text);
+}
+
+.not-found-links ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 22px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.not-found-links a {
+  display: inline-block;
+  padding: 12px 0;
+  color: var(--maris-text, inherit);
+  text-underline-offset: 4px;
 }
 
 .page-actions {
@@ -157,6 +274,28 @@ a {
   display: grid;
   gap: 14px;
   max-width: 760px;
+}
+
+.subpage-intro-action {
+  margin: 8px 0 0;
+}
+
+.subpage-intro-action a.primary-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 24px;
+  border: 1px solid var(--maris-teal);
+  background: var(--maris-teal);
+  color: var(--maris-white);
+  text-decoration: none;
+  transition: background 0.25s ease, transform 0.25s ease;
+}
+
+.subpage-intro-action a.primary-link:hover {
+  background: #00382d;
+  transform: translateY(-2px);
 }
 
 .subpage-hero-gallery {
@@ -294,13 +433,17 @@ a {
 }
 
 .subpage-step-image {
+  position: relative;
+  overflow: hidden;
   aspect-ratio: 4 / 3;
   width: 100%;
   margin-bottom: 4px;
   border: 1px solid rgba(16, 41, 35, 0.08);
   background-color: rgba(255, 250, 246, 0.82);
-  background-repeat: no-repeat;
-  background-size: 400% 200%;
+}
+
+.subpage-step-image img {
+  object-fit: cover;
 }
 
 .subpage-step-index,
@@ -402,6 +545,20 @@ a {
 
 .wishlist-panel {
   width: 100%;
+}
+
+.wishlist-loading {
+  min-height: 240px;
+  margin: 0;
+  padding: 52px 0;
+  text-align: center;
+  color: var(--maris-muted);
+  font-size: 14px;
+  letter-spacing: 0.04em;
+}
+
+.wishlist-empty h2:focus {
+  outline: none;
 }
 
 .wishlist-empty {
@@ -590,9 +747,24 @@ a {
 }
 
 .account-form,
-.account-profile-form {
+.account-profile-form,
+.account-password-form {
   display: grid;
   gap: 12px;
+}
+
+/* The password form sits between the profile and delete forms and needs the same
+   field styling; it used to render with browser defaults. */
+.account-password-form {
+  margin-top: 38px;
+  padding-top: 28px;
+  border-top: 1px solid rgba(221, 164, 165, 0.42);
+}
+
+.account-password-form h3 {
+  font-family: var(--maris-font-sans);
+  font-weight: 300;
+  line-height: 1;
 }
 
 .account-form h2,
@@ -615,7 +787,8 @@ a {
 }
 
 .account-form label,
-.account-profile-form label {
+.account-profile-form label,
+.account-password-form label {
   margin-top: 8px;
   font-size: 12px;
   letter-spacing: 0.14em;
@@ -625,7 +798,8 @@ a {
 
 .account-form input,
 .account-profile-form input,
-.account-profile-form select {
+.account-profile-form select,
+.account-password-form input {
   width: 100%;
   min-height: 50px;
   padding: 0 14px;
@@ -638,7 +812,8 @@ a {
 
 .account-form input:focus,
 .account-profile-form input:focus,
-.account-profile-form select:focus {
+.account-profile-form select:focus,
+.account-password-form input:focus {
   outline: 2px solid var(--maris-teal);
   outline-offset: 2px;
   border-color: var(--maris-teal);
@@ -691,6 +866,24 @@ a {
 
 .account-message[data-type="error"] {
   color: #9b3944;
+}
+
+.account-field-hint {
+  margin: -6px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--maris-muted);
+}
+
+/* Keeps the shell's height while the session loads so the forms do not push the page down. */
+.account-shell--loading {
+  min-height: 520px;
+}
+
+.account-form input[aria-invalid="true"],
+.account-password-form input[aria-invalid="true"],
+.inquiry-form input[aria-invalid="true"] {
+  border-color: #9b3944;
 }
 
 .account-dashboard {
@@ -861,6 +1054,7 @@ a {
 .bag-image img {
   display: block;
   width: 100%;
+  height: auto;
   aspect-ratio: 1 / 1.08;
   object-fit: cover;
   object-position: center top;
@@ -921,6 +1115,73 @@ a {
   background: rgba(255, 255, 255, 0.72);
   color: var(--maris-ink);
   font: inherit;
+}
+
+.bag-qty {
+  display: grid;
+  gap: 8px;
+}
+
+.bag-qty-label {
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--maris-gold-text);
+}
+
+.bag-qty-row {
+  display: grid;
+  grid-template-columns: 44px minmax(52px, 1fr) 44px;
+  gap: 6px;
+}
+
+.bag-controls .bag-qty-row input {
+  min-height: 44px;
+  padding: 0 6px;
+  text-align: center;
+}
+
+.bag-controls .bag-qty-step {
+  min-width: 44px;
+  padding: 0;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.bag-qty-step[disabled] {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.bag-qty-hint {
+  font-size: 12px;
+  color: var(--maris-muted);
+}
+
+.bag-undo {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  color: var(--maris-teal);
+}
+
+.bag-undo:empty {
+  display: none;
+}
+
+.bag-undo button {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--maris-teal);
+  background: transparent;
+  color: var(--maris-ink);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
 }
 
 .bag-controls button,
@@ -1038,6 +1299,15 @@ a {
 .inquiry-column {
   display: grid;
   gap: 18px;
+}
+
+#inquiry-form {
+  scroll-margin-top: 96px;
+}
+
+/* Only shown on phones, where the form is below the contact cards. */
+.contact-jump {
+  display: none;
 }
 
 .inquiry-card,
@@ -1243,6 +1513,14 @@ a {
   color: #9b3944;
 }
 
+.form-status-list {
+  margin: -6px 0 0;
+  padding-left: 18px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #9b3944;
+}
+
 .newsletter-panel {
   margin-top: 28px;
 }
@@ -1294,6 +1572,7 @@ a {
 .selected-piece-image img {
   display: block;
   width: 100%;
+  height: auto;
   aspect-ratio: 1 / 1.08;
   object-fit: cover;
   object-position: center top;
@@ -1388,6 +1667,25 @@ a {
   .contact-social-disabled {
     flex: 1 1 150px;
     justify-content: center;
+    min-height: 44px;
+  }
+
+  /* The email and phone links are the most used actions on this page. */
+  .inquiry-list a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+
+  .contact-jump {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    margin-top: 14px;
+    color: var(--maris-teal);
+    font-weight: 500;
+    text-decoration: underline;
+    text-underline-offset: 4px;
   }
 
   .lead {
@@ -1563,6 +1861,7 @@ a {
   }
 
   .bag-image img {
+    height: auto;
     aspect-ratio: 1 / 0.95;
   }
 
@@ -1700,4 +1999,74 @@ a {
 
 .form-note a {
   color: var(--maris-teal);
+}
+
+/* Account: request list, duplicate-email actions, reset-password link buttons. */
+a.account-submit,
+a.account-link-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+.account-duplicate-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.account-requests {
+  display: grid;
+  gap: 12px;
+  padding: 24px 0;
+  border-top: 1px solid rgba(221, 164, 165, 0.42);
+}
+
+.account-requests h3,
+.account-requests p {
+  margin: 0;
+}
+
+.account-request-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+}
+
+.account-request-links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--maris-teal);
+}
+
+.account-request-list {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.account-request-list li {
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px;
+  border: 1px solid rgba(221, 164, 165, 0.42);
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.account-request-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  font-size: 13px;
+  color: var(--maris-muted);
+}
+
+.account-request-excerpt {
+  font-size: 14px;
+  color: var(--maris-muted);
 }

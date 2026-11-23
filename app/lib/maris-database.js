@@ -14,6 +14,7 @@ export {
   createAdminProduct,
   deleteAdminProduct,
   readAdminBestSellerSettings,
+  readAdminCatalogueProduct,
   readAdminCatalogueProducts,
   readPublicBestSellerProducts,
   readPublicCatalogueProducts,
@@ -36,6 +37,10 @@ export {
   readAdminCustomers
 } from "./maris-database/customers.js";
 export {
+  readAdminCustomerList,
+  readAdminNewsletterSubscribers
+} from "./maris-database/admin-people.js";
+export {
   ADMIN_CUSTOM_ORDER_STATUSES,
   AdminCustomOrderRequestError,
   normalizeCustomOrderRequest,
@@ -44,8 +49,10 @@ export {
 } from "./maris-database/custom-orders.js";
 export {
   ADMIN_INQUIRY_STATUSES,
+  normalizeCustomerInquiry,
   normalizeInquiry,
   readAdminInquiries,
+  readCustomerInquiries,
   updateAdminInquiryStatus
 } from "./maris-database/inquiries.js";
 export {

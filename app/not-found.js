@@ -1,15 +1,10 @@
+import NotFoundView from "./components/NotFoundView";
+
+// The English default; NotFoundView swaps the title and copy for Thai paths.
+export const metadata = {
+  title: { absolute: "Page not found | Maris Jewelry" }
+};
+
 export default function NotFound() {
-  return (
-    <main id="main-content" className="not-found-shell site-main">
-      <section className="placeholder-card">
-        <p className="eyebrow">Page not found</p>
-        <h1>We could not find that page.</h1>
-        <p className="lead">The Maris Jewelry page may have moved into the new catalogue structure.</p>
-        <div className="page-actions">
-          <a className="primary-link" href="/">Go to Home</a>
-          <a href="/contact-us">Contact Maris</a>
-        </div>
-      </section>
-    </main>
-  );
+  return <NotFoundView />;
 }

@@ -35,7 +35,10 @@ function escapeHtml(value) {
     .replaceAll("'", "&#39;");
 }
 
+const FIELD_LABELS = { line_id: "Line ID" };
+
 function labelFor(key) {
+  if (FIELD_LABELS[key]) return FIELD_LABELS[key];
   return key.replaceAll("_", " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 

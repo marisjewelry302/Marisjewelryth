@@ -38,7 +38,9 @@ export default function ProductCard({ product, collectionLabel, collectionSlug =
   const { locale, t, href: localHref } = useShopLocale();
   const productPath = getPublicProductPath(product);
   const href = localHref(productPath);
-  const displayName = getPublicProductDisplayName(product);
+  const displayName = getPublicProductDisplayName(product, t.bag.kinds);
+  // The wishlist keeps the English name so a saved piece reads the same in either language.
+  const storedDisplayName = getPublicProductDisplayName(product);
   const productCode = product.sku || displayName;
   const { primaryImage, hoverImage } = getCardImages(product);
   const hasHoverImage = Boolean(hoverImage);
@@ -48,7 +50,7 @@ export default function ProductCard({ product, collectionLabel, collectionSlug =
   const wishlistItem = {
     id: `${product.collection || storedCollection}:${productCode}`,
     title: productCode,
-    details: [displayName],
+    details: [storedDisplayName],
     image: primaryImage,
     href: productPath,
     collection: storedCollection,
@@ -68,7 +70,7 @@ export default function ProductCard({ product, collectionLabel, collectionSlug =
           <Image
             className="product-card-image product-card-image-primary"
             src={primaryImage}
-            alt={getPublicProductAltText(product)}
+            alt={getPublicProductAltText(product, t.bag.kinds)}
             width={CARD_IMAGE_SIZE}
             height={CARD_IMAGE_SIZE}
             sizes={CARD_IMAGE_SIZES}

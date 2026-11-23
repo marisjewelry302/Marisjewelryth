@@ -6,7 +6,7 @@
 // admin/customer sessions) never wait for consent; only the optional
 // categories below do.
 //
-// Gate any future tracker on the choice:
+// Gate any tracker on the choice (GoogleAnalytics.jsx does this for GA4):
 //
 //   import { hasCookieConsent, onCookieConsentChange } from "../lib/cookie-consent";
 //   if (hasCookieConsent("analytics")) loadAnalytics();
@@ -15,12 +15,20 @@
 export const COOKIE_CONSENT_NAME = "maris_cookie_consent";
 // Bump when the categories or their meaning change: older answers are then
 // treated as missing and the banner asks again.
-export const COOKIE_CONSENT_VERSION = 1;
+export const COOKIE_CONSENT_VERSION = 2;
 export const COOKIE_CONSENT_MAX_AGE_SECONDS = 180 * 24 * 60 * 60;
 export const COOKIE_CONSENT_EVENT = "maris:cookie-consent";
 export const COOKIE_SETTINGS_EVENT = "maris:cookie-settings";
 
-export const OPTIONAL_COOKIE_CATEGORIES = ["analytics", "marketing"];
+// Marketing cookies are not used yet (no ad or social pixel is installed), so the
+// category is hidden from the banner and settings and can never be saved as
+// granted. Flip to true only together with a real marketing tag, the banner
+// copy for it, the privacy policy, and a COOKIE_CONSENT_VERSION bump.
+export const MARKETING_COOKIES_ENABLED = false;
+
+export const OPTIONAL_COOKIE_CATEGORIES = MARKETING_COOKIES_ENABLED
+  ? ["analytics", "marketing"]
+  : ["analytics"];
 
 function isBrowser() {
   return typeof document !== "undefined";
@@ -46,7 +54,7 @@ function normalizeConsent(value) {
     v: COOKIE_CONSENT_VERSION,
     necessary: true,
     analytics: value.analytics === true,
-    marketing: value.marketing === true,
+    marketing: MARKETING_COOKIES_ENABLED && value.marketing === true,
     updatedAt: typeof value.updatedAt === "string" ? value.updatedAt : null
   };
 }
@@ -81,7 +89,7 @@ export function saveCookieConsent(choices = {}) {
     v: COOKIE_CONSENT_VERSION,
     necessary: true,
     analytics: choices.analytics === true,
-    marketing: choices.marketing === true,
+    marketing: MARKETING_COOKIES_ENABLED && choices.marketing === true,
     updatedAt: new Date().toISOString()
   };
 

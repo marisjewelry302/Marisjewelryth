@@ -110,7 +110,7 @@ export default function HeroSlider({ slides }) {
   }
 
   return (
-    <div className="hero-slider" onPointerDown={handlePointerDown}
+    <div className="hero-slider" role="region" aria-roledescription="carousel" aria-label={t.hero.label} onPointerDown={handlePointerDown}
       onPointerUp={handlePointerUp}
       onPointerCancel={() => { swipeRef.current = null; }}
       onClickCapture={handleClickCapture}>
@@ -124,6 +124,7 @@ export default function HeroSlider({ slides }) {
           <div
             key={slide.id || index}
             className={`hero-slide ${stateClass}`}
+            aria-hidden="true"
             style={{
               backgroundImage: index === activeIndex && slide.image ? `url(${slide.image})` : undefined,
               "--hero-position-start": slide.positionStart,
@@ -135,18 +136,18 @@ export default function HeroSlider({ slides }) {
         );
       })}
 
-      {/* The left half advances and the right half goes back, so each label names what the click does. */}
+      {/* The left half goes back and the right half advances, matching the swipe direction. */}
       <button
         type="button"
         className="hero-hit hero-hit-left"
-        aria-label={t.hero.next}
-        onClick={() => moveSlide(1)}
+        aria-label={t.hero.previous}
+        onClick={() => moveSlide(-1)}
       />
       <button
         type="button"
         className="hero-hit hero-hit-right"
-        aria-label={t.hero.previous}
-        onClick={() => moveSlide(-1)}
+        aria-label={t.hero.next}
+        onClick={() => moveSlide(1)}
       />
 
       {slides.length > 1 && (
@@ -156,6 +157,7 @@ export default function HeroSlider({ slides }) {
               key={slide.id || index}
               type="button"
               className={`hero-slide-dot${index === activeIndex ? " is-active" : ""}`}
+              aria-label={t.hero.slideOf(index + 1, slides.length)}
               aria-current={index === activeIndex ? "true" : "false"}
               onClick={() => setActiveIndex(index)}
             >

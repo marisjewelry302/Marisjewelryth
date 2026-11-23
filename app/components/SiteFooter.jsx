@@ -7,6 +7,7 @@ import { useId, useState } from "react";
 import { useLocale } from "../hooks/useLocale";
 import { openCookieSettings } from "../lib/cookie-consent";
 import { stripLocale } from "../lib/i18n";
+import { BRAND_CONTACT } from "../lib/seo";
 import NewsletterSignup from "./NewsletterSignup";
 
 function SocialIcon({ label }) {
@@ -53,8 +54,57 @@ function SocialLinks() {
   ));
 }
 
-function FooterSection({ section, index, href }) {
-  const [isOpen, setIsOpen] = useState(index === 0);
+// Published details only (the same constants that feed the JSON-LD); no hours.
+function FooterContact({ label }) {
+  const { email, phone, displayPhone, address } = BRAND_CONTACT;
+  const addressLine = [
+    [address.streetAddress, address.addressLocality, address.addressRegion].filter(Boolean).join(", "),
+    address.postalCode
+  ].filter(Boolean).join(" ");
+
+  return (
+    <address className="maris-footer__contact" aria-label={label}>
+      <a href={`mailto:${email}`}>{email}</a>
+      <a href={`tel:${phone}`}>{displayPhone}</a>
+      <span>{addressLine}</span>
+    </address>
+  );
+}
+
+function FooterSectionBody({ section, href, currentPath, contactLabel }) {
+  return (
+    <div className="maris-footer__panel-inner">
+      {section.body && <p>{section.body}</p>}
+      {section.links && (
+        <div className="maris-footer__links">
+          {section.links.map((item) => (
+            <Link key={item.href} href={href(item.href)} aria-current={item.href === currentPath ? "page" : undefined}>{item.label}</Link>
+          ))}
+        </div>
+      )}
+      {section.key === "brand" && <FooterContact label={contactLabel} />}
+      {section.newsletter && <NewsletterSignup source="footer" />}
+    </div>
+  );
+}
+
+// The brand block has nothing to collapse, so on phones it is a plain heading
+// over an always-visible panel: no button, nothing that could hide its links.
+function StaticFooterSection({ section, href, currentPath, contactLabel }) {
+  return (
+    <section className="maris-footer__section maris-footer__section--static is-open">
+      <h3 className="maris-footer__toggle maris-footer__toggle--static">
+        <span className="maris-footer__toggle-label">{section.title}</span>
+      </h3>
+      <div className="maris-footer__panel">
+        <FooterSectionBody section={section} href={href} currentPath={currentPath} contactLabel={contactLabel} />
+      </div>
+    </section>
+  );
+}
+
+function FooterSection({ section, href, currentPath, contactLabel }) {
+  const [isOpen, setIsOpen] = useState(false);
   const panelId = useId();
 
   return (
@@ -76,17 +126,7 @@ function FooterSection({ section, index, href }) {
         aria-hidden={!isOpen}
         inert={!isOpen}
       >
-        <div className="maris-footer__panel-inner">
-          {section.body && <p>{section.body}</p>}
-          {section.links && (
-            <div className="maris-footer__links">
-              {section.links.map((item) => (
-                <Link key={item.href} href={href(item.href)}>{item.label}</Link>
-              ))}
-            </div>
-          )}
-          {section.newsletter && <NewsletterSignup source="footer" />}
-        </div>
+        <FooterSectionBody section={section} href={href} currentPath={currentPath} contactLabel={contactLabel} />
       </div>
     </section>
   );
@@ -114,11 +154,12 @@ export default function SiteFooter() {
                 <ul>
                   {section.links.map((item) => (
                     <li key={item.href}>
-                      <Link href={href(item.href)}>{item.label}</Link>
+                      <Link href={href(item.href)} aria-current={item.href === normalizedPathname ? "page" : undefined}>{item.label}</Link>
                     </li>
                   ))}
                 </ul>
               )}
+              {section.key === "brand" && <FooterContact label={t.footer.contactLabel} />}
               {section.newsletter && <NewsletterSignup source="footer" />}
               {section.key === "brand" && (
                 <div className="maris-footer__social">
@@ -136,8 +177,10 @@ export default function SiteFooter() {
             </div>
           </div>
           <div className="maris-footer__sections">
-            {footerSections.map((section, index) => (
-              <FooterSection key={section.key} section={section} index={index} href={href} />
+            {footerSections.map((section) => (
+              section.key === "brand"
+                ? <StaticFooterSection key={section.key} section={section} href={href} currentPath={normalizedPathname} contactLabel={t.footer.contactLabel} />
+                : <FooterSection key={section.key} section={section} href={href} currentPath={normalizedPathname} contactLabel={t.footer.contactLabel} />
             ))}
           </div>
         </div>

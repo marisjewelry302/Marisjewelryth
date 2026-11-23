@@ -1,4 +1,9 @@
-import { getAdminConfig, hashAdminPassword, verifyAdminPassword } from "./admin-auth.js";
+import {
+  ADMIN_PASSWORD_MIN_LENGTH,
+  getAdminConfig,
+  hashAdminPassword,
+  verifyAdminPassword
+} from "./admin-auth.js";
 import { createSupabaseAdminClient, getSupabaseAdminConfig } from "./maris-database.js";
 
 const ADMIN_USER_COLUMNS = `
@@ -13,6 +18,20 @@ const ADMIN_USER_COLUMNS = `
 function cleanText(value) {
   return String(value || "").trim();
 }
+
+// The environment variable names that are missing belong in the server log, not
+// on a sign-in screen the shop owner reads. The page only says the database is
+// not connected.
+export function logAdminConfigProblem(context, { missingEnv = [], error = null } = {}) {
+  const details = [
+    missingEnv && missingEnv.length ? `missing environment variables: ${missingEnv.join(", ")}` : "",
+    error ? `error: ${error instanceof Error ? error.message : String(error)}` : ""
+  ].filter(Boolean).join("; ");
+
+  console.error(`[admin] ${context} - ${details || "admin database is not configured"}`);
+}
+
+export const ADMIN_DATABASE_NOT_CONNECTED_MESSAGE = "The admin database isn't connected. Contact your developer.";
 
 export function normalizeAdminUsername(value) {
   return cleanText(value).toLowerCase();
@@ -177,7 +196,7 @@ export async function authenticateAdminUser(username, password, { env = process.
 export async function createInitialAdminUser({ username, displayName, password }, { env = process.env, client } = {}) {
   const normalizedUsername = normalizeAdminUsername(username);
 
-  if (!normalizedUsername || String(password || "").length < 12) {
+  if (!normalizedUsername || String(password || "").length < ADMIN_PASSWORD_MIN_LENGTH) {
     return { status: "invalid" };
   }
 

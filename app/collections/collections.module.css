@@ -17,7 +17,9 @@
 }
 
 .jump a {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   padding: 9px 16px;
   border: 1px solid var(--maris-hairline);
   color: inherit;

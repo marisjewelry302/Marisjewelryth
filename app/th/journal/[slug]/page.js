@@ -20,6 +20,7 @@ export async function generateMetadata({ params }) {
     title: `${text.title} | Maris Jewelry`,
     description: text.excerpt,
     path: `/journal/${article.slug}`,
+    type: "article",
     ...(article.image ? { image: article.image } : {}),
     locale: "th"
   });

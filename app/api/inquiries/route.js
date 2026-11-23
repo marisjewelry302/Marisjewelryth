@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { SESSION_COOKIE_NAME, verifyCustomerSession } from "../../lib/customer-auth.js";
 import { createInquiry } from "../../lib/inquiries.js";
 import { sendInquiryEmails } from "../../lib/inquiry-email.js";
 import { isSameOriginRequest } from "../../lib/request-security.js";
@@ -18,7 +19,7 @@ function json(payload, status = 200) {
 
 export async function POST(request) {
   if (!isSameOriginRequest(request)) {
-    return json({ error: "Cross-origin request blocked." }, 403);
+    return json({ error: "Cross-origin request blocked.", code: "cross_origin" }, 403);
   }
 
   let body;
@@ -26,11 +27,16 @@ export async function POST(request) {
   try {
     body = await request.json();
   } catch {
-    return json({ error: "Invalid JSON payload." }, 400);
+    return json({ error: "Invalid JSON payload.", code: "invalid_json" }, 400);
   }
 
   try {
+    // Anyone may send an enquiry. When the sender is signed in, the enquiry is
+    // also linked to their account, using the id from the verified session
+    // cookie and nothing the form sent.
+    const session = verifyCustomerSession(request.cookies.get(SESSION_COOKIE_NAME)?.value);
     const result = await createInquiry(body, {
+      customerId: session.isValid ? session.customerId : null,
       sendEmails: (context) => sendInquiryEmails(context)
     });
 
@@ -51,6 +57,7 @@ export async function POST(request) {
     if (result.status === "invalid") {
       return json({
         status: "invalid",
+        code: "invalid",
         error: "Please check the form details.",
         errors: result.errors || []
       }, 400);
@@ -59,17 +66,18 @@ export async function POST(request) {
     if (result.status === "rate_limited") {
       return json({
         status: "rate_limited",
+        code: "rate_limited",
         error: "Too many messages from this address. Please try again later."
       }, 429);
     }
 
     if (result.status === "not_configured") {
-      return json({ status: "not_configured", error: "Service unavailable." }, 503);
+      return json({ status: "not_configured", code: "service_unavailable", error: "Service unavailable." }, 503);
     }
 
-    return json({ error: "Your message could not be sent." }, 500);
+    return json({ error: "Your message could not be sent.", code: "send_failed" }, 500);
   } catch (error) {
     console.error("Inquiry submission failed", error);
-    return json({ error: "Your message could not be sent." }, 500);
+    return json({ error: "Your message could not be sent.", code: "send_failed" }, 500);
   }
 }

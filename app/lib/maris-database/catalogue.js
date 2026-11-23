@@ -482,6 +482,31 @@ export async function readAdminCatalogueProducts({ env = process.env, client, li
   };
 }
 
+// One product in the same shape the product list uses, so a route that changed
+// it (images, media) can hand the fresh row back and the admin page can patch
+// just that product instead of reloading the whole catalogue. null when the
+// product does not exist.
+export async function readAdminCatalogueProduct(productId, { env = process.env, client } = {}) {
+  const config = getSupabaseAdminConfig(env);
+
+  if (!config.isConfigured) {
+    throw new Error(`Supabase admin database is not configured. Set ${config.missingEnv.join(", ")}.`);
+  }
+
+  const supabase = client || createSupabaseAdminClient(env);
+  const { data, error } = await supabase
+    .from("products")
+    .select(ADMIN_CATALOGUE_SELECT)
+    .eq("id", productId)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message || "Product could not be loaded.");
+  }
+
+  return data ? normalizeProduct(data) : null;
+}
+
 export async function readPublicCatalogueProducts({ env = process.env, client, limit = null } = {}) {
   const config = getSupabaseAdminConfig(env);
 
@@ -952,7 +977,10 @@ export async function updateAdminProduct(productId, updates, { env = process.env
   }
 
   const supabase = client || createSupabaseAdminClient(env);
-  const status = updates.status === undefined ? undefined : normalizeAdminProductStatus(updates.status);
+  // A missing or blank status means "leave it alone"; it must never become draft on update.
+  const status = updates.status === undefined || updates.status === null || String(updates.status).trim() === ""
+    ? undefined
+    : normalizeAdminProductStatus(updates.status);
   const collection = updates.collection === undefined
     ? undefined
     : normalizeAdminProductCollection(updates.collection || updates.category) || null;

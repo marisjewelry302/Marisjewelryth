@@ -1,4 +1,6 @@
+import ContactMethodFields from "./ContactMethodFields";
 import LeadForm from "./LeadForm";
+import { baseText } from "../lib/ui-text-base";
 import { THAI_LOCALE, localizePath } from "../lib/i18n";
 
 // Option values are what the atelier receives in the inquiry email, so they stay
@@ -20,6 +22,7 @@ const copy = {
       { title: "Custom development", text: "Discuss reference images, metal tone, stone options, proportions, and event timing for made-to-order work." },
       { title: "Business inquiries", text: "Start conversations about OEM production, selective retail, or wholesale support in a more structured way." }
     ],
+    jumpToForm: "Send an inquiry ↓",
     formTitle: "Send an inquiry",
     formLead: "Use the form below if you want a reply with product guidance, custom advice, or a business conversation starting point.",
     fullName: "Full name",
@@ -51,8 +54,8 @@ const copy = {
     notes: "Notes",
     notesPlaceholder: "Tell us what you are looking for, which collection you like, or what kind of support you need.",
     formNote: "If you already know a category, target date, or budget direction, adding it here will help Maris Jewelry reply more precisely.",
-    requestPricing: "Request pricing",
-    readArticles: "Read Maris articles"
+    requestPricing: "Ask about pricing",
+    readArticles: "Read the Maris blog"
   },
   th: {
     eyebrow: "บริการ Maris",
@@ -70,6 +73,7 @@ const copy = {
       { title: "พัฒนางานสั่งทำ", text: "พูดคุยเรื่องภาพอ้างอิง โทนโลหะ ตัวเลือกพลอย สัดส่วน และกำหนดเวลาของงานสั่งผลิต" },
       { title: "สอบถามสำหรับธุรกิจ", text: "เริ่มต้นพูดคุยเรื่องการผลิต OEM ค้าปลีกแบบคัดสรร หรือการสนับสนุนการขายส่งอย่างเป็นระบบ" }
     ],
+    jumpToForm: "ส่งข้อความสอบถาม ↓",
     formTitle: "ส่งข้อความสอบถาม",
     formLead: "ใช้แบบฟอร์มด้านล่างหากต้องการให้เราตอบกลับพร้อมคำแนะนำเรื่องสินค้า คำปรึกษางานสั่งทำ หรือจุดเริ่มต้นของการคุยเรื่องธุรกิจ",
     fullName: "ชื่อ-นามสกุล",
@@ -101,14 +105,15 @@ const copy = {
     notes: "รายละเอียดเพิ่มเติม",
     notesPlaceholder: "บอกเราว่าคุณมองหาอะไร ชอบคอลเลกชันไหน หรือต้องการความช่วยเหลือแบบใด",
     formNote: "หากคุณทราบหมวดหมู่ วันที่ต้องการ หรือแนวงบประมาณแล้ว การใส่ไว้ที่นี่จะช่วยให้ Maris Jewelry ตอบได้ตรงจุดยิ่งขึ้น",
-    requestPricing: "ขอราคา",
-    readArticles: "อ่านบทความของ Maris"
+    requestPricing: "สอบถามราคา",
+    readArticles: "อ่านบล็อกของ Maris"
   }
 };
 
 export default function ContactPageView({ locale = "en", defaultService }) {
   const c = copy[locale === THAI_LOCALE ? "th" : "en"];
   const link = (path) => localizePath(path, locale);
+  const optional = baseText[locale === THAI_LOCALE ? "th" : "en"].lead.optional;
 
   return (
     <main id="main-content" className="placeholder-main content-page site-main">
@@ -117,6 +122,8 @@ export default function ContactPageView({ locale = "en", defaultService }) {
           <p className="eyebrow">{c.eyebrow}</p>
           <h1>{c.title}</h1>
           <p className="lead">{c.lead}</p>
+          {/* On phones the form sits below the contact cards, so offer a way straight to it. */}
+          <a className="contact-jump" href="#inquiry-form">{c.jumpToForm}</a>
         </div>
 
         <div className="inquiry-layout">
@@ -130,7 +137,7 @@ export default function ContactPageView({ locale = "en", defaultService }) {
                 </article>
                 <article>
                   <strong>{c.phone}</strong>
-                  <p><a href="tel:0958792659">095-879-2659</a></p>
+                  <p><a href="tel:+66958792659">095-879-2659</a></p>
                 </article>
                 <article>
                   <strong>{c.address}</strong>
@@ -166,7 +173,7 @@ export default function ContactPageView({ locale = "en", defaultService }) {
           </div>
 
           <div className="inquiry-column">
-            <section className="inquiry-card">
+            <section className="inquiry-card" id="inquiry-form">
               <h2>{c.formTitle}</h2>
               <p>{c.formLead}</p>
 
@@ -185,22 +192,11 @@ export default function ContactPageView({ locale = "en", defaultService }) {
                     <span>{c.emailField}</span>
                     <input type="email" name="email" autoComplete="email" required />
                   </label>
-                  <label>
-                    <span>{c.phoneField}</span>
-                    <input type="tel" name="phone" autoComplete="tel" />
-                  </label>
+                  <ContactMethodFields phoneLabel={c.phoneField} preferredLabel={c.preferred} contacts={c.contacts} />
                   <label>
                     <span>{c.interested}</span>
                     <select name="service" defaultValue={c.services.some(([value]) => value === defaultService) ? defaultService : "Engagement Rings"}>
                       {c.services.map(([value, label]) => (
-                        <option value={value} key={value}>{label}</option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    <span>{c.preferred}</span>
-                    <select name="preferred_contact" defaultValue="Email">
-                      {c.contacts.map(([value, label]) => (
                         <option value={value} key={value}>{label}</option>
                       ))}
                     </select>
@@ -216,7 +212,7 @@ export default function ContactPageView({ locale = "en", defaultService }) {
                 </div>
 
                 <label>
-                  <span>{c.notes}</span>
+                  <span>{c.notes} {optional}</span>
                   <textarea name="message" placeholder={c.notesPlaceholder} />
                 </label>
 
@@ -227,7 +223,7 @@ export default function ContactPageView({ locale = "en", defaultService }) {
         </div>
 
         <div className="page-actions">
-          <a className="primary-link" href={link("/request-quote")}>{c.requestPricing}</a>
+          <a className="primary-link" href="#inquiry-form">{c.requestPricing}</a>
           <a href={link("/journal")}>{c.readArticles}</a>
         </div>
       </section>

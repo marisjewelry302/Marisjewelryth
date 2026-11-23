@@ -9,8 +9,10 @@ import "../assets/css/mobile.css";
 import "../assets/css/mobile-drawer.css";
 import "../assets/css/cookie-consent.css";
 import CookieConsent from "./components/CookieConsent";
+import GoogleAnalytics from "./components/GoogleAnalytics";
 import JsonLd from "./components/JsonLd";
 import SiteFooter from "./components/SiteFooter";
+import SkipLink from "./components/SkipLink";
 import SnowfallEffect from "./components/SnowfallEffect";
 import SiteHeader from "./components/SiteHeader";
 import {
@@ -68,7 +70,12 @@ export default function RootLayout({ children }) {
       </head>
       <body className="has-maris-footer notranslate" translate="no" suppressHydrationWarning>
         <JsonLd data={siteJsonLd} />
-        <a className="skip-link" href="#main-content">Skip to main content</a>
+        <SkipLink />
+        {/* Fixed-position, so it sits here without changing the layout; keyboard and
+            screen-reader users reach a first-visit banner right after the skip link. */}
+        <CookieConsent />
+        {/* Renders nothing until the visitor allows analytics and a valid GA ID is set. */}
+        <GoogleAnalytics />
         <SiteHeader />
         {/* The shared layout is prerendered without knowing the route, so the
             homepage HTML arrives wearing the plain inline header and only
@@ -83,7 +90,6 @@ export default function RootLayout({ children }) {
         />
         {children}
         <SiteFooter />
-        <CookieConsent />
         <SnowfallEffect />
       </body>
     </html>

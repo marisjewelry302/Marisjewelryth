@@ -265,6 +265,13 @@
     -webkit-tap-highlight-color: transparent;
   }
 
+  /* Language switch: a full-width 44px+ row under the account links. */
+  html body .site-header .navbar.navbar.navbar.navbar .nav-mobile-actions.nav-mobile-actions.nav-mobile-actions a.nav-mobile-lang {
+    grid-column: 1 / -1;
+    min-height: 48px;
+    font-size: 13px;
+  }
+
   html body .site-header .nav-mobile-actions.nav-mobile-actions a:active {
     background: rgba(16, 41, 35, 0.06);
   }
@@ -299,7 +306,12 @@
   }
 }
 
-/* The close button only exists for the phone drawer. */
+/* The close button and the Home row only exist for the phone drawer; the phone
+   rules above give the Home link the same row look as the other top-level links. */
 .site-header .nav-mobile-close {
+  display: none;
+}
+
+.site-header .navbar .nav a.nav-home-link {
   display: none;
 }

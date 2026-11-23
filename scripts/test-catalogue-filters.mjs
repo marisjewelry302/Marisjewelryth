@@ -161,4 +161,21 @@ assert.match(
   "Card filter data must use the same facets as the toolbar"
 );
 
+// Structured stone data counts as a facet source, not only names and alt text.
+const structured = [
+  { sku: "SR 0092 ER", name: "Diamond Ring", specs: { stoneShape: "Marquise", caratWeight: "1.049 ct" }, gemReport: { totalCarat: 1.049, stones: [{ shape: "Round", caratEach: 0.01 }, { shape: "Marquise", caratEach: 0.5 }] }, images: [], variants: [] },
+  { sku: "SR 0100 ER", name: "Diamond Ring", specs: {}, gemReport: { totalCarat: 2.5, stones: [{ shape: "Round", caratEach: 0.01 }, { shape: "Oval", caratEach: 1.2 }] }, images: [], variants: [] },
+  { sku: "SR 0101 ER", name: "Diamond Ring", specs: {}, images: [], variants: [] }
+];
+assert.ok(getProductFacetTokens(structured[0]).includes("shape:marquise"), "specs.stoneShape must feed the shape facet");
+assert.ok(!getProductFacetTokens(structured[0]).includes("shape:round"), "Melee in the gem report must not add shapes");
+assert.ok(getProductFacetTokens(structured[1]).includes("shape:oval"), "The gem report centre stone must feed the shape facet");
+assert.equal(getProductCarat(structured[0]), 1.049, "specs.caratWeight must drive carat");
+assert.equal(getProductCarat(structured[1]), 2.5, "gemReport.totalCarat must drive carat");
+assert.equal(getProductCarat(structured[2]), 0, "Pieces without carat data must stay at 0");
+
+assert.match(files.categoryProducts, /useSearchParams/, "Sort and filter must live in the URL");
+assert.match(files.categoryProducts, /router\.replace/, "Sort and filter changes must replace the URL entry");
+assert.match(files.categoryProducts, /autoComplete="off"/, "Selects must not be restored by the browser behind React's back");
+
 console.log("Catalogue filters are derived from catalogue data.");

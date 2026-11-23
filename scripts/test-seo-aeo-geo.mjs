@@ -104,4 +104,19 @@ assert.equal(getPublicProductPath({ slug: "sr-0015" }), "/product/sr-0015");
 
 assert.equal(packageJson.scripts["test:seo-aeo-geo"], "node scripts/test-seo-aeo-geo.mjs");
 
+// Privacy policy: Google Analytics is disclosed truthfully in both languages.
+for (const [file, locale] of [["../app/lib/static-pages.js", "en"], ["../app/lib/static-pages-th.js", "th"]]) {
+  const source = await readSource(file);
+  assert.match(source, /Google Analytics 4/, `${locale} privacy policy names Google Analytics 4`);
+  assert.match(source, /id: "analytics"/, `${locale} privacy policy has an analytics section`);
+  assert.match(source, /_ga_<ID>/, `${locale} privacy policy lists the _ga_<ID> cookie`);
+  assert.match(source, /https:\/\/policies\.google\.com\/privacy/, `${locale} privacy policy links to Google's privacy policy`);
+  assert.match(source, /Google Ireland Limited/, `${locale} privacy policy names the Google entities`);
+  assert.doesNotMatch(source, /does not use analytics or advertising cookies|ไม่ใช้คุกกี้เพื่อการวิเคราะห์หรือโฆษณา/, `${locale} privacy policy no longer says analytics is unused`);
+  assert.doesNotMatch(source, /\d+\s*months|\d+\s*เดือน/, `${locale} privacy policy must not invent an analytics retention period`);
+}
+assert.match(await readSource("../app/lib/static-pages.js"), /effectiveDate: "20 November 2026"/);
+assert.match(await readSource("../app/lib/static-pages-th.js"), /effectiveDate: "20 พฤศจิกายน 2569"/);
+assert.match(layout, /<GoogleAnalytics \/>/, "layout mounts GoogleAnalytics, which renders nothing without consent");
+
 console.log("SEO/AEO/GEO contract passed.");

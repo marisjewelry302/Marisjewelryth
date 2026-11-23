@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import vm from "node:vm";
+import { readAdminSource } from "./lib/admin-i18n-source.mjs";
 
-const adminHtml = await readFile(new URL("../app/admin/page.js", import.meta.url), "utf8");
-const adminJs = await readFile(new URL("../assets/js/admin-page.js", import.meta.url), "utf8");
+const adminHtml = await readAdminSource("app/admin/page.js");
+const adminJs = await readAdminSource("assets/js/admin-page.js");
 const parserSource = await readFile(new URL("../assets/js/admin-image-group-parser.js", import.meta.url), "utf8");
 
 const context = {
@@ -66,7 +67,7 @@ assert.ok(
 
 assert.match(adminJs, /buildSmartImageGroup/, "Admin page logic should read selected image groups");
 assert.match(adminJs, /applyImageGroupToProductForm/, "Admin page logic should auto-fill the existing Add Product form from filenames");
-assert.match(adminJs, /uploadProductImages/, "Add Product submit should upload selected product images after creating the product");
+assert.match(adminJs, /buildProductImageUploadTasks/, "Add Product submit should upload selected product images after creating the product (E-03: per-file tasks that can be retried)");
 assert.doesNotMatch(adminJs, /id="modal-field-sku"[^>]*readonly/, "Edit modal should allow admins to change SKU");
 assert.match(adminJs, /id="modal-field-collection"[\s\S]*value="wedding-bands"[\s\S]*value="mens-wedding-bands"[\s\S]*value="rings"/, "Edit modal collection options should use canonical collection slugs");
 assert.match(adminJs, /id="modal-field-collection-name"/, "Edit modal should let admins edit a display collection name");

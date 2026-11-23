@@ -4,6 +4,7 @@ import { THAI_LOCALE, fill } from "../../lib/i18n";
 import { readPublicProductBySlug } from "../../lib/maris-database.js";
 import {
   getPublicProductAltText,
+  getPublicProductPath,
   groupProductImagesByMetal
 } from "../../lib/product-display.js";
 import { buildPageMetadata } from "../../lib/seo";
@@ -81,6 +82,7 @@ export default async function ContactOrderPageView({ params, searchParams }) {
     <CustomOrderForm
       productCode={decodedProductCode}
       productImage={pickProductImage(product, metalKey)}
+      productPath={product ? getPublicProductPath(product) : ""}
       initialMetal={product && metalKey ? METAL_OPTION_CODES[metalKey] : ""}
     />
   );

@@ -120,7 +120,7 @@ export default function WholesaleClient() {
         <p className={styles.lead}>{w.lead}</p>
       </section>
 
-      {phase !== "loading" && account?.status !== "approved" && (
+      {account?.status !== "approved" && (
         <section className={styles.shell}>
           <div className={styles.card}>
             <h2>{w.inquiry.title}</h2>
@@ -135,12 +135,27 @@ export default function WholesaleClient() {
               <a className={styles.textLink} href={FACEBOOK_URL} target="_blank" rel="noopener noreferrer">Facebook</a>
               <a className={styles.textLink} href={INSTAGRAM_URL} target="_blank" rel="noopener noreferrer">Instagram</a>
             </p>
-            <p className={styles.muted}>{w.inquiry.portalNote}</p>
+            <p className={styles.muted}>{w.inquiry.portalNote} <a className={styles.textLink} href={signInHref}>{w.inquiry.signIn}</a></p>
           </div>
         </section>
       )}
 
-      {phase !== "loading" && account?.status !== "approved" && (
+      {account?.status !== "approved" && (
+        <section className={styles.shell} aria-labelledby="wholesale-about">
+          <h2 id="wholesale-about" className={styles.sectionTitle}>{w.about.title}</h2>
+          <p className={styles.lead}>{w.about.audience}</p>
+          <ol className={styles.highlightGrid}>
+            {w.about.steps.map((step) => (
+              <li key={step.title} className={styles.highlight}>
+                <h3>{step.title}</h3>
+                <p>{step.text}</p>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
+
+      {account?.status !== "approved" && (
         <section className={styles.shell} aria-labelledby="wholesale-highlights">
           <h2 id="wholesale-highlights" className={styles.sectionTitle}>{w.highlights.title}</h2>
           <div className={styles.highlightGrid}>
@@ -154,10 +169,14 @@ export default function WholesaleClient() {
         </section>
       )}
 
-      <section className={styles.shell}>
+      <section className={`${styles.shell} ${["loading", "unavailable"].includes(phase) ? styles.statusArea : ""}`}>
         {phase === "loading" && <p className={styles.muted} role="status">{w.loading}</p>}
 
-        {phase === "unavailable" && <p className={styles.notice} role="alert">{w.unavailable}</p>}
+        {phase === "unavailable" && (
+          <p className={styles.notice} role="alert">
+            {w.unavailable} <a className={styles.textLink} href={signInHref}>{w.inquiry.signIn}</a>
+          </p>
+        )}
 
         {phase === "signed_out" && (
           <div className={styles.card}>
@@ -165,7 +184,6 @@ export default function WholesaleClient() {
             <p>{w.signedOut.text}</p>
             <div className={styles.actions}>
               <a className={styles.button} href={signInHref}>{w.signedOut.action}</a>
-              <a className={styles.textLink} href={href("/wholesale-retail")}>{w.signedOut.learnMore}</a>
             </div>
           </div>
         )}

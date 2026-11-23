@@ -183,6 +183,24 @@ export function buildFaqPageJsonLd(faqs = HOME_FAQS, locale = "en") {
   };
 }
 
+// Article structured data for a journal guide. No datePublished/dateModified:
+// the articles carry no real dates yet, and an invented one would be untrue.
+export function buildArticleJsonLd({ slug, title, description, image, locale = "en" } = {}) {
+  const url = absoluteUrl(localizePath(`/journal/${slug}`, locale));
+
+  return {
+    "@type": "Article",
+    "@id": `${url}#article`,
+    headline: title,
+    description,
+    inLanguage: locale === THAI_LOCALE ? "th" : "en",
+    mainEntityOfPage: { "@type": "WebPage", "@id": url },
+    ...(image ? { image: absoluteUrl(image) } : {}),
+    author: { "@id": `${SITE_URL}/#organization` },
+    publisher: { "@id": `${SITE_URL}/#organization` }
+  };
+}
+
 export function buildBreadcrumbJsonLd(items = [], locale = "en") {
   const normalizedItems = items.length > 0 && items[0].path === "/"
     ? items

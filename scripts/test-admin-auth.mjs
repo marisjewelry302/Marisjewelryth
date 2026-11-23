@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
+import { readAdminSource } from "./lib/admin-i18n-source.mjs";
 
 process.env.MARIS_ADMIN_SESSION_SECRET = "test-session-secret";
 
@@ -48,3 +49,47 @@ assert.ok(
   )),
   "Next.js must redirect the legacy admin.html URL into the protected /admin flow"
 );
+
+// E-02: login may return to a same-origin /admin path and nothing else.
+const { sanitizeAdminNextPath } = await import("../app/lib/admin-next-path.js");
+assert.equal(sanitizeAdminNextPath("/admin"), "/admin");
+assert.equal(sanitizeAdminNextPath("/admin#products"), "/admin#products");
+assert.equal(sanitizeAdminNextPath("/admin?tab=orders#orders"), "/admin?tab=orders#orders");
+assert.equal(sanitizeAdminNextPath("/admin/wholesale"), "/admin/wholesale");
+for (const unsafe of [
+  undefined,
+  null,
+  "",
+  "https://evil.example/admin",
+  "//evil.example/admin",
+  "/\\evil.example",
+  "/admin\\..\\evil",
+  "/administrator",
+  "/admin.evil.example",
+  "/adminx/path",
+  "/evil",
+  "/api/admin/products",
+  "javascript:alert(1)",
+  "/admin/../evil",
+  "/admin/%2e%2e/evil",
+  "/admin/%2fevil",
+  "/admin\n/evil",
+  "/admin/login",
+  "/admin/setup?x=1",
+  "admin",
+  ["/admin"]
+]) {
+  assert.equal(sanitizeAdminNextPath(unsafe), "/admin", `next=${JSON.stringify(unsafe)} must fall back to /admin`);
+}
+
+const loginRouteSource = await readFile(new URL("../app/api/admin/login/route.js", import.meta.url), "utf8");
+assert.match(loginRouteSource, /sanitizeAdminNextPath\(String\(formData\.get\("next"\)/, "Login route validates the next field");
+assert.match(loginRouteSource, /redirectTo\(request, nextPath\)/, "Login route redirects to the validated next path");
+
+const adminScriptSource = await readAdminSource("assets/js/admin-page.js");
+const wholesaleScriptSource = await readAdminSource("assets/js/admin-wholesale.js");
+for (const [name, source] of [["admin-page.js", adminScriptSource], ["admin-wholesale.js", wholesaleScriptSource]]) {
+  assert.match(source, /function describeAuthFailure\(/, `${name} handles 401 and 403 the same way`);
+  assert.match(source, /\/admin\/login\?next=\$\{encodeURIComponent\(target\)\}/, `${name} links to sign-in with a next path`);
+  assert.doesNotMatch(source, /location\.assign\("\/admin\/login"\)/, `${name} must not navigate away on 401`);
+}

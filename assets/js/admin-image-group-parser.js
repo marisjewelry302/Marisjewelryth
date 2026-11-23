@@ -1,6 +1,24 @@
 (function (root) {
   const IMAGE_EXTENSIONS = /\.(avif|gif|jpe?g|png|webp)$/i;
 
+  // The summary shown on the Add Product form follows the admin language when
+  // the page has the dictionary (window.marisAdminT); otherwise English.
+  const METAL_TEXT_KEYS = { "White Gold": "metal.WG", "Yellow Gold": "metal.YG", "Rose Gold": "metal.RG", Platinum: "metal.PN", Silver: "metal.AG" };
+
+  function displayMetal(label) {
+    const translate = root.marisAdminT;
+    return typeof translate === "function" && translate.has && translate.has(METAL_TEXT_KEYS[label])
+      ? translate(METAL_TEXT_KEYS[label])
+      : label;
+  }
+
+  function describeImageCount(count) {
+    const translate = root.marisAdminT;
+    return typeof translate === "function" && translate.plural && translate.has("images.count.other")
+      ? translate.plural("images.count", count, { n: count })
+      : `${count} image${count === 1 ? "" : "s"}`;
+  }
+
   const METAL_DEFINITIONS = [
     { key: "white-gold", label: "White Gold", order: 0, pattern: /\bwhite\s*gold\b|\bwhitegold\b/i },
     { key: "yellow-gold", label: "Yellow Gold", order: 1, pattern: /\byellow\s*gold\b|\byellowgold\b/i },
@@ -255,8 +273,8 @@
       summary: cleanSpaces([
         code,
         productName,
-        metalLabels.join(", "),
-        `${orderedImages.length} image${orderedImages.length === 1 ? "" : "s"}`
+        metalLabels.map(displayMetal).join(", "),
+        describeImageCount(orderedImages.length)
       ].filter(Boolean).join(" - "))
     };
   }

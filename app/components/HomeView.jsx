@@ -40,7 +40,7 @@ const heroSlides = [
   }
 ];
 
-const atelierFallbackHrefs = ["/category/engagement-ring", "/request-quote", "/about-us"];
+const atelierFallbackHrefs = ["/category/engagement-ring", "/contact-us", "/about-us"];
 
 const shopCategoryItems = [
   { href: "/category/rings", image: "/assets/images/home/optimized/category-focus-rings-box-v3-720.webp" },
@@ -74,7 +74,8 @@ async function getBestSellerProducts() {
 }
 
 // Shared by / and /th. Product names come from the catalogue and are not
-// translated yet, so product links keep their English path.
+// translated yet, but /product/ is a translated prefix, so product links are
+// localized like every other link.
 export default async function HomeView({ locale = "en" }) {
   const isThai = locale === THAI_LOCALE;
   const c = homeCopy[isThai ? "th" : "en"];
@@ -151,7 +152,7 @@ export default async function HomeView({ locale = "en" }) {
                 <a
                   key={product.id}
                   className="atelier-product"
-                  href={getPublicProductPath(product)}
+                  href={link(getPublicProductPath(product))}
                   style={{ "--atelier-delay": `${index * 90}ms` }}
                 >
                   {product.primaryImageUrl ? (
@@ -208,11 +209,11 @@ export default async function HomeView({ locale = "en" }) {
       </section>
 
       <section className="product-promises is-home" aria-labelledby="home-promises-heading">
-        <p className="section-kicker" id="home-promises-heading">{c.promisesKicker}</p>
+        <h2 className="section-kicker" id="home-promises-heading">{c.promisesKicker}</h2>
         <ul className="product-promise-list">
           {c.promises.map((item) => (
             <li key={item.title}>
-              <strong>{item.title}</strong>
+              <h3>{item.title}</h3>
               <span>{item.text}</span>
             </li>
           ))}

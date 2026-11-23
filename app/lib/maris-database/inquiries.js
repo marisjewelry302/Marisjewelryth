@@ -116,3 +116,82 @@ export async function updateAdminInquiryStatus(inquiryId, status, { env = proces
 
   return { status: "updated", inquiry: normalizeInquiry(data) };
 }
+
+// ─── Customer account ───────────────────────────────────────────────────────
+// What a signed-in customer may see of their own enquiries. Rows are matched on
+// customer_id only, which the inquiries route sets from the verified session at
+// submission time. Matching on email is deliberately not done: account emails
+// are not verified, so anyone could register with another person's address.
+// Never returns the email, phone, metadata or any other contact detail.
+
+const CUSTOMER_INQUIRY_SELECT = "id, kind, subject, message, status, fields, created_at";
+const EXCERPT_LENGTH = 160;
+
+function readSelectedPieces(fields) {
+  const raw = typeof fields?.selected_pieces === "string" ? fields.selected_pieces : "";
+
+  // One piece per line: "1. Title | Collection | Qty 1 | details | /product/slug".
+  return raw
+    .split(/\r?\n/)
+    .map((line) => line.split("|")[0].replace(/^\s*\d+\.\s*/, "").trim())
+    .filter(Boolean)
+    .slice(0, 12);
+}
+
+function buildExcerpt(message) {
+  const text = String(message || "").replace(/\s+/g, " ").trim();
+  return text.length > EXCERPT_LENGTH ? `${text.slice(0, EXCERPT_LENGTH - 1).trimEnd()}…` : text;
+}
+
+export function normalizeCustomerInquiry(row) {
+  if (!row) {
+    return null;
+  }
+
+  const fields = row.fields && typeof row.fields === "object" && !Array.isArray(row.fields) ? row.fields : {};
+
+  return {
+    id: row.id,
+    kind: row.kind === "quote" ? "quote" : "contact",
+    createdAt: row.created_at || null,
+    service: typeof fields.service === "string" ? fields.service.slice(0, 80) : "",
+    pieces: readSelectedPieces(fields),
+    status: row.status || "new",
+    excerpt: buildExcerpt(row.message)
+  };
+}
+
+export async function readCustomerInquiries(customerId, { env = process.env, client, limit = 20 } = {}) {
+  const id = String(customerId || "").trim();
+
+  if (!id) {
+    return { status: "invalid", inquiries: [], quoteCount: 0, total: 0 };
+  }
+
+  const config = getSupabaseAdminConfig(env);
+
+  if (!config.isConfigured && !client) {
+    return { status: "not_configured", inquiries: [], quoteCount: 0, total: 0 };
+  }
+
+  const supabase = client || createSupabaseAdminClient(env);
+  const { data, error } = await supabase
+    .from("inquiries")
+    .select(CUSTOMER_INQUIRY_SELECT)
+    .eq("customer_id", id)
+    .order("created_at", { ascending: false })
+    .limit(Math.min(Math.max(Number(limit) || 20, 1), 50));
+
+  if (error) {
+    throw new Error(error.message || "Inquiries could not be loaded.");
+  }
+
+  const inquiries = (Array.isArray(data) ? data : []).map(normalizeCustomerInquiry).filter(Boolean);
+
+  return {
+    status: "ready",
+    inquiries,
+    quoteCount: inquiries.filter((inquiry) => inquiry.kind === "quote").length,
+    total: inquiries.length
+  };
+}

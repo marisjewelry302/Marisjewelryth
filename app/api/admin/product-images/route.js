@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { ADMIN_PERMISSIONS, requireAdminPermission } from "../../../lib/admin-api-auth";
-import { deleteAdminProductImage, reorderAdminProductImages, updateAdminProductImageAltText } from "../../../lib/maris-database";
+import {
+  deleteAdminProductImage,
+  readAdminCatalogueProduct,
+  reorderAdminProductImages,
+  updateAdminProductImageAltText
+} from "../../../lib/maris-database";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -12,6 +17,16 @@ function json(payload, status = 200) {
       "Cache-Control": "private, no-store"
     }
   });
+}
+
+// The changed product, so the admin page can patch it in place. A failed read
+// only means the page falls back to fetching it itself.
+async function readChangedProduct(productId) {
+  try {
+    return await readAdminCatalogueProduct(productId);
+  } catch {
+    return null;
+  }
 }
 
 function getErrorStatus(error) {
@@ -47,7 +62,7 @@ export async function PATCH(request) {
         altText: body.altText
       });
 
-      return json(result, 200);
+      return json({ ...result, product: await readChangedProduct(body.productId) }, 200);
     }
 
     const result = await reorderAdminProductImages({
@@ -55,7 +70,7 @@ export async function PATCH(request) {
       imageIds: body.imageIds
     });
 
-    return json(result, 200);
+    return json({ ...result, product: await readChangedProduct(body.productId) }, 200);
   } catch (error) {
     return json({
       error: error instanceof Error ? error.message : "Product image order could not be updated."
@@ -72,7 +87,7 @@ export async function DELETE(request) {
 
   try {
     const result = await deleteAdminProductImage({ productId, imageId });
-    return json(result, 200);
+    return json({ ...result, product: await readChangedProduct(productId) }, 200);
   } catch (error) {
     return json({
       error: error instanceof Error ? error.message : "Product image could not be deleted."

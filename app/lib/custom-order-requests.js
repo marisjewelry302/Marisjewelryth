@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 
 import { normalizeMarketingEmail } from "./customer-email.js";
+import { formatRingSize, isValidThaiSize, isValidUsSize, thaiToUs, THAI_MAX, THAI_MIN } from "./ring-size.js";
 import { createSupabaseAdminClient, getSupabaseAdminConfig } from "./maris-database.js";
 
 export const GOLD_METALS = Object.freeze(new Set(["WG", "YG", "RG"]));
@@ -97,10 +98,6 @@ function getPhoneDigits(contactNumber) {
   return String(contactNumber || "").replace(/\D/g, "");
 }
 
-function isHalfStep(value) {
-  return Number.isInteger(Number(value) * 2);
-}
-
 function normalizeBoolean(value) {
   return value === true || value === "true" || value === "yes" || value === "1";
 }
@@ -150,6 +147,12 @@ export function normalizeCustomOrderPayload(payload = {}) {
   const metal = cleanOptionalText(customOptions.metal);
   const metalPurity = GOLD_METALS.has(metal) ? cleanOptionalText(customOptions.metal_purity) : null;
   const contactNumber = cleanText(payload.contact_number);
+  // The size is entered in US or Thai sizing and always stored as a US size.
+  const ringSizeSystem = customOptions.ring_size_system === "th" ? "th" : "us";
+  const ringSizeInput = parseOptionalNumber(customOptions.ring_size);
+  const ringSize = ringSizeInput !== null && ringSizeSystem === "th"
+    ? (thaiToUs(ringSizeInput) ?? Number.NaN)
+    : ringSizeInput;
 
   return {
     productCode: cleanProductCode(payload.product_code),
@@ -160,7 +163,9 @@ export function normalizeCustomOrderPayload(payload = {}) {
     phoneDigits: getPhoneDigits(contactNumber),
     metal,
     metalPurity,
-    ringSize: parseOptionalNumber(customOptions.ring_size),
+    ringSize,
+    ringSizeSystem,
+    ringSizeInput,
     stoneCarat: parseOptionalNumber(stoneOptions.carat ?? customOptions.stone_carat),
     stoneColor: cleanOptionalText(stoneOptions.color ?? customOptions.stone_color),
     stoneClarity: cleanOptionalText(stoneOptions.clarity ?? customOptions.stone_clarity),
@@ -206,16 +211,14 @@ export function validateCustomOrderPayload(payload = {}) {
     addError("metal_purity", "Metal purity is not supported.");
   }
 
-  if (
-    normalized.ringSize !== null
-    && (
-      !Number.isFinite(normalized.ringSize)
-      || normalized.ringSize < 5
-      || normalized.ringSize > 16
-      || !isHalfStep(normalized.ringSize)
-    )
-  ) {
-    addError("ring_size", "Ring size must be from 5 to 16 in half-size steps.");
+  if (normalized.ringSize !== null) {
+    if (normalized.ringSizeSystem === "th") {
+      if (!isValidThaiSize(normalized.ringSizeInput)) {
+        addError("ring_size", `Thai ring size must be a whole number from ${THAI_MIN} to ${THAI_MAX}.`);
+      }
+    } else if (!isValidUsSize(normalized.ringSize)) {
+      addError("ring_size", "Ring size must be from 5 to 16 in half-size steps.");
+    }
   }
 
   if (
@@ -283,7 +286,7 @@ export function buildCustomOrderSummary(order) {
     order.ringDesign?.stoneShape ? `${order.ringDesign.stoneShape} stone` : "",
     order.ringDesign?.setting ? `Setting ${order.ringDesign.setting}` : "",
     metalText,
-    order.ringSize === null || order.ringSize === undefined ? "" : `Size ${order.ringSize}`,
+    order.ringSize === null || order.ringSize === undefined ? "" : `Size ${formatRingSize(order.ringSize, order.ringSizeSystem)}`,
     order.origin,
     stoneText,
     order.ringDesign?.engravingEnabled ? `Engraving ${order.ringDesign.engravingText}` : ""

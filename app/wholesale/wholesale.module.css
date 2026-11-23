@@ -53,6 +53,12 @@
   gap: var(--space-sm);
 }
 
+/* Reserve room for the account status so the page does not jump when it resolves. */
+.statusArea {
+  min-height: 96px;
+  align-content: start;
+}
+
 .card {
   background: var(--maris-white);
   border: 1px solid color-mix(in srgb, var(--maris-teal) 16%, transparent);
@@ -653,6 +659,9 @@
 }
 
 .highlightGrid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: var(--space-sm);

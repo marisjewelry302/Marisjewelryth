@@ -18,7 +18,6 @@ export const TRANSLATED_ROUTES = [
   "/oem-jewelry",
   "/ready-to-ship",
   "/collections",
-  "/wholesale-retail",
   "/wholesale",
   "/shipping",
   "/returns",
@@ -29,7 +28,9 @@ export const TRANSLATED_ROUTES = [
   "/request-quote",
   "/shopping-bag",
   "/wishlist",
-  "/account"
+  "/account",
+  "/account/reset-password",
+  "/unsubscribe"
 ];
 
 // Dynamic sections: every path below these roots has a Thai counterpart.

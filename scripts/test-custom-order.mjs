@@ -322,6 +322,8 @@ assert.deepEqual(normalized, {
   metal: "YG",
   metalPurity: "18K",
   ringSize: 7,
+  ringSizeSystem: "us",
+  ringSizeInput: 7,
   stoneCarat: 0.8,
   stoneColor: "D",
   stoneClarity: "VVS1",
@@ -343,7 +345,7 @@ assert.deepEqual(validResult.errors, []);
 assert.deepEqual(validResult.normalized, normalized);
 assert.equal(
   buildCustomOrderSummary(normalized),
-  "18K Yellow Gold · Size 7 · Lab-grown · 0.8 ct D VVS1 Excellent"
+  "18K Yellow Gold · Size US 7 (Thai 54) · Lab-grown · 0.8 ct D VVS1 Excellent"
 );
 
 const fingerprint = buildRequestFingerprint(normalized);
@@ -454,6 +456,32 @@ const invalidRingSizeTextResult = validateCustomOrderPayload({
 });
 assert.equal(invalidRingSizeTextResult.isValid, false, "Non-numeric ring size should be invalid");
 assert.ok(hasFieldError(invalidRingSizeTextResult, "ring_size"));
+
+// Thai sizes are accepted with ring_size_system and stored as a US size.
+const thaiRingSizeResult = validateCustomOrderPayload({
+  ...validPayload,
+  custom_options: { ...validPayload.custom_options, ring_size: 54, ring_size_system: "th" }
+});
+assert.equal(thaiRingSizeResult.isValid, true, "Thai size 54 is valid");
+assert.equal(thaiRingSizeResult.normalized.ringSize, 7, "Thai 54 is stored as US 7");
+assert.equal(thaiRingSizeResult.normalized.ringSizeSystem, "th");
+assert.match(buildCustomOrderSummary(thaiRingSizeResult.normalized), /Size Thai 54 \(US 7\)/);
+
+for (const thaiSize of [48, 78, 54.5, "abc"]) {
+  const result = validateCustomOrderPayload({
+    ...validPayload,
+    custom_options: { ...validPayload.custom_options, ring_size: thaiSize, ring_size_system: "th" }
+  });
+  assert.equal(result.isValid, false, `Thai ring size ${thaiSize} should be invalid`);
+  assert.ok(hasFieldError(result, "ring_size"));
+}
+
+const ringSizeModule = await import("../app/lib/ring-size.js");
+for (const [us, thai] of ringSizeModule.RING_SIZE_TABLE) {
+  assert.equal(ringSizeModule.thaiToUs(thai), us, `US ${us} and Thai ${thai} round-trip`);
+}
+assert.equal(ringSizeModule.formatRingSize(7), "US 7 (Thai 54)");
+assert.equal(ringSizeModule.formatRingSize(7, "th"), "Thai 54 (US 7)");
 
 const invalidStoneCaratResult = validateCustomOrderPayload({
   ...validPayload,
@@ -596,7 +624,7 @@ assert.equal(requestInsert.payload.status, "pending");
 assert.equal(requestInsert.payload.metadata.unsafe, undefined);
 assert.match(requestInsert.payload.metadata.requestFingerprint, /^[a-f0-9]{64}$/);
 assert.equal(requestInsert.payload.metadata.phoneDigits, "66812345678");
-assert.equal(requestInsert.payload.metadata.optionSummary, "Platinum · Size 7 · Lab-grown · 0.8 ct D VVS1 Excellent");
+assert.equal(requestInsert.payload.metadata.optionSummary, "Platinum · Size US 7 (Thai 54) · Lab-grown · 0.8 ct D VVS1 Excellent");
 assert.equal(requestInsert.payload.metal, "PN");
 assert.equal(requestInsert.payload.metal_purity, null);
 assert.equal(requestInsert.payload.product_code, "SR000");
@@ -990,9 +1018,12 @@ assert.match(customOrderFormSource, /\{o\.metals\[metal\]\}/);
 assert.match(customOrderFormSource, /\["9K",\s*"14K",\s*"18K"\]/);
 assert.match(customOrderFormSource, /GOLD_METALS\.has/);
 assert.match(customOrderFormSource, /metal_purity:\s*isGoldMetal/);
-assert.match(customOrderFormSource, /min=["']5["']/);
-assert.match(customOrderFormSource, /max=["']16["']/);
-assert.match(customOrderFormSource, /step=["']0\.5["']/);
+// The size input follows the chosen system: US 5-16 in half steps, Thai whole numbers.
+assert.match(customOrderFormSource, /min=\{isThaiSize \? THAI_MIN : US_MIN\}/);
+assert.match(customOrderFormSource, /max=\{isThaiSize \? THAI_MAX : US_MAX\}/);
+assert.match(customOrderFormSource, /step=\{isThaiSize \? "1" : "0\.5"\}/);
+assert.match(customOrderFormSource, /ring_size_system: options\.ring_size_system/, "The chosen size system is sent to the API");
+assert.match(customOrderFormSource, /SIZE_GUIDE_PATH/, "The ring size guide stays linked");
 for (const stoneField of ["carat", "color", "clarity", "cut"]) {
   assert.match(customOrderFormSource, new RegExp(`name=["']${stoneField}["']`), `Stone option should include ${stoneField}`);
 }

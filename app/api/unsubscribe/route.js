@@ -45,19 +45,19 @@ export async function POST(request) {
   const { isValid, email } = verifyUnsubscribeToken(token);
 
   if (!isValid) {
-    return json({ error: "This unsubscribe link is not valid." }, 400);
+    return json({ error: "This unsubscribe link is not valid.", code: "invalid_token" }, 400);
   }
 
   try {
     const result = await unsubscribeEmail(email);
 
     if (result.status === "not_configured") {
-      return json({ error: "Service unavailable." }, 503);
+      return json({ error: "Service unavailable.", code: "service_unavailable" }, 503);
     }
 
     return json({ status: "unsubscribed" });
   } catch (error) {
     console.error("Unsubscribe failed", error);
-    return json({ error: "You could not be unsubscribed. Please contact us." }, 500);
+    return json({ error: "You could not be unsubscribed. Please contact us.", code: "unsubscribe_failed" }, 500);
   }
 }

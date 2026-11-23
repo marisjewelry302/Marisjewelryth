@@ -5,6 +5,7 @@ import {
   createAdminSession,
 } from "../../../lib/admin-auth";
 import { authenticateAdminUser, getAdminSetupState } from "../../../lib/admin-users";
+import { sanitizeAdminNextPath } from "../../../lib/admin-next-path";
 import { consumeAuthAttempt } from "../../../lib/auth-rate-limit";
 import { isSameOriginRequest } from "../../../lib/request-security";
 
@@ -13,6 +14,12 @@ export const dynamic = "force-dynamic";
 
 function redirectTo(request, path) {
   return NextResponse.redirect(new URL(path, request.url), 303);
+}
+
+function loginPath(error, nextPath) {
+  const params = new URLSearchParams({ error });
+  if (nextPath && nextPath !== "/admin") params.set("next", nextPath);
+  return `/admin/login?${params.toString()}`;
 }
 
 export async function GET(request) {
@@ -41,6 +48,7 @@ export async function POST(request) {
   }
 
   const formData = await request.formData();
+  const nextPath = sanitizeAdminNextPath(String(formData.get("next") || ""));
   const username = String(formData.get("username") || "");
   const password = String(formData.get("password") || "");
   const rateLimit = await consumeAuthAttempt({
@@ -52,13 +60,13 @@ export async function POST(request) {
   });
 
   if (!rateLimit.allowed) {
-    return redirectTo(request, "/admin/login?error=rate_limit");
+    return redirectTo(request, loginPath("rate_limit", nextPath));
   }
 
   const authResult = await authenticateAdminUser(username, password);
 
   if (authResult.status !== "valid") {
-    return redirectTo(request, "/admin/login?error=invalid");
+    return redirectTo(request, loginPath("invalid", nextPath));
   }
 
   await consumeAuthAttempt({
@@ -70,7 +78,7 @@ export async function POST(request) {
     success: true
   });
 
-  const response = redirectTo(request, "/admin");
+  const response = redirectTo(request, nextPath);
 
   response.cookies.set({
     name: SESSION_COOKIE_NAME,

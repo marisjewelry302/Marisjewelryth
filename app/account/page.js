@@ -1,9 +1,10 @@
 import AccountClient from "./AccountClient";
 import { buildPageMetadata } from "../lib/seo";
+import { uiText } from "../lib/ui-text";
 
 export const metadata = buildPageMetadata({
-  title: "Account | Maris Jewelry",
-  description: "View saved Maris Jewelry details, wishlist pieces, shopping bag selections, and quote requests in this browser-based client area.",
+  title: uiText.en.account.metaTitle,
+  description: uiText.en.account.metaDescription,
   path: "/account",
   noindex: true
 });

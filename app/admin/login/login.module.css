@@ -12,11 +12,59 @@
 }
 
 .panel {
+  position: relative;
   width: min(100%, 430px);
   padding: 34px;
   border: 1px solid rgba(221, 164, 165, 0.38);
   background: rgba(255, 255, 255, 0.78);
   box-shadow: 0 24px 60px rgba(0, 73, 58, 0.14);
+}
+
+/* TH | EN switch in the card's top-right corner. */
+.langSwitch {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: inline-flex;
+  border: 1px solid rgba(0, 73, 58, 0.22);
+}
+
+.langSwitch button {
+  min-width: 36px;
+  min-height: 32px;
+  padding: 0 8px;
+  border: 0;
+  background: transparent;
+  color: #00493a;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+}
+
+.langSwitch button + button {
+  border-left: 1px solid rgba(0, 73, 58, 0.22);
+}
+
+.langSwitch button:hover {
+  background: rgba(0, 73, 58, 0.06);
+}
+
+.langSwitch button[aria-pressed="true"] {
+  background: #00493a;
+  color: #ffffff;
+  cursor: default;
+}
+
+.langSwitch button:focus-visible {
+  outline: 2px solid #00493a;
+  outline-offset: 2px;
+}
+
+main[lang="th"] .kicker,
+main[lang="th"] .label,
+main[lang="th"] .button {
+  letter-spacing: 0;
 }
 
 .logo {
@@ -28,7 +76,7 @@
 
 .kicker {
   margin: 0 0 8px;
-  color: #b9933a;
+  color: var(--maris-gold-text, #856a22);
   font-size: 11px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -112,6 +160,19 @@
   color: #8b2631;
   font-size: 13px;
   line-height: 1.5;
+}
+
+.success {
+  border-color: rgba(0, 73, 58, 0.24);
+  background: rgba(0, 73, 58, 0.07);
+  color: #00493a;
+}
+
+.hint {
+  color: #5c6d68;
+  font-size: 12px;
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 .setup {

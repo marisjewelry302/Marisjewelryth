@@ -111,7 +111,8 @@
   font-size: 12px;
 }
 
-/* Price appears on hover where hover exists; always shown on touch. */
+/* Price appears on hover where hover exists; shown on touch above phone width
+   (the phone rule below hides it - owner decision). */
 @media (hover: hover) and (pointer: fine) {
   .category-page .product-info p:last-child {
     opacity: 0;
@@ -141,7 +142,42 @@
     row-gap: 16px;
   }
   .category-page .product-info { padding: 0 40px 10px 10px; }
-  .category-page .product-info h3 { font-size: 11px; letter-spacing: 0.08em; }
+  .category-page .product-info h3 { font-size: 12px; letter-spacing: 0.08em; }
+  /* The type line ("Diamond Ring") is not a duplicate of the code title, so
+     phones show it under the code, matching the homepage cards. */
+  .category-page .product-info p:first-of-type {
+    display: block;
+    margin: 2px 0 0;
+    font-size: 12px;
+    line-height: 1.4;
+  }
   .category-page .product-info p:last-child { display: none; }
 }
 
+
+/* Links under an empty catalogue message, so the page is not a dead end. */
+.catalogue-empty-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 20px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.catalogue-empty-links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--maris-teal);
+  font-size: 14px;
+  letter-spacing: 0.04em;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.catalogue-empty-links a:hover,
+.catalogue-empty-links a:focus-visible {
+  color: var(--maris-gold-text);
+}

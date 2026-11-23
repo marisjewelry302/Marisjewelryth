@@ -300,7 +300,10 @@ assert.match(adminOrdersRoute, /action === "quote" && !adminRoleHasPermission\(a
 const i18n = await import("../app/lib/i18n.js");
 assert.equal(i18n.localizePath("/wholesale", "th"), "/th/wholesale");
 const portalPage = await read("app/wholesale/page.js");
-assert.match(portalPage, /noindex: true/, "The signed-in portal stays out of search results");
+assert.doesNotMatch(portalPage, /noindex: true/, "/wholesale is the public wholesale explainer (it replaced /wholesale-retail), so it is indexable");
+const nextConfigSource = await read("next.config.mjs");
+assert.match(nextConfigSource, /source: "\/wholesale-retail",\s*destination: "\/wholesale",\s*permanent: true/, "/wholesale-retail permanently redirects to /wholesale");
+assert.match(nextConfigSource, /source: "\/th\/wholesale-retail",\s*destination: "\/th\/wholesale",\s*permanent: true/, "/th/wholesale-retail permanently redirects to /th/wholesale");
 
 const migrationFiles = await readdir(new URL("../supabase/migrations/", import.meta.url));
 const migrationFile = migrationFiles.find((name) => name.endsWith("_create_wholesale_program.sql"));

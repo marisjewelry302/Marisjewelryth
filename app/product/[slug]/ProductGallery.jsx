@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import Image from "next/image";
 import { isOptimizableImageSrc } from "../../lib/image-source";
-import { getProductImageMetal, getProductImageView, getPublicImageAltText } from "../../lib/product-display";
+import { getProductImageMetal, getProductImageView, getPublicImageAltText, localizeCatalogueValue } from "../../lib/product-display";
 import { buildProductMediaSlides } from "../../lib/product-media";
 import { useShopLocale } from "../../hooks/useShopLocale";
 import { fill } from "../../lib/i18n";
@@ -24,18 +24,41 @@ export default function ProductGallery({ imageSets, coverImageUrl, video, produc
   const coverMetal = getProductImageMetal(coverImage)?.key;
   const coverIsView = Boolean(coverImage && getProductImageView(coverImage));
   const setCoverImageUrl = coverIsView && (!coverMetal || coverMetal === activeSet?.key) ? coverImageUrl : "";
-  const viewLabels = new Map(images.map((image) => [image.imageUrl, getProductImageView(image)?.label]));
+  const viewKeys = new Map(images.map((image) => [image.imageUrl, getProductImageView(image)?.key]));
+  const metalLabel = activeSet?.key ? localizeCatalogueValue(activeSet.label, "metal", t.catalogue.values) : "";
+  // The labels shown to the shopper come from the page language; the English
+  // ones buildProductMediaSlides makes are only used to tell the slides apart.
+  const localizeSlideLabel = (slide) => {
+    if (slide.type === "video") {
+      return g.video360;
+    }
+
+    const viewKey = viewKeys.get(slide.src);
+
+    if (viewKey && g.views[viewKey]) {
+      return g.views[viewKey];
+    }
+
+    const numbered = /^View (\d+)$/.exec(slide.label);
+
+    return numbered ? fill(g.viewN, { n: numbered[1] }) : g.primary;
+  };
   const slides = buildProductMediaSlides({
     images: images.map((image, index) => ({
       src: image.imageUrl,
-      alt: getPublicImageAltText(image, productCode, productName, index)
+      alt: getPublicImageAltText(image, productCode, productName, index, {
+        metal: metalLabel,
+        view: g.views[getProductImageView(image)?.key] || fill(g.viewN, { n: index + 1 })
+      })
     })),
     coverImageUrl: setCoverImageUrl,
     video,
     fallbackAlt: `${productCode} ${productName}`
-  }).map((slide) => (
-    slide.type === "image" && viewLabels.get(slide.src) ? { ...slide, label: viewLabels.get(slide.src) } : slide
-  ));
+  }).map((slide) => ({
+    ...slide,
+    label: localizeSlideLabel(slide),
+    alt: slide.type === "video" ? fill(g.videoAlt, { name: `${productCode} ${productName}`.trim() }) : slide.alt
+  }));
   const imageSlides = slides.filter((slide) => slide.type === "image" && slide.src);
   // Whatever stands in for the cover when the video has no poster of its own.
   const firstPhoto = imageSlides[0]?.src || "";

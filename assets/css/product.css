@@ -14,6 +14,59 @@
   align-items: start;
 }
 
+.product-breadcrumb {
+  width: min(1320px, calc(100% - 48px));
+  margin: 0 auto;
+  padding-top: 14px;
+}
+
+.product-breadcrumb ol {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  color: var(--maris-muted);
+}
+
+.product-breadcrumb li {
+  display: inline-flex;
+  align-items: center;
+}
+
+.product-breadcrumb li + li::before {
+  content: "\203A";
+  margin: 0 10px;
+  color: var(--maris-muted);
+}
+
+.product-breadcrumb a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--maris-muted);
+  text-decoration: none;
+}
+
+.product-breadcrumb a:hover,
+.product-breadcrumb a:focus-visible {
+  color: var(--maris-gold-text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.product-breadcrumb [aria-current="page"] {
+  color: var(--maris-ink);
+  font-weight: 600;
+}
+
+.product-breadcrumb + .product-detail {
+  padding-top: 6px;
+}
+
 .product-gallery-column {
   display: grid;
   gap: 14px;
@@ -810,6 +863,10 @@
 }
 
 @media (max-width: 1023px) {
+  .product-breadcrumb {
+    width: min(calc(100% - 28px), 720px);
+  }
+
   .product-detail {
     grid-template-columns: 1fr;
     width: min(calc(100% - 28px), 720px);
@@ -836,6 +893,10 @@
 }
 
 @media (max-width: 520px) {
+  .product-breadcrumb {
+    width: calc(100% - 20px);
+  }
+
   .product-detail {
     width: calc(100% - 20px);
     gap: 18px;
@@ -936,7 +997,9 @@
     min-height: 48px;
   }
 
-  .product-page {
-    padding-bottom: 72px;
+  /* The fixed order bar is about 69px tall; the footer that follows the page
+     needs the same room so the bar never covers its last line. */
+  body:has(.product-sticky-cta) {
+    padding-bottom: calc(70px + env(safe-area-inset-bottom));
   }
 }

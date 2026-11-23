@@ -39,7 +39,7 @@ export const homeCopy = {
     heroSecondary: "Discover Maris",
     shopHeading: "Shop By Category",
     shopLead:
-      "From classic earstuds to chandeliers, from timeless bracelet to chic bangles. Shop our wide selection of jewelry",
+      "From classic stud earrings to chandeliers, timeless bracelets to chic bangles — shop our full selection.",
     categories: [
       { label: "Rings", alt: "Diamond ring in a green Maris Jewelry gift box" },
       { label: "Earrings", alt: "Diamond stud earrings in a green Maris Jewelry gift box" },
@@ -53,7 +53,7 @@ export const homeCopy = {
       "Product availability is confirmed personally by the atelier before order details are finalized.",
     imageSoon: "Image coming soon",
     fallbackCards: [
-      { kicker: "Catalogue slot", title: "Engagement selection" },
+      { kicker: "Start here", title: "Engagement selection" },
       { kicker: "Private request", title: "Availability review" },
       { kicker: "Maris atelier", title: "Custom conversation" }
     ],
@@ -94,7 +94,7 @@ export const homeCopy = {
       oemImageAlt: "Illustrated jewelry design and production process, from sketch and CAD to a finished ring",
       contactKicker: "Let's begin",
       contactHeading: "What would you like to create?",
-      contactText: "Choose a topic to start a conversation with Maris.",
+      contactText: "Choose where you'd like to start.",
       contactShop: "Shop jewelry",
       contactCustom: "Custom / Wedding bands",
       contactOem: "OEM / Wholesale"
@@ -128,7 +128,7 @@ export const homeCopy = {
       "ห้องทำงานของเราจะยืนยันความพร้อมของสินค้าด้วยตนเอง ก่อนสรุปรายละเอียดคำสั่งซื้อ",
     imageSoon: "ภาพจะมาเร็ว ๆ นี้",
     fallbackCards: [
-      { kicker: "ช่องแคตตาล็อก", title: "คัดสรรแหวนหมั้น" },
+      { kicker: "เริ่มต้นที่นี่", title: "คัดสรรแหวนหมั้น" },
       { kicker: "คำขอส่วนตัว", title: "ตรวจสอบความพร้อม" },
       { kicker: "แอเทลิเยร์ Maris", title: "พูดคุยเรื่องงานสั่งทำ" }
     ],
@@ -169,7 +169,7 @@ export const homeCopy = {
       oemImageAlt: "ภาพประกอบขั้นตอนออกแบบและผลิตเครื่องประดับ ตั้งแต่ภาพร่างและ CAD ไปจนถึงแหวนที่เสร็จแล้ว",
       contactKicker: "เริ่มต้นกันเลย",
       contactHeading: "คุณอยากสร้างสรรค์อะไร",
-      contactText: "เลือกหัวข้อเพื่อเริ่มพูดคุยกับ Maris",
+      contactText: "เลือกว่าคุณอยากเริ่มต้นจากตรงไหน",
       contactShop: "เลือกซื้อเครื่องประดับ",
       contactCustom: "งานสั่งทำ / แหวนแถว",
       contactOem: "OEM / ขายส่ง"

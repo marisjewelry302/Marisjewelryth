@@ -127,6 +127,46 @@ a {
   background: rgba(0, 73, 58, 0.06);
 }
 
+/* Compact TH | EN switch in the top bar. The chosen language is the filled one. */
+.admin-lang-switch {
+  display: inline-flex;
+  border: 1px solid rgba(0, 73, 58, 0.22);
+}
+
+.admin-lang-switch button {
+  min-width: 36px;
+  min-height: 32px;
+  padding: 0 8px;
+  border: 0;
+  background: transparent;
+  color: var(--maris-teal);
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+}
+
+.admin-lang-switch button + button {
+  border-left: 1px solid rgba(0, 73, 58, 0.22);
+}
+
+.admin-lang-switch button:hover {
+  background: rgba(0, 73, 58, 0.06);
+}
+
+.admin-lang-switch button[aria-pressed="true"] {
+  background: var(--maris-teal);
+  color: #ffffff;
+  cursor: default;
+}
+
+/* Thai is written without spaces between letters: wide letter spacing pulls
+   the vowels and tone marks away from their consonants. */
+.admin-page-shell[lang="th"] *,
+#maris-edit-modal[lang="th"] * {
+  letter-spacing: 0 !important;
+}
+
 .admin-shell {
   display: grid;
   grid-template-columns: 230px minmax(0, 1fr);
@@ -149,6 +189,7 @@ a {
 
 .admin-sidebar button {
   min-height: 42px;
+  padding: 0 12px;
   border: 0;
   background: transparent;
   color: var(--maris-muted);
@@ -165,11 +206,21 @@ a {
   color: var(--maris-teal);
 }
 
+.admin-sidebar button.is-active {
+  box-shadow: inset 3px 0 0 var(--maris-teal);
+  font-weight: 600;
+}
+
+.admin-sidebar button .admin-nav-badge {
+  letter-spacing: 0;
+}
+
 .admin-content {
   min-width: 0;
 }
 
 .admin-panel {
+  scroll-margin-top: 72px;
   display: none;
   padding: clamp(24px, 4vw, 42px);
   background: rgba(255, 255, 255, 0.76);
@@ -290,22 +341,27 @@ a {
   text-transform: uppercase;
 }
 
+.admin-feed-meta > div {
+  min-width: 0;
+}
+
 .admin-feed-meta strong {
   color: var(--maris-ink);
   font-size: 16px;
   font-weight: 500;
   line-height: 1.4;
+  overflow-wrap: anywhere;
 }
 
-[data-sheet-status][data-sheet-state="ready"] {
+[data-catalogue-status][data-catalogue-state="ready"] {
   color: var(--maris-teal);
 }
 
-[data-sheet-status][data-sheet-state="error"] {
+[data-catalogue-status][data-catalogue-state="error"] {
   color: var(--maris-red);
 }
 
-[data-sheet-status][data-sheet-state="loading"] {
+[data-catalogue-status][data-catalogue-state="loading"] {
   color: var(--maris-gold-text);
 }
 
@@ -452,6 +508,42 @@ a {
 
 .admin-span-2 {
   grid-column: span 2;
+}
+
+.admin-file-hint {
+  color: var(--maris-muted);
+  font-size: 12px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.admin-form input[aria-invalid="true"] {
+  border-color: var(--maris-red-text);
+}
+
+.admin-create-retry {
+  display: grid;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--maris-red-text);
+  background: #fff4f2;
+  color: var(--maris-red-text);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.admin-create-retry[hidden] {
+  display: none;
+}
+
+.admin-create-retry p {
+  margin: 0;
+}
+
+.admin-create-retry-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .admin-image-group-summary {
@@ -789,6 +881,17 @@ a {
   display: none;
 }
 
+.best-seller-show-more {
+  grid-column: 1 / -1;
+  justify-self: center;
+  padding: 0 18px;
+}
+
+[data-best-seller-unavailable-note] {
+  color: var(--maris-red-text);
+  font-size: 13px;
+}
+
 .best-seller-picker-tools {
   grid-template-columns: minmax(220px, 1fr) minmax(160px, 240px) auto;
   margin-top: 0;
@@ -993,6 +1096,39 @@ td strong {
   gap: 8px;
 }
 
+/* Delete sits on its own row, apart from Edit, and reads as dangerous. */
+.admin-row-danger {
+  flex-basis: 100%;
+  margin-top: 6px;
+  padding-top: 10px;
+  border-top: 1px dashed rgba(197, 51, 71, 0.4);
+}
+
+.admin-row-actions button.admin-danger {
+  border-color: var(--maris-red-text);
+  color: var(--maris-red-text);
+}
+
+.admin-row-actions button.admin-danger:hover {
+  background: var(--maris-red-text);
+  color: var(--maris-white);
+}
+
+.admin-message.has-action {
+  pointer-events: auto;
+}
+
+.admin-message-action {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid currentColor;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 .admin-row-actions button {
   min-height: 40px;
   font-size: 12px;
@@ -1001,6 +1137,32 @@ td strong {
 /* The single status line used to render below every panel, so a save made at
    the top of a long tab reported success far past the fold. It is now a toast
    pinned to the viewport. */
+.admin-session-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px 16px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--maris-red-text);
+  background: #fff4f2;
+  color: var(--maris-red-text);
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.admin-session-banner[hidden] {
+  display: none;
+}
+
+.admin-session-banner a {
+  color: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .admin-message {
   position: fixed;
   right: 20px;
@@ -1397,9 +1559,31 @@ td strong {
     grid-template-columns: 1fr;
   }
 
+  /* One row that scrolls sideways instead of a tall 3 x 4 block above the content. */
   .admin-sidebar {
     position: static;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-auto-flow: column;
+    grid-auto-columns: max-content;
+    grid-template-columns: none;
+    gap: 4px;
+    padding: 6px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+  }
+
+  .admin-sidebar button {
+    min-height: 44px;
+    padding: 0 14px;
+    white-space: nowrap;
+  }
+
+  .admin-sidebar button.is-active {
+    box-shadow: inset 0 -3px 0 var(--maris-teal);
+  }
+
+  table {
+    min-width: 640px;
   }
 
   .admin-stats,
@@ -1472,12 +1656,19 @@ td strong {
     margin-top: 18px;
   }
 
-  .admin-sidebar,
   .admin-stats,
   .admin-form,
   .admin-feed-grid,
   .best-seller-admin-slots,
   .admin-guide-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-user {
+    display: none;
+  }
+
+  .admin-attention-list {
     grid-template-columns: 1fr;
   }
 
@@ -1635,4 +1826,456 @@ td strong {
   .admin-wholesale-break button {
     grid-column: 1 / -1;
   }
+}
+
+
+/* ── Admin UX, part 2 ── */
+
+.admin-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.admin-head-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.admin-head-actions :is(.admin-primary, .admin-secondary) {
+  padding: 0 16px;
+}
+
+.admin-required {
+  color: var(--maris-red-text);
+}
+
+.admin-warn {
+  color: var(--maris-red-text);
+  font-weight: 600;
+}
+
+.admin-warn::before {
+  content: "⚠ ";
+}
+
+/* Signed-in person in the top bar. */
+.admin-user {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  margin-right: 6px;
+  line-height: 1.25;
+}
+
+.admin-user-name {
+  max-width: 160px;
+  overflow: hidden;
+  color: var(--maris-ink);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-user-role {
+  color: var(--maris-muted);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* Counts on the menu. */
+.admin-nav-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  margin-left: 6px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: var(--maris-red-text);
+  color: var(--maris-white);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+.admin-nav-badge[hidden] {
+  display: none;
+}
+
+/* Dashboard: what is waiting. */
+.admin-attention {
+  margin: 0 0 22px;
+  padding: 18px 20px;
+  border: 1px solid rgba(221, 164, 165, 0.34);
+  background: rgba(255, 250, 246, 0.7);
+}
+
+.admin-attention h3 {
+  margin-bottom: 12px;
+  color: var(--maris-gold-text);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.admin-attention-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  list-style: none;
+}
+
+.admin-attention-list a {
+  display: grid;
+  gap: 4px;
+  min-height: 44px;
+  padding: 12px 14px;
+  border: 1px solid rgba(0, 73, 58, 0.16);
+  background: var(--maris-white);
+  color: var(--maris-ink);
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.admin-attention-list a:hover {
+  border-color: var(--maris-teal);
+}
+
+.admin-attention-list strong {
+  color: var(--maris-teal);
+  font-size: 30px;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.admin-attention-list li.has-items a {
+  border-color: var(--maris-red-text);
+}
+
+.admin-attention-list li.has-items strong {
+  color: var(--maris-red-text);
+}
+
+.admin-attention .admin-note {
+  margin-top: 12px;
+}
+
+/* Status badges: product, order and payment status share one look. */
+.admin-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border: 1px solid;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.admin-status-badge::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.admin-status-badge.is-good {
+  border-color: rgba(0, 73, 58, 0.35);
+  background: rgba(0, 73, 58, 0.07);
+  color: var(--maris-teal);
+}
+
+.admin-status-badge.is-pending {
+  border-color: rgba(133, 106, 34, 0.5);
+  background: rgba(185, 147, 58, 0.12);
+  color: #6e551d;
+}
+
+.admin-status-badge.is-muted {
+  border-color: rgba(92, 109, 104, 0.35);
+  background: rgba(92, 109, 104, 0.08);
+  color: var(--maris-muted);
+}
+
+/* Products table: SKUs stay on one line, headers sort, actions stay in reach. */
+.admin-products-table td {
+  vertical-align: middle;
+}
+
+.admin-sku-cell {
+  white-space: nowrap;
+}
+
+.admin-sort-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+}
+
+.admin-sort-button::after {
+  content: "↕";
+  opacity: 0.45;
+}
+
+.admin-sort-button[data-sort-direction="asc"]::after {
+  content: "▲";
+  opacity: 1;
+}
+
+.admin-sort-button[data-sort-direction="desc"]::after {
+  content: "▼";
+  opacity: 1;
+}
+
+/* The Actions column stays visible while the rest of a wide table scrolls. */
+.admin-table-wrap table:has(tbody td:last-child > .admin-row-actions) :is(th, td):last-child {
+  position: sticky;
+  right: 0;
+  z-index: 1;
+  background: #fffdfb;
+  box-shadow: -10px 0 10px -10px rgba(0, 73, 58, 0.25);
+}
+
+/* Compact enough that all eight columns fit beside the sidebar on a desktop. */
+.admin-products-table {
+  min-width: 720px;
+}
+
+.admin-products-table :is(th, td) {
+  padding: 12px 8px;
+}
+
+.admin-products-table .admin-row-actions {
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.admin-products-table .admin-row-actions :is(button, a.admin-secondary) {
+  padding: 0 10px;
+}
+
+.admin-products-table .admin-row-menu > summary {
+  min-width: 40px;
+}
+
+/* The "..." menu beside Edit and Preview: Set Draft and Delete live here. The
+   list is fixed-positioned by script so the table's sideways scroll cannot clip it. */
+.admin-row-menu > summary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  min-height: 40px;
+  border: 1px solid rgba(0, 73, 58, 0.25);
+  background: transparent;
+  color: var(--maris-ink);
+  font-size: 18px;
+  line-height: 1;
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+}
+
+.admin-row-menu > summary::-webkit-details-marker {
+  display: none;
+}
+
+.admin-row-menu[open] > summary {
+  background: rgba(0, 73, 58, 0.08);
+}
+
+.admin-row-menu-list {
+  position: fixed;
+  top: -9999px;
+  right: 8px;
+  z-index: 40;
+  display: grid;
+  gap: 6px;
+  min-width: 176px;
+  padding: 8px;
+  border: 1px solid rgba(221, 164, 165, 0.55);
+  background: var(--maris-paper);
+  box-shadow: 0 16px 40px rgba(0, 73, 58, 0.2);
+}
+
+.admin-row-menu-list button {
+  width: 100%;
+  justify-content: flex-start;
+  padding: 0 12px;
+  text-align: left;
+}
+
+/* A control this role cannot use. */
+.is-permission-locked,
+:is(button, input, select, textarea)[disabled].is-permission-locked {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* Wide tables say they scroll, and show a soft edge where more is hidden. */
+.admin-scroll-hint {
+  margin: 0 0 6px;
+  color: var(--maris-muted);
+  font-size: 12px;
+  text-align: right;
+}
+
+.admin-scroll-hint[hidden] {
+  display: none;
+}
+
+.admin-table-wrap {
+  background-color: rgba(255, 255, 255, 0.56);
+  background-image:
+    linear-gradient(to right, #fffdfb 30%, rgba(255, 253, 251, 0)),
+    linear-gradient(to left, #fffdfb 30%, rgba(255, 253, 251, 0)),
+    radial-gradient(farthest-side at 0 50%, rgba(0, 73, 58, 0.2), rgba(0, 73, 58, 0)),
+    radial-gradient(farthest-side at 100% 50%, rgba(0, 73, 58, 0.2), rgba(0, 73, 58, 0));
+  background-position: 0 0, 100% 0, 0 0, 100% 0;
+  background-repeat: no-repeat;
+  background-size: 40px 100%, 40px 100%, 14px 100%, 14px 100%;
+  background-attachment: local, local, scroll, scroll;
+}
+
+.admin-system-status {
+  margin-top: 36px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(221, 164, 165, 0.34);
+}
+
+.admin-system-status:target,
+#admin-system-status-title:focus {
+  outline: none;
+}
+
+/* The row whose "..." menu is open paints above the rows below it; sticky cells
+   each make their own stacking context, so without this the next row's Preview
+   link would sit on top of the open menu. */
+.admin-table-wrap table:has(tbody td:last-child > .admin-row-actions) :is(th, td):last-child:has(.admin-row-menu[open]) {
+  z-index: 10;
+}
+
+.admin-role-banner {
+  margin: 0;
+  padding: 10px clamp(16px, 3vw, 32px);
+  border-bottom: 1px solid rgba(133, 106, 34, 0.3);
+  background: rgba(185, 147, 58, 0.12);
+  color: #5c4513;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* Typed-SKU confirmation before a product is deleted for good. */
+.admin-confirm-dialog {
+  width: min(520px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  padding: 28px;
+  border: 1px solid rgba(0, 73, 58, 0.25);
+  background: var(--maris-white, #fff);
+  color: var(--maris-ink);
+}
+
+.admin-confirm-dialog::backdrop {
+  background: rgba(10, 30, 26, 0.55);
+}
+
+.admin-confirm-dialog h2 {
+  margin: 0 0 12px;
+  font-size: 20px;
+  overflow-wrap: anywhere;
+}
+
+.admin-confirm-dialog p,
+.admin-confirm-dialog li {
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.admin-confirm-dialog ul {
+  margin: 0 0 12px;
+  padding-left: 20px;
+}
+
+.admin-confirm-dialog label {
+  display: grid;
+  gap: 8px;
+  margin: 16px 0;
+  font-size: 14px;
+}
+
+.admin-confirm-dialog input {
+  min-height: 44px;
+  width: 100%;
+  padding: 0 12px;
+  border: 1px solid rgba(0, 73, 58, 0.3);
+  background: #fff;
+  font: inherit;
+}
+
+.admin-confirm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.admin-confirm-actions button {
+  min-height: 44px;
+  padding: 0 18px;
+  cursor: pointer;
+}
+
+.admin-confirm-actions .admin-danger {
+  border: 1px solid #8f2d2d;
+  background: #8f2d2d;
+  color: #fff;
+}
+
+.admin-confirm-actions .admin-danger:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+/* Customers and Newsletter lists. */
+.admin-people-tools {
+  grid-template-columns: minmax(220px, 1fr) repeat(auto-fit, minmax(150px, 0.3fr));
+}
+
+.admin-people-tools [data-people-summary] {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.admin-people-table td {
+  overflow-wrap: anywhere;
+}
+
+.admin-people-table .admin-people-muted {
+  color: var(--maris-muted);
 }

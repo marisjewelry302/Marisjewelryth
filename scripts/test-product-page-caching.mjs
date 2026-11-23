@@ -39,7 +39,7 @@ assert.match(pageSource, /getProductStaticParams\(\)/, "the English route must l
 assert.match(paramsHelperSource, /catch \(error\) \{\s*return \[\];/, "an unreadable catalogue at build time must fall back to on-demand pages, not fail the build");
 const withoutComments = (source) => source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
 assert.doesNotMatch(withoutComments(pageSource + slugPageSource), /force-dynamic|cookies\(|headers\(\)|noStore|no-store/, "request-time APIs would opt the product page out of caching again");
-assert.match(slugPageSource, /getPublicProductSeoTitle\(product\)/, "the product metadata must use the unique title");
+assert.match(slugPageSource, /getPublicProductSeoTitle\(product, copy\.bag\.kinds\)/, "the product metadata must use the unique title");
 assert.doesNotMatch(slugPageSource, /title: `\$\{displayName\} \| Maris Jewelry`/, "the shared display name must not be the whole title");
 
 // generateStaticParams must survive a missing database (no Supabase env in this process).

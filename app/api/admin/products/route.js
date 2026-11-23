@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import { ADMIN_PERMISSIONS, requireAdminPermission } from "../../../lib/admin-api-auth";
-import { createAdminProduct, deleteAdminProduct, readAdminCatalogueProducts, updateAdminProduct } from "../../../lib/maris-database";
+import {
+  createAdminProduct,
+  deleteAdminProduct,
+  readAdminCatalogueProduct,
+  readAdminCatalogueProducts,
+  updateAdminProduct
+} from "../../../lib/maris-database";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,6 +23,18 @@ function json(payload, status = 200) {
 export async function GET(request) {
   const authorization = await requireAdminPermission(request);
   if (!authorization.ok) return authorization.response;
+
+  // ?id= returns just that product, so the page can refresh one row.
+  const productId = request.nextUrl.searchParams.get("id");
+
+  if (productId) {
+    try {
+      const product = await readAdminCatalogueProduct(productId);
+      return product ? json({ product }) : json({ error: "Product not found." }, 404);
+    } catch (error) {
+      return json({ error: error instanceof Error ? error.message : "Product could not be loaded." }, 500);
+    }
+  }
 
   try {
     const catalogue = await readAdminCatalogueProducts();

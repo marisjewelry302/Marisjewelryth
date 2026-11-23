@@ -7,12 +7,23 @@ export const wholesaleEn = {
   lead: "Fine jewelry in real gold, real diamonds, and real gemstones, crafted in our Bangkok atelier for retailers, brands, and boutique buyers.",
   inquiry: {
     title: "Start with an inquiry",
-    text: "Tell us about your store or brand and the fine jewelry, real gold, real diamond, or real gemstone pieces you need. The atelier replies with terms and next steps before you apply for portal access.",
+    text: "Tell us about your store or brand and the pieces you need, with the quantity and timing you have in mind. The atelier replies with terms and next steps.",
     action: "Send an inquiry",
     emailLabel: "Or email us directly",
     email: "marisjewelryth@gmail.com",
     channelsLabel: "Prefer to chat? Message us on",
-    portalNote: "Already have an approved wholesale account? Sign in below."
+    portalNote: "Already have an approved wholesale account?",
+    signIn: "Sign in"
+  },
+  about: {
+    title: "How wholesale works",
+    audience: "Maris wholesale is for jewelry stores and boutiques, online sellers, private-label brands, distributors, and corporate gifting buyers who want fine jewelry made in our Bangkok atelier.",
+    steps: [
+      { title: "1. Send an inquiry", text: "Tell us whether you plan wholesale, retail, private label, event pieces, or a specific collection, and the categories, quantity, and timing you have in mind." },
+      { title: "2. The atelier replies", text: "We narrow down product type, material, finish, and quantity, and share terms and next steps before anything is ordered." },
+      { title: "3. Apply for a wholesale account", text: "Sign in with your Maris account (or create one) and apply on this page. The atelier reviews every application and sets your wholesale terms." },
+      { title: "4. Order online", text: "Approved partners see wholesale prices and minimum quantities, and send purchase orders here. Wholesale pieces are made to order." }
+    ]
   },
   highlights: {
     title: "What we supply wholesale",
@@ -26,10 +37,9 @@ export const wholesaleEn = {
   loading: "Loading your wholesale account…",
   unavailable: "The wholesale portal is not available right now. Please try again later or contact the atelier.",
   signedOut: {
-    title: "Sign in to apply",
-    text: "A wholesale account is linked to your Maris account. Sign in, or create an account first, then come back to apply.",
-    action: "Sign in or create an account",
-    learnMore: "How wholesale works"
+    title: "Step 3: sign in to apply",
+    text: "Once the atelier has replied to your inquiry, sign in or create a Maris account to apply for a wholesale account. It is linked to your Maris account.",
+    action: "Sign in or create an account"
   },
   form: {
     title: "Apply for a wholesale account",
@@ -181,13 +191,24 @@ export const wholesaleTh = {
   title: "พอร์ทัลขายส่ง",
   lead: "เครื่องประดับ Fine Jewelry ทองแท้ เพชรแท้ และพลอยแท้ ผลิตอย่างประณีตจากอะเทลิเยร์ของเราในกรุงเทพฯ สำหรับร้านค้า แบรนด์ และผู้ซื้อบูติก",
   inquiry: {
-    title: "เริ่มต้นด้วยการส่ง Inquiry",
-    text: "บอกเราเกี่ยวกับร้านหรือแบรนด์ของคุณ และเครื่องประดับ Fine Jewelry ทองแท้ เพชรแท้ หรือพลอยแท้ที่ต้องการ ทีมงานจะตอบกลับพร้อมเงื่อนไขและขั้นตอนถัดไป ก่อนที่คุณจะสมัครใช้พอร์ทัล",
-    action: "ส่ง Inquiry",
+    title: "เริ่มต้นด้วยการส่งคำสอบถาม",
+    text: "บอกเราเกี่ยวกับร้านหรือแบรนด์ของคุณ และชิ้นงานที่ต้องการ พร้อมจำนวนและระยะเวลาที่คาดไว้ ทีมงานจะตอบกลับพร้อมเงื่อนไขและขั้นตอนถัดไป",
+    action: "ส่งคำสอบถาม",
     emailLabel: "หรืออีเมลถึงเราโดยตรง",
     email: "marisjewelryth@gmail.com",
     channelsLabel: "สะดวกคุยแชต? ทักเราได้ที่",
-    portalNote: "มีบัญชีขายส่งที่ได้รับอนุมัติแล้ว? เข้าสู่ระบบด้านล่าง"
+    portalNote: "มีบัญชีขายส่งที่ได้รับอนุมัติแล้ว?",
+    signIn: "เข้าสู่ระบบ"
+  },
+  about: {
+    title: "การขายส่งทำงานอย่างไร",
+    audience: "การขายส่งของ Maris เหมาะกับร้านเครื่องประดับและบูติก ผู้ขายออนไลน์ แบรนด์ private label ตัวแทนจำหน่าย และผู้ซื้อของพรีเมียมองค์กร ที่ต้องการเครื่องประดับ Fine Jewelry ผลิตจากอะเทลิเยร์ของเราในกรุงเทพฯ",
+    steps: [
+      { title: "1. ส่งคำสอบถาม", text: "บอกเราว่าคุณวางแผนขายส่ง ขายปลีก private label ชิ้นงานสำหรับอีเวนต์ หรือคอลเลกชันเฉพาะ พร้อมหมวดสินค้า จำนวน และระยะเวลาที่คาดไว้" },
+      { title: "2. ทีมงานตอบกลับ", text: "เราช่วยจำกัดประเภทสินค้า วัสดุ การตกแต่งผิว และจำนวน พร้อมแจ้งเงื่อนไขและขั้นตอนถัดไปก่อนมีการสั่งซื้อ" },
+      { title: "3. สมัครบัญชีขายส่ง", text: "เข้าสู่ระบบด้วยบัญชี Maris (หรือสร้างบัญชีใหม่) แล้วสมัครที่หน้านี้ ทีมงานจะตรวจสอบใบสมัครทุกใบและกำหนดเงื่อนไขขายส่งให้" },
+      { title: "4. สั่งซื้อออนไลน์", text: "คู่ค้าที่ได้รับอนุมัติดูราคาส่งและจำนวนขั้นต่ำ และส่งใบสั่งซื้อได้ที่นี่ ชิ้นงานขายส่งผลิตตามคำสั่ง" }
+    ]
   },
   highlights: {
     title: "สินค้าที่เรารับจำหน่ายขายส่ง",
@@ -201,10 +222,9 @@ export const wholesaleTh = {
   loading: "กำลังโหลดบัญชีขายส่งของคุณ…",
   unavailable: "ขณะนี้พอร์ทัลขายส่งยังใช้งานไม่ได้ กรุณาลองใหม่ภายหลังหรือติดต่อทีมงาน",
   signedOut: {
-    title: "เข้าสู่ระบบเพื่อสมัคร",
-    text: "บัญชีขายส่งผูกกับบัญชี Maris ของคุณ กรุณาเข้าสู่ระบบหรือสร้างบัญชีก่อน แล้วกลับมาสมัครที่หน้านี้",
-    action: "เข้าสู่ระบบหรือสร้างบัญชี",
-    learnMore: "ขั้นตอนการขายส่ง"
+    title: "ขั้นที่ 3: เข้าสู่ระบบเพื่อสมัคร",
+    text: "เมื่อทีมงานตอบกลับคำสอบถามของคุณแล้ว ให้เข้าสู่ระบบหรือสร้างบัญชี Maris เพื่อสมัครบัญชีขายส่ง ซึ่งผูกกับบัญชี Maris ของคุณ",
+    action: "เข้าสู่ระบบหรือสร้างบัญชี"
   },
   form: {
     title: "สมัครบัญชีขายส่ง",

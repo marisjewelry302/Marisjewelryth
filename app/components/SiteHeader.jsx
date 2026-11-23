@@ -61,11 +61,12 @@ function Icon({ name }) {
   );
 }
 
-function SearchIcon() {
+// A gem outline: this link browses jewelry, it is not a search field.
+function BrowseIcon() {
   return (
     <svg aria-hidden="true" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" viewBox="0 0 24 24">
-      <circle cx="11" cy="11" r="7" />
-      <path d="m16.5 16.5 4 4" />
+      <path d="M6.5 4h11L22 9.5 12 21 2 9.5 6.5 4Z" />
+      <path d="M2 9.5h20M9 4l-2 5.5L12 21l5-11.5L15 4" />
     </svg>
   );
 }
@@ -124,6 +125,8 @@ export default function SiteHeader() {
   const swipeStartRef = useRef(null);
   // The query string only exists in the browser, so it is added to the language link after mount.
   const [languageSuffix, setLanguageSuffix] = useState("");
+  // True when the page body is a 404 (NotFoundView marks itself), so the language link can skip the dead counterpart.
+  const [onNotFoundPage, setOnNotFoundPage] = useState(false);
 
   const normalizedPathname = useMemo(() => stripLocale(pathname).replace(/\/$/, "") || "/", [pathname]);
   const isHome = normalizedPathname === "/";
@@ -259,6 +262,7 @@ export default function SiteHeader() {
   useEffect(() => {
     setIsOpen(false);
     setLanguageSuffix(`${window.location.search}${window.location.hash}`);
+    setOnNotFoundPage(Boolean(document.querySelector("[data-maris-not-found]")));
   }, [pathname]);
 
   // The drawer closes from its X button, by tapping the dimmed page, by dragging
@@ -329,13 +333,21 @@ export default function SiteHeader() {
   }
 
   // The other language's version of this page; a page without one falls back to that language's home.
+  // A 404 under a translated section (an unknown product, say) matches
+  // hasThaiVersion but has no counterpart, so it also falls back to home.
+  const hasCounterpart = !onNotFoundPage && hasThaiVersion(normalizedPathname);
   const languageSwitch = locale === THAI_LOCALE
-    ? { href: normalizedPathname, label: "English", lang: "en" }
+    ? { href: hasCounterpart ? normalizedPathname : "/", label: "English", lang: "en" }
     : {
-        href: hasThaiVersion(normalizedPathname) ? localizePath(normalizedPathname, THAI_LOCALE) : "/th",
+        href: hasCounterpart ? localizePath(normalizedPathname, THAI_LOCALE) : "/th",
         label: "ภาษาไทย",
         lang: "th"
       };
+
+  function refreshLanguageHref(event) {
+    // Read the address at click time so a query changed without a route change is kept too.
+    event.currentTarget.href = `${languageSwitch.href}${window.location.search}${window.location.hash}`;
+  }
 
   function isCurrent(href) {
     return normalizedPathname === href || normalizedPathname.startsWith(`${href}/`);
@@ -370,10 +382,7 @@ export default function SiteHeader() {
             href={`${languageSwitch.href}${languageSuffix}`}
             lang={languageSwitch.lang}
             hrefLang={languageSwitch.lang}
-            onClick={(event) => {
-              // Read the address at click time so a query changed without a route change is kept too.
-              event.currentTarget.href = `${languageSwitch.href}${window.location.search}${window.location.hash}`;
-            }}
+            onClick={refreshLanguageHref}
           >
             {languageSwitch.label}
           </a>
@@ -414,7 +423,7 @@ export default function SiteHeader() {
         </div>
 
         <Link className="nav-search" href={localHref("/category/engagement-ring")} aria-label={t.header.browse}>
-          <SearchIcon />
+          <BrowseIcon />
         </Link>
 
         {isMobile && isOpen ? (
@@ -450,6 +459,11 @@ export default function SiteHeader() {
               <path d="M6 6l12 12M18 6 6 18" />
             </svg>
           </button>
+
+          {/* Phone drawer only: the full-width backdrop covers the logo while the menu is open. */}
+          <Link href={localHref("/")} className="nav-home-link" aria-current={isHome ? "page" : undefined}>
+            {t.header.home}
+          </Link>
 
           {t.header.primary.map((item) => (
             <Link key={item.href} href={localHref(item.href)} aria-current={isCurrent(item.href) ? "page" : undefined}>
@@ -502,20 +516,30 @@ export default function SiteHeader() {
           })}
 
           <div className="nav-mobile-actions">
-            <Link href="/account">{t.header.account}</Link>
-            <Link href="/wishlist">{t.header.wishlist}</Link>
-            <Link href="/shopping-bag">{t.header.bag}</Link>
+            <Link href={localHref("/account")}>{t.header.account}</Link>
+            <Link href={localHref("/wishlist")}>{t.header.wishlist}</Link>
+            <Link href={localHref("/shopping-bag")}>{t.header.bag}</Link>
+            {/* The top bar holding the desktop language link is hidden on phones. */}
+            <a
+              className="nav-mobile-lang"
+              href={`${languageSwitch.href}${languageSuffix}`}
+              lang={languageSwitch.lang}
+              hrefLang={languageSwitch.lang}
+              onClick={refreshLanguageHref}
+            >
+              {languageSwitch.label}
+            </a>
           </div>
         </nav>
 
         <div className="icons" aria-label={t.header.iconsLabel}>
-          <Link href="/account" aria-label={t.header.account} aria-current={isCurrent("/account") ? "page" : undefined}>
+          <Link href={localHref("/account")} aria-label={t.header.account} aria-current={isCurrent("/account") ? "page" : undefined}>
             <Icon name="user" />
           </Link>
-          <Link href="/wishlist" aria-label={t.header.wishlist} aria-current={isCurrent("/wishlist") ? "page" : undefined}>
+          <Link href={localHref("/wishlist")} aria-label={t.header.wishlist} aria-current={isCurrent("/wishlist") ? "page" : undefined}>
             <Icon name="heart" />
           </Link>
-          <Link href="/shopping-bag" aria-label={t.header.bag} aria-current={isCurrent("/shopping-bag") ? "page" : undefined}>
+          <Link href={localHref("/shopping-bag")} aria-label={t.header.bag} aria-current={isCurrent("/shopping-bag") ? "page" : undefined}>
             <Icon name="bag" />
             <span className="bag-count-badge" data-bag-count-badge hidden={bagCount === 0}>
               {bagCount}

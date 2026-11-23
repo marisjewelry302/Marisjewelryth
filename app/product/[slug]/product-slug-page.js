@@ -9,7 +9,9 @@ import {
   getPublicProductSeoTitle,
   getPublicProductSlug,
   getPublicVariantDisplayName,
-  groupProductImagesByMetal
+  groupProductImagesByMetal,
+  formatPublicProductCode,
+  localizeCatalogueValue
 } from "../../lib/product-display.js";
 import JsonLd from "../../components/JsonLd";
 import WishlistButton from "../../components/WishlistButton";
@@ -82,7 +84,7 @@ export async function buildProductMetadata({ params, locale = "en" }) {
     return { title: "Maris Jewelry" };
   }
 
-  const seoTitle = getPublicProductSeoTitle(product);
+  const seoTitle = getPublicProductSeoTitle(product, copy.bag.kinds);
   const collectionLabel = copy.collections[product.collection]?.title || product.category || "Maris Jewelry";
   const productPath = getPublicProductPath(product);
   const metadata = buildPageMetadata({
@@ -133,11 +135,23 @@ export async function ProductPageView({ params, locale = "en" }) {
   const collectionLabel = copy.collections[product.collection]?.title || product.category || "Maris Jewelry";
   // What the bag and wishlist store: always the English title, so a saved piece reads the same in either language.
   const storedCollectionLabel = uiText.en.collections[product.collection]?.title || product.category || "Maris Jewelry";
-  const displayName = getPublicProductDisplayName(product);
+  // What the bag and wishlist store stays English; what the page shows is in the page language.
+  const storedDisplayName = getPublicProductDisplayName(product);
+  const displayName = getPublicProductDisplayName(product, copy.bag.kinds);
+  const localizeValue = (group, value) => localizeCatalogueValue(value, group, copy.catalogue.values);
+  const productCode = formatPublicProductCode(product.sku);
   const collectionLine = getMeaningfulText(product.collectionName);
   const productPath = getPublicProductPath(product);
   const productSpecs = PRODUCT_SPEC_KEYS
-    .map((key) => ({ key, label: t.specs[key], value: getMeaningfulText(product.specs?.[key]) }))
+    .map((key) => ({
+      key,
+      label: t.specs[key],
+      value: key === "stoneType"
+        ? localizeValue("stone", getMeaningfulText(product.specs?.[key]))
+        : key === "stoneShape"
+          ? localizeValue("shape", getMeaningfulText(product.specs?.[key]))
+          : getMeaningfulText(product.specs?.[key])
+    }))
     .filter((spec) => spec.value);
   const gemStones = product.gemReport?.stones || [];
   const gemColumns = GEM_REPORT_KEYS
@@ -149,7 +163,7 @@ export async function ProductPageView({ params, locale = "en" }) {
   const wishlistItem = {
     id: `${product.collection || storedCollectionLabel}:${product.sku}`,
     title: product.sku,
-    details: [displayName],
+    details: [storedDisplayName],
     image: product.primaryImageUrl,
     href: productPath,
     collection: storedCollectionLabel,
@@ -170,6 +184,15 @@ export async function ProductPageView({ params, locale = "en" }) {
     <>
       <JsonLd data={productJsonLd} />
       <main id="main-content" className="product-page">
+        <nav className="product-breadcrumb" aria-label={t.breadcrumb}>
+          <ol>
+            <li><a href={localizePath("/", locale)}>{copy.common.home}</a></li>
+            {product.collection && (
+              <li><a href={localizePath(`/category/${product.collection}`, locale)}>{collectionLabel}</a></li>
+            )}
+            <li><span aria-current="page">{productCode}</span></li>
+          </ol>
+        </nav>
         <ProductMetalProvider initialKey={imageSets[0].key}>
           <div className="product-detail">
             <div className="product-gallery-column">
@@ -184,7 +207,7 @@ export async function ProductPageView({ params, locale = "en" }) {
 
             <div className="product-summary">
               <p className="product-kicker" data-product-collection>{collectionLabel}</p>
-              <h1 data-product-title>{product.sku}</h1>
+              <h1 data-product-title>{productCode}</h1>
               <h2 data-product-name>{displayName}</h2>
               {/* Rows left blank store "-", which is not copy worth printing. */}
               {collectionLine && (
@@ -194,6 +217,24 @@ export async function ProductPageView({ params, locale = "en" }) {
               )}
 
               <ProductMetalSelector metals={metalOptions} />
+
+              {/* Price and the order buttons come straight after the metal choice so
+                  they sit above the fold on desktop, however long the spec block is. */}
+              <p className="product-price" data-product-price>{formatPrice(product.basePrice, locale)}</p>
+
+              <div className="product-actions">
+                <AddToBagButton product={product} collectionLabel={storedCollectionLabel} />
+                <WishlistButton item={wishlistItem} variant="action" />
+                <ProductContactLink
+                  className="product-action is-primary is-contact"
+                  productCode={product.sku}
+                  hasMetalChoice={metalOptions.length > 1}
+                >
+                  {t.contactToOrder}
+                </ProductContactLink>
+              </div>
+
+              <p className="product-note">{t.availabilityNote}</p>
 
               {/* Every piece is made to order, so the specs describe the sample
                   and say plainly that each one can be changed. */}
@@ -225,7 +266,13 @@ export async function ProductPageView({ params, locale = "en" }) {
                           {gemStones.map((stone, index) => (
                             <tr key={index}>
                               {gemColumns.map(([key]) => (
-                                <td key={key} className={`is-${key}`}>{readGemReportCell(stone, key)}</td>
+                                <td key={key} className={`is-${key}`}>
+                                  {key === "stone"
+                                    ? localizeValue("stone", readGemReportCell(stone, key))
+                                    : key === "shape"
+                                      ? localizeValue("shape", readGemReportCell(stone, key))
+                                      : readGemReportCell(stone, key)}
+                                </td>
                               ))}
                             </tr>
                           ))}
@@ -271,22 +318,6 @@ export async function ProductPageView({ params, locale = "en" }) {
                   ))}
                 </ul>
               )}
-
-              <p className="product-price" data-product-price>{formatPrice(product.basePrice, locale)}</p>
-
-              <div className="product-actions">
-                <AddToBagButton product={product} collectionLabel={storedCollectionLabel} />
-                <WishlistButton item={wishlistItem} variant="action" />
-                <ProductContactLink
-                  className="product-action is-primary is-contact"
-                  productCode={product.sku}
-                  hasMetalChoice={metalOptions.length > 1}
-                >
-                  {t.contactToOrder}
-                </ProductContactLink>
-              </div>
-
-              <p className="product-note">{t.availabilityNote}</p>
 
               {/* Maris makes to order, so these are agreed per client rather than
                   fixed on the page. Say where they are settled, promise nothing. */}
@@ -359,10 +390,10 @@ export async function ProductPageView({ params, locale = "en" }) {
               {relatedProducts.map((item) => (
                 <a key={item.id} className="also-card" href={localizePath(getPublicProductPath(item), locale)}>
                   {item.primaryImageUrl && (
-                    <Image src={item.primaryImageUrl} alt={getPublicProductAltText(item)} width={1024} height={1024} sizes="(max-width: 900px) 50vw, 25vw" unoptimized={!isOptimizableImageSrc(item.primaryImageUrl)} />
+                    <Image src={item.primaryImageUrl} alt={getPublicProductAltText(item, copy.bag.kinds)} width={1024} height={1024} sizes="(max-width: 900px) 50vw, 25vw" unoptimized={!isOptimizableImageSrc(item.primaryImageUrl)} />
                   )}
-                  <span>{item.sku}</span>
-                  <small>{getPublicProductDisplayName(item)}</small>
+                  <span>{formatPublicProductCode(item.sku)}</span>
+                  <small>{getPublicProductDisplayName(item, copy.bag.kinds)}</small>
                 </a>
               ))}
             </div>

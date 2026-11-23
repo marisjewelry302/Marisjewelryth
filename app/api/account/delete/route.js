@@ -15,14 +15,14 @@ export const dynamic = "force-dynamic";
 export async function POST(request) {
   try {
     if (!isSameOriginRequest(request)) {
-      return NextResponse.json({ error: "Cross-origin request blocked." }, { status: 403 });
+      return NextResponse.json({ error: "Cross-origin request blocked.", code: "cross_origin" }, { status: 403 });
     }
 
     const cookieStore = await cookies();
     const session = verifyCustomerSession(cookieStore.get(SESSION_COOKIE_NAME)?.value);
 
     if (!session.isValid) {
-      return NextResponse.json({ error: "Not signed in." }, { status: 401 });
+      return NextResponse.json({ error: "Not signed in.", code: "not_signed_in" }, { status: 401 });
     }
 
     const rateLimit = await consumeAuthAttempt({
@@ -35,7 +35,7 @@ export async function POST(request) {
 
     if (!rateLimit.allowed) {
       return NextResponse.json(
-        { error: "Too many attempts. Please try again later." },
+        { error: "Too many attempts. Please try again later.", code: "rate_limited" },
         {
           status: rateLimit.status === "not_configured" ? 503 : 429,
           headers: rateLimit.retryAfterSeconds
@@ -56,15 +56,15 @@ export async function POST(request) {
     const result = await deleteCustomerAccount(session.customerId, String(body?.password || ""));
 
     if (result.status === "not_configured") {
-      return NextResponse.json({ error: "Service unavailable." }, { status: 503 });
+      return NextResponse.json({ error: "Service unavailable.", code: "service_unavailable" }, { status: 503 });
     }
 
     if (result.status === "wrong_password") {
-      return NextResponse.json({ error: "Password is incorrect." }, { status: 400 });
+      return NextResponse.json({ error: "Password is incorrect.", code: "wrong_password" }, { status: 400 });
     }
 
     if (result.status !== "deleted") {
-      return NextResponse.json({ error: "Could not delete account." }, { status: 404 });
+      return NextResponse.json({ error: "Could not delete account.", code: "delete_failed" }, { status: 404 });
     }
 
     await consumeAuthAttempt({
@@ -80,6 +80,6 @@ export async function POST(request) {
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error("Delete account error:", error);
-    return NextResponse.json({ error: "Something went wrong." }, { status: 500 });
+    return NextResponse.json({ error: "Something went wrong.", code: "server_error" }, { status: 500 });
   }
 }

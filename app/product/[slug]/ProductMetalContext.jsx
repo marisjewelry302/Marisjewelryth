@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState } from "react";
 import { useShopLocale } from "../../hooks/useShopLocale";
+import { localizeCatalogueValue } from "../../lib/product-display";
 
 // The metal switch sits in the details column and the gallery it drives sits
 // in the image column, so the choice lives in a provider wrapping both.
@@ -29,7 +30,8 @@ export function ProductMetalSelector({ metals }) {
     return null;
   }
 
-  const selectedLabel = metals.find((metal) => metal.key === selectedKey)?.label || metals[0].label;
+  const labelFor = (metal) => localizeCatalogueValue(metal.label, "metal", t.catalogue.values);
+  const selectedLabel = labelFor(metals.find((metal) => metal.key === selectedKey) || metals[0]);
 
   return (
     <fieldset className="product-metal-selector" data-product-metal-selector>
@@ -46,7 +48,7 @@ export function ProductMetalSelector({ metals }) {
             onClick={() => setSelectedKey(metal.key)}
           >
             <span className="product-metal-swatch" aria-hidden="true" />
-            {metal.label}
+            {labelFor(metal)}
           </button>
         ))}
       </div>

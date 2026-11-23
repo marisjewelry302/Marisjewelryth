@@ -141,6 +141,34 @@ body.not-found-page.has-maris-footer {
   font-weight: 600;
 }
 
+/* The page you are on, in the footer's link lists. */
+[data-maris-footer] a[aria-current="page"] {
+  color: var(--maris-white, #ffffff);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+}
+
+.maris-footer__contact {
+  display: grid;
+  gap: 2px;
+  margin-top: 14px;
+  font-style: normal;
+}
+
+.maris-footer__contact a,
+.maris-footer__contact span {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+  line-height: 1.6;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+}
+
+.maris-footer__contact a:hover {
+  color: var(--maris-rose, #dda4a5);
+}
+
 .maris-footer__social {
   display: flex;
   align-items: center;

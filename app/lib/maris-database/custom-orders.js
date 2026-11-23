@@ -3,6 +3,7 @@
 import { createSupabaseAdminClient, getSupabaseAdminConfig } from "./connection.js";
 import { getRelatedCustomer } from "./customers.js";
 import { getMetadata } from "./shared.js";
+import { formatRingSize } from "../ring-size.js";
 
 export const ADMIN_CUSTOM_ORDER_STATUSES = Object.freeze([
   "pending",
@@ -100,6 +101,8 @@ export function normalizeCustomOrderRequest(row) {
     metal: row.metal || "",
     metalPurity: row.metal_purity || "",
     ringSize: row.ring_size === null || row.ring_size === undefined ? null : Number(row.ring_size),
+    // Stored as a US size; shown with its system, e.g. "US 7 (Thai 54)".
+    ringSizeLabel: row.ring_size === null || row.ring_size === undefined ? "" : formatRingSize(Number(row.ring_size)),
     stoneCarat: row.stone_carat === null || row.stone_carat === undefined ? null : Number(row.stone_carat),
     stoneColor: row.stone_color || "",
     stoneClarity: row.stone_clarity || "",

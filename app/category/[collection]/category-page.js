@@ -44,7 +44,9 @@ export async function buildCategoryMetadata({ params, locale = "en" }) {
 
 async function getCollectionProducts(collectionSlug) {
   try {
-    const result = await readPublicCatalogueProducts({ limit: 200 });
+    // No limit: the reader pages through every active piece, as /collections
+    // does, so a growing catalogue never drops pieces off the category pages.
+    const result = await readPublicCatalogueProducts();
     return result.products.filter((product) => productMatchesCollection(product, collectionSlug));
   } catch (error) {
     return [];

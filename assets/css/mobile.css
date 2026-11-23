@@ -281,9 +281,10 @@
   }
 
   /* ---- Home: catalogue slots, best seller, popup ---- */
-  /* New arrival: small cards, two and a bit across, swipeable with a finger. */
+  /* New arrival: small cards, two and a bit across, swipeable with a finger.
+     38vw leaves the third card peeking in (44vw left it exactly clipped at 375px). */
   .atelier-product-grid {
-    grid-auto-columns: min(44vw, 180px) !important;
+    grid-auto-columns: min(38vw, 180px) !important;
     gap: 10px !important;
     overflow-x: auto !important;
     scroll-snap-type: x proximity !important;
@@ -474,13 +475,31 @@
   }
 
   .maris-footer__mobile-social {
-    gap: 10px !important;
+    gap: 12px !important;
     margin-bottom: 0 !important;
   }
 
   .maris-footer__mobile-social a {
+    position: relative;
     width: 32px !important;
     height: 32px !important;
+  }
+
+  /* 44px tap targets: the 32px circle stays as drawn, an invisible ::before grows
+     the hit area (12px gap + 12px of inset keeps neighbours from overlapping). */
+  .maris-footer__mobile-social a::before,
+  .maris-footer__newsletter-note a::before {
+    content: "";
+    position: absolute;
+    inset: -7px;
+  }
+
+  .maris-footer__newsletter-note a {
+    position: relative;
+  }
+
+  .maris-footer__newsletter-note a::before {
+    inset: -16px -6px;
   }
 
   .maris-footer__mobile-social svg {
@@ -488,24 +507,21 @@
     height: 14px !important;
   }
 
-  /* The brand block has nothing to collapse: its title stays, as plain text. */
-  .maris-footer__section:first-child .maris-footer__toggle {
+  /* The brand block has nothing to collapse: a plain h3 over an always-visible panel. */
+  .maris-footer__toggle--static {
+    margin: 0;
     min-height: 32px !important;
     padding-top: 12px;
-    pointer-events: none;
+    cursor: default;
   }
 
-  .maris-footer__section:first-child .maris-footer__chevron {
-    display: none;
-  }
-
-  .maris-footer__section:first-child .maris-footer__toggle-label {
+  .maris-footer__toggle--static .maris-footer__toggle-label {
     font-size: 16px;
     font-weight: 600;
   }
 
-  .maris-footer__section:first-child .maris-footer__panel {
-    max-height: none !important;
+  .maris-footer__section--static .maris-footer__panel {
+    max-height: none;
     padding-top: 4px;
     opacity: 1;
   }
@@ -532,6 +548,16 @@
     display: flex !important;
     flex-wrap: wrap;
     gap: 0 20px !important;
+  }
+
+  .maris-footer__contact {
+    margin-top: 6px;
+  }
+
+  .maris-footer__contact a {
+    display: flex;
+    align-items: center;
+    min-height: 40px;
   }
 
   .maris-footer__links a {
@@ -596,8 +622,18 @@
     scroll-snap-align: start;
   }
 
+  /* Numbered steps read as a sequence, so they stack instead of hiding behind a swipe row. */
   .subpage-step-grid {
-    grid-auto-columns: 72%;
+    grid-auto-flow: row;
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-auto-columns: auto;
+    max-width: 100%;
+    margin-inline: 0;
+    padding: 0;
+    gap: 12px !important;
+    overflow: visible;
+    scroll-snap-type: none;
+    touch-action: auto;
   }
 
   .subpage-step-card {
@@ -607,6 +643,7 @@
 
   .subpage-step-image {
     height: 150px !important;
+    aspect-ratio: auto;
     min-height: 0 !important;
   }
 

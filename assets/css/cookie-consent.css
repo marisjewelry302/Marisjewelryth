@@ -31,6 +31,44 @@
   pointer-events: auto;
 }
 
+.cookie-consent__inner {
+  position: relative;
+}
+
+.cookie-consent__close {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--maris-teal);
+  cursor: pointer;
+}
+
+.cookie-consent__close svg {
+  width: 20px;
+  height: 20px;
+}
+
+.cookie-consent__close:hover {
+  background: rgba(0, 73, 58, 0.08);
+}
+
+.cookie-consent__close:focus-visible {
+  outline: 2px solid var(--maris-teal);
+  outline-offset: 2px;
+}
+
+/* Keep the heading clear of the close button. */
+.cookie-consent__close + .cookie-consent__copy {
+  padding-right: 40px;
+}
+
 .cookie-consent:focus-visible .cookie-consent__inner {
   outline: 2px solid var(--maris-teal);
   outline-offset: 3px;
@@ -181,12 +219,14 @@
   transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease;
 }
 
-.cookie-consent__button.is-primary {
+/* Accept all and Necessary only share this style on purpose: refusing must be
+   exactly as easy and as visible as accepting. */
+.cookie-consent__button.is-choice {
   background: var(--maris-teal);
   color: var(--maris-white);
 }
 
-.cookie-consent__button.is-primary:hover {
+.cookie-consent__button.is-choice:hover {
   background: var(--maris-ink);
   border-color: var(--maris-ink);
 }
@@ -233,11 +273,6 @@
     grid-template-columns: 1fr 1fr;
   }
 
-  .cookie-consent__button.is-primary {
-    grid-column: 1 / -1;
-    grid-row: 1;
-  }
-
   .cookie-consent__button.is-ghost {
     grid-column: 1 / -1;
     margin-right: 0;
@@ -257,6 +292,13 @@
   text-decoration: underline;
   text-underline-offset: 3px;
   cursor: pointer;
+}
+
+@media (max-width: 768px) {
+  .maris-footer__cookie-settings {
+    min-height: 44px;
+    padding: 10px 0;
+  }
 }
 
 .maris-footer__cookie-settings:hover {

@@ -4,7 +4,50 @@ export function hasThaiText(value) {
   return THAI_TEXT_PATTERN.test(String(value || ""));
 }
 
-export function getPublicProductDisplayName(product = {}) {
+// English display names by language-neutral kind. The shopping bag stores the kind
+// and looks the name up when it renders, so a piece added in one language reads
+// correctly in the other.
+export const PUBLIC_PRODUCT_KIND_NAMES = Object.freeze({
+  earrings: "Diamond Earrings",
+  "wedding-band": "Wedding Band",
+  ring: "Diamond Ring",
+  pendant: "Diamond Pendant",
+  bracelet: "Diamond Bracelet",
+  piece: "Fine Jewelry Piece"
+});
+
+// `kindNames` is the language's own map (t.bag.kinds on the storefront), keyed
+// like PUBLIC_PRODUCT_KIND_NAMES; anything it lacks falls back to English.
+export function getPublicProductDisplayName(product = {}, kindNames = PUBLIC_PRODUCT_KIND_NAMES) {
+  const kind = getPublicProductKind(product);
+
+  return kindNames?.[kind] || PUBLIC_PRODUCT_KIND_NAMES[kind];
+}
+
+// Turns a stored English value ("Marquise", "White Gold", "Diamond") into the
+// page language through the catalogue.values dictionary. Values the dictionary
+// does not know stay as stored rather than being guessed at.
+export function localizeCatalogueValue(text, group, values = {}) {
+  const value = String(text || "").trim();
+  const toKey = (word) => word.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
+  if (!value || !values) {
+    return value;
+  }
+
+  const direct = values[`${group}:${toKey(value)}`];
+
+  if (direct) {
+    return direct;
+  }
+
+  // "Round Brilliant" -> the leading word names the shape.
+  const firstWord = values[`${group}:${toKey(value.split(/\s+/)[0] || "")}`];
+
+  return firstWord || value;
+}
+
+export function getPublicProductKind(product = {}) {
   const sku = String(product.sku || "").toUpperCase();
   const searchText = [
     product.category,
@@ -14,7 +57,7 @@ export function getPublicProductDisplayName(product = {}) {
   ].filter(Boolean).join(" ").toLowerCase();
 
   if (sku.startsWith("SE") || searchText.includes("earring")) {
-    return "Diamond Earrings";
+    return "earrings";
   }
 
   if (
@@ -25,22 +68,22 @@ export function getPublicProductDisplayName(product = {}) {
     || searchText.includes("wedding-band")
     || searchText.includes("wedding band")
   ) {
-    return "Wedding Band";
+    return "wedding-band";
   }
 
   if (sku.startsWith("SR") || searchText.includes("ring")) {
-    return "Diamond Ring";
+    return "ring";
   }
 
   if (sku.startsWith("SN") || sku.startsWith("SP") || searchText.includes("necklace") || searchText.includes("pendant")) {
-    return "Diamond Pendant";
+    return "pendant";
   }
 
   if (sku.startsWith("SB") || searchText.includes("bracelet")) {
-    return "Diamond Bracelet";
+    return "bracelet";
   }
 
-  return "Fine Jewelry Piece";
+  return "piece";
 }
 
 // Catalogue codes are entered by hand and most follow "SR 0101 ER", but a few
@@ -96,8 +139,8 @@ export function compareSiblingProductCodes(leftSku, rightSku) {
   return rank(leftSku) - rank(rightSku);
 }
 
-export function getPublicProductAltText(product = {}) {
-  return `${product.sku || "Maris"} ${getPublicProductDisplayName(product)}`;
+export function getPublicProductAltText(product = {}, kindNames = PUBLIC_PRODUCT_KIND_NAMES) {
+  return `${product.sku || "Maris"} ${getPublicProductDisplayName(product, kindNames)}`;
 }
 
 export function getPublicVariantDisplayName(variant = {}) {
@@ -113,12 +156,15 @@ export function getPublicVariantDisplayName(variant = {}) {
   return details.length ? details.join(", ") : variant.sku || "Selected option";
 }
 
-export function getPublicImageAltText(image = {}, productCode, productName, index = 0) {
-  if (image.altText && !hasThaiText(image.altText)) {
-    return image.altText;
-  }
+// Upload file names ("... Th White Gold gallery image 2") are not descriptions,
+// so alt text is rebuilt from the code, the piece name, the metal and the view.
+// `labels` carries the page language's own metal and view words.
+export function getPublicImageAltText(image = {}, productCode, productName, index = 0, labels = {}) {
+  const view = labels.view || `view ${index + 1}`;
 
-  return `${productCode || "Maris"} ${productName || "Fine Jewelry Piece"} view ${index + 1}`;
+  return [productCode || "Maris", productName || "Fine Jewelry Piece", labels.metal, view]
+    .filter(Boolean)
+    .join(" ");
 }
 
 // A catalogue row that was never filled in arrives as "-" rather than empty, so
@@ -157,8 +203,8 @@ export function getPublicProductPath(product = {}) {
 // The display name only says what kind of piece it is ("Diamond Ring"), so on its
 // own it repeats across dozens of products and the page titles collide in search
 // results. The catalogue code is unique per piece, so it goes after the name.
-export function getPublicProductSeoTitle(product = {}) {
-  const displayName = getPublicProductDisplayName(product);
+export function getPublicProductSeoTitle(product = {}, kindNames = PUBLIC_PRODUCT_KIND_NAMES) {
+  const displayName = getPublicProductDisplayName(product, kindNames);
   const code = formatPublicProductCode(product.sku);
 
   return code ? `${displayName} ${code}` : displayName;
@@ -172,7 +218,7 @@ export const PRODUCT_IMAGE_METALS = [
   { key: "rose-gold", label: "Rose Gold", pattern: /\brose\s*gold\b/i }
 ];
 
-const PRODUCT_IMAGE_VIEWS = [
+export const PRODUCT_IMAGE_VIEWS = [
   { key: "hero", label: "Main View", pattern: /\b(hero|main|primary)\b/i },
   { key: "top", label: "Top View", pattern: /\btop\b/i },
   { key: "front", label: "Front View", pattern: /\bfront\b/i },

@@ -269,6 +269,7 @@ body.is-page-scrolled .icons i {
 .catalogue-select {
   min-width: 220px;
   width: 220px;
+  min-height: 44px;
   padding: 8px 12px;
   border: 1px solid rgba(0,0,0,0.12);
   border-radius: 0;
@@ -404,7 +405,7 @@ body.is-page-scrolled .icons i {
   height: 44px;
   border: 0;
   background: transparent;
-  color: var(--maris-rose);
+  color: var(--maris-muted);
   font-family: var(--maris-font-sans);
   font-size: 26px;
   line-height: 1;
@@ -412,9 +413,28 @@ body.is-page-scrolled .icons i {
   transition: color 0.24s ease, transform 0.24s ease;
 }
 
-.wishlist-toggle:hover,
+/* Unsaved: an outline in the muted text colour (about 5:1 on the card ground,
+   above the 3:1 non-text minimum). Hover only darkens the outline. Saved: the
+   same heart filled in the brand red, so the two states never look alike. */
+.wishlist-heart {
+  display: block;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linejoin: round;
+  transition: fill 0.24s ease;
+}
+
+.wishlist-toggle:hover {
+  color: var(--maris-red-text);
+}
+
 .wishlist-toggle.is-saved {
   color: var(--maris-red-text);
+}
+
+.wishlist-toggle.is-saved .wishlist-heart {
+  fill: currentColor;
 }
 
 .bag-count-badge {
@@ -792,6 +812,7 @@ body.is-page-scrolled .icons i {
   .catalogue-select {
     min-width: 0;
     width: 100%;
+    min-height: 44px;
     padding: 11px 10px;
     font-size: 12px;
   }

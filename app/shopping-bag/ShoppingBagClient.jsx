@@ -4,166 +4,58 @@ import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useCustomerSession } from "../hooks/useCustomerSession";
 import { useShopLocale } from "../hooks/useShopLocale";
+import {
+  MAX_BAG_QUANTITY,
+  clampQuantity,
+  getBagItemDetails,
+  normalizeBag,
+  readBag,
+  syncBagWithAccount,
+  updateBag
+} from "../lib/bag-store";
 import { fill, localizePriceLabel } from "../lib/i18n";
 import { localizeCollectionName } from "../lib/ui-text-shop";
 import { isOptimizableImageSrc } from "../lib/image-source";
 
-const BAG_KEY = "marisShoppingBag";
-const BAG_API = "/api/account/bag";
-
-function getItemId(item) {
-  return String(item?.id || item?.productId || item?.href || item?.title || item?.sku || "").trim();
-}
-
-function clampQuantity(value) {
-  const quantity = Math.round(Number(value) || 1);
-  return Math.max(1, Math.min(9, quantity));
-}
-
-function normalizeBag(items) {
-  if (!Array.isArray(items)) {
-    return [];
-  }
-
-  const seen = new Set();
-  const normalized = [];
-
-  for (const item of items) {
-    if (!item || typeof item !== "object" || Array.isArray(item)) {
-      continue;
-    }
-
-    const id = getItemId(item);
-
-    if (!id || seen.has(id)) {
-      continue;
-    }
-
-    seen.add(id);
-    normalized.push({ ...item, id, quantity: clampQuantity(item.quantity) });
-  }
-
-  return normalized;
-}
-
-function mergeBagItems(localItems, remoteItems) {
-  const merged = new Map();
-
-  for (const item of normalizeBag(remoteItems)) {
-    merged.set(item.id, item);
-  }
-
-  for (const item of normalizeBag(localItems)) {
-    merged.set(item.id, item);
-  }
-
-  return [...merged.values()];
-}
-
-function readBag() {
-  try {
-    const value = JSON.parse(window.localStorage.getItem(BAG_KEY));
-    return normalizeBag(value);
-  } catch (error) {
-    return [];
-  }
-}
-
-function writeBag(items) {
-  try {
-    window.localStorage.setItem(BAG_KEY, JSON.stringify(items));
-    window.dispatchEvent(new CustomEvent("maris:bagchange"));
-  } catch (error) {
-    // Keep the page usable if browser storage is unavailable.
-  }
-}
-
-async function saveBag(items) {
-  const response = await fetch(BAG_API, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    credentials: "same-origin",
-    body: JSON.stringify({ items })
-  });
-
-  if (response.status === 401) {
-    return null;
-  }
-
-  if (!response.ok) {
-    throw new Error("Shopping bag could not be synced.");
-  }
-
-  return response.json();
-}
+// How long the "Bag cleared" notice keeps its Undo button.
+const UNDO_WINDOW_MS = 8000;
 
 export default function ShoppingBagClient() {
   const { locale, t, href: localHref } = useShopLocale();
   const b = t.bag;
-  const { isLoggedIn, isLoading: sessionLoading } = useCustomerSession();
+  const { customer, isLoggedIn, isLoading: sessionLoading } = useCustomerSession();
+  const customerId = customer?.id || "";
   const [items, setItems] = useState([]);
-  const didSyncRef = useRef(false);
+  // What is typed in a quantity box before it is committed; empty is allowed while typing.
+  const [drafts, setDrafts] = useState({});
+  const [clearedItems, setClearedItems] = useState(null);
+  const clearTimerRef = useRef(null);
 
   useEffect(() => {
     setItems(readBag());
   }, []);
 
+  // A signed-in customer's saved bag is merged in once per page load. The shared
+  // store only merges a local bag that is anonymous or already theirs.
   useEffect(() => {
-    if (sessionLoading) {
+    if (sessionLoading || !isLoggedIn || !customerId) {
       return undefined;
     }
 
-    if (!isLoggedIn) {
-      didSyncRef.current = false;
-      return undefined;
-    }
-
-    if (didSyncRef.current) {
-      return undefined;
-    }
-
-    didSyncRef.current = true;
     let isCancelled = false;
 
-    async function syncBag() {
-      try {
-        const localItems = readBag();
-        const response = await fetch(BAG_API, {
-          cache: "no-store",
-          credentials: "same-origin"
-        });
-
-        if (response.status === 401) {
-          return;
-        }
-
-        if (!response.ok) {
-          throw new Error("Shopping bag could not be loaded.");
-        }
-
-        const payload = await response.json();
-        const mergedItems = mergeBagItems(localItems, payload?.items || []);
-
-        if (isCancelled) {
-          return;
-        }
-
-        setItems(mergedItems);
-        writeBag(mergedItems);
-        await saveBag(mergedItems);
-      } catch (error) {
-        if (!isCancelled) {
-          didSyncRef.current = false;
-        }
+    syncBagWithAccount(customerId).then((syncedItems) => {
+      if (!isCancelled) {
+        setItems(syncedItems);
       }
-    }
-
-    syncBag();
+    });
 
     return () => {
       isCancelled = true;
     };
-  }, [isLoggedIn, sessionLoading]);
+  }, [customerId, isLoggedIn, sessionLoading]);
+
+  useEffect(() => () => window.clearTimeout(clearTimerRef.current), []);
 
   const totalQuantity = useMemo(
     () => items.reduce((total, item) => total + (Number(item.quantity) || 1), 0),
@@ -173,18 +65,35 @@ export default function ShoppingBagClient() {
   const updateItems = useCallback((nextItems) => {
     const normalizedItems = normalizeBag(nextItems);
     setItems(normalizedItems);
-    writeBag(normalizedItems);
-
-    if (isLoggedIn) {
-      saveBag(normalizedItems).catch(() => {});
-    }
-  }, [isLoggedIn]);
+    updateBag(() => normalizedItems, { customerId });
+  }, [customerId]);
 
   function updateQuantity(itemId, quantity) {
     const nextQuantity = clampQuantity(quantity);
+    setDrafts((current) => {
+      const { [itemId]: removed, ...rest } = current;
+      return rest;
+    });
     updateItems(items.map((item) => (
       item.id === itemId ? { ...item, quantity: nextQuantity, updatedAt: new Date().toISOString() } : item
     )));
+  }
+
+  function clearBag() {
+    window.clearTimeout(clearTimerRef.current);
+    setClearedItems(items);
+    updateItems([]);
+    clearTimerRef.current = window.setTimeout(() => setClearedItems(null), UNDO_WINDOW_MS);
+  }
+
+  function undoClear() {
+    window.clearTimeout(clearTimerRef.current);
+
+    if (clearedItems) {
+      updateItems(clearedItems);
+    }
+
+    setClearedItems(null);
   }
 
   return (
@@ -197,6 +106,15 @@ export default function ShoppingBagClient() {
       </section>
 
       <section className="bag-layout" aria-label={b.label}>
+        <div className="bag-undo" role="status" aria-live="polite">
+          {clearedItems && (
+            <>
+              <span>{b.cleared}</span>
+              <button type="button" onClick={undoClear}>{b.undo}</button>
+            </>
+          )}
+        </div>
+
         {!items.length ? (
           <div className="bag-empty">
             <p className="eyebrow">{b.emptyEyebrow}</p>
@@ -210,36 +128,82 @@ export default function ShoppingBagClient() {
         ) : (
           <div className="bag-content">
             <div className="bag-list">
-              {items.map((item) => (
-                <article className="bag-item" key={item.id || item.title}>
-                  <a className="bag-image" href={localHref(item.href || "/category/engagement-ring")}>
-                    <Image src={item.image || "/assets/images/logo.png"} alt={item.title || b.itemAlt} width={1024} height={1024} sizes="(max-width: 900px) 50vw, 320px" unoptimized={!isOptimizableImageSrc(item.image || "/assets/images/logo.png")} />
-                  </a>
-                  <div className="bag-copy">
-                    <p className="bag-collection">{localizeCollectionName(item.collection || "Maris Jewelry", locale)}</p>
-                    <h2>{item.title || b.piece}</h2>
-                    {(Array.isArray(item.details) ? item.details : []).map((detail) => (
-                      <p key={detail}>{detail}</p>
-                    ))}
-                    <p className="bag-price">{localizePriceLabel(item.priceLabel || "Price on request", locale)}</p>
-                  </div>
-                  <div className="bag-controls">
-                    <label>
-                      {b.qty}
-                      <input
-                        type="number"
-                        min="1"
-                        max="9"
-                        value={Number(item.quantity) || 1}
-                        onChange={(event) => updateQuantity(item.id, event.target.value)}
-                      />
-                    </label>
-                    <button type="button" onClick={() => updateItems(items.filter((savedItem) => savedItem.id !== item.id))}>
-                      {b.remove}
-                    </button>
-                  </div>
-                </article>
-              ))}
+              {items.map((item) => {
+                const code = item.title || b.piece;
+                const quantity = Number(item.quantity) || 1;
+
+                return (
+                  <article className="bag-item" key={item.id || item.title}>
+                    <a className="bag-image" href={localHref(item.href || "/category/engagement-ring")}>
+                      <Image src={item.image || "/assets/images/logo.png"} alt={item.title || b.itemAlt} width={1024} height={1024} sizes="(max-width: 900px) 50vw, 320px" unoptimized={!isOptimizableImageSrc(item.image || "/assets/images/logo.png")} />
+                    </a>
+                    <div className="bag-copy">
+                      <p className="bag-collection">{localizeCollectionName(item.collection || "Maris Jewelry", locale)}</p>
+                      <h2>{code}</h2>
+                      {getBagItemDetails(item, b.kinds).map((detail) => (
+                        <p key={detail}>{detail}</p>
+                      ))}
+                      <p className="bag-price">{localizePriceLabel(item.priceLabel || "Price on request", locale)}</p>
+                    </div>
+                    <div className="bag-controls">
+                      <div className="bag-qty">
+                        <span className="bag-qty-label">{b.qty}</span>
+                        <div className="bag-qty-row">
+                          <button
+                            type="button"
+                            className="bag-qty-step"
+                            aria-label={fill(b.decrease, { code })}
+                            disabled={quantity <= 1}
+                            onClick={() => updateQuantity(item.id, quantity - 1)}
+                          >
+                            −
+                          </button>
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            maxLength={2}
+                            aria-label={fill(b.qtyFor, { code })}
+                            value={drafts[item.id] ?? String(quantity)}
+                            onChange={(event) => {
+                              const digits = event.target.value.replace(/\D/g, "").slice(0, 2);
+                              setDrafts((current) => ({ ...current, [item.id]: digits }));
+                            }}
+                            onBlur={(event) => {
+                              if (item.id in drafts) {
+                                updateQuantity(item.id, event.target.value);
+                              }
+                            }}
+                            onKeyDown={(event) => {
+                              if (event.key === "Enter") {
+                                event.preventDefault();
+                                updateQuantity(item.id, event.currentTarget.value);
+                              }
+                            }}
+                          />
+                          <button
+                            type="button"
+                            className="bag-qty-step"
+                            aria-label={fill(b.increase, { code })}
+                            disabled={quantity >= MAX_BAG_QUANTITY}
+                            onClick={() => updateQuantity(item.id, quantity + 1)}
+                          >
+                            +
+                          </button>
+                        </div>
+                        <small className="bag-qty-hint">{fill(b.qtyHint, { max: MAX_BAG_QUANTITY })}</small>
+                      </div>
+                      <button
+                        type="button"
+                        aria-label={fill(b.removeLabel, { code })}
+                        onClick={() => updateItems(items.filter((savedItem) => savedItem.id !== item.id))}
+                      >
+                        {b.remove}
+                      </button>
+                    </div>
+                  </article>
+                );
+              })}
             </div>
 
             <aside className="bag-summary" aria-label={b.summaryLabel}>
@@ -257,7 +221,7 @@ export default function ShoppingBagClient() {
               <a className="bag-primary-action" href={localHref("/request-quote?source=bag")}>{b.continueQuote}</a>
               <a className="bag-secondary-action" href={localHref("/category/engagement-ring")}>{b.continueShopping}</a>
               <a className="bag-secondary-action" href={localHref("/contact-us")}>{b.contactDirect}</a>
-              <button className="bag-clear" type="button" onClick={() => updateItems([])}>{b.clear}</button>
+              <button className="bag-clear" type="button" onClick={clearBag}>{b.clear}</button>
             </aside>
           </div>
         )}

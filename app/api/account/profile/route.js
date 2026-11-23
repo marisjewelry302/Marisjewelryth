@@ -10,7 +10,7 @@ import { isSameOriginRequest } from "@/app/lib/request-security";
 export async function PATCH(request) {
   try {
     if (!isSameOriginRequest(request)) {
-      return NextResponse.json({ error: "Cross-origin request blocked." }, { status: 403 });
+      return NextResponse.json({ error: "Cross-origin request blocked.", code: "cross_origin" }, { status: 403 });
     }
 
     const cookieStore = await cookies();
@@ -18,20 +18,20 @@ export async function PATCH(request) {
     const session = verifyCustomerSession(sessionToken);
 
     if (!session.isValid) {
-      return NextResponse.json({ error: "Not signed in." }, { status: 401 });
+      return NextResponse.json({ error: "Not signed in.", code: "not_signed_in" }, { status: 401 });
     }
 
     const body = await request.json();
     const result = await updateCustomerProfile(session.customerId, body);
 
     if (result.status === "not_configured") {
-      return NextResponse.json({ error: "Service unavailable." }, { status: 503 });
+      return NextResponse.json({ error: "Service unavailable.", code: "service_unavailable" }, { status: 503 });
     }
 
     return NextResponse.json({ customer: result.customer });
   } catch (error) {
     console.error("Profile update error:", error);
-    return NextResponse.json({ error: "Something went wrong." }, { status: 500 });
+    return NextResponse.json({ error: "Something went wrong.", code: "server_error" }, { status: 500 });
   }
 }
 
@@ -40,7 +40,7 @@ export async function PATCH(request) {
 export async function POST(request) {
   try {
     if (!isSameOriginRequest(request)) {
-      return NextResponse.json({ error: "Cross-origin request blocked." }, { status: 403 });
+      return NextResponse.json({ error: "Cross-origin request blocked.", code: "cross_origin" }, { status: 403 });
     }
 
     const cookieStore = await cookies();
@@ -48,7 +48,7 @@ export async function POST(request) {
     const session = verifyCustomerSession(sessionToken);
 
     if (!session.isValid) {
-      return NextResponse.json({ error: "Not signed in." }, { status: 401 });
+      return NextResponse.json({ error: "Not signed in.", code: "not_signed_in" }, { status: 401 });
     }
 
     const rateLimit = await consumeAuthAttempt({
@@ -61,7 +61,7 @@ export async function POST(request) {
 
     if (!rateLimit.allowed) {
       return NextResponse.json(
-        { error: "Too many password attempts. Please try again later." },
+        { error: "Too many password attempts. Please try again later.", code: "rate_limited" },
         {
           status: rateLimit.status === "not_configured" ? 503 : 429,
           headers: rateLimit.retryAfterSeconds
@@ -77,11 +77,11 @@ export async function POST(request) {
     const result = await changeCustomerPassword(session.customerId, currentPassword, newPassword);
 
     if (result.status === "wrong_password") {
-      return NextResponse.json({ error: "Current password is incorrect." }, { status: 400 });
+      return NextResponse.json({ error: "Current password is incorrect.", code: "wrong_password" }, { status: 400 });
     }
 
     if (result.status === "invalid") {
-      return NextResponse.json({ error: result.message }, { status: 400 });
+      return NextResponse.json({ error: result.message, code: result.code || "invalid_input" }, { status: 400 });
     }
 
     await consumeAuthAttempt({
@@ -96,6 +96,6 @@ export async function POST(request) {
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error("Change password error:", error);
-    return NextResponse.json({ error: "Something went wrong." }, { status: 500 });
+    return NextResponse.json({ error: "Something went wrong.", code: "server_error" }, { status: 500 });
   }
 }

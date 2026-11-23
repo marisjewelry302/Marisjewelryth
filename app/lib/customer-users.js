@@ -2,6 +2,14 @@ import { hashCustomerPassword, verifyCustomerPassword } from "./customer-auth.js
 import { sanitizeCustomerMetadata } from "./customer-data.js";
 import { createSupabaseAdminClient, getSupabaseAdminConfig } from "./maris-database.js";
 import { deleteEmailSubscriber } from "./customer-subscribers.js";
+import {
+  PASSWORD_MIN_LENGTH,
+  createPasswordResetToken,
+  isPasswordResetConfigured,
+  isPasswordResetTokenCurrent,
+  verifyPasswordResetToken
+} from "./customer-password-reset.js";
+import { normalizeMarketingEmail, sendPasswordResetEmail } from "./customer-email.js";
 
 const CUSTOMER_COLUMNS = `
   id,
@@ -53,7 +61,8 @@ export async function createCustomer({ fullName, email, phone, password }, { env
   const normalizedEmail = normalizeEmail(email);
 
   if (!cleanText(fullName) || !normalizedEmail || String(password || "").length < 12) {
-    return { status: "invalid", message: "Name, email, and password (min 12 chars) are required." };
+    const code = cleanText(fullName) && normalizedEmail ? "password_too_short" : "missing_fields";
+    return { status: "invalid", code, message: "Name, email, and password (min 12 chars) are required." };
   }
 
   // Check duplicate email
@@ -190,13 +199,15 @@ export async function updateCustomerProfile(id, { fullName, phone, service }, { 
 
 // ─── Change Password ───────────────────────────────────────────────────────
 
-export async function changeCustomerPassword(id, currentPassword, newPassword, { env = process.env } = {}) {
-  const { config, client: supabase } = getClient(env);
+export async function changeCustomerPassword(id, currentPassword, newPassword, { env = process.env, client } = {}) {
+  const { config, client: defaultClient } = getClient(env);
 
-  if (!config.isConfigured) return { status: "not_configured" };
+  if (!config.isConfigured && !client) return { status: "not_configured" };
+
+  const supabase = client || defaultClient;
 
   if (String(newPassword || "").length < 12) {
-    return { status: "invalid", message: "New password must be at least 12 characters." };
+    return { status: "invalid", code: "password_too_short", message: "New password must be at least 12 characters." };
   }
 
   const { data, error } = await supabase
@@ -267,4 +278,155 @@ export async function deleteCustomerAccount(id, password, { env = process.env, c
   if (deleteError) throw new Error(deleteError.message || "Account could not be deleted.");
 
   return { status: "deleted" };
+}
+
+// ─── Password reset ────────────────────────────────────────────────────────
+// Token format and the single-use rule live in customer-password-reset.js.
+
+function readStoredPasswordHash(row) {
+  return row?.password_hash || row?.metadata?.password_hash || "";
+}
+
+// Looks the account up and emails a reset link when one exists. The caller
+// answers every request the same way, so this result is for logs and tests only
+// and must never be sent back to the browser.
+export async function requestCustomerPasswordReset(
+  email,
+  { locale = "en", env = process.env, client, now = new Date(), sendEmail = sendPasswordResetEmail } = {}
+) {
+  const { config, client: defaultClient } = getClient(env);
+
+  if (!config.isConfigured && !client) {
+    return { status: "not_configured" };
+  }
+
+  if (!isPasswordResetConfigured(env)) {
+    return { status: "not_configured" };
+  }
+
+  const normalizedEmail = normalizeMarketingEmail(email);
+
+  if (!normalizedEmail) {
+    return { status: "no_account" };
+  }
+
+  const supabase = client || defaultClient;
+  const { data, error } = await supabase
+    .from("customers")
+    .select("id, full_name, email, password_hash, metadata")
+    .eq("email", normalizedEmail)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message || "Could not load customer.");
+
+  const passwordHash = readStoredPasswordHash(data);
+
+  if (!data || !passwordHash) {
+    return { status: "no_account" };
+  }
+
+  const token = createPasswordResetToken({ customerId: data.id, passwordHash }, { env, now });
+
+  if (!token) {
+    return { status: "not_configured" };
+  }
+
+  const result = await sendEmail(
+    { email: data.email, fullName: data.full_name, token, locale },
+    { env }
+  );
+
+  return { status: result?.status === "sent" ? "sent" : result?.status || "failed" };
+}
+
+// status: "valid" | "expired" | "invalid" | "used" | "not_configured"
+// "used" means the signature and expiry are fine but the password has changed
+// since the link was issued. It is also what a link for a deleted account gets
+// ("invalid"), so a token can never be used to probe for accounts.
+export async function inspectPasswordResetToken(token, { env = process.env, client, now = new Date() } = {}) {
+  const verified = verifyPasswordResetToken(token, { env, now });
+
+  if (verified.status !== "valid") {
+    return { status: verified.status };
+  }
+
+  const { config, client: defaultClient } = getClient(env);
+
+  if (!config.isConfigured && !client) {
+    return { status: "not_configured" };
+  }
+
+  const supabase = client || defaultClient;
+  const { data, error } = await supabase
+    .from("customers")
+    .select("id, password_hash, metadata")
+    .eq("id", verified.customerId)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message || "Could not load customer.");
+
+  const passwordHash = readStoredPasswordHash(data);
+
+  if (!data || !passwordHash) {
+    return { status: "invalid" };
+  }
+
+  if (!isPasswordResetTokenCurrent(verified.fingerprint, passwordHash, { env })) {
+    return { status: "used" };
+  }
+
+  return { status: "valid", customerId: data.id, passwordHash };
+}
+
+export async function resetCustomerPasswordWithToken(
+  token,
+  newPassword,
+  { env = process.env, client, now = new Date() } = {}
+) {
+  if (String(newPassword || "").length < PASSWORD_MIN_LENGTH) {
+    return { status: "invalid_password", code: "password_too_short" };
+  }
+
+  const inspected = await inspectPasswordResetToken(token, { env, client, now });
+
+  if (inspected.status !== "valid") {
+    return { status: inspected.status };
+  }
+
+  const { client: defaultClient } = getClient(env);
+  const supabase = client || defaultClient;
+  const { data: current, error: loadError } = await supabase
+    .from("customers")
+    .select("metadata")
+    .eq("id", inspected.customerId)
+    .maybeSingle();
+
+  if (loadError) throw new Error(loadError.message || "Could not load customer.");
+
+  let update = supabase
+    .from("customers")
+    .update({
+      password_hash: hashCustomerPassword(newPassword),
+      metadata: sanitizeCustomerMetadata(current?.metadata || {}),
+      updated_at: new Date().toISOString()
+    })
+    .eq("id", inspected.customerId);
+
+  // Compare-and-set on the hash the token was issued for: of two requests that
+  // race with the same link, only one can match, so a link works exactly once.
+  const storedColumnHash = inspected.passwordHash === current?.metadata?.password_hash ? "" : inspected.passwordHash;
+
+  if (storedColumnHash) {
+    update = update.eq("password_hash", storedColumnHash);
+  }
+
+  const { data: updated, error } = await update.select("id");
+
+  if (error) throw new Error(error.message || "Password could not be reset.");
+
+  if (!Array.isArray(updated) || updated.length === 0) {
+    return { status: "used" };
+  }
+
+  return { status: "reset", customerId: inspected.customerId };
 }

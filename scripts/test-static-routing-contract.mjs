@@ -79,7 +79,7 @@ assert.doesNotMatch(
 
 assert.equal(hasOurServicePage, true, "our-service page route must exist");
 assert.match(staticPages, /"our-service":/, "our-service content must be defined in static pages");
-assert.match(staticPages, /custom-jewelry-process-storyboard\.webp/, "our-service must use the optimized process storyboard image");
+assert.equal((staticPages.match(/custom-jewelry-process-0\d-[a-z-]+\.webp/g) || []).length, 8, "our-service must render each process step through its own optimized image");
 assert.match(staticPages, /custom-jewelry-service-hero\.webp/, "our-service hero must use an optimized dedicated image that is not the step storyboard");
 assert.match(staticPages, /custom-jewelry-service-hero-02-seamless\.webp/, "our-service hero gallery must include the optimized seamless satin jewelry hero image");
 assert.match(staticPages, /heroImages:\s*\[/, "our-service must support multiple hero images");
@@ -94,5 +94,19 @@ assert.match(sitemap, /"our-service"/, "sitemap must include our-service");
 assert.match(nextConfig, /\["our-service", "\/our-service"\]/, "legacy pages redirect map must include our-service");
 assert.match(siteCss, /\.home-signup-popup__dialog\s*\{[\s\S]*overflow-x:\s*hidden;[\s\S]*overflow-y:\s*auto;/, "signup popup dialog must allow vertical scrolling instead of clipping bottom controls");
 assert.match(siteCss, /\.home-signup-popup__content\s*\{[\s\S]*justify-content:\s*flex-start;/, "signup popup content must start at the top so bottom controls stay inside the dialog");
+
+// Every ?service= deep link in the static pages must match a ContactPageView option value,
+// otherwise the contact form silently falls back to "Engagement Rings".
+const contactViewSource = await readFile("app/components/ContactPageView.jsx", "utf8");
+const contactServiceValues = new Set([...contactViewSource.matchAll(/^\s*\["([^"]+)",\s*"[^"]+"\],?\s*$/gm)].map((match) => match[1]));
+assert.ok(contactServiceValues.has("Custom Design"), "contact form must expose the Custom Design service option");
+for (const file of ["app/lib/static-pages.js", "app/lib/static-pages-th.js"]) {
+  const source = await readFile(file, "utf8");
+  const linked = [...source.matchAll(/\?service=([^"&]*(?:%26[^"&]*)*)"/g)].map((match) => decodeURIComponent(match[1]));
+  assert.ok(linked.length > 0, `${file} should contain contact service deep links`);
+  for (const value of linked) {
+    assert.ok(contactServiceValues.has(value), `${file}: ?service=${value} is not a ContactPageView service option`);
+  }
+}
 
 console.log("React routing contract is valid.");

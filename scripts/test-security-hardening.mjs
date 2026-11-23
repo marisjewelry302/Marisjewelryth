@@ -75,3 +75,42 @@ for (const route of [
 const customerUsers = await readFile(new URL("../app/lib/customer-users.js", import.meta.url), "utf8");
 assert.match(customerUsers, /password_hash:\s*passwordHash/);
 assert.doesNotMatch(customerUsers, /metadata:\s*\{\s*password_hash:/);
+
+// Google Analytics 4 needs exactly these origins and nothing broader.
+const csp = new Map(
+  globalHeaders
+    .find((header) => header.key === "Content-Security-Policy")
+    .value.split(";")
+    .map((directive) => directive.trim().split(/\s+/))
+    .map(([name, ...sources]) => [name, sources])
+);
+assert.deepEqual(
+  csp.get("script-src").filter((source) => source.startsWith("https:")),
+  ["https://www.googletagmanager.com"],
+  "script-src allows only the Google tag origin"
+);
+assert.deepEqual(
+  csp.get("connect-src").filter((source) => source.startsWith("https:")).sort(),
+  [
+    "https://*.analytics.google.com",
+    "https://*.google-analytics.com",
+    "https://*.supabase.co",
+    "https://www.googletagmanager.com"
+  ],
+  "connect-src allows only Supabase and the GA4 collection origins"
+);
+assert.ok(csp.get("img-src").includes("https://*.google-analytics.com"), "img-src allows the GA4 beacon fallback");
+for (const [name, sources] of csp) {
+  for (const source of sources) {
+    assert.notEqual(source, "*", `${name} must not allow every origin`);
+    assert.notEqual(source, "https:", `${name} must not allow every https origin`);
+    assert.doesNotMatch(source, /^https:\/\/\*\.google\.com$|googleadservices|doubleclick/, `${name} must not allow Google ad origins`);
+  }
+}
+for (const name of ["default-src", "style-src", "font-src", "media-src", "frame-src"]) {
+  assert.equal(
+    (csp.get(name) || []).some((source) => /google/.test(source)),
+    false,
+    `${name} must not gain Google origins`
+  );
+}

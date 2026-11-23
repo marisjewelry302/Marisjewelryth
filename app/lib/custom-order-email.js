@@ -1,4 +1,5 @@
 import { normalizeMarketingEmail } from "./customer-email.js";
+import { formatRingSize } from "./ring-size.js";
 
 const RESEND_EMAIL_ENDPOINT = "https://api.resend.com/emails";
 const RESEND_API_KEY_ENV = "RESEND_API_KEY";
@@ -48,7 +49,7 @@ function buildOptionLines(order, optionSummary) {
     `Setting: ${formatValue(order.ringDesign?.setting)}`,
     `Metal: ${formatValue(order.metal)}`,
     `Metal purity: ${formatValue(order.metalPurity)}`,
-    `Ring size: ${formatValue(order.ringSize)}`,
+    `Ring size: ${formatValue(formatRingSize(order.ringSize, order.ringSizeSystem))}`,
     `Stone carat: ${formatValue(order.stoneCarat)}`,
     `Stone color: ${formatValue(order.stoneColor)}`,
     `Stone clarity: ${formatValue(order.stoneClarity)}`,

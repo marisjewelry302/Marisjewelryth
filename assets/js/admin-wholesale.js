@@ -5,41 +5,52 @@
   const root = document.querySelector("[data-wholesale-root]");
   if (!root) return;
 
+  // Text and formats come from the server-injected dictionary
+  // (app/lib/admin-i18n.js -> window.MARIS_ADMIN_I18N, window.marisAdminT).
+  const t = window.marisAdminT || ((key) => key);
+  const tp = window.marisAdminT?.plural || ((key) => key);
+  const locale = window.MARIS_ADMIN_I18N?.locale || "en-GB";
+
   const API = "/api/admin/wholesale";
   const ORDER_STATUS_LABELS = {
-    submitted: "Submitted",
-    quoted: "Quoted",
-    confirmed: "Confirmed",
-    in_production: "In production",
-    ready: "Ready to ship",
-    shipped: "Shipped",
-    completed: "Completed",
-    cancelled: "Cancelled"
+    submitted: t("wholesale.status.submitted"),
+    quoted: t("wholesale.status.quoted"),
+    confirmed: t("wholesale.status.confirmed"),
+    in_production: t("wholesale.status.in_production"),
+    ready: t("wholesale.status.ready"),
+    shipped: t("wholesale.status.shipped"),
+    completed: t("wholesale.status.completed"),
+    cancelled: t("wholesale.status.cancelled")
   };
   const OPEN_ORDER_STATUSES = ["submitted", "quoted", "confirmed", "in_production", "ready", "shipped"];
-  const ACCOUNT_STATUS_LABELS = { pending: "Pending review", approved: "Approved", rejected: "Rejected", suspended: "Suspended" };
+  const ACCOUNT_STATUS_LABELS = {
+    pending: t("wholesale.account.pending"),
+    approved: t("wholesale.account.approved"),
+    rejected: t("wholesale.account.rejected"),
+    suspended: t("wholesale.account.suspended")
+  };
   const PAYMENT_TERMS_LABELS = {
-    prepaid: "Full payment before production",
-    deposit_50: "50% deposit, balance before shipping",
-    net_15: "Net 15 days",
-    net_30: "Net 30 days"
+    prepaid: t("wholesale.terms.prepaid"),
+    deposit_50: t("wholesale.terms.deposit_50"),
+    net_15: t("wholesale.terms.net_15"),
+    net_30: t("wholesale.terms.net_30")
   };
   const BUSINESS_TYPE_LABELS = {
-    retailer: "Jewelry store / retailer",
-    online_store: "Online store",
-    private_label: "Private label",
-    distributor: "Distributor",
-    corporate_gifting: "Corporate gifting",
-    other: "Other"
+    retailer: t("wholesale.business.retailer"),
+    online_store: t("wholesale.business.online_store"),
+    private_label: t("wholesale.business.private_label"),
+    distributor: t("wholesale.business.distributor"),
+    corporate_gifting: t("wholesale.business.corporate_gifting"),
+    other: t("wholesale.business.other")
   };
   // Action -> [button label, statuses it may start from]. Mirrors the SQL guard.
   const ORDER_ACTIONS = {
-    confirm: ["Confirm order", ["submitted", "quoted"]],
-    start_production: ["Start production", ["confirmed"]],
-    mark_ready: ["Mark ready to ship", ["confirmed", "in_production"]],
-    ship: ["Mark shipped", ["ready"]],
-    complete: ["Mark completed", ["shipped"]],
-    cancel: ["Cancel order", ["submitted", "quoted", "confirmed", "in_production", "ready"]]
+    confirm: [t("wholesale.action.confirm"), ["submitted", "quoted"]],
+    start_production: [t("wholesale.action.start_production"), ["confirmed"]],
+    mark_ready: [t("wholesale.action.mark_ready"), ["confirmed", "in_production"]],
+    ship: [t("wholesale.action.ship"), ["ready"]],
+    complete: [t("wholesale.action.complete"), ["shipped"]],
+    cancel: [t("wholesale.action.cancel"), ["submitted", "quoted", "confirmed", "in_production", "ready"]]
   };
   const MAX_PRICE_BREAKS = 10;
 
@@ -74,7 +85,7 @@
   const state = {
     loaded: false,
     loading: false,
-    error: "",
+    errors: {},
     orders: [],
     accounts: [],
     products: [],
@@ -95,12 +106,12 @@
       .replaceAll("'", "&#039;");
   }
 
-  const moneyFormat = new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const moneyFormat = new Intl.NumberFormat(locale === "th-TH" ? locale : "en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const money = (value, currency = "THB") => (
-    value === null || value === undefined ? "On request" : `${moneyFormat.format(Number(value))} ${currency}`
+    value === null || value === undefined ? t("wholesale.onRequest") : `${moneyFormat.format(Number(value))} ${currency}`
   );
-  const dateFormat = new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short" });
-  const dayFormat = new Intl.DateTimeFormat("en-GB", { dateStyle: "medium" });
+  const dateFormat = new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" });
+  const dayFormat = new Intl.DateTimeFormat(locale, { dateStyle: "medium" });
   function formatDate(value, withTime = true) {
     if (!value) return "-";
     const date = new Date(value);
@@ -119,6 +130,34 @@
     }
   }
 
+  // 401: the session has ended. Show a persistent banner with a sign-in link that
+  // opens in a new tab, so nothing typed on this page is lost.
+  // 403: the signed-in role is not allowed to do this.
+  const SESSION_ENDED_MESSAGE = t("error.sessionEnded");
+  const FORBIDDEN_MESSAGE = t("error.forbidden");
+
+  function showSessionBanner() {
+    const banner = document.querySelector("[data-admin-session-banner]");
+    if (!banner) return;
+    const target = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    const link = banner.querySelector("[data-admin-session-banner-link]");
+    const text = banner.querySelector("[data-admin-session-banner-text]");
+    if (link) link.href = `/admin/login?next=${encodeURIComponent(target)}`;
+    if (text) text.textContent = SESSION_ENDED_MESSAGE;
+    banner.hidden = false;
+  }
+
+  function describeAuthFailure(status) {
+    if (status === 401) {
+      showSessionBanner();
+      return SESSION_ENDED_MESSAGE;
+    }
+    if (status === 403) {
+      return FORBIDDEN_MESSAGE;
+    }
+    return "";
+  }
+
   async function api(path, options = {}) {
     const response = await fetch(`${API}${path}`, {
       credentials: "same-origin",
@@ -128,17 +167,24 @@
     });
     const payload = await response.json().catch(() => ({}));
 
-    if (response.status === 401) {
-      window.location.assign("/admin/login");
-      throw new Error("Session expired.");
+    const authMessage = describeAuthFailure(response.status);
+    if (authMessage) {
+      const authError = new Error(authMessage);
+      authError.status = response.status;
+      throw authError;
     }
 
     if (!response.ok) {
       const detail = Array.isArray(payload.errors) && payload.errors.length ? ` (${payload.errors.join(", ")})` : "";
-      throw new Error(`${payload.error || "Request failed."}${detail}`);
+      throw new Error(`${payload.error || t("wholesale.requestFailed")}${detail}`);
     }
 
     return payload;
+  }
+
+  // Disables the controls the signed-in role cannot use (shared with admin-page.js).
+  function applyRolePermissions(container) {
+    window.MARIS_ADMIN_PERMISSIONS?.apply(container);
   }
 
   function replaceById(list, item) {
@@ -147,24 +193,28 @@
 
   // ─── Loading ───────────────────────────────────────────────────────────
 
-  async function loadAll() {
+  // Each section loads on its own: one failing endpoint leaves the other two usable.
+  const SECTIONS = {
+    orders: { label: t("wholesale.section.orders"), load: async () => { state.orders = (await api("/orders")).orders || []; } },
+    accounts: { label: t("wholesale.section.accounts"), load: async () => { state.accounts = (await api("/accounts")).accounts || []; } },
+    pricing: { label: t("wholesale.section.pricing"), load: async () => { state.products = (await api("/pricing")).products || []; } }
+  };
+
+  async function loadAll(names = Object.keys(SECTIONS)) {
     if (state.loading) return;
+    const wanted = Array.isArray(names) ? names : Object.keys(SECTIONS);
     state.loading = true;
-    state.error = "";
     renderAll();
 
     try {
-      const [orders, accounts, pricing] = await Promise.all([
-        api("/orders"),
-        api("/accounts"),
-        api("/pricing")
-      ]);
-      state.orders = orders.orders || [];
-      state.accounts = accounts.accounts || [];
-      state.products = pricing.products || [];
+      const results = await Promise.allSettled(wanted.map((name) => SECTIONS[name].load()));
+      results.forEach((result, index) => {
+        const name = wanted[index];
+        state.errors[name] = result.status === "fulfilled"
+          ? ""
+          : (result.reason?.message || t("wholesale.couldNotBeLoaded", { label: SECTIONS[name].label }));
+      });
       state.loaded = true;
-    } catch (error) {
-      state.error = error.message || "Wholesale data could not be loaded.";
     } finally {
       state.loading = false;
       renderAll();
@@ -181,27 +231,34 @@
   function renderBadges() {
     const pendingAccounts = state.accounts.filter((account) => account.status === "pending").length;
     const newOrders = state.orders.filter((order) => order.status === "submitted").length;
-    if (elements.badges.accounts) elements.badges.accounts.textContent = pendingAccounts ? `(${pendingAccounts} new)` : "";
-    if (elements.badges.orders) elements.badges.orders.textContent = newOrders ? `(${newOrders} new)` : "";
+    if (elements.badges.accounts) elements.badges.accounts.textContent = pendingAccounts ? t("wholesale.badgeNew", { n: pendingAccounts }) : "";
+    if (elements.badges.orders) elements.badges.orders.textContent = newOrders ? t("wholesale.badgeNew", { n: newOrders }) : "";
+  }
+
+  function productStatusLabel(status) {
+    const key = `status.product.${status}`;
+    const label = t(key);
+    return label === key ? status : label;
   }
 
   function placeholderRow(table, text) {
     table.innerHTML = `<tr><td colspan="6">${escapeHtml(text)}</td></tr>`;
   }
 
-  function notReady(table, summary) {
+  function notReady(table, summary, section) {
     if (state.loading && !state.loaded) {
-      placeholderRow(table, "Loading wholesale data...");
-      summary.textContent = "Loading...";
+      placeholderRow(table, t("wholesale.loading"));
+      summary.textContent = t("common.loading");
       return true;
     }
-    if (state.error) {
-      placeholderRow(table, state.error);
-      summary.textContent = "Wholesale data is unavailable.";
+    if (state.errors[section]) {
+      const label = SECTIONS[section].label;
+      table.innerHTML = `<tr><td colspan="6">${escapeHtml(t("wholesale.loadFailed", { label, message: state.errors[section] }))} <button type="button" class="admin-secondary" data-wholesale-retry="${section}">${escapeHtml(t("common.retry"))}</button></td></tr>`;
+      summary.textContent = t("wholesale.unavailable", { label });
       return true;
     }
     if (!state.loaded) {
-      placeholderRow(table, "Open the Wholesale tab to load data.");
+      placeholderRow(table, t("wholesale.openTab"));
       return true;
     }
     return false;
@@ -224,7 +281,7 @@
 
   function renderOrders() {
     const table = elements.ordersTable;
-    if (!table || notReady(table, elements.orderSummary)) {
+    if (!table || notReady(table, elements.orderSummary, "orders")) {
       renderOrderDetail();
       return;
     }
@@ -235,20 +292,20 @@
         <td>
           <strong>${escapeHtml(order.orderNumber)}</strong><br>
           <span>${escapeHtml(formatDate(order.submittedAt))}</span>
-          ${order.customerReference ? `<br><span>PO: ${escapeHtml(order.customerReference)}</span>` : ""}
+          ${order.customerReference ? `<br><span>${escapeHtml(t("wholesale.po", { ref: order.customerReference }))}</span>` : ""}
         </td>
         <td>
           <strong>${escapeHtml(order.companyName || "-")}</strong><br>
           <span>${escapeHtml(order.contactName)} ${escapeHtml(order.contactPhone)}</span><br>
           <span>${escapeHtml(order.customerEmail)}</span>
         </td>
-        <td>${order.items.length} line${order.items.length === 1 ? "" : "s"} · ${order.items.reduce((sum, item) => sum + item.quantity, 0)} pcs</td>
-        <td>${order.hasUnpricedItems ? "<strong>Needs quote</strong>" : escapeHtml(money(order.totalAmount, order.currency))}</td>
+        <td>${escapeHtml(tp("wholesale.lines", order.items.length, { n: order.items.length }))} · ${escapeHtml(t("wholesale.pcs", { n: order.items.reduce((sum, item) => sum + item.quantity, 0) }))}</td>
+        <td>${order.hasUnpricedItems ? `<strong>${escapeHtml(t("wholesale.needsQuote"))}</strong>` : escapeHtml(money(order.totalAmount, order.currency))}</td>
         <td><span class="custom-request-status" data-status="${escapeHtml(order.status)}">${escapeHtml(ORDER_STATUS_LABELS[order.status] || order.status)}</span></td>
-        <td><div class="admin-row-actions"><button type="button" data-wholesale-open-order="${escapeHtml(order.id)}">Open</button></div></td>
+        <td><div class="admin-row-actions"><button type="button" data-wholesale-open-order="${escapeHtml(order.id)}">${escapeHtml(t("common.open"))}</button></div></td>
       </tr>
-    `).join("") || `<tr><td colspan="6">No purchase orders match these filters.</td></tr>`;
-    elements.orderSummary.textContent = `Showing ${list.length} of ${state.orders.length} orders`;
+    `).join("") || `<tr><td colspan="6">${escapeHtml(t("wholesale.orders.noMatch"))}</td></tr>`;
+    elements.orderSummary.textContent = t("wholesale.orders.showing", { shown: list.length, total: state.orders.length });
     renderOrderDetail();
   }
 
@@ -266,7 +323,7 @@
     const canQuote = ["submitted", "quoted"].includes(order.status);
     const actions = Object.entries(ORDER_ACTIONS)
       .filter(([, [, from]]) => from.includes(order.status))
-      .map(([action, [label]]) => `<button type="button" class="${action === "cancel" ? "admin-secondary" : "admin-primary"}" data-wholesale-order-action="${action}">${escapeHtml(label)}</button>`)
+      .map(([action, [label]]) => `<button type="button" class="${action === "cancel" ? "admin-secondary" : "admin-primary"}" data-wholesale-order-action="${action}" data-requires="operations:write">${escapeHtml(label)}</button>`)
       .join("");
 
     const itemRows = order.items.map((item) => `
@@ -276,7 +333,7 @@
         <td>${escapeHtml(money(item.listUnitPrice, order.currency))}</td>
         <td>
           ${canQuote
-            ? `<input type="number" min="0" step="0.01" inputmode="decimal" aria-label="Unit price for ${escapeHtml(item.sku)}" data-wholesale-quote-item="${escapeHtml(item.id)}" value="${item.unitPrice === null ? "" : escapeHtml(item.unitPrice)}" placeholder="Set price">`
+            ? `<input type="number" min="0" step="0.01" inputmode="decimal" aria-label="${escapeHtml(t("wholesale.unitPriceFor", { sku: item.sku }))}" data-wholesale-quote-item="${escapeHtml(item.id)}" value="${item.unitPrice === null ? "" : escapeHtml(item.unitPrice)}" placeholder="${escapeHtml(t("wholesale.setPrice"))}">`
             : escapeHtml(money(item.unitPrice, order.currency))}
         </td>
         <td>${escapeHtml(item.lineTotal === null ? "-" : money(item.lineTotal, order.currency))}</td>
@@ -285,7 +342,7 @@
 
     const history = order.history.slice().reverse().map((entry) => `
       <li>
-        <strong>${escapeHtml(entry.fromStatus === entry.toStatus ? "Internal note" : ORDER_STATUS_LABELS[entry.toStatus] || entry.toStatus)}</strong>
+        <strong>${escapeHtml(entry.fromStatus === entry.toStatus ? t("wholesale.internalNote") : ORDER_STATUS_LABELS[entry.toStatus] || entry.toStatus)}</strong>
         <span>${escapeHtml(formatDate(entry.at))} · ${escapeHtml(entry.actor || "-")}</span>
         ${entry.note ? `<p>${escapeHtml(entry.note)}</p>` : ""}
       </li>
@@ -295,67 +352,68 @@
     panel.innerHTML = `
       <div class="custom-request-detail-head">
         <div>
-          <p class="admin-kicker">Purchase order</p>
+          <p class="admin-kicker">${escapeHtml(t("wholesale.purchaseOrder"))}</p>
           <h3>${escapeHtml(order.orderNumber)} · ${escapeHtml(order.companyName)}</h3>
           <p><span class="custom-request-status" data-status="${escapeHtml(order.status)}">${escapeHtml(ORDER_STATUS_LABELS[order.status])}</span>
-            · Account discount ${escapeHtml(order.discountPercent)}% · ${escapeHtml(PAYMENT_TERMS_LABELS[order.paymentTerms] || order.paymentTerms)}</p>
+            · ${escapeHtml(t("wholesale.accountDiscount", { percent: order.discountPercent }))} · ${escapeHtml(PAYMENT_TERMS_LABELS[order.paymentTerms] || order.paymentTerms)}</p>
         </div>
-        <button type="button" class="admin-secondary" data-wholesale-close="order">Close</button>
+        <button type="button" class="admin-secondary" data-wholesale-close="order">${escapeHtml(t("common.close"))}</button>
       </div>
 
       <dl class="admin-wholesale-facts">
-        <div><dt>Contact</dt><dd>${escapeHtml(order.contactName)} · ${escapeHtml(order.contactPhone)}<br>${escapeHtml(order.customerEmail)}</dd></div>
-        <div><dt>Ship to</dt><dd class="admin-wholesale-preline">${escapeHtml(order.shippingAddress)}</dd></div>
-        <div><dt>Customer PO</dt><dd>${escapeHtml(order.customerReference || "-")}</dd></div>
-        <div><dt>Requested ship date</dt><dd>${escapeHtml(order.requestedShipDate ? formatDate(order.requestedShipDate, false) : "-")}</dd></div>
-        ${order.customerNote ? `<div class="admin-wholesale-wide"><dt>Customer note</dt><dd class="admin-wholesale-preline">${escapeHtml(order.customerNote)}</dd></div>` : ""}
-        ${order.trackingNumber ? `<div><dt>Tracking</dt><dd>${escapeHtml(order.trackingNumber)}</dd></div>` : ""}
-        ${order.quoteValidUntil ? `<div><dt>Quote valid until</dt><dd>${escapeHtml(formatDate(order.quoteValidUntil, false))}</dd></div>` : ""}
+        <div><dt>${escapeHtml(t("wholesale.contact"))}</dt><dd>${escapeHtml(order.contactName)} · ${escapeHtml(order.contactPhone)}<br>${escapeHtml(order.customerEmail)}</dd></div>
+        <div><dt>${escapeHtml(t("wholesale.shipTo"))}</dt><dd class="admin-wholesale-preline">${escapeHtml(order.shippingAddress)}</dd></div>
+        <div><dt>${escapeHtml(t("wholesale.customerPo"))}</dt><dd>${escapeHtml(order.customerReference || "-")}</dd></div>
+        <div><dt>${escapeHtml(t("wholesale.requestedShipDate"))}</dt><dd>${escapeHtml(order.requestedShipDate ? formatDate(order.requestedShipDate, false) : "-")}</dd></div>
+        ${order.customerNote ? `<div class="admin-wholesale-wide"><dt>${escapeHtml(t("wholesale.customerNote"))}</dt><dd class="admin-wholesale-preline">${escapeHtml(order.customerNote)}</dd></div>` : ""}
+        ${order.trackingNumber ? `<div><dt>${escapeHtml(t("wholesale.tracking"))}</dt><dd>${escapeHtml(order.trackingNumber)}</dd></div>` : ""}
+        ${order.quoteValidUntil ? `<div><dt>${escapeHtml(t("wholesale.quoteValidUntil"))}</dt><dd>${escapeHtml(formatDate(order.quoteValidUntil, false))}</dd></div>` : ""}
       </dl>
 
       <form data-wholesale-quote-form>
         <div class="admin-table-wrap">
           <table class="custom-request-table">
-            <thead><tr><th>Piece</th><th>Qty</th><th>List price</th><th>Unit price (after discount)</th><th>Line total</th></tr></thead>
+            <thead><tr><th>${escapeHtml(t("wholesale.col.piece"))}</th><th>${escapeHtml(t("wholesale.col.qty"))}</th><th>${escapeHtml(t("wholesale.col.listPrice"))}</th><th>${escapeHtml(t("wholesale.col.unitPrice"))}</th><th>${escapeHtml(t("wholesale.col.lineTotal"))}</th></tr></thead>
             <tbody>${itemRows}</tbody>
             <tfoot>
-              <tr><th colspan="4">Subtotal</th><td>${escapeHtml(money(order.subtotalAmount, order.currency))}</td></tr>
-              <tr><th colspan="4">Discount</th><td>${canQuote ? `<input type="number" min="0" step="0.01" name="discountAmount" aria-label="Extra discount" value="${escapeHtml(order.discountAmount)}">` : escapeHtml(money(order.discountAmount, order.currency))}</td></tr>
-              <tr><th colspan="4">Shipping</th><td>${canQuote ? `<input type="number" min="0" step="0.01" name="shippingAmount" aria-label="Shipping" value="${escapeHtml(order.shippingAmount)}">` : escapeHtml(money(order.shippingAmount, order.currency))}</td></tr>
-              <tr><th colspan="4">Total</th><td><strong>${order.hasUnpricedItems ? "Needs quote" : escapeHtml(money(order.totalAmount, order.currency))}</strong></td></tr>
+              <tr><th colspan="4">${escapeHtml(t("wholesale.subtotal"))}</th><td>${escapeHtml(money(order.subtotalAmount, order.currency))}</td></tr>
+              <tr><th colspan="4">${escapeHtml(t("wholesale.discount"))}</th><td>${canQuote ? `<input type="number" min="0" step="0.01" name="discountAmount" aria-label="${escapeHtml(t("wholesale.extraDiscount"))}" value="${escapeHtml(order.discountAmount)}">` : escapeHtml(money(order.discountAmount, order.currency))}</td></tr>
+              <tr><th colspan="4">${escapeHtml(t("wholesale.shipping"))}</th><td>${canQuote ? `<input type="number" min="0" step="0.01" name="shippingAmount" aria-label="${escapeHtml(t("wholesale.shipping"))}" value="${escapeHtml(order.shippingAmount)}">` : escapeHtml(money(order.shippingAmount, order.currency))}</td></tr>
+              <tr><th colspan="4">${escapeHtml(t("wholesale.total"))}</th><td><strong>${order.hasUnpricedItems ? escapeHtml(t("wholesale.needsQuote")) : escapeHtml(money(order.totalAmount, order.currency))}</strong></td></tr>
             </tfoot>
           </table>
         </div>
         ${canQuote ? `
           <div class="admin-wholesale-inline">
-            <label>Quote valid until <input type="date" name="quoteValidUntil" value="${escapeHtml(order.quoteValidUntil || "")}"></label>
-            <label class="admin-wholesale-grow">Message to partner (shown in their timeline)
-              <input type="text" name="note" maxlength="1000" placeholder="e.g. Price includes 18K white gold, lead time 21 days">
+            <label>${escapeHtml(t("wholesale.quoteValidUntil"))} <input type="date" name="quoteValidUntil" value="${escapeHtml(order.quoteValidUntil || "")}"></label>
+            <label class="admin-wholesale-grow">${escapeHtml(t("wholesale.messageToPartner"))}
+              <input type="text" name="note" maxlength="1000" placeholder="${escapeHtml(t("wholesale.messagePlaceholder"))}">
             </label>
-            <button type="submit" class="admin-primary">${order.status === "quoted" ? "Update quote" : "Send quote"}</button>
+            <button type="submit" class="admin-primary" data-requires="catalogue:write">${escapeHtml(order.status === "quoted" ? t("wholesale.updateQuote") : t("wholesale.sendQuote"))}</button>
           </div>
-          <p class="admin-inline-note">The partner accepts the quote in their portal, which confirms the order. Use "Confirm order" only when they agreed another way.</p>
+          <p class="admin-inline-note">${escapeHtml(t("wholesale.quoteNote"))}</p>
         ` : ""}
       </form>
 
       <div class="admin-wholesale-inline">
-        <label class="admin-wholesale-grow">Note for this step (shown to the partner with a status change)
+        <label class="admin-wholesale-grow">${escapeHtml(t("wholesale.stepNote"))}
           <input type="text" maxlength="1000" data-wholesale-action-note>
         </label>
-        ${order.status === "ready" ? `<label>Tracking number <input type="text" maxlength="120" data-wholesale-tracking></label>` : ""}
+        ${order.status === "ready" ? `<label>${escapeHtml(t("wholesale.trackingNumber"))} <input type="text" maxlength="120" data-wholesale-tracking></label>` : ""}
       </div>
-      <div class="admin-form-actions">${actions || "<span>No further status changes.</span>"}</div>
+      <div class="admin-form-actions">${actions || `<span>${escapeHtml(t("wholesale.noFurtherChanges"))}</span>`}</div>
 
       <div class="admin-wholesale-inline">
-        <label class="admin-wholesale-grow">Internal note (not shown to the partner)
+        <label class="admin-wholesale-grow">${escapeHtml(t("wholesale.internalNoteLabel"))}
           <input type="text" maxlength="1000" data-wholesale-internal-note>
         </label>
-        <button type="button" class="admin-secondary" data-wholesale-order-action="note">Add note</button>
+        <button type="button" class="admin-secondary" data-wholesale-order-action="note" data-requires="operations:write">${escapeHtml(t("wholesale.addNote"))}</button>
       </div>
 
-      <h4>History</h4>
-      <ol class="custom-request-history">${history || "<li>No history yet.</li>"}</ol>
+      <h4>${escapeHtml(t("wholesale.history"))}</h4>
+      <ol class="custom-request-history">${history || `<li>${escapeHtml(t("wholesale.noHistory"))}</li>`}</ol>
     `;
+    applyRolePermissions(panel);
   }
 
   async function runOrderAction(order, body, successText) {
@@ -394,7 +452,7 @@
     }));
 
     if (items.some((item) => item.unitPrice === "")) {
-      setMessage("Set a unit price on every line before sending the quote.", true);
+      setMessage(t("wholesale.setEveryPrice"), true);
       return;
     }
 
@@ -406,7 +464,7 @@
       discountAmount: data.get("discountAmount"),
       quoteValidUntil: data.get("quoteValidUntil"),
       note: data.get("note")
-    }, `Quote saved for ${order.orderNumber}.`);
+    }, t("wholesale.quoteSaved", { order: order.orderNumber }));
   });
 
   elements.orderDetail?.addEventListener("click", (event) => {
@@ -428,16 +486,16 @@
       : panel.querySelector("[data-wholesale-action-note]")?.value || "";
 
     if (action === "note" && !note.trim()) {
-      setMessage("Write the note first.", true);
+      setMessage(t("wholesale.writeNoteFirst"), true);
       return;
     }
-    if (action === "cancel" && !window.confirm(`Cancel ${order.orderNumber}? The partner will see it as cancelled.`)) return;
+    if (action === "cancel" && !window.confirm(t("wholesale.confirmCancel", { order: order.orderNumber }))) return;
 
     runOrderAction(order, {
       action,
       note,
       trackingNumber: panel.querySelector("[data-wholesale-tracking]")?.value || ""
-    }, action === "note" ? "Note added." : `${order.orderNumber} updated.`);
+    }, action === "note" ? t("wholesale.noteAdded") : t("wholesale.orderUpdated", { order: order.orderNumber }));
   });
 
   // ─── Accounts ──────────────────────────────────────────────────────────
@@ -454,7 +512,7 @@
 
   function renderAccounts() {
     const table = elements.accountsTable;
-    if (!table || notReady(table, elements.accountSummary)) {
+    if (!table || notReady(table, elements.accountSummary, "accounts")) {
       renderAccountDetail();
       return;
     }
@@ -465,12 +523,12 @@
         <td>${escapeHtml(formatDate(account.createdAt))}</td>
         <td><strong>${escapeHtml(account.companyName)}</strong><br><span>${escapeHtml(BUSINESS_TYPE_LABELS[account.businessType] || account.businessType)}</span></td>
         <td>${escapeHtml(account.contactName)}<br><span>${escapeHtml(account.customerEmail)}</span><br><span>${escapeHtml(account.contactPhone)}</span></td>
-        <td>${escapeHtml(account.discountPercent)}% off<br><span>${escapeHtml(PAYMENT_TERMS_LABELS[account.paymentTerms] || account.paymentTerms)}</span></td>
+        <td>${escapeHtml(t("wholesale.percentOff", { percent: account.discountPercent }))}<br><span>${escapeHtml(PAYMENT_TERMS_LABELS[account.paymentTerms] || account.paymentTerms)}</span></td>
         <td><span class="custom-request-status" data-status="${escapeHtml(account.status)}">${escapeHtml(ACCOUNT_STATUS_LABELS[account.status] || account.status)}</span></td>
-        <td><div class="admin-row-actions"><button type="button" data-wholesale-open-account="${escapeHtml(account.id)}">Review</button></div></td>
+        <td><div class="admin-row-actions"><button type="button" data-wholesale-open-account="${escapeHtml(account.id)}">${escapeHtml(t("wholesale.review"))}</button></div></td>
       </tr>
-    `).join("") || `<tr><td colspan="6">No accounts match these filters.</td></tr>`;
-    elements.accountSummary.textContent = `Showing ${list.length} of ${state.accounts.length} accounts`;
+    `).join("") || `<tr><td colspan="6">${escapeHtml(t("wholesale.accounts.noMatch"))}</td></tr>`;
+    elements.accountSummary.textContent = t("wholesale.accounts.showing", { shown: list.length, total: state.accounts.length });
     renderAccountDetail();
   }
 
@@ -493,34 +551,35 @@
     panel.innerHTML = `
       <div class="custom-request-detail-head">
         <div>
-          <p class="admin-kicker">Wholesale account</p>
+          <p class="admin-kicker">${escapeHtml(t("wholesale.account.kicker"))}</p>
           <h3>${escapeHtml(account.companyName)}</h3>
-          <p>Applied ${escapeHtml(formatDate(account.createdAt))}${account.reviewedAt ? ` · Last reviewed ${escapeHtml(formatDate(account.reviewedAt))} by ${escapeHtml(account.reviewedBy || "-")}` : ""}</p>
+          <p>${escapeHtml(t("wholesale.account.applied", { date: formatDate(account.createdAt) }))}${account.reviewedAt ? ` · ${escapeHtml(t("wholesale.account.reviewed", { date: formatDate(account.reviewedAt), by: account.reviewedBy || "-" }))}` : ""}</p>
         </div>
-        <button type="button" class="admin-secondary" data-wholesale-close="account">Close</button>
+        <button type="button" class="admin-secondary" data-wholesale-close="account">${escapeHtml(t("common.close"))}</button>
       </div>
 
       <dl class="admin-wholesale-facts">
-        <div><dt>Business type</dt><dd>${escapeHtml(BUSINESS_TYPE_LABELS[account.businessType] || account.businessType)}</dd></div>
-        <div><dt>Tax ID</dt><dd>${escapeHtml(account.taxId || "-")}</dd></div>
-        <div><dt>Contact</dt><dd>${escapeHtml(account.contactName)} · ${escapeHtml(account.contactPhone)}${account.lineId ? `<br>LINE: ${escapeHtml(account.lineId)}` : ""}<br>${escapeHtml(account.customerEmail)}</dd></div>
-        <div><dt>Country</dt><dd>${escapeHtml(account.country)}</dd></div>
-        <div><dt>Website</dt><dd>${account.website ? `<a href="${escapeHtml(account.website)}" target="_blank" rel="noopener noreferrer nofollow">${escapeHtml(account.website)}</a>` : "-"}</dd></div>
-        <div><dt>Expected volume</dt><dd>${escapeHtml(account.expectedMonthlyVolume || "-")}</dd></div>
-        <div><dt>Categories</dt><dd>${escapeHtml(account.interestedCategories.join(", ") || "-")}</dd></div>
-        <div class="admin-wholesale-wide"><dt>Address</dt><dd class="admin-wholesale-preline">${escapeHtml(account.businessAddress)}</dd></div>
-        ${account.applicantNote ? `<div class="admin-wholesale-wide"><dt>Applicant note</dt><dd class="admin-wholesale-preline">${escapeHtml(account.applicantNote)}</dd></div>` : ""}
+        <div><dt>${escapeHtml(t("wholesale.account.businessType"))}</dt><dd>${escapeHtml(BUSINESS_TYPE_LABELS[account.businessType] || account.businessType)}</dd></div>
+        <div><dt>${escapeHtml(t("wholesale.account.taxId"))}</dt><dd>${escapeHtml(account.taxId || "-")}</dd></div>
+        <div><dt>${escapeHtml(t("wholesale.contact"))}</dt><dd>${escapeHtml(account.contactName)} · ${escapeHtml(account.contactPhone)}${account.lineId ? `<br>${escapeHtml(t("wholesale.account.line", { id: account.lineId }))}` : ""}<br>${escapeHtml(account.customerEmail)}</dd></div>
+        <div><dt>${escapeHtml(t("wholesale.account.country"))}</dt><dd>${escapeHtml(account.country)}</dd></div>
+        <div><dt>${escapeHtml(t("wholesale.account.website"))}</dt><dd>${account.website ? `<a href="${escapeHtml(account.website)}" target="_blank" rel="noopener noreferrer nofollow">${escapeHtml(account.website)}</a>` : "-"}</dd></div>
+        <div><dt>${escapeHtml(t("wholesale.account.expectedVolume"))}</dt><dd>${escapeHtml(account.expectedMonthlyVolume || "-")}</dd></div>
+        <div><dt>${escapeHtml(t("wholesale.account.categories"))}</dt><dd>${escapeHtml(account.interestedCategories.join(", ") || "-")}</dd></div>
+        <div class="admin-wholesale-wide"><dt>${escapeHtml(t("wholesale.account.address"))}</dt><dd class="admin-wholesale-preline">${escapeHtml(account.businessAddress)}</dd></div>
+        ${account.applicantNote ? `<div class="admin-wholesale-wide"><dt>${escapeHtml(t("wholesale.account.applicantNote"))}</dt><dd class="admin-wholesale-preline">${escapeHtml(account.applicantNote)}</dd></div>` : ""}
       </dl>
 
       <form class="admin-form" data-wholesale-account-form>
-        <label>Status<select name="status">${option(ACCOUNT_STATUS_LABELS, account.status)}</select></label>
-        <label>Account discount (%)<input type="number" name="discountPercent" min="0" max="90" step="0.5" value="${escapeHtml(account.discountPercent)}"></label>
-        <label>Payment terms<select name="paymentTerms">${option(PAYMENT_TERMS_LABELS, account.paymentTerms)}</select></label>
-        <label class="admin-wholesale-wide">Internal note<textarea name="adminNote" rows="3" maxlength="1000">${escapeHtml(account.adminNote)}</textarea></label>
-        <div class="admin-form-actions"><button type="submit" class="admin-primary">Save account</button></div>
-        <p class="admin-inline-note">The discount applies to every wholesale price this partner sees, on top of price breaks. Only approved accounts can see prices and order.</p>
+        <label>${escapeHtml(t("wholesale.status"))}<select name="status">${option(ACCOUNT_STATUS_LABELS, account.status)}</select></label>
+        <label>${escapeHtml(t("wholesale.account.discountLabel"))}<input type="number" name="discountPercent" min="0" max="90" step="0.5" value="${escapeHtml(account.discountPercent)}"></label>
+        <label>${escapeHtml(t("wholesale.account.paymentTerms"))}<select name="paymentTerms">${option(PAYMENT_TERMS_LABELS, account.paymentTerms)}</select></label>
+        <label class="admin-wholesale-wide">${escapeHtml(t("wholesale.account.internalNote"))}<textarea name="adminNote" rows="3" maxlength="1000">${escapeHtml(account.adminNote)}</textarea></label>
+        <div class="admin-form-actions"><button type="submit" class="admin-primary" data-requires="catalogue:write">${escapeHtml(t("wholesale.account.save"))}</button></div>
+        <p class="admin-inline-note">${escapeHtml(t("wholesale.account.discountNote"))}</p>
       </form>
     `;
+    applyRolePermissions(panel);
   }
 
   elements.accountsTable?.addEventListener("click", (event) => {
@@ -558,7 +617,7 @@
         })
       });
       state.accounts = replaceById(state.accounts, payload.account);
-      setMessage(`${payload.account.companyName} saved.`);
+      setMessage(t("wholesale.account.saved", { company: payload.account.companyName }));
       renderAll();
     } catch (error) {
       setMessage(error.message, true);
@@ -580,13 +639,13 @@
 
   function breaksSummary(product) {
     const breaks = product.wholesale.priceBreaks;
-    if (!breaks.length) return product.basePrice ? "Retail price" : "On request";
+    if (!breaks.length) return product.basePrice ? t("wholesale.retailPrice") : t("wholesale.onRequest");
     return breaks.map((entry) => `${entry.minQuantity}+ → ${moneyFormat.format(entry.unitPrice)}`).join("<br>");
   }
 
   function renderPricing() {
     const table = elements.pricingTable;
-    if (!table || notReady(table, elements.pricingSummary)) {
+    if (!table || notReady(table, elements.pricingSummary, "pricing")) {
       renderPricingDetail();
       return;
     }
@@ -594,25 +653,25 @@
     const list = filteredProducts();
     table.innerHTML = list.map((product) => `
       <tr>
-        <td><strong>${escapeHtml(product.sku)}</strong><br><span>${escapeHtml(product.name)}</span>${product.status !== "active" ? `<br><span>(${escapeHtml(product.status)})</span>` : ""}</td>
+        <td><strong>${escapeHtml(product.sku)}</strong><br><span>${escapeHtml(product.name)}</span>${product.status !== "active" ? `<br><span>(${escapeHtml(productStatusLabel(product.status))})</span>` : ""}</td>
         <td>${escapeHtml(money(product.basePrice))}</td>
-        <td><span class="custom-request-status" data-status="${product.wholesale.isEnabled ? "completed" : "cancelled"}">${product.wholesale.isEnabled ? "On" : "Off"}</span></td>
+        <td><span class="custom-request-status" data-status="${product.wholesale.isEnabled ? "completed" : "cancelled"}">${escapeHtml(product.wholesale.isEnabled ? t("common.on") : t("common.off"))}</span></td>
         <td>${product.wholesale.minimumOrderQuantity} / ${product.wholesale.casePack}</td>
         <td>${breaksSummary(product)}</td>
-        <td><div class="admin-row-actions"><button type="button" data-wholesale-open-product="${escapeHtml(product.id)}">Edit</button></div></td>
+        <td><div class="admin-row-actions"><button type="button" data-wholesale-open-product="${escapeHtml(product.id)}">${escapeHtml(t("common.edit"))}</button></div></td>
       </tr>
-    `).join("") || `<tr><td colspan="6">No products match.</td></tr>`;
+    `).join("") || `<tr><td colspan="6">${escapeHtml(t("wholesale.pricing.noMatch"))}</td></tr>`;
     const enabled = state.products.filter((product) => product.wholesale.isEnabled).length;
-    elements.pricingSummary.textContent = `Showing ${list.length} of ${state.products.length} products · ${enabled} sold wholesale`;
+    elements.pricingSummary.textContent = t("wholesale.pricing.showing", { shown: list.length, total: state.products.length, enabled });
     renderPricingDetail();
   }
 
   function breakRow(entry = {}) {
     return `
       <div class="admin-wholesale-break" data-wholesale-break>
-        <label>From qty<input type="number" min="1" step="1" data-break-qty value="${escapeHtml(entry.minQuantity ?? "")}"></label>
-        <label>Unit price (THB)<input type="number" min="0.01" step="0.01" data-break-price value="${escapeHtml(entry.unitPrice ?? "")}"></label>
-        <button type="button" class="admin-secondary" data-wholesale-remove-break aria-label="Remove price break">Remove</button>
+        <label>${escapeHtml(t("wholesale.break.fromQty"))}<input type="number" min="1" step="1" data-break-qty value="${escapeHtml(entry.minQuantity ?? "")}"></label>
+        <label>${escapeHtml(t("wholesale.break.unitPrice"))}<input type="number" min="0.01" step="0.01" data-break-price value="${escapeHtml(entry.unitPrice ?? "")}"></label>
+        <button type="button" class="admin-secondary" data-wholesale-remove-break aria-label="${escapeHtml(t("wholesale.break.removeLabel"))}">${escapeHtml(t("common.remove"))}</button>
       </div>
     `;
   }
@@ -633,30 +692,31 @@
     panel.innerHTML = `
       <div class="custom-request-detail-head">
         <div>
-          <p class="admin-kicker">Wholesale terms</p>
+          <p class="admin-kicker">${escapeHtml(t("wholesale.pricing.kicker"))}</p>
           <h3>${escapeHtml(product.sku)} · ${escapeHtml(product.name)}</h3>
-          <p>Retail price: ${escapeHtml(money(product.basePrice))}</p>
+          <p>${escapeHtml(t("wholesale.pricing.retail", { price: money(product.basePrice) }))}</p>
         </div>
-        <button type="button" class="admin-secondary" data-wholesale-close="product">Close</button>
+        <button type="button" class="admin-secondary" data-wholesale-close="product">${escapeHtml(t("common.close"))}</button>
       </div>
 
       <form class="admin-form" data-wholesale-pricing-form>
-        <label class="admin-wholesale-check"><input type="checkbox" name="isEnabled"${terms.isEnabled ? " checked" : ""}> Sell this piece wholesale</label>
-        <label>Minimum order quantity<input type="number" name="minimumOrderQuantity" min="1" step="1" value="${escapeHtml(terms.minimumOrderQuantity)}" required></label>
-        <label>Case pack (order in multiples of)<input type="number" name="casePack" min="1" step="1" value="${escapeHtml(terms.casePack)}" required></label>
-        <label>Lead time (days)<input type="number" name="leadTimeDays" min="0" max="365" step="1" value="${escapeHtml(terms.leadTimeDays ?? "")}"></label>
-        <label class="admin-wholesale-wide">Note shown to partners<input type="text" name="note" maxlength="500" value="${escapeHtml(terms.note)}" placeholder="e.g. Price for 18K; platinum quoted on request"></label>
+        <label class="admin-wholesale-check"><input type="checkbox" name="isEnabled"${terms.isEnabled ? " checked" : ""}> ${escapeHtml(t("wholesale.pricing.sellWholesale"))}</label>
+        <label>${escapeHtml(t("wholesale.pricing.moq"))}<input type="number" name="minimumOrderQuantity" min="1" step="1" value="${escapeHtml(terms.minimumOrderQuantity)}" required></label>
+        <label>${escapeHtml(t("wholesale.pricing.casePack"))}<input type="number" name="casePack" min="1" step="1" value="${escapeHtml(terms.casePack)}" required></label>
+        <label>${escapeHtml(t("wholesale.pricing.leadTime"))}<input type="number" name="leadTimeDays" min="0" max="365" step="1" value="${escapeHtml(terms.leadTimeDays ?? "")}"></label>
+        <label class="admin-wholesale-wide">${escapeHtml(t("wholesale.pricing.noteToPartners"))}<input type="text" name="note" maxlength="500" value="${escapeHtml(terms.note)}" placeholder="${escapeHtml(t("wholesale.pricing.notePlaceholder"))}"></label>
 
         <fieldset class="admin-wholesale-wide admin-wholesale-breaks">
-          <legend>Price breaks (before the partner's account discount)</legend>
-          <p class="admin-inline-note">Leave empty to use the retail price. With no retail price either, partners see "Price on request" and you quote each order.</p>
+          <legend>${escapeHtml(t("wholesale.pricing.breaksLegend"))}</legend>
+          <p class="admin-inline-note">${escapeHtml(t("wholesale.pricing.breaksNote"))}</p>
           <div data-wholesale-breaks>${terms.priceBreaks.map(breakRow).join("")}</div>
-          <button type="button" class="admin-secondary" data-wholesale-add-break>Add price break</button>
+          <button type="button" class="admin-secondary" data-wholesale-add-break>${escapeHtml(t("wholesale.pricing.addBreak"))}</button>
         </fieldset>
 
-        <div class="admin-form-actions"><button type="submit" class="admin-primary">Save wholesale terms</button></div>
+        <div class="admin-form-actions"><button type="submit" class="admin-primary" data-requires="catalogue:write">${escapeHtml(t("wholesale.pricing.save"))}</button></div>
       </form>
     `;
+    applyRolePermissions(panel);
   }
 
   elements.pricingTable?.addEventListener("click", (event) => {
@@ -678,7 +738,7 @@
 
     if (event.target.closest("[data-wholesale-add-break]")) {
       if (container.querySelectorAll("[data-wholesale-break]").length >= MAX_PRICE_BREAKS) {
-        setMessage(`At most ${MAX_PRICE_BREAKS} price breaks.`, true);
+        setMessage(t("wholesale.pricing.maxBreaks", { n: MAX_PRICE_BREAKS }), true);
         return;
       }
       container.insertAdjacentHTML("beforeend", breakRow());
@@ -719,12 +779,13 @@
         })
       });
       if (payload.product) state.products = replaceById(state.products, payload.product);
-      setMessage(`Wholesale terms saved for ${product.sku}.`);
+      setMessage(t("wholesale.pricing.saved", { sku: product.sku }));
       renderAll();
     } catch (error) {
+      // The server sends these stable codes inside its message.
       const hints = {
-        priceBreaksOrder: "a bigger quantity cannot have a higher unit price",
-        priceBreaksDuplicate: "each break needs a different quantity"
+        priceBreaksOrder: t("wholesale.hint.priceBreaksOrder"),
+        priceBreaksDuplicate: t("wholesale.hint.priceBreaksDuplicate")
       };
       const text = Object.entries(hints).reduce((message, [code, hint]) => message.replace(code, hint), error.message);
       setMessage(text, true);
@@ -756,10 +817,23 @@
   elements.accountStatus?.addEventListener("change", renderAccounts);
   elements.pricingSearch?.addEventListener("input", renderPricing);
   elements.pricingFilter?.addEventListener("change", renderPricing);
-  elements.refresh?.addEventListener("click", loadAll);
+  elements.refresh?.addEventListener("click", () => loadAll());
+  root.addEventListener("click", (event) => {
+    const retry = event.target.closest("[data-wholesale-retry]");
+    if (retry && SECTIONS[retry.dataset.wholesaleRetry]) {
+      loadAll([retry.dataset.wholesaleRetry]);
+    }
+  });
 
   // Load on first visit to the tab, so the rest of the admin is not slowed down.
-  elements.tab?.addEventListener("click", () => {
+  // The tab can also be reached by a link, Back or a saved #wholesale address.
+  function loadOnFirstVisit() {
     if (!state.loaded && !state.loading) loadAll();
+  }
+
+  elements.tab?.addEventListener("click", loadOnFirstVisit);
+  window.addEventListener("maris:admin-panel-shown", (event) => {
+    if (event.detail?.name === "wholesale") loadOnFirstVisit();
   });
+  if (root.classList.contains("is-active")) loadOnFirstVisit();
 })();

@@ -5,6 +5,13 @@
   // one that names the most gem columns, each column is recognised by what its
   // header says, and numbers are read out of whatever text surrounds them.
 
+  // Error text follows the admin language when the page has the dictionary
+  // (window.marisAdminT); otherwise English.
+  function say(key, fallback) {
+    const translate = root.marisAdminT;
+    return typeof translate === "function" && translate.has && translate.has(key) ? translate(key) : fallback;
+  }
+
   const MAX_STONE_ROWS = 200;
   const HEADER_SCAN_ROWS = 20;
   const ROUND_SHAPE = /round|brilliant|กลม/i;
@@ -420,7 +427,7 @@
     if (!header) {
       return {
         ok: false,
-        error: "No gem columns found. The report needs a header row naming at least two of: Stone or Gem, Shape or Cut, Size, Qty, Carat or Weight."
+        error: say("gem.parser.noColumns", "No gem columns found. The report needs a header row naming at least two of: Stone or Gem, Shape or Cut, Size, Qty, Carat or Weight.")
       };
     }
 
@@ -514,7 +521,7 @@
     if (!stones.length) {
       return {
         ok: false,
-        error: "The gem columns were found, but no stone rows were under them."
+        error: say("gem.parser.noRows", "The gem columns were found, but no stone rows were under them.")
       };
     }
 

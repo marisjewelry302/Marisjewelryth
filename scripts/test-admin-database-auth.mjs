@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { readAdminSource } from "./lib/admin-i18n-source.mjs";
 
 const {
   SESSION_COOKIE_NAME,
@@ -233,7 +234,7 @@ const envExample = await readFile(new URL("../.env.example", import.meta.url), "
 const loginRoute = await readFile(new URL("../app/api/admin/login/route.js", import.meta.url), "utf8");
 const setupRoute = await readFile(new URL("../app/api/admin/setup/route.js", import.meta.url), "utf8");
 const uploadRoute = await readFile(new URL("../app/api/admin/uploads/product-image/route.js", import.meta.url), "utf8");
-const setupPage = await readFile(new URL("../app/admin/setup/page.js", import.meta.url), "utf8");
+const setupPage = await readAdminSource("app/admin/setup/page.js");
 
 assert.doesNotMatch(envExample, /^MARIS_ADMIN_PASSWORD=/m, "Admin password should no longer be configured through env");
 assert.match(envExample, /^MARIS_ADMIN_SESSION_SECRET=/m, "Session signing secret should remain server-side env");

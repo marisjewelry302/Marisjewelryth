@@ -446,6 +446,13 @@ export const journalArticles = [
   },
   {
     "slug": "journal-ring-size-guide",
+    "cta": {
+      "href": "/contact-us?service=General%20Inquiry",
+      "label": {
+        "en": "Ask us about your ring size",
+        "th": "ถามเรื่องขนาดแหวนกับเรา"
+      }
+    },
     "url": "/journal/journal-ring-size-guide",
     "category": {
       "en": "Sizing Guide"
@@ -521,6 +528,13 @@ export const journalArticles = [
   },
   {
     "slug": "journal-gold-white-gold-platinum-guide",
+    "cta": {
+      "href": "/category/rings",
+      "label": {
+        "en": "Browse rings",
+        "th": "ดูแหวนทั้งหมด"
+      }
+    },
     "url": "/journal/journal-gold-white-gold-platinum-guide",
     "category": {
       "en": "Metal Guide"
@@ -596,6 +610,13 @@ export const journalArticles = [
   },
   {
     "slug": "journal-diamond-ring-care-guide",
+    "cta": {
+      "href": "/contact-us?service=General%20Inquiry",
+      "label": {
+        "en": "Ask about caring for your jewelry",
+        "th": "สอบถามการดูแลเครื่องประดับ"
+      }
+    },
     "url": "/journal/journal-diamond-ring-care-guide",
     "category": {
       "en": "Jewelry Care"
@@ -853,6 +874,30 @@ export function getJournalVideoEmbed(article) {
   }
 
   return /^[\w-]{11}$/.test(id) ? `https://www.youtube-nocookie.com/embed/${id}?rel=0` : null;
+}
+
+// "More reads" for an article: the same category first, then the articles that
+// follow it in the list (wrapping around), never the article itself.
+export function getRelatedJournalArticles(article, limit = 3) {
+  const others = journalArticles.filter((candidate) => candidate.slug !== article.slug);
+  const start = journalArticles.findIndex((candidate) => candidate.slug === article.slug);
+  const following = start === -1
+    ? others
+    : [...journalArticles.slice(start + 1), ...journalArticles.slice(0, start)];
+  const sameCategory = others.filter((candidate) => byLanguage(candidate.category) === byLanguage(article.category));
+
+  return [...new Set([...sameCategory, ...following])].slice(0, limit);
+}
+
+// Optional per-article call to action; null means "use the default link".
+export function getJournalCta(article, language = "en") {
+  const cta = article?.cta;
+
+  if (!cta?.href) {
+    return null;
+  }
+
+  return { href: cta.href, label: byLanguage(cta.label, language) };
 }
 
 export function byLanguage(entry, language = "en") {

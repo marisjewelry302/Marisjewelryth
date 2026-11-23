@@ -1,6 +1,7 @@
 // The catalogue has no structured trim data: `product_variants` is empty and
-// `products` stores no metal, shape, or setting column. The descriptive text the
-// admin uploader writes is the only real signal - image alt text records the metal
+// `products` stores no metal or setting column. Shape and carat come from the
+// structured specs and gem report when a piece has them. Otherwise the
+// descriptive text the admin uploader writes is the real signal - image alt text records the metal
 // per photo ("... White Gold Detail view") and product names carry the diamond
 // shape and setting style. Facets are read from that text, and the storefront only
 // offers a filter option when at least one piece actually answers it, so a control
@@ -54,6 +55,23 @@ function collectVariantText(product) {
     : [];
 }
 
+// The gem report lists every stone, melee included. Only the centre stone (the
+// largest by carat each) names the piece's shape, otherwise every halo ring
+// would also read as "Round".
+function collectGemReportText(product) {
+  const stones = Array.isArray(product?.gemReport?.stones) ? product.gemReport.stones : [];
+
+  if (!stones.length) {
+    return [];
+  }
+
+  const centre = stones.reduce((best, stone) => (
+    Number(stone?.caratEach || 0) > Number(best?.caratEach || 0) ? stone : best
+  ), stones[0]);
+
+  return [toText(centre?.shape)];
+}
+
 // Image alt text is the richest source, so it is folded in for every group.
 function collectProductText(product = {}) {
   return [
@@ -62,6 +80,9 @@ function collectProductText(product = {}) {
     toText(product.category),
     toText(product.collection),
     toText(product.collectionName),
+    toText(product.specs?.stoneShape),
+    toText(product.specs?.stoneType),
+    ...collectGemReportText(product),
     ...collectVariantText(product),
     ...collectImageText(product)
   ]
@@ -182,6 +203,19 @@ export function buildCatalogueFilterGroups(products) {
 }
 
 export function getProductCarat(product = {}) {
+  // Structured data first: the specs carat weight, then the gem report total.
+  const specCarat = parseFloat(String(product?.specs?.caratWeight || "").replace(/,/g, ""));
+
+  if (Number.isFinite(specCarat) && specCarat > 0) {
+    return specCarat;
+  }
+
+  const reportCarat = Number(product?.gemReport?.totalCarat);
+
+  if (Number.isFinite(reportCarat) && reportCarat > 0) {
+    return reportCarat;
+  }
+
   const match = collectProductText(product).match(CARAT_PATTERN);
   const carat = match ? Number(match[1]) : 0;
 

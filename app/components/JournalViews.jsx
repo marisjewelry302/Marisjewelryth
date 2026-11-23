@@ -1,8 +1,11 @@
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { THAI_LOCALE, localizePath } from "../lib/i18n";
-import { getJournalArticle, getJournalText, getJournalVideoEmbed, journalArticles } from "../lib/journal-data";
+import { THAI_LOCALE, fill, localizePath } from "../lib/i18n";
+import { getJournalArticle, getJournalCta, getJournalText, getJournalVideoEmbed, getRelatedJournalArticles, journalArticles } from "../lib/journal-data";
+import { buildArticleJsonLd, buildBreadcrumbJsonLd } from "../lib/seo";
 import { uiText } from "../lib/ui-text";
+import JsonLd from "./JsonLd";
+import JournalVideoFacade from "./JournalVideoFacade";
 
 function languageOf(locale) {
   return locale === THAI_LOCALE ? "th" : "en";
@@ -19,7 +22,7 @@ export function JournalListView({ locale = "en" }) {
         <div className="subpage-intro">
           <p className="eyebrow">{copy.eyebrow}</p>
           <h1>{copy.title}</h1>
-          <p className="lead journal-library-meta">{copy.lead}</p>
+          <p className="lead journal-library-meta">{fill(copy.lead, { count: journalArticles.length })}</p>
           <p className="journal-library-note">{copy.note}</p>
         </div>
 
@@ -28,12 +31,12 @@ export function JournalListView({ locale = "en" }) {
             const text = getJournalText(article, language);
 
             return (
-              <a className="subpage-article-card journal-card-link" href={link(`/journal/${article.slug}`)} key={article.slug}>
+              <a className={`subpage-article-card journal-card-link${article.image ? " journal-card-link--featured" : ""}`} href={link(`/journal/${article.slug}`)} key={article.slug}>
                 {article.image ? (
                   <Image
                     className="journal-card-thumb"
                     src={article.image}
-                    alt={text.title}
+                    alt=""
                     width={1280}
                     height={720}
                     sizes="(max-width: 960px) 100vw, 540px"
@@ -68,34 +71,48 @@ export function JournalArticleView({ slug, locale = "en" }) {
   const text = getJournalText(article, language);
   const link = (path) => localizePath(path, locale);
   const videoEmbed = getJournalVideoEmbed(article);
+  const related = getRelatedJournalArticles(article);
+  const cta = getJournalCta(article, language) ?? { href: "/category/engagement-ring", label: copy.viewRings };
+  const articleJsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      buildArticleJsonLd({ slug: article.slug, title: text.title, description: text.excerpt, image: article.image, locale }),
+      buildBreadcrumbJsonLd(
+        [
+          { name: copy.title, path: "/journal" },
+          { name: text.title, path: `/journal/${article.slug}` }
+        ],
+        locale
+      )
+    ]
+  };
 
   return (
     <main id="main-content" className="placeholder-main content-page site-main">
+      <JsonLd data={articleJsonLd} />
       <article className={`placeholder-card journal-article-shell journal-article-shell--${language}`}>
         <header className="journal-article-header">
           <p className="eyebrow">{text.category}</p>
           <h1>{text.title}</h1>
+          {text.readTime ? <p className="journal-article-readtime">{text.readTime}</p> : null}
           <p className="journal-article-dek">{text.excerpt}</p>
         </header>
 
         <div className="journal-article-layout">
           <div className="journal-article-content">
             {videoEmbed ? (
-              <div className={`journal-video${article.videoFormat === "vertical" ? " journal-video--vertical" : ""}`}>
-                <iframe
-                  src={videoEmbed}
-                  title={text.title}
-                  loading="lazy"
-                  allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  referrerPolicy="strict-origin-when-cross-origin"
-                  allowFullScreen
-                />
-              </div>
+              <JournalVideoFacade
+                embedSrc={videoEmbed}
+                title={text.title}
+                poster={article.image}
+                playLabel={copy.playVideo}
+                vertical={article.videoFormat === "vertical"}
+              />
             ) : null}
             {videoEmbed ? (
               <p className="journal-video-link">
                 <a href={article.video} target="_blank" rel="noopener noreferrer">
-                  {language === "th" ? "ดูบน YouTube" : "Watch on YouTube"}
+                  {copy.watchOnYoutube}
                 </a>
               </p>
             ) : null}
@@ -136,8 +153,28 @@ export function JournalArticleView({ slug, locale = "en" }) {
           </aside>
         </div>
 
+        {related.length > 0 ? (
+          <section className="journal-more" aria-labelledby="journal-more-heading">
+            <h2 id="journal-more-heading">{copy.moreReads}</h2>
+            <ul className="journal-more-list">
+              {related.map((item) => {
+                const itemText = getJournalText(item, language);
+
+                return (
+                  <li key={item.slug}>
+                    <a className="journal-more-card" href={link(`/journal/${item.slug}`)}>
+                      <span className="journal-more-meta">{itemText.category}{itemText.readTime ? ` · ${itemText.readTime}` : ""}</span>
+                      <span className="journal-more-title">{itemText.title}</span>
+                    </a>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        ) : null}
+
         <div className="page-actions journal-page-actions">
-          <a className="primary-link" href={link("/category/engagement-ring")}>{copy.viewRings}</a>
+          <a className="primary-link" href={link(cta.href)}>{cta.label}</a>
           <a href={link("/contact-us")}>{copy.contact}</a>
           <a href={link("/journal")}>{copy.back}</a>
         </div>

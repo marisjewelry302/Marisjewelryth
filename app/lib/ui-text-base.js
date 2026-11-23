@@ -12,8 +12,10 @@ const en = {
     closeMenu: "Close menu",
     openMenu: "Open menu",
     homeLabel: "Go to homepage",
+    home: "Home",
+    skipToContent: "Skip to main content",
     logoAlt: "Maris Jewelry Logo",
-    browse: "Browse jewelry",
+    browse: "Shop engagement rings",
     primaryNav: "Primary navigation",
     account: "Account",
     wishlist: "Wishlist",
@@ -109,11 +111,15 @@ const en = {
       }
     ],
     copyright: "© 2026 Maris Jewelry. All rights reserved.",
+    contactLabel: "Contact details",
     cookieSettings: "Cookie settings"
   },
   newsletter: {
     success: "You're on the Maris list.",
     failure: "Your email could not be saved.",
+    invalid: "Please enter a valid email address.",
+    rateLimited: "Too many signups from here. Please try again later.",
+    notConfigured: "Sign-up is unavailable right now. Please try again later.",
     connection: "Please check your connection.",
     joining: "Joining...",
     emailAddress: "Email address",
@@ -123,6 +129,25 @@ const en = {
     footerConsent: "By joining, you agree to receive marketing emails. Unsubscribe any time.",
     joinLabel: "Join newsletter",
     join: "Join"
+  },
+  notFound: {
+    eyebrow: "Page not found",
+    title: "We could not find that page.",
+    lead: "The link may be out of date, or the piece may no longer be listed. Browse our collections, or message the atelier and we will help you find it.",
+    product: {
+      eyebrow: "Piece not listed",
+      title: "This piece is no longer listed.",
+      lead: "It may have been sold or taken down. See the pieces we currently offer, or message the atelier to ask about something similar."
+    },
+    browseLabel: "Browse collections",
+    homeLabel: "Go to Home",
+    moreLabel: "Or start from here",
+    links: [
+      { href: "/category/engagement-ring", label: "Engagement rings" },
+      { href: "/category/wedding-bands", label: "Wedding bands" },
+      { href: "/ready-to-ship", label: "Ready to Ship" },
+      { href: "/contact-us", label: "Contact us" }
+    ]
   },
   cookie: {
     categories: [
@@ -135,24 +160,25 @@ const en = {
       {
         key: "analytics",
         title: "Analytics",
-        text: "Help us understand which pages and pieces visitors look at, so we can improve the catalogue. No data is sold."
+        text: "Google Analytics helps us understand how visitors use the site (pages visited, approximate location, device and browser) so we can improve it. It runs only if you allow it and is not used for advertising."
       },
       {
         key: "marketing",
         title: "Marketing",
-        text: "Let us measure our social media and advertising campaigns and show you more relevant Maris pieces elsewhere."
+        text: "Reserved for future use. Maris does not currently use any marketing or advertising cookies."
       }
     ],
     eyebrow: "Your privacy",
     title: "We use cookies",
-    textBefore: "Maris Jewelry uses essential cookies to run this site. With your permission we would also like to use optional cookies for analytics and marketing. You can change your choice at any time from “Cookie settings” in the footer.",
+    textBefore: "Maris Jewelry uses essential cookies to run this site. We use Google Analytics to understand how visitors use the site, only if you allow it. You can change your choice at any time from “Cookie settings” in the footer.",
     privacyPolicy: "Privacy policy",
     legend: "Cookie categories",
     alwaysOn: "Always on",
     save: "Save preferences",
     customize: "Customize",
     necessaryOnly: "Necessary only",
-    acceptAll: "Accept all"
+    acceptAll: "Accept all",
+    close: "Close cookie settings"
   },
   lead: {
     messages: {
@@ -188,7 +214,37 @@ const en = {
     copied: "Copied",
     copy: "Copy summary",
     contactDirect: "Contact Maris directly",
-    quoteInstead: "Request a quote instead"
+    quoteInstead: "Browse the collections",
+    optional: "(optional)",
+    phoneForContact: "Phone / WhatsApp number",
+    lineId: "Line ID",
+    lineIdPlaceholder: "Your Line ID",
+    // Keyed by the stable "code" the inquiry API returns; the API's English
+    // message is never shown.
+    errors: {
+      name_required: "Please enter your name.",
+      email_required: "Please enter your email address.",
+      email_invalid: "Please enter a valid email address.",
+      phone_required: "Please enter a phone or WhatsApp number so we can reach you.",
+      line_id_required: "Please enter your Line ID so we can reach you.",
+      kind_unsupported: "This form could not be recognised. Please reload the page and try again.",
+      rate_limited: "Too many messages from this address. Please try again later.",
+      service_unavailable: "Sending is unavailable right now. Please try again later or contact us directly."
+    }
+  },
+  unsubscribe: {
+    eyebrow: "Maris Updates",
+    title: "Unsubscribe",
+    lead: "Stop Maris Jewelry marketing emails to {email}.",
+    invalid: "This unsubscribe link is not valid or is incomplete. To stop receiving emails, contact us and we will remove you.",
+    contact: "Contact Maris",
+    confirm: "Confirm unsubscribe",
+    working: "Unsubscribing...",
+    done: "You have been unsubscribed. You will not receive further marketing emails from Maris Jewelry.",
+    invalidToken: "This unsubscribe link is not valid. Please contact us and we will remove you.",
+    unavailable: "Unsubscribing is unavailable right now. Please try again later or contact us.",
+    failed: "You could not be unsubscribed. Please contact us.",
+    wrong: "Something went wrong. Please try again."
   },
   popup: {
     invalidEmail: "Please enter a valid email address.",
@@ -196,7 +252,7 @@ const en = {
     join: "Join Maris Jewelry",
     close: "Close signup popup",
     welcome: "Welcome to",
-    intro: "Sign up for our mailing list and enjoy",
+    intro: "Create your Maris account and enjoy",
     offer: "10% OFF",
     subOffer: "your first confirmed order",
     perksLabel: "Member benefits",
@@ -208,6 +264,7 @@ const en = {
     emailAddress: "Email address",
     emailPlaceholder: "Enter your email",
     submit: "Get 10% Off",
+    accountNote: "Next, you will create your Maris account to claim the offer.",
     consent: "I agree to receive Maris Jewelry marketing emails, including offers. I can unsubscribe at any time.",
     privacyBefore: "See how we use your details in our",
     privacyPolicy: "Privacy Policy",
@@ -218,6 +275,8 @@ const en = {
     next: "Next slide",
     previous: "Previous slide",
     slide: "Slide",
+    label: "Featured collections",
+    slideOf: (number, total) => `Slide ${number} of ${total}`,
     play: "Play slideshow",
     pause: "Pause slideshow",
     playShort: "Play",
@@ -226,7 +285,16 @@ const en = {
   bestSeller: {
     heading: "Best Seller",
     label: "Best Seller",
-    listLabel: "Best seller products"
+    listLabel: "Best seller products",
+    controlsLabel: "Best seller carousel controls",
+    previous: "Previous best seller",
+    next: "Next best seller",
+    pause: "Pause best seller slideshow",
+    play: "Play best seller slideshow",
+    previousShort: "Prev",
+    nextShort: "Next",
+    pauseShort: "Pause",
+    playShort: "Play"
   }
 };
 
@@ -238,8 +306,10 @@ const th = {
     closeMenu: "ปิดเมนู",
     openMenu: "เปิดเมนู",
     homeLabel: "ไปที่หน้าแรก",
+    home: "หน้าแรก",
+    skipToContent: "ข้ามไปยังเนื้อหาหลัก",
     logoAlt: "โลโก้ Maris Jewelry",
-    browse: "เลือกชมเครื่องประดับ",
+    browse: "ดูแหวนหมั้น",
     primaryNav: "เมนูหลัก",
     account: "บัญชี",
     wishlist: "รายการโปรด",
@@ -290,7 +360,7 @@ const th = {
         items: [
           { href: "/about-us", label: "เกี่ยวกับเรา" },
           { href: "/contact-us", label: "ติดต่อเรา" },
-          { href: "/journal", label: "บทความ" }
+          { href: "/journal", label: "บล็อก" }
         ]
       }
     ]
@@ -304,7 +374,7 @@ const th = {
         links: [
           { href: "/about-us", label: "เกี่ยวกับเรา" },
           { href: "/contact-us", label: "ติดต่อเรา" },
-          { href: "/journal", label: "บทความ" }
+          { href: "/journal", label: "บล็อก" }
         ]
       },
       {
@@ -335,11 +405,15 @@ const th = {
       }
     ],
     copyright: "© 2026 Maris Jewelry สงวนลิขสิทธิ์",
+    contactLabel: "ช่องทางติดต่อ",
     cookieSettings: "ตั้งค่าคุกกี้"
   },
   newsletter: {
     success: "คุณอยู่ในรายชื่อของ Maris แล้ว",
     failure: "ไม่สามารถบันทึกอีเมลของคุณได้",
+    invalid: "โปรดกรอกอีเมลให้ถูกต้อง",
+    rateLimited: "มีการสมัครจากที่นี่มากเกินไป โปรดลองอีกครั้งภายหลัง",
+    notConfigured: "ขณะนี้ยังไม่สามารถสมัครได้ โปรดลองอีกครั้งภายหลัง",
     connection: "โปรดตรวจสอบการเชื่อมต่ออินเทอร์เน็ต",
     joining: "กำลังสมัคร...",
     emailAddress: "อีเมล",
@@ -349,6 +423,25 @@ const th = {
     footerConsent: "เมื่อสมัคร ถือว่าคุณยินยอมรับอีเมลการตลาด ยกเลิกได้ทุกเมื่อ",
     joinLabel: "สมัคร",
     join: "สมัคร"
+  },
+  notFound: {
+    eyebrow: "ไม่พบหน้านี้",
+    title: "ไม่พบหน้าที่คุณค้นหา",
+    lead: "ลิงก์นี้อาจล้าสมัยแล้ว หรือชิ้นงานนี้อาจไม่ได้วางจำหน่ายอีกต่อไป ลองเลือกดูคอลเลกชันของเรา หรือส่งข้อความถึงห้องทำงาน Maris เรายินดีช่วยคุณค้นหา",
+    product: {
+      eyebrow: "ไม่พบชิ้นงาน",
+      title: "ชิ้นงานนี้ไม่ได้วางจำหน่ายแล้ว",
+      lead: "ชิ้นงานนี้อาจขายไปแล้วหรือถูกนำออกจากรายการ ดูชิ้นงานที่เรามีอยู่ในขณะนี้ หรือส่งข้อความถึงห้องทำงาน Maris เพื่อสอบถามชิ้นงานที่ใกล้เคียง"
+    },
+    browseLabel: "ดูคอลเลกชัน",
+    homeLabel: "ไปที่หน้าแรก",
+    moreLabel: "หรือเริ่มจากตรงนี้",
+    links: [
+      { href: "/category/engagement-ring", label: "แหวนหมั้น" },
+      { href: "/category/wedding-bands", label: "แหวนแถว" },
+      { href: "/ready-to-ship", label: "พร้อมส่ง" },
+      { href: "/contact-us", label: "ติดต่อเรา" }
+    ]
   },
   cookie: {
     categories: [
@@ -361,24 +454,25 @@ const th = {
       {
         key: "analytics",
         title: "คุกกี้เพื่อการวิเคราะห์",
-        text: "ช่วยให้เราเข้าใจว่าผู้เข้าชมดูหน้าและผลงานใดบ้าง เพื่อปรับปรุงแคตตาล็อก เราไม่ขายข้อมูลของคุณ"
+        text: "Google Analytics ช่วยให้เราเข้าใจว่าผู้เข้าชมใช้งานเว็บไซต์อย่างไร (หน้าที่เข้าชม ตำแหน่งโดยประมาณ อุปกรณ์และเบราว์เซอร์) เพื่อนำไปปรับปรุงเว็บไซต์ จะทำงานก็ต่อเมื่อคุณอนุญาตเท่านั้น และไม่ใช้เพื่อการโฆษณา"
       },
       {
         key: "marketing",
         title: "คุกกี้เพื่อการตลาด",
-        text: "ให้เราวัดผลแคมเปญโซเชียลมีเดียและโฆษณา และแสดงผลงาน Maris ที่ตรงใจคุณมากขึ้นบนเว็บไซต์อื่น"
+        text: "สงวนไว้สำหรับอนาคต ปัจจุบัน Maris ไม่ใช้คุกกี้เพื่อการตลาดหรือโฆษณา"
       }
     ],
     eyebrow: "ความเป็นส่วนตัวของคุณ",
     title: "เราใช้คุกกี้",
-    textBefore: "Maris Jewelry ใช้คุกกี้ที่จำเป็นเพื่อให้เว็บไซต์ทำงานได้ หากคุณอนุญาต เราต้องการใช้คุกกี้เสริมเพื่อการวิเคราะห์และการตลาดด้วย คุณเปลี่ยนตัวเลือกได้ทุกเมื่อจาก “ตั้งค่าคุกกี้” ที่ส่วนท้ายของหน้า",
+    textBefore: "Maris Jewelry ใช้คุกกี้ที่จำเป็นเพื่อให้เว็บไซต์ทำงานได้ และเราใช้ Google Analytics เพื่อทำความเข้าใจว่าผู้เข้าชมใช้งานเว็บไซต์อย่างไร ก็ต่อเมื่อคุณอนุญาตเท่านั้น คุณเปลี่ยนตัวเลือกได้ทุกเมื่อจาก “ตั้งค่าคุกกี้” ที่ส่วนท้ายของหน้า",
     privacyPolicy: "นโยบายความเป็นส่วนตัว",
     legend: "ประเภทของคุกกี้",
     alwaysOn: "เปิดเสมอ",
     save: "บันทึกการตั้งค่า",
     customize: "ปรับแต่ง",
     necessaryOnly: "เฉพาะที่จำเป็น",
-    acceptAll: "ยอมรับทั้งหมด"
+    acceptAll: "ยอมรับทั้งหมด",
+    close: "ปิดการตั้งค่าคุกกี้"
   },
   lead: {
     messages: {
@@ -414,7 +508,35 @@ const th = {
     copied: "คัดลอกแล้ว",
     copy: "คัดลอกสรุป",
     contactDirect: "ติดต่อ Maris โดยตรง",
-    quoteInstead: "ขอใบเสนอราคาแทน"
+    quoteInstead: "ดูคอลเลกชัน",
+    optional: "(ไม่บังคับ)",
+    phoneForContact: "เบอร์โทรศัพท์ / WhatsApp",
+    lineId: "Line ID",
+    lineIdPlaceholder: "Line ID ของคุณ",
+    errors: {
+      name_required: "โปรดกรอกชื่อของคุณ",
+      email_required: "โปรดกรอกอีเมลของคุณ",
+      email_invalid: "โปรดกรอกอีเมลให้ถูกต้อง",
+      phone_required: "โปรดกรอกเบอร์โทรศัพท์หรือ WhatsApp เพื่อให้เราติดต่อกลับได้",
+      line_id_required: "โปรดกรอก Line ID เพื่อให้เราติดต่อกลับได้",
+      kind_unsupported: "ไม่รู้จักแบบฟอร์มนี้ โปรดโหลดหน้าใหม่แล้วลองอีกครั้ง",
+      rate_limited: "ส่งข้อความจากที่อยู่นี้บ่อยเกินไป โปรดลองอีกครั้งภายหลัง",
+      service_unavailable: "ขณะนี้ยังส่งข้อความไม่ได้ โปรดลองอีกครั้งภายหลังหรือติดต่อเราโดยตรง"
+    }
+  },
+  unsubscribe: {
+    eyebrow: "ข่าวสารจาก Maris",
+    title: "ยกเลิกการรับอีเมล",
+    lead: "หยุดรับอีเมลการตลาดจาก Maris Jewelry ที่ส่งถึง {email}",
+    invalid: "ลิงก์ยกเลิกการรับอีเมลนี้ไม่ถูกต้องหรือไม่สมบูรณ์ หากต้องการหยุดรับอีเมล โปรดติดต่อเราแล้วเราจะนำคุณออกจากรายชื่อ",
+    contact: "ติดต่อ Maris",
+    confirm: "ยืนยันยกเลิกการรับอีเมล",
+    working: "กำลังยกเลิก...",
+    done: "ยกเลิกการรับอีเมลเรียบร้อยแล้ว คุณจะไม่ได้รับอีเมลการตลาดจาก Maris Jewelry อีก",
+    invalidToken: "ลิงก์ยกเลิกการรับอีเมลนี้ไม่ถูกต้อง โปรดติดต่อเราแล้วเราจะนำคุณออกจากรายชื่อ",
+    unavailable: "ขณะนี้ยังยกเลิกไม่ได้ โปรดลองอีกครั้งภายหลังหรือติดต่อเรา",
+    failed: "ไม่สามารถยกเลิกการรับอีเมลได้ โปรดติดต่อเรา",
+    wrong: "เกิดข้อผิดพลาด โปรดลองอีกครั้ง"
   },
   popup: {
     invalidEmail: "โปรดกรอกอีเมลให้ถูกต้อง",
@@ -422,7 +544,7 @@ const th = {
     join: "เข้าร่วม Maris Jewelry",
     close: "ปิดหน้าต่างสมัครสมาชิก",
     welcome: "ยินดีต้อนรับสู่",
-    intro: "สมัครรับจดหมายข่าวของเรา แล้วรับส่วนลด",
+    intro: "สร้างบัญชี Maris ของคุณ แล้วรับส่วนลด",
     offer: "ลด 10%",
     subOffer: "สำหรับคำสั่งซื้อแรกที่ยืนยันแล้ว",
     perksLabel: "สิทธิพิเศษสำหรับสมาชิก",
@@ -434,6 +556,7 @@ const th = {
     emailAddress: "อีเมล",
     emailPlaceholder: "กรอกอีเมลของคุณ",
     submit: "รับส่วนลด 10%",
+    accountNote: "ขั้นต่อไป คุณจะสร้างบัญชี Maris เพื่อรับสิทธิ์นี้",
     consent: "ฉันยินยอมรับอีเมลการตลาดจาก Maris Jewelry รวมถึงข้อเสนอต่าง ๆ และสามารถยกเลิกการรับได้ทุกเมื่อ",
     privacyBefore: "ดูว่าเราใช้ข้อมูลของคุณอย่างไรใน",
     privacyPolicy: "นโยบายความเป็นส่วนตัว",
@@ -444,6 +567,8 @@ const th = {
     next: "สไลด์ถัดไป",
     previous: "สไลด์ก่อนหน้า",
     slide: "สไลด์",
+    label: "คอลเลกชันแนะนำ",
+    slideOf: (number, total) => `สไลด์ที่ ${number} จาก ${total}`,
     play: "เล่น",
     pause: "หยุด",
     playShort: "เล่น",
@@ -452,7 +577,16 @@ const th = {
   bestSeller: {
     heading: "สินค้าขายดี",
     label: "สินค้าขายดี",
-    listLabel: "สินค้าขายดี"
+    listLabel: "สินค้าขายดี",
+    controlsLabel: "ปุ่มควบคุมสินค้าขายดี",
+    previous: "สินค้าขายดีก่อนหน้า",
+    next: "สินค้าขายดีถัดไป",
+    pause: "หยุดการเลื่อนสินค้าขายดี",
+    play: "เล่นการเลื่อนสินค้าขายดี",
+    previousShort: "ก่อนหน้า",
+    nextShort: "ถัดไป",
+    pauseShort: "หยุด",
+    playShort: "เล่น"
   }
 };
 

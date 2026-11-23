@@ -2,6 +2,9 @@ import { createHmac, randomBytes, scryptSync, timingSafeEqual } from "node:crypt
 
 export const SESSION_COOKIE_NAME = "maris_admin_session";
 export const SESSION_MAX_AGE_SECONDS = 60 * 60 * 8;
+// One number for the setup form's minLength, the message it shows and the
+// server-side check, so they cannot drift apart.
+export const ADMIN_PASSWORD_MIN_LENGTH = 12;
 
 const SESSION_VERSION = 2;
 const PASSWORD_HASH_ALGORITHM = "scrypt";

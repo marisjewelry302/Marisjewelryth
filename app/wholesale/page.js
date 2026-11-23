@@ -1,13 +1,13 @@
 import WholesaleClient from "./WholesaleClient";
 import { buildPageMetadata } from "../lib/seo";
 
-// The portal is behind sign-in and shows account-specific prices, so it stays
-// out of search results; /wholesale-retail is the public page that explains it.
+// The signed-out view is the public explainer for the wholesale programme (it
+// replaced /wholesale-retail), so it is indexable; partner prices only render
+// after sign-in and never appear in the server HTML.
 export const metadata = buildPageMetadata({
-  title: "Wholesale Portal | Maris Jewelry",
-  description: "Apply for a Maris Jewelry wholesale account, see partner pricing, and send purchase orders.",
-  path: "/wholesale",
-  noindex: true
+  title: "Wholesale | Maris Jewelry",
+  description: "Wholesale fine jewelry from the Maris atelier for retailers and brands. Send an inquiry, then apply for a wholesale account to see partner pricing and send purchase orders.",
+  path: "/wholesale"
 });
 
 export default function WholesalePage() {

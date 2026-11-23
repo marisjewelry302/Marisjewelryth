@@ -7,6 +7,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { useLocale } from "../hooks/useLocale";
 import {
   COOKIE_SETTINGS_EVENT,
+  MARKETING_COOKIES_ENABLED,
   readCookieConsent,
   saveCookieConsent
 } from "../lib/cookie-consent";
@@ -29,6 +30,11 @@ export default function CookieConsent() {
   const [showDetails, setShowDetails] = useState(false);
   const [choices, setChoices] = useState({ analytics: false, marketing: false });
   const [focusOnOpen, setFocusOnOpen] = useState(false);
+  // True when the panel was reopened from "Cookie settings" (a choice already
+  // exists), so it can be dismissed without saving. A first visit has no such way out.
+  const [fromSettings, setFromSettings] = useState(false);
+  // The control that reopened the panel, so focus can go back to it.
+  const openerRef = useRef(null);
 
   useEffect(() => {
     if (!readCookieConsent()) {
@@ -36,6 +42,9 @@ export default function CookieConsent() {
     }
 
     function handleOpenSettings() {
+      const active = document.activeElement;
+      openerRef.current = active && active !== document.body ? active : null;
+      setFromSettings(true);
       const saved = readCookieConsent();
       setChoices({ analytics: Boolean(saved?.analytics), marketing: Boolean(saved?.marketing) });
       setShowDetails(true);
@@ -54,12 +63,41 @@ export default function CookieConsent() {
     }
   }, [isOpen, focusOnOpen]);
 
+  useEffect(() => {
+    if (!isOpen || !fromSettings) return undefined;
+
+    function handleKeyDown(event) {
+      if (event.key === "Escape") {
+        closeWithoutSaving();
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  });
+
   if (!isOpen || isAdminPath(pathname)) return null;
+
+  function restoreFocus() {
+    const opener = openerRef.current;
+    openerRef.current = null;
+    if (opener && opener.isConnected) opener.focus();
+  }
+
+  function closePanel() {
+    setIsOpen(false);
+    setShowDetails(false);
+    setFromSettings(false);
+    restoreFocus();
+  }
+
+  function closeWithoutSaving() {
+    closePanel();
+  }
 
   function finish(nextChoices) {
     saveCookieConsent(nextChoices);
-    setIsOpen(false);
-    setShowDetails(false);
+    closePanel();
   }
 
   return (
@@ -72,6 +110,13 @@ export default function CookieConsent() {
       tabIndex={-1}
     >
       <div className="cookie-consent__inner">
+        {fromSettings && (
+          <button type="button" className="cookie-consent__close" aria-label={copy.close} onClick={closeWithoutSaving}>
+            <svg aria-hidden="true" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.8" viewBox="0 0 24 24">
+              <path d="M6 6l12 12M18 6 6 18" />
+            </svg>
+          </button>
+        )}
         <div className="cookie-consent__copy">
           <p className="cookie-consent__eyebrow">{copy.eyebrow}</p>
           <h2 id={titleId} className="cookie-consent__title">{copy.title}</h2>
@@ -84,7 +129,7 @@ export default function CookieConsent() {
         {showDetails && (
           <fieldset className="cookie-consent__categories">
             <legend className="sr-only">{copy.legend}</legend>
-            {copy.categories.map((category) => {
+            {copy.categories.filter((category) => MARKETING_COOKIES_ENABLED || category.key !== "marketing").map((category) => {
               const inputId = `${titleId}-${category.key}`;
               const checked = category.locked ? true : choices[category.key];
 
@@ -128,15 +173,15 @@ export default function CookieConsent() {
           )}
           <button
             type="button"
-            className="cookie-consent__button is-secondary"
+            className="cookie-consent__button is-choice"
             onClick={() => finish({ analytics: false, marketing: false })}
           >
             {copy.necessaryOnly}
           </button>
           <button
             type="button"
-            className="cookie-consent__button is-primary"
-            onClick={() => finish({ analytics: true, marketing: true })}
+            className="cookie-consent__button is-choice"
+            onClick={() => finish({ analytics: true, marketing: MARKETING_COOKIES_ENABLED })}
           >
             {copy.acceptAll}
           </button>

@@ -157,4 +157,10 @@ const unsubscribeRoute = await read("app/api/unsubscribe/route.js");
 assert.match(unsubscribeRoute, /verifyUnsubscribeToken/);
 assert.doesNotMatch(unsubscribeRoute, /export async function GET/, "a GET must never unsubscribe anyone");
 
+// Marketing *cookies* are a separate switch from marketing emails: hidden and
+// never granted until a real marketing tag exists.
+const cookieConsent = await read("app/lib/cookie-consent.js");
+assert.match(cookieConsent, /export const MARKETING_COOKIES_ENABLED = false;/, "marketing cookies stay off until a marketing tag exists");
+assert.match(await read("app/components/CookieConsent.jsx"), /MARKETING_COOKIES_ENABLED \|\| category\.key !== "marketing"/, "the banner hides the marketing category");
+
 console.log("PASS: Marketing consent, unsubscribe links, and account deletion.");

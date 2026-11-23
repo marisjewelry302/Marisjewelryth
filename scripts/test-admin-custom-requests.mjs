@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { readAdminSource } from "./lib/admin-i18n-source.mjs";
 
 const {
   ADMIN_CUSTOM_ORDER_STATUSES,
@@ -201,8 +202,8 @@ await assert.rejects(
 );
 
 const adminRoute = await readFile(new URL("../app/api/admin/custom-order-requests/route.js", import.meta.url), "utf8");
-const adminPage = await readFile(new URL("../app/admin/page.js", import.meta.url), "utf8");
-const adminScript = await readFile(new URL("../assets/js/admin-page.js", import.meta.url), "utf8");
+const adminPage = await readAdminSource("app/admin/page.js");
+const adminScript = await readAdminSource("assets/js/admin-page.js");
 const adminCss = await readFile(new URL("../app/admin/admin.css", import.meta.url), "utf8");
 
 assert.match(adminRoute, /export async function PATCH/);

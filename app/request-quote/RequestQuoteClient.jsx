@@ -4,16 +4,19 @@ import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { isOptimizableImageSrc } from "../lib/image-source";
 import { useSearchParams } from "next/navigation";
+import ContactMethodFields from "../components/ContactMethodFields";
 import LeadForm from "../components/LeadForm";
 import { useShopLocale } from "../hooks/useShopLocale";
+import { getBagItemDetails, readBag } from "../lib/bag-store";
 import { fill, localizePriceLabel } from "../lib/i18n";
-import { localizeCollectionName } from "../lib/ui-text-shop";
+import { localizeCollectionName, shopEn } from "../lib/ui-text-shop";
+import { baseText } from "../lib/ui-text-base";
 
-const BAG_KEY = "marisShoppingBag";
+const WISHLIST_KEY = "marisWishlist";
 
-function readBag() {
+function readWishlist() {
   try {
-    const value = JSON.parse(window.localStorage.getItem(BAG_KEY));
+    const value = JSON.parse(window.localStorage.getItem(WISHLIST_KEY));
     return Array.isArray(value) ? value : [];
   } catch (error) {
     return [];
@@ -31,18 +34,38 @@ function buildParamItem(searchParams) {
   return {
     id: `${collection}:${productId}`,
     title: productId,
-    details: [`Collection: ${collection}`],
+    details: [],
     image: "/assets/images/logo.png",
     href: `/product/${productId}`,
-    collection,
+    // The English title is localized when it renders, never the raw slug.
+    collection: shopEn.collections[collection]?.title || "Maris Jewelry",
     priceLabel: "Price on request",
     quantity: 1
   };
 }
 
+// "?source=wishlist&id=<saved item id>": the full saved item (picture, name,
+// collection) comes from the wishlist stored in this browser. A link that no
+// longer matches falls back to a piece built from the code in the id.
+function buildWishlistItem(searchParams) {
+  const savedId = searchParams.get("id") || "";
+  const saved = readWishlist().find((item) => item?.id === savedId);
+
+  if (saved) {
+    return { ...saved, quantity: 1 };
+  }
+
+  const code = savedId.includes(":") ? savedId.slice(savedId.lastIndexOf(":") + 1) : savedId;
+  const params = new URLSearchParams();
+  params.set("id", code);
+
+  return buildParamItem(params);
+}
+
 function formatSelectedPieces(items) {
   return items
     .map((item, index) => {
+      // Stored details are English, which is what the atelier reads in the email.
       const details = Array.isArray(item.details) ? item.details.join("; ") : "";
       return `${index + 1}. ${item.title || "Maris piece"} | ${item.collection || "Maris Jewelry"} | Qty ${Number(item.quantity) || 1} | ${details} | ${item.href || ""}`;
     })
@@ -52,14 +75,25 @@ function formatSelectedPieces(items) {
 export default function RequestQuoteClient() {
   const { locale, t, href: localHref } = useShopLocale();
   const q = t.quote;
+  const lead = baseText[locale].lead;
   const searchParams = useSearchParams();
-  const [selectedItems, setSelectedItems] = useState([]);
+  // null until the bag / wishlist in this browser has been read, so the empty
+  // panel never flashes for a visitor who does have a selection.
+  const [selectedItems, setSelectedItems] = useState(null);
+  const [bagCount, setBagCount] = useState(0);
 
   useEffect(() => {
     const source = searchParams.get("source");
+    setBagCount(readBag().length);
 
     if (source === "bag") {
       setSelectedItems(readBag());
+      return;
+    }
+
+    if (source === "wishlist") {
+      const wishlistItem = buildWishlistItem(searchParams);
+      setSelectedItems(wishlistItem ? [wishlistItem] : []);
       return;
     }
 
@@ -67,7 +101,9 @@ export default function RequestQuoteClient() {
     setSelectedItems(paramItem ? [paramItem] : []);
   }, [searchParams]);
 
-  const selectedPieces = useMemo(() => formatSelectedPieces(selectedItems), [selectedItems]);
+  const items = selectedItems || [];
+  const selectedPieces = useMemo(() => formatSelectedPieces(items), [selectedItems]);
+  const empty = q.emptyPanel;
 
   return (
     <main id="main-content" className="placeholder-main content-page site-main">
@@ -78,45 +114,54 @@ export default function RequestQuoteClient() {
           <p className="lead">{q.lead}</p>
         </div>
 
+        {selectedItems && selectedItems.length === 0 && (
+          <div className="wishlist-empty">
+            <p className="eyebrow">{empty.eyebrow}</p>
+            <h2>{empty.title}</h2>
+            <p>{empty.text}</p>
+            <div className="page-actions">
+              <a className="primary-link" href={localHref("/collections")}>{empty.links.collections}</a>
+              <a href={localHref("/category/engagement-ring")}>{empty.links.engagement}</a>
+              <a href={localHref("/category/wedding-bands")}>{empty.links.bands}</a>
+              <a href={localHref("/ready-to-ship")}>{empty.links.ready}</a>
+              {bagCount > 0 && <a href={localHref("/shopping-bag")}>{fill(empty.links.bag, { n: bagCount })}</a>}
+            </div>
+            <p>{empty.contactNote}</p>
+            <div className="page-actions">
+              <a href={localHref("/contact-us")}>{empty.links.contact}</a>
+            </div>
+          </div>
+        )}
+
+        {selectedItems && selectedItems.length > 0 && (
         <div className="inquiry-layout">
           <div className="inquiry-column">
             <div className="quote-selection-intro" aria-live="polite">
-              <strong>{selectedItems.length ? (selectedItems.length === 1 ? q.selectedOne : fill(q.selectedMany, { n: selectedItems.length })) : q.none}</strong>
-              <span>
-                {selectedItems.length
-                  ? q.attached
-                  : q.startFrom}
-              </span>
+              <strong>{selectedItems.length === 1 ? q.selectedOne : fill(q.selectedMany, { n: selectedItems.length })}</strong>
+              <span>{q.attached}</span>
             </div>
 
-            {!selectedItems.length && (
-              <div className="empty-selection">
-                <p>{q.emptyBox}</p>
-              </div>
-            )}
-
-            {selectedItems.length > 0 && (
-              <div className="selected-piece-list">
-                {selectedItems.map((item) => (
-                  <article className="selected-piece-card" key={item.id || item.title}>
-                    <a className="selected-piece-image" href={localHref(item.href || "/category/engagement-ring")}>
-                      <Image src={item.image || "/assets/images/logo.png"} alt={item.title || q.itemAlt} width={1024} height={1024} sizes="(max-width: 900px) 50vw, 320px" unoptimized={!isOptimizableImageSrc(item.image || "/assets/images/logo.png")} />
-                    </a>
-                    <div className="selected-piece-copy">
-                      <p className="selected-piece-collection">{localizeCollectionName(item.collection || "Maris Jewelry", locale)}</p>
-                      <h2>{item.title || q.piece}</h2>
-                      {(Array.isArray(item.details) ? item.details : []).map((detail) => (
-                        <p key={detail}>{detail}</p>
-                      ))}
-                    </div>
-                    <div className="selected-piece-meta">
-                      <span>{localizePriceLabel(item.priceLabel || "Price on request", locale)}</span>
-                      <a href={localHref(item.href || "/category/engagement-ring")}>{q.viewDetails}</a>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            )}
+            <div className="selected-piece-list">
+              {selectedItems.map((item) => (
+                <article className="selected-piece-card" key={item.id || item.title}>
+                  <a className="selected-piece-image" href={localHref(item.href || "/category/engagement-ring")}>
+                    <Image src={item.image || "/assets/images/logo.png"} alt={item.title || q.itemAlt} width={1024} height={1024} sizes="(max-width: 900px) 50vw, 320px" unoptimized={!isOptimizableImageSrc(item.image || "/assets/images/logo.png")} />
+                  </a>
+                  <div className="selected-piece-copy">
+                    <p className="selected-piece-collection">{localizeCollectionName(item.collection || "Maris Jewelry", locale)}</p>
+                    <h2>{item.title || q.piece}</h2>
+                    {getBagItemDetails(item, t.bag.kinds).map((detail) => (
+                      <p key={detail}>{detail}</p>
+                    ))}
+                  </div>
+                  <div className="selected-piece-meta">
+                    <span>{q.qtyLabel}: {Number(item.quantity) || 1}</span>
+                    <span>{localizePriceLabel(item.priceLabel || "Price on request", locale)}</span>
+                    <a href={localHref(item.href || "/category/engagement-ring")}>{q.viewDetails}</a>
+                  </div>
+                </article>
+              ))}
+            </div>
           </div>
 
           <div className="inquiry-column">
@@ -156,20 +201,9 @@ export default function RequestQuoteClient() {
                     <span>{q.email}</span>
                     <input type="email" name="email" autoComplete="email" required />
                   </label>
+                  <ContactMethodFields phoneLabel={q.phone} preferredLabel={q.preferred} contacts={q.contacts} />
                   <label>
-                    <span>{q.phone}</span>
-                    <input type="tel" name="phone" autoComplete="tel" />
-                  </label>
-                  <label>
-                    <span>{q.preferred}</span>
-                    <select name="preferred_contact" defaultValue="Email">
-                      {q.contacts.map(([value, label]) => (
-                        <option value={value} key={value}>{label}</option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    <span>{q.budget}</span>
+                    <span>{q.budget} {lead.optional}</span>
                     <input type="text" name="budget_range" placeholder={q.budgetPlaceholder} />
                   </label>
                   <label>
@@ -195,7 +229,7 @@ export default function RequestQuoteClient() {
                 </div>
 
                 <label>
-                  <span>{q.notes}</span>
+                  <span>{q.notes} {lead.optional}</span>
                   <textarea name="message" placeholder={q.notesPlaceholder} />
                 </label>
 
@@ -204,11 +238,14 @@ export default function RequestQuoteClient() {
             </section>
           </div>
         </div>
+        )}
 
-        <div className="page-actions">
-          <a className="primary-link" href={localHref("/shopping-bag")}>{q.returnSelection}</a>
-          <a href={localHref("/category/engagement-ring")}>{q.browse}</a>
-        </div>
+        {selectedItems && selectedItems.length > 0 && (
+          <div className="page-actions">
+            <a className="primary-link" href={localHref("/shopping-bag")}>{q.returnSelection}</a>
+            <a href={localHref("/category/engagement-ring")}>{q.browse}</a>
+          </div>
+        )}
       </section>
     </main>
   );

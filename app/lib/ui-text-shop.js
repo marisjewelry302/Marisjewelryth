@@ -31,7 +31,7 @@ export const shopEn = {
   },
   readyToShip: {
     title: "Ready to Ship",
-    lead: "Pieces we already hold in stock. Add one to your bag and order now - no waiting for production.",
+    lead: "Pieces we already hold in stock. Add one to your bag to request a quote; the atelier confirms availability when you enquire.",
     meta: "Maris Jewelry pieces in stock and ready to ship, shown with the price before and after discount.",
     productsLabel: "Ready to ship products",
     count: "{count} in stock",
@@ -40,13 +40,14 @@ export const shopEn = {
     off: "-{percent}%",
     view: "View {code}",
     note: "Stock is limited and confirmed by the atelier when you order.",
-    empty: "No ready-to-ship pieces are listed right now. Please check back soon or contact Maris Jewelry."
+    empty: "No ready-to-ship pieces are listed right now. Browse the collections, or contact Maris about current availability.",
+    unavailable: "We could not load the ready-to-ship pieces just now. Please try again in a moment, or contact Maris Jewelry."
   },
   categoryMeta: "Browse Maris Jewelry catalogue pieces and contact the atelier to confirm availability or custom details.",
   catalogue: {
     controls: "Catalogue controls",
     sortBy: "Sort by",
-    featured: "Featured",
+    newest: "Newest",
     codeAsc: "Product Code A-Z",
     caratDesc: "Carat: High to Low",
     caratAsc: "Carat: Low to High",
@@ -57,6 +58,12 @@ export const shopEn = {
     productsLabel: "products",
     available: "Available",
     empty: "No products are available in this collection yet. Please contact Maris Jewelry for current availability.",
+    emptyLinks: {
+      collections: "Browse the collections",
+      engagementRings: "Engagement rings",
+      contact: "Contact Maris",
+      custom: "Request a custom piece"
+    },
     view: "View",
     groups: { metal: "Metal", shape: "Diamond Shape", style: "Setting", collection: "Collection" },
     values: {}
@@ -68,6 +75,7 @@ export const shopEn = {
     add: "Add to Wishlist"
   },
   product: {
+    breadcrumb: "Breadcrumb",
     specs: { caratWeight: "Carat Weight", stoneType: "Stone", stoneShape: "Shape" },
     gemColumns: { stone: "Stone", shape: "Shape", size: "Size", quantity: "Qty", caratTotal: "Carat" },
     enquiry: [
@@ -122,7 +130,12 @@ export const shopEn = {
     close: "Close image preview",
     choose: "Choose a view",
     pauseVideo: "Pause 360° video",
-    playVideo: "Play 360° video"
+    playVideo: "Play 360° video",
+    primary: "Primary view",
+    viewN: "View {n}",
+    video360: "360° view",
+    videoAlt: "{name} 360° turntable video",
+    views: { hero: "Main View", top: "Top View", front: "Front View", side: "Side View", back: "Back View" }
   },
   bag: {
     eyebrow: "Selected Pieces",
@@ -150,7 +163,23 @@ export const shopEn = {
     continueQuote: "Continue to Quote Request",
     continueShopping: "Continue Shopping",
     contactDirect: "Contact Maris directly",
-    clear: "Clear Bag"
+    clear: "Clear Bag",
+    cleared: "Bag cleared.",
+    undo: "Undo",
+    removeLabel: "Remove {code} from bag",
+    qtyFor: "Quantity of {code}",
+    decrease: "Decrease quantity of {code}",
+    increase: "Increase quantity of {code}",
+    qtyHint: "max {max}",
+    // Display names by the language-neutral kind the bag stores.
+    kinds: {
+      earrings: "Diamond Earrings",
+      "wedding-band": "Wedding Band",
+      ring: "Diamond Ring",
+      pendant: "Diamond Pendant",
+      bracelet: "Diamond Bracelet",
+      piece: "Fine Jewelry Piece"
+    }
   },
   wishlist: {
     eyebrow: "Saved Pieces",
@@ -168,7 +197,10 @@ export const shopEn = {
     piece: "Maris Piece",
     viewDetails: "View Details",
     requestQuote: "Request Quote",
-    remove: "Remove"
+    remove: "Remove",
+    removed: "Removed {code} from your wishlist.",
+    undo: "Undo",
+    loading: "Loading your saved pieces..."
   },
   quote: {
     metaTitle: "Request Quote | Maris Jewelry",
@@ -211,11 +243,25 @@ export const shopEn = {
     formNote: "If you already know your event date or target budget, adding it here will help Maris Jewelry give a more useful first reply.",
     returnSelection: "Return to selection",
     browse: "Browse Engagement Rings",
-    qtyLabel: "Qty"
+    qtyLabel: "Qty",
+    emptyPanel: {
+      eyebrow: "Choose a piece first",
+      title: "Pick a piece to request a quote",
+      text: "A quote request is about specific pieces, so start by choosing one. Add a piece to your bag, or open a product and use its quote button.",
+      links: {
+        collections: "Browse collections",
+        engagement: "Engagement rings",
+        bands: "Wedding bands",
+        ready: "Ready to ship",
+        bag: "Open your bag ({n})",
+        contact: "Contact us instead"
+      },
+      contactNote: "Not sure what you want yet, or looking for a custom design? Contact us and the atelier will help."
+    }
   },
   account: {
     metaTitle: "Account | Maris Jewelry",
-    metaDescription: "View saved Maris Jewelry details, wishlist pieces, shopping bag selections, and quote requests in this browser-based client area.",
+    metaDescription: "Sign in to manage your Maris Jewelry profile and password, review your wishlist and shopping bag, and see the quote requests you sent while signed in.",
     eyebrow: "Client Access",
     title: "Account",
     lead: "A quiet place for saved details, wishlist pieces, and future private appointments.",
@@ -262,7 +308,51 @@ export const shopEn = {
     deleteUnderstand: "I understand this cannot be undone.",
     deleting: "Deleting…",
     deleteButton: "Delete my account",
+    passwordHint: "At least 12 characters.",
+    optional: "(optional)",
+    forgotLink: "Forgot password?",
+    signInInstead: "Sign in instead",
+    backToSignIn: "Back to sign in",
+    forgotTitle: "Reset your password",
+    forgotLead: "Enter the email you used for your Maris account. If an account exists, we will email you a link to choose a new password.",
+    sendResetLink: "Send reset link",
+    sendingReset: "Sending…",
+    requests: {
+      title: "Your requests",
+      loading: "Loading your requests…",
+      empty: "You have not sent a quote request while signed in yet. Requests sent before you signed in are not listed here.",
+      browse: "Browse the catalogue",
+      contact: "Contact Maris",
+      error: "Your requests could not be loaded right now. Please try again later.",
+      retry: "Try again",
+      kindQuote: "Quote request",
+      kindContact: "Message",
+      pieces: "Pieces",
+      noPieces: "No pieces selected",
+      status: { new: "Received", read: "In review", replied: "Replied", closed: "Closed" }
+    },
+    reset: {
+      metaTitle: "Reset password | Maris Jewelry",
+      eyebrow: "Client Access",
+      title: "Choose a new password",
+      lead: "Enter a new password for your Maris account.",
+      button: "Set new password",
+      saving: "Saving…",
+      requestNew: "Request a new reset link",
+      signIn: "Go to sign in",
+      expiredTitle: "This reset link has expired",
+      expired: "Reset links work for 45 minutes. Request a new one to continue.",
+      invalidTitle: "This reset link is not valid",
+      invalid: "The link may be incomplete or damaged. Request a new reset link to continue.",
+      usedTitle: "This reset link has already been used",
+      used: "Your password was changed after this link was sent, so it no longer works. Sign in with your current password, or request a new link.",
+      unavailableTitle: "Password reset is unavailable",
+      unavailable: "Password reset is not available right now. Please try again later or contact Maris.",
+      success: "Your password has been changed. Please sign in with your new password."
+    },
     msg: {
+      resetSent: "If an account exists for that email, a reset link is on its way. It works once and expires in 45 minutes. Please check your spam folder too.",
+      invalidEmail: "Please enter a valid email address.",
       createFail: "Could not create account.",
       created: "Account created. Welcome to Maris.",
       createdEmail: "Account created. Your Maris welcome email is on the way.",
@@ -275,20 +365,32 @@ export const shopEn = {
       pwFail: "Could not change password.",
       pwDone: "Password changed successfully.",
       deleteFail: "Could not delete account.",
-      deleted: "Your account has been deleted."
+      deleted: "Your account has been deleted.",
+      // Keyed by the stable "code" the account API returns; the API's English
+      // error text is never shown.
+      unavailable: "Accounts are unavailable right now. Please try again later.",
+      rateLimited: "Too many attempts. Please try again later.",
+      duplicate: "An account with this email already exists. Try signing in instead.",
+      passwordShort: "Your password must be at least 12 characters.",
+      missingFields: "Please fill in your name, email and password.",
+      wrongPassword: "That password is incorrect.",
+      notSignedIn: "Your session has ended. Please sign in again."
     }
   },
   journal: {
     metaTitle: "Blog | Maris Jewelry",
     metaDescription: "Practical reads for buyers researching diamonds, engagement rings, and fine jewelry with more confidence.",
-    eyebrow: "Maris Journal",
+    eyebrow: "Maris Blog",
     title: "Blog",
-    lead: "10 practical reads for buyers researching diamonds, engagement rings, and fine jewelry with more confidence.",
-    note: "This journal collection focuses on questions real buyers actually ask before choosing a piece.",
+    lead: "{count} practical reads for buyers researching diamonds, engagement rings, and fine jewelry with more confidence.",
+    note: "This blog focuses on questions real buyers actually ask before choosing a piece.",
     read: "Read article",
     quick: "Quick notes",
     final: "Final thought",
     viewRings: "View engagement rings",
+    moreReads: "More reads",
+    watchOnYoutube: "Watch on YouTube",
+    playVideo: "Play video",
     contact: "Contact Maris",
     back: "Back to blog"
   },
@@ -326,6 +428,41 @@ export const shopEn = {
     purity: "Metal purity",
     purityNote: "Purity is available only for WG, YG, or RG.",
     ringSize: "Ring size",
+    requiredNote: "Fields marked * are required.",
+    optional: "(optional)",
+    successTitle: "Thank you, your request is with the atelier",
+    successText: "The Maris atelier will reply to the email address or contact number you gave. We confirm availability with you before any next step.",
+    successCode: "Your request for",
+    backToProduct: "Back to {code}",
+    browseCollections: "Browse the collections",
+    ringSizeHint: "US size, 5 to 16 in half sizes.",
+    ringSizeHintTh: "Thai size, a whole number from {min} to {max}.",
+    ringSizeSystem: "Ring size system",
+    sizeUs: "US",
+    sizeThai: "Thai",
+    ringSizeIsThai: "About Thai size {size}",
+    ringSizeIsUs: "About US size {size}",
+    sizeGuide: "Ring size guide",
+    newTab: "opens in a new tab",
+    optionsNeedAttention: "Some details in Product Options need attention.",
+    errors: {
+      summary: "Please check the highlighted details and try again.",
+      product_code: "The product code is missing. Please go back to the product and try again.",
+      full_name: "Please enter your full name.",
+      email: "Please enter a valid email address.",
+      contact_number_required: "Please enter a contact number.",
+      contact_number: "Contact number must have 9 to 15 digits (numbers, spaces and + ( ) - only).",
+      metal: "Please choose one of the listed metals.",
+      metal_purity: "Please choose 9K, 14K or 18K.",
+      ring_size: "Ring size must be a US size from 5 to 16, in half-size steps (for example 6.5).",
+      ring_size_th: "Thai ring size must be a whole number from 49 to 77 (for example 54).",
+      stone_carat: "Stone carat must be from 0.2 to 5.",
+      option: "Please choose one of the listed options.",
+      other: "Please check this detail and try again.",
+      rateLimited: "Too many requests. Please try again later.",
+      unavailable: "This service is unavailable right now. Please try again later or contact Maris directly.",
+      partial: "Your request was saved, but the notification email could not be sent. Please contact Maris to confirm it was received."
+    },
     carat: "Stone carat",
     color: "Color",
     clarity: "Clarity",
@@ -366,7 +503,7 @@ export const shopTh = {
   },
   readyToShip: {
     title: "พร้อมส่ง",
-    lead: "ชิ้นที่เรามีในสต็อกพร้อมส่ง ใส่ตะกร้าแล้วสั่งซื้อได้เลย ไม่ต้องรอผลิต",
+    lead: "ชิ้นงานที่เรามีในสต็อก ใส่ตะกร้าเพื่อขอใบเสนอราคาได้ ห้องทำงานจะยืนยันความพร้อมให้เมื่อคุณสอบถาม",
     meta: "เครื่องประดับ Maris Jewelry ที่มีสต็อกพร้อมส่ง แสดงราคาก่อนลดและราคาปัจจุบัน",
     productsLabel: "สินค้าพร้อมส่ง",
     count: "มีสินค้า {count} ชิ้น",
@@ -375,13 +512,14 @@ export const shopTh = {
     off: "-{percent}%",
     view: "ดู {code}",
     note: "จำนวนสินค้ามีจำกัด และทางร้านจะยืนยันสต็อกอีกครั้งเมื่อคุณสั่งซื้อ",
-    empty: "ขณะนี้ยังไม่มีสินค้าพร้อมส่ง โปรดกลับมาดูใหม่เร็วๆ นี้ หรือติดต่อ Maris Jewelry"
+    empty: "ขณะนี้ยังไม่มีสินค้าพร้อมส่งที่แสดงอยู่ เลือกชมคอลเลกชัน หรือติดต่อ Maris เพื่อสอบถามความพร้อมล่าสุด",
+    unavailable: "ขณะนี้ไม่สามารถโหลดรายการสินค้าพร้อมส่งได้ โปรดลองอีกครั้งในอีกสักครู่ หรือติดต่อ Maris Jewelry"
   },
   categoryMeta: "เลือกชมชิ้นงานในแคตตาล็อก Maris Jewelry และติดต่อห้องทำงานเพื่อยืนยันความพร้อมหรือรายละเอียดงานสั่งทำ",
   catalogue: {
     controls: "ตัวควบคุมแคตตาล็อก",
     sortBy: "เรียงตาม",
-    featured: "แนะนำ",
+    newest: "ใหม่ล่าสุด",
     codeAsc: "รหัสสินค้า A-Z",
     caratDesc: "กะรัต: มากไปน้อย",
     caratAsc: "กะรัต: น้อยไปมาก",
@@ -392,11 +530,17 @@ export const shopTh = {
     productsLabel: "สินค้า",
     available: "สินค้าที่มี:",
     empty: "ยังไม่มีสินค้าในคอลเลกชันนี้ โปรดติดต่อ Maris Jewelry เพื่อสอบถามความพร้อมล่าสุด",
+    emptyLinks: {
+      collections: "เลือกชมคอลเลกชัน",
+      engagementRings: "แหวนหมั้น",
+      contact: "ติดต่อ Maris",
+      custom: "สอบถามงานสั่งทำ"
+    },
     view: "ดู",
     groups: { metal: "โลหะ", shape: "รูปทรงเพชร", style: "แบบการฝัง", collection: "คอลเลกชัน" },
     values: {
       "metal:white-gold": "ทองขาว",
-      "metal:yellow-gold": "ทองเหลือง",
+      "metal:yellow-gold": "ทองคำเหลือง",
       "metal:rose-gold": "โรสโกลด์",
       "metal:platinum": "แพลทินัม",
       "shape:round": "ทรงกลม",
@@ -413,7 +557,8 @@ export const shopTh = {
       "style:solitaire": "โซลิแทร์",
       "style:three-stone": "สามเม็ด",
       "style:eternity": "เอ็ทเทอร์นิตี้",
-      "style:pave": "ปาเว่"
+      "style:pave": "ปาเว่",
+      "stone:diamond": "เพชร"
     }
   },
   wishlistButton: {
@@ -423,6 +568,7 @@ export const shopTh = {
     add: "เพิ่มในรายการโปรด"
   },
   product: {
+    breadcrumb: "เส้นทางนำทาง",
     specs: { caratWeight: "น้ำหนักกะรัต", stoneType: "พลอย", stoneShape: "รูปทรง" },
     gemColumns: { stone: "พลอย", shape: "รูปทรง", size: "ขนาด", quantity: "จำนวน", caratTotal: "กะรัต" },
     enquiry: [
@@ -477,7 +623,12 @@ export const shopTh = {
     close: "ปิดภาพตัวอย่าง",
     choose: "เลือกมุมมอง",
     pauseVideo: "หยุดวิดีโอ 360°",
-    playVideo: "เล่นวิดีโอ 360°"
+    playVideo: "เล่นวิดีโอ 360°",
+    primary: "มุมหลัก",
+    viewN: "มุมที่ {n}",
+    video360: "มุมมอง 360°",
+    videoAlt: "วิดีโอหมุน 360° ของ {name}",
+    views: { hero: "มุมหลัก", top: "มุมบน", front: "มุมหน้า", side: "มุมข้าง", back: "มุมหลัง" }
   },
   bag: {
     eyebrow: "ชิ้นงานที่เลือก",
@@ -505,7 +656,22 @@ export const shopTh = {
     continueQuote: "ไปขอใบเสนอราคา",
     continueShopping: "เลือกซื้อต่อ",
     contactDirect: "ติดต่อ Maris โดยตรง",
-    clear: "ล้างตะกร้า"
+    clear: "ล้างตะกร้า",
+    cleared: "ล้างตะกร้าแล้ว",
+    undo: "เลิกทำ",
+    removeLabel: "นำ {code} ออกจากตะกร้า",
+    qtyFor: "จำนวนของ {code}",
+    decrease: "ลดจำนวนของ {code}",
+    increase: "เพิ่มจำนวนของ {code}",
+    qtyHint: "สูงสุด {max}",
+    kinds: {
+      earrings: "ต่างหูเพชร",
+      "wedding-band": "แหวนแถว",
+      ring: "แหวนเพชร",
+      pendant: "จี้เพชร",
+      bracelet: "สร้อยข้อมือเพชร",
+      piece: "เครื่องประดับชั้นดี"
+    }
   },
   wishlist: {
     eyebrow: "ชิ้นงานที่บันทึกไว้",
@@ -523,7 +689,10 @@ export const shopTh = {
     piece: "ชิ้นงาน Maris",
     viewDetails: "ดูรายละเอียด",
     requestQuote: "ขอใบเสนอราคา",
-    remove: "นำออก"
+    remove: "นำออก",
+    removed: "นำ {code} ออกจากรายการโปรดแล้ว",
+    undo: "เลิกทำ",
+    loading: "กำลังโหลดรายการโปรดของคุณ..."
   },
   quote: {
     metaTitle: "ขอใบเสนอราคา | Maris Jewelry",
@@ -566,11 +735,25 @@ export const shopTh = {
     formNote: "หากคุณทราบวันงานหรืองบประมาณเป้าหมายแล้ว การใส่ไว้ที่นี่จะช่วยให้ Maris Jewelry ตอบกลับครั้งแรกได้เป็นประโยชน์ยิ่งขึ้น",
     returnSelection: "กลับไปที่รายการที่เลือก",
     browse: "ดูแหวนหมั้น",
-    qtyLabel: "จำนวน"
+    qtyLabel: "จำนวน",
+    emptyPanel: {
+      eyebrow: "เลือกชิ้นงานก่อน",
+      title: "เลือกชิ้นงานเพื่อขอใบเสนอราคา",
+      text: "คำขอใบเสนอราคาเป็นเรื่องของชิ้นงานที่เจาะจง จึงควรเริ่มจากเลือกชิ้นงานก่อน เพิ่มชิ้นงานลงตะกร้า หรือเปิดหน้าสินค้าแล้วกดปุ่มขอใบเสนอราคา",
+      links: {
+        collections: "ดูคอลเลกชัน",
+        engagement: "แหวนหมั้น",
+        bands: "แหวนแถว",
+        ready: "พร้อมส่ง",
+        bag: "เปิดตะกร้าสินค้า ({n})",
+        contact: "ติดต่อเราแทน"
+      },
+      contactNote: "ยังไม่แน่ใจว่าต้องการแบบไหน หรืออยากได้งานออกแบบพิเศษ? ติดต่อเรา ทีมงานยินดีช่วยแนะนำ"
+    }
   },
   account: {
     metaTitle: "บัญชี | Maris Jewelry",
-    metaDescription: "ดูรายละเอียดที่บันทึกไว้ ชิ้นงานในรายการโปรด ตะกร้าสินค้า และคำขอใบเสนอราคาของคุณ ในพื้นที่ลูกค้าบนเบราว์เซอร์นี้",
+    metaDescription: "เข้าสู่ระบบเพื่อจัดการโปรไฟล์และรหัสผ่าน Maris Jewelry ดูรายการโปรดและตะกร้าสินค้า และดูคำขอใบเสนอราคาที่คุณส่งขณะเข้าสู่ระบบ",
     eyebrow: "สำหรับลูกค้า",
     title: "บัญชี",
     lead: "พื้นที่เงียบสงบสำหรับรายละเอียดที่บันทึกไว้ ชิ้นงานในรายการโปรด และการนัดหมายส่วนตัวในอนาคต",
@@ -617,7 +800,51 @@ export const shopTh = {
     deleteUnderstand: "ฉันเข้าใจว่าไม่สามารถยกเลิกการลบได้",
     deleting: "กำลังลบ…",
     deleteButton: "ลบบัญชีของฉัน",
+    passwordHint: "อย่างน้อย 12 ตัวอักษร",
+    optional: "(ไม่บังคับ)",
+    forgotLink: "ลืมรหัสผ่าน?",
+    signInInstead: "เข้าสู่ระบบแทน",
+    backToSignIn: "กลับไปเข้าสู่ระบบ",
+    forgotTitle: "ตั้งรหัสผ่านใหม่",
+    forgotLead: "กรอกอีเมลที่ใช้กับบัญชี Maris ของคุณ หากมีบัญชีนี้อยู่ เราจะส่งลิงก์สำหรับตั้งรหัสผ่านใหม่ไปให้ทางอีเมล",
+    sendResetLink: "ส่งลิงก์ตั้งรหัสผ่านใหม่",
+    sendingReset: "กำลังส่ง…",
+    requests: {
+      title: "คำขอของคุณ",
+      loading: "กำลังโหลดคำขอของคุณ…",
+      empty: "คุณยังไม่เคยส่งคำขอใบเสนอราคาขณะเข้าสู่ระบบ คำขอที่ส่งก่อนเข้าสู่ระบบจะไม่แสดงที่นี่",
+      browse: "ดูแคตตาล็อก",
+      contact: "ติดต่อ Maris",
+      error: "ขณะนี้ไม่สามารถโหลดคำขอของคุณได้ โปรดลองอีกครั้งภายหลัง",
+      retry: "ลองอีกครั้ง",
+      kindQuote: "คำขอใบเสนอราคา",
+      kindContact: "ข้อความ",
+      pieces: "ชิ้นงาน",
+      noPieces: "ไม่ได้เลือกชิ้นงาน",
+      status: { new: "ได้รับแล้ว", read: "กำลังตรวจสอบ", replied: "ตอบกลับแล้ว", closed: "ปิดเรื่องแล้ว" }
+    },
+    reset: {
+      metaTitle: "ตั้งรหัสผ่านใหม่ | Maris Jewelry",
+      eyebrow: "สำหรับลูกค้า",
+      title: "ตั้งรหัสผ่านใหม่",
+      lead: "กรอกรหัสผ่านใหม่สำหรับบัญชี Maris ของคุณ",
+      button: "ตั้งรหัสผ่านใหม่",
+      saving: "กำลังบันทึก…",
+      requestNew: "ขอลิงก์ตั้งรหัสผ่านใหม่",
+      signIn: "ไปที่หน้าเข้าสู่ระบบ",
+      expiredTitle: "ลิงก์นี้หมดอายุแล้ว",
+      expired: "ลิงก์ตั้งรหัสผ่านใช้ได้ 45 นาที โปรดขอลิงก์ใหม่เพื่อดำเนินการต่อ",
+      invalidTitle: "ลิงก์นี้ไม่ถูกต้อง",
+      invalid: "ลิงก์อาจไม่ครบหรือเสียหาย โปรดขอลิงก์ตั้งรหัสผ่านใหม่เพื่อดำเนินการต่อ",
+      usedTitle: "ลิงก์นี้ถูกใช้ไปแล้ว",
+      used: "รหัสผ่านของคุณถูกเปลี่ยนหลังจากส่งลิงก์นี้ ลิงก์จึงใช้ไม่ได้อีก โปรดเข้าสู่ระบบด้วยรหัสผ่านปัจจุบัน หรือขอลิงก์ใหม่",
+      unavailableTitle: "ยังไม่สามารถตั้งรหัสผ่านใหม่ได้",
+      unavailable: "ขณะนี้ระบบตั้งรหัสผ่านใหม่ยังไม่พร้อมใช้งาน โปรดลองอีกครั้งภายหลังหรือติดต่อ Maris",
+      success: "เปลี่ยนรหัสผ่านเรียบร้อยแล้ว โปรดเข้าสู่ระบบด้วยรหัสผ่านใหม่"
+    },
     msg: {
+      resetSent: "หากมีบัญชีที่ใช้อีเมลนี้ เราได้ส่งลิงก์ตั้งรหัสผ่านใหม่ไปให้แล้ว ลิงก์ใช้ได้ครั้งเดียวและหมดอายุใน 45 นาที โปรดตรวจสอบโฟลเดอร์สแปมด้วย",
+      invalidEmail: "โปรดกรอกอีเมลที่ถูกต้อง",
       createFail: "ไม่สามารถสร้างบัญชีได้",
       created: "สร้างบัญชีแล้ว ยินดีต้อนรับสู่ Maris",
       createdEmail: "สร้างบัญชีแล้ว อีเมลต้อนรับจาก Maris กำลังส่งถึงคุณ",
@@ -630,28 +857,38 @@ export const shopTh = {
       pwFail: "ไม่สามารถเปลี่ยนรหัสผ่านได้",
       pwDone: "เปลี่ยนรหัสผ่านเรียบร้อยแล้ว",
       deleteFail: "ไม่สามารถลบบัญชีได้",
-      deleted: "บัญชีของคุณถูกลบแล้ว"
+      deleted: "บัญชีของคุณถูกลบแล้ว",
+      unavailable: "ขณะนี้ระบบบัญชียังไม่พร้อมใช้งาน โปรดลองอีกครั้งภายหลัง",
+      rateLimited: "ลองหลายครั้งเกินไป โปรดลองอีกครั้งภายหลัง",
+      duplicate: "มีบัญชีที่ใช้อีเมลนี้อยู่แล้ว ลองเข้าสู่ระบบแทน",
+      passwordShort: "รหัสผ่านต้องมีอย่างน้อย 12 ตัวอักษร",
+      missingFields: "โปรดกรอกชื่อ อีเมล และรหัสผ่าน",
+      wrongPassword: "รหัสผ่านไม่ถูกต้อง",
+      notSignedIn: "เซสชันของคุณสิ้นสุดแล้ว โปรดเข้าสู่ระบบอีกครั้ง"
     }
   },
   journal: {
-    metaTitle: "บทความ | Maris Jewelry",
+    metaTitle: "บล็อก | Maris Jewelry",
     metaDescription: "บทความที่ใช้ได้จริงสำหรับผู้ซื้อที่กำลังศึกษาเรื่องเพชร แหวนหมั้น และเครื่องประดับชั้นดี เพื่อตัดสินใจอย่างมั่นใจยิ่งขึ้น",
-    eyebrow: "บันทึก Maris",
-    title: "บทความ",
-    lead: "10 บทความที่ใช้ได้จริง สำหรับผู้ซื้อที่กำลังศึกษาเรื่องเพชร แหวนหมั้น และเครื่องประดับชั้นดี เพื่อตัดสินใจอย่างมั่นใจยิ่งขึ้น",
-    note: "คอลเลกชันบทความนี้เน้นคำถามที่ผู้ซื้อตัวจริงมักถามก่อนเลือกชิ้นงาน",
+    eyebrow: "บล็อก Maris",
+    title: "บล็อก",
+    lead: "{count} บทความที่ใช้ได้จริง สำหรับผู้ซื้อที่กำลังศึกษาเรื่องเพชร แหวนหมั้น และเครื่องประดับชั้นดี เพื่อตัดสินใจอย่างมั่นใจยิ่งขึ้น",
+    note: "บล็อกนี้เน้นคำถามที่ผู้ซื้อตัวจริงมักถามก่อนเลือกชิ้นงาน",
     read: "อ่านบทความ",
     quick: "สรุปสั้น ๆ",
     final: "ข้อคิดท้ายเรื่อง",
     viewRings: "ดูแหวนหมั้น",
+    moreReads: "บทความที่น่าอ่านต่อ",
+    watchOnYoutube: "ดูบน YouTube",
+    playVideo: "เล่นวิดีโอ",
     contact: "ติดต่อ Maris",
-    back: "กลับไปหน้าบทความ"
+    back: "กลับไปหน้าบล็อก"
   },
   order: {
     metaTitle: "{code} | ติดต่อ Maris Jewelry",
     metaDescription: "ติดต่อ Maris Jewelry เรื่อง {code} และรายละเอียดงานสั่งทำเพิ่มเติม (ถ้ามี)",
     customOrder: "งานสั่งทำ",
-    metals: { WG: "ทองขาว", YG: "ทองเหลือง", RG: "โรสโกลด์", PN: "แพลทินัม", Pd: "แพลเลเดียม" },
+    metals: { WG: "ทองขาว", YG: "ทองคำเหลือง", RG: "โรสโกลด์", PN: "แพลทินัม", Pd: "แพลเลเดียม" },
     cuts: { Excellent: "ยอดเยี่ยม", "Very Good": "ดีมาก", Good: "ดี", Fair: "พอใช้", Poor: "ต่ำ" },
     origins: { "Lab-grown": "เพชรแล็บ", Natural: "ธรรมชาติ" },
     sending: "กำลังส่งคำขอติดต่อ",
@@ -681,6 +918,41 @@ export const shopTh = {
     purity: "ความบริสุทธิ์ของโลหะ",
     purityNote: "เลือกความบริสุทธิ์ได้เฉพาะ WG, YG หรือ RG",
     ringSize: "ไซส์แหวน",
+    requiredNote: "ช่องที่มี * ต้องกรอก",
+    optional: "(ไม่บังคับ)",
+    successTitle: "ขอบคุณ คำขอของคุณส่งถึงห้องทำงานแล้ว",
+    successText: "ห้องทำงาน Maris จะตอบกลับทางอีเมลหรือเบอร์ติดต่อที่คุณแจ้งไว้ และจะยืนยันความพร้อมกับคุณก่อนดำเนินการขั้นต่อไป",
+    successCode: "คำขอสำหรับ",
+    backToProduct: "กลับไปที่ {code}",
+    browseCollections: "เลือกชมคอลเลกชัน",
+    ringSizeHint: "ไซส์ US ตั้งแต่ 5 ถึง 16 เพิ่มทีละครึ่งไซส์",
+    ringSizeHintTh: "ไซส์ไทย เป็นเลขจำนวนเต็มตั้งแต่ {min} ถึง {max}",
+    ringSizeSystem: "ระบบไซส์แหวน",
+    sizeUs: "US",
+    sizeThai: "ไทย",
+    ringSizeIsThai: "เทียบเท่าไซส์ไทยประมาณ {size}",
+    ringSizeIsUs: "เทียบเท่าไซส์ US ประมาณ {size}",
+    sizeGuide: "คู่มือเลือกไซส์แหวน",
+    newTab: "เปิดในแท็บใหม่",
+    optionsNeedAttention: "มีบางรายการในตัวเลือกสินค้าที่ต้องตรวจสอบ",
+    errors: {
+      summary: "โปรดตรวจสอบข้อมูลที่ไฮไลต์แล้วลองอีกครั้ง",
+      product_code: "ไม่พบรหัสสินค้า โปรดกลับไปที่หน้าสินค้าแล้วลองอีกครั้ง",
+      full_name: "โปรดกรอกชื่อ-นามสกุล",
+      email: "โปรดกรอกอีเมลที่ถูกต้อง",
+      contact_number_required: "โปรดกรอกเบอร์ติดต่อ",
+      contact_number: "เบอร์ติดต่อต้องมี 9 ถึง 15 หลัก (ใช้ได้เฉพาะตัวเลข เว้นวรรค และ + ( ) -)",
+      metal: "โปรดเลือกโลหะจากตัวเลือกที่มี",
+      metal_purity: "โปรดเลือก 9K, 14K หรือ 18K",
+      ring_size_th: "ไซส์แหวนไทยต้องเป็นเลขจำนวนเต็มตั้งแต่ 49 ถึง 77 (เช่น 54)",
+      ring_size: "ไซส์แหวนต้องเป็นไซส์ US ตั้งแต่ 5 ถึง 16 และเพิ่มทีละครึ่งไซส์ (เช่น 6.5)",
+      stone_carat: "กะรัตของพลอยต้องอยู่ระหว่าง 0.2 ถึง 5",
+      option: "โปรดเลือกจากตัวเลือกที่มี",
+      other: "โปรดตรวจสอบข้อมูลนี้แล้วลองอีกครั้ง",
+      rateLimited: "ส่งคำขอบ่อยเกินไป โปรดลองอีกครั้งภายหลัง",
+      unavailable: "ขณะนี้บริการไม่พร้อมใช้งาน โปรดลองอีกครั้งภายหลัง หรือติดต่อ Maris โดยตรง",
+      partial: "บันทึกคำขอของคุณแล้ว แต่ส่งอีเมลแจ้งไม่สำเร็จ โปรดติดต่อ Maris เพื่อยืนยันว่าได้รับคำขอแล้ว"
+    },
     carat: "กะรัตของพลอย",
     color: "สี",
     clarity: "ความสะอาด",

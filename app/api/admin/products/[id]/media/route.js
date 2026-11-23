@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { ADMIN_PERMISSIONS, requireAdminPermission } from "../../../../../lib/admin-api-auth";
 import {
+  readAdminCatalogueProduct,
   updateAdminProductMedia
 } from "../../../../../lib/maris-database";
 
@@ -69,8 +70,11 @@ export async function PATCH(request, { params }) {
 
   try {
     const media = await updateAdminProductMedia({ productId: id, changes });
+    // The changed product, so the admin page can patch it in place.
+    const product = await readAdminCatalogueProduct(id).catch(() => null);
 
     return json({
+      product,
       media: {
         productId: media.productId,
         coverImageUrl: media.coverImageUrl,

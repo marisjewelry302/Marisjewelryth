@@ -30,7 +30,7 @@ export function HomeServiceStories({ locale = "en" }) {
         <div className={styles.copy}><p className={styles.kicker}>{s.customKicker}</p><h2 id="custom-bridal-heading">{s.customHeading}</h2><p>{s.customText}</p><p className={styles.steps}>{s.customSteps}</p><a className={styles.button} href={link("/our-service")}>{s.customButton}</a></div>
       </section>
       <section className={`${styles.split} ${styles.oem}`} id="oem-wholesale" aria-labelledby="oem-wholesale-heading">
-        <div className={styles.copy}><p className={styles.kicker}>{s.oemKicker}</p><h2 id="oem-wholesale-heading">{s.oemHeadingLine1}<br />{s.oemHeadingLine2}</h2><p>{s.oemText}</p><p className={styles.steps}>{s.oemSteps}</p><div className={styles.actions}><a className={styles.button} href={link("/oem-jewelry")}>{s.oemButton}</a><a className={styles.textLink} href={link("/wholesale-retail")}>{s.oemLink} <span aria-hidden="true">↗</span></a></div></div>
+        <div className={styles.copy}><p className={styles.kicker}>{s.oemKicker}</p><h2 id="oem-wholesale-heading">{s.oemHeadingLine1}<br />{s.oemHeadingLine2}</h2><p>{s.oemText}</p><p className={styles.steps}>{s.oemSteps}</p><div className={styles.actions}><a className={styles.button} href={link("/oem-jewelry")}>{s.oemButton}</a><a className={styles.textLink} href={link("/wholesale")}>{s.oemLink} <span aria-hidden="true">↗</span></a></div></div>
         <div className={`${styles.media} ${styles.process}`}><Image src="/assets/images/service/custom-jewelry-process-storyboard.webp" alt={s.oemImageAlt} fill sizes="(max-width: 760px) 100vw, 50vw" /></div>
       </section>
     </div>

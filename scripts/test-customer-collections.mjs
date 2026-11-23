@@ -190,4 +190,13 @@ for (const routeSource of [wishlistRoute, bagRoute]) {
 
 assert.match(sessionHook, /\/api\/account\/me/, "useCustomerSession should derive login state from the account session API");
 assert.match(wishlistClient, /\/api\/account\/wishlist/, "Wishlist page should sync through the account wishlist API");
-assert.match(bagClient, /\/api\/account\/bag/, "Shopping bag page should sync through the account bag API");
+// The bag page, product page and Ready to Ship grid share one store, which owns the account sync.
+const bagStore = await readFile(new URL("../app/lib/bag-store.js", import.meta.url), "utf8");
+assert.match(bagStore, /\/api\/account\/bag/, "The shared bag store should sync through the account bag API");
+assert.match(bagClient, /syncBagWithAccount/, "Shopping bag page should sync through the shared bag store");
+assert.match(bagStore, /clearLocalBag/, "The bag store should be clearable on sign-out so it never merges into another account");
+assert.match(bagStore, /clearLocalWishlist/, "The wishlist should be clearable on sign-out so it never merges into another account");
+assert.match(wishlistClient, /canMergeLocalWishlist\(customerId\)/, "The wishlist page must not merge a local wishlist owned by another customer");
+assert.match(wishlistClient, /writeWishlistOwner/, "The wishlist page must tag the local wishlist with its owner");
+const accountClient = await readFile(new URL("../app/account/AccountClient.jsx", import.meta.url), "utf8");
+assert.match(accountClient, /clearLocalWishlist\(\)/, "Signing out must clear the local wishlist");

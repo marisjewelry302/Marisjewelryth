@@ -2,9 +2,10 @@ import assert from "node:assert/strict";
 import path from "node:path";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
+import { readAdminSource } from "./lib/admin-i18n-source.mjs";
 
-const adminHtml = await readFile(new URL("../app/admin/page.js", import.meta.url), "utf8");
-const adminJs = await readFile(new URL("../assets/js/admin-page.js", import.meta.url), "utf8");
+const adminHtml = await readAdminSource("app/admin/page.js");
+const adminJs = await readAdminSource("assets/js/admin-page.js");
 const contactPage = await readFile(new URL("../app/contact-us/page.js", import.meta.url), "utf8");
 const quotePage = await readFile(new URL("../app/request-quote/RequestQuoteClient.jsx", import.meta.url), "utf8");
 const homepage = (await readFile(new URL("../app/page.js", import.meta.url), "utf8")) + (await readFile(new URL("../app/components/HomeView.jsx", import.meta.url), "utf8")) + (await readFile(new URL("../app/lib/home-copy.js", import.meta.url), "utf8"));
@@ -39,11 +40,28 @@ assert.ok(
   "The legacy /pages/admin.html route must go through the protected /admin gate"
 );
 
+// E-19: day-to-day admin copy is plain English. Technical wording lives on the
+// System status section of Settings, not in the Dashboard, Products or Orders.
 assert.match(
   adminHtml,
-  /Supabase is now the storefront catalogue source/i,
-  "Admin copy must frame Supabase as the storefront catalogue source"
+  /Products marked Live appear on the website/,
+  "Dashboard copy should explain in plain words what Live means for the website"
 );
+
+{
+  const dayToDayHtml = adminHtml.slice(0, adminHtml.indexOf("data-admin-section=\"system-status\""));
+
+  assert.doesNotMatch(
+    dayToDayHtml,
+    /Supabase catalogue source|Refresh Supabase Data|Open Catalogue API|CRUD|Supabase entry form|protected Supabase APIs/i,
+    "Day-to-day admin copy must not use developer wording; keep it on System status"
+  );
+  assert.doesNotMatch(
+    adminJs,
+    /CRUD|Saved in Supabase|saved in Supabase|Supabase admin data refreshed|Supabase connection is available/,
+    "Admin messages must not talk about Supabase or CRUD"
+  );
+}
 
 assert.doesNotMatch(
   adminHtml,
@@ -144,9 +162,14 @@ assert.match(
 );
 
 assert.match(
-  adminHtml,
+  await readFile(new URL("../app/lib/admin-script-src.js", import.meta.url), "utf8"),
   /async function buildAdminScriptSrc\(src\)[\s\S]*?\?v=\$\{Math\.trunc\(fileStats\.mtimeMs\)\}/,
   "Admin scripts need an mtime version stamp so the one hour /assets/js cache cannot serve stale admin logic"
+);
+assert.match(
+  adminHtml,
+  /import \{ buildAdminScriptSrc \} from "\.\.\/lib\/admin-script-src"/,
+  "The admin page builds its script URLs with the shared version stamp helper"
 );
 
 assert.doesNotMatch(
@@ -204,7 +227,7 @@ assert.doesNotMatch(
 assert.match(
   adminCss,
   /\.stock-low::before \{\s*content: "⚠ ";/,
-  "Low stock must carry a glyph so it is not signalled by colour alone"
+  "A failing status (System status table) must carry a glyph so it is not signalled by colour alone"
 );
 
 assert.match(

@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { access, readFile } from "node:fs/promises";
+import { expandAdminI18n } from "./lib/admin-i18n-source.mjs";
 
 const configuredEnv = {
   SUPABASE_URL: "https://maris-test.supabase.co",
@@ -7,7 +8,7 @@ const configuredEnv = {
 };
 
 async function readRequiredSource(path) {
-  return readFile(new URL(`../${path}`, import.meta.url), "utf8");
+  return readFile(new URL(`../${path}`, import.meta.url), "utf8").then(expandAdminI18n);
 }
 
 async function readOptionalSource(path) {
@@ -212,7 +213,8 @@ assert.match(adminPage, /data-best-seller-form/);
 assert.match(adminPage, /data-best-seller-slots/);
 assert.match(bestSellerRoute, /readAdminBestSellerSettings/);
 assert.match(bestSellerRoute, /updateAdminBestSellerSettings/);
-assert.match(adminScript, /fetchAdminApi\("\/best-sellers"\)/);
+// E-04: data sets load through ADMIN_DATASETS (Promise.allSettled); the path is declared there.
+assert.ok(adminScript.includes('bestSellers: { path: "/best-sellers"'));
 assert.match(adminScript, /function renderBestSellerSettings\(\)/);
 assert.match(adminScript, /data-best-seller-slot/);
 assert.match(homepage, /readPublicBestSellerProducts/);

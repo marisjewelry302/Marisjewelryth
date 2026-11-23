@@ -8,13 +8,13 @@ import { isSameOriginRequest } from "@/app/lib/request-security";
 export async function POST(request) {
   try {
     if (!isSameOriginRequest(request)) {
-      return NextResponse.json({ error: "Cross-origin request blocked." }, { status: 403 });
+      return NextResponse.json({ error: "Cross-origin request blocked.", code: "cross_origin" }, { status: 403 });
     }
 
     const authConfig = getCustomerAuthConfig();
 
     if (!authConfig.isConfigured) {
-      return NextResponse.json({ error: "Service unavailable." }, { status: 503 });
+      return NextResponse.json({ error: "Service unavailable.", code: "service_unavailable" }, { status: 503 });
     }
 
     const body = await request.json();
@@ -27,7 +27,7 @@ export async function POST(request) {
 
     if (!rateLimit.allowed) {
       return NextResponse.json(
-        { error: "Too many sign-in attempts. Please try again later." },
+        { error: "Too many sign-in attempts. Please try again later.", code: "rate_limited" },
         {
           status: rateLimit.status === "not_configured" ? 503 : 429,
           headers: rateLimit.retryAfterSeconds
@@ -40,11 +40,11 @@ export async function POST(request) {
     const result = await authenticateCustomer(email, password);
 
     if (result.status === "not_configured") {
-      return NextResponse.json({ error: "Service unavailable." }, { status: 503 });
+      return NextResponse.json({ error: "Service unavailable.", code: "service_unavailable" }, { status: 503 });
     }
 
     if (result.status !== "valid") {
-      return NextResponse.json({ error: "Incorrect email or password." }, { status: 401 });
+      return NextResponse.json({ error: "Incorrect email or password.", code: "invalid_credentials" }, { status: 401 });
     }
 
     await consumeAuthAttempt({
@@ -69,6 +69,6 @@ export async function POST(request) {
     return NextResponse.json({ customer: result.customer });
   } catch (error) {
     console.error("Signin error:", error);
-    return NextResponse.json({ error: "Something went wrong." }, { status: 500 });
+    return NextResponse.json({ error: "Something went wrong.", code: "server_error" }, { status: 500 });
   }
 }

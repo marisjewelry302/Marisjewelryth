@@ -4,16 +4,17 @@ import { useEffect, useId, useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
+import { useCustomerSession } from "./hooks/useCustomerSession";
 import { useLocale } from "./hooks/useLocale";
 import { hasCookieConsentDecision, onCookieConsentChange } from "./lib/cookie-consent";
 
 const CLOSED_KEY = "marisSignupPopupClosedUntil";
-const DISMISSED_SESSION_KEY = "marisSignupPopupDismissed";
 // The email travels to /account through sessionStorage so it never lands in the URL.
 const EMAIL_HANDOFF_KEY = "marisSignupPopupEmail";
 // Set only when the visitor ticked the marketing box, so the sign-up page can carry that choice over.
 const CONSENT_HANDOFF_KEY = "marisSignupPopupConsent";
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+const SEVEN_DAYS_MS = 7 * ONE_DAY_MS;
 const THIRTY_DAYS_MS = 30 * ONE_DAY_MS;
 const POPUP_DELAY_MS = 3000;
 
@@ -39,8 +40,7 @@ function suppressPopup(durationMs) {
 }
 
 function shouldSuppressPopup() {
-  if (Number(readStorage("localStorage", CLOSED_KEY) || 0) > Date.now()) return true;
-  return readStorage("sessionStorage", DISMISSED_SESSION_KEY) === "1";
+  return Number(readStorage("localStorage", CLOSED_KEY) || 0) > Date.now();
 }
 
 function isValidEmail(email) {
@@ -52,6 +52,11 @@ export default function HomeSignupPopup() {
   const { t, href } = useLocale();
   const copy = t.popup;
   const emailId = useId();
+  const messageId = useId();
+  const emailRef = useRef(null);
+  const consentRef = useRef(null);
+  // Signed-in customers already have an account, so the offer is not shown to them.
+  const { isLoggedIn, isLoading: sessionLoading } = useCustomerSession();
   const titleId = useId();
   const dialogRef = useRef(null);
   const previousFocusRef = useRef(null);
@@ -62,9 +67,11 @@ export default function HomeSignupPopup() {
   const [hideToday, setHideToday] = useState(false);
   const [agreeMarketing, setAgreeMarketing] = useState(false);
   const [message, setMessage] = useState("");
+  // Which field the current message is about, so aria-invalid points at the right one.
+  const [errorField, setErrorField] = useState("");
 
   useEffect(() => {
-    if (shouldSuppressPopup()) return undefined;
+    if (sessionLoading || isLoggedIn || shouldSuppressPopup()) return undefined;
 
     let timer = null;
     function startTimer() {
@@ -89,7 +96,7 @@ export default function HomeSignupPopup() {
       unsubscribe();
       if (timer !== null) window.clearTimeout(timer);
     };
-  }, []);
+  }, [sessionLoading, isLoggedIn]);
 
   useEffect(() => {
     if (!isOpen) return undefined;
@@ -101,7 +108,7 @@ export default function HomeSignupPopup() {
 
     function handleKeyDown(event) {
       if (event.key === "Escape") {
-        closePopup();
+        closePopup(false);
         return;
       }
 
@@ -129,15 +136,23 @@ export default function HomeSignupPopup() {
     };
   }, [isOpen]);
 
-  function closePopup() {
-    if (hideTodayRef.current) {
-      suppressPopup(ONE_DAY_MS);
+  // An explicit "No, thank you" is a firm answer (30 days). Closing with the
+  // x, Escape or the backdrop may be a slip, so the popup returns sooner (7 days),
+  // or after one day when "Don't show again today" is ticked.
+  function closePopup(declined) {
+    if (declined) {
+      suppressPopup(THIRTY_DAYS_MS);
     } else {
-      // Any dismissal keeps the popup away for the rest of this browser session.
-      writeStorage("sessionStorage", DISMISSED_SESSION_KEY, "1");
+      suppressPopup(hideTodayRef.current ? ONE_DAY_MS : SEVEN_DAYS_MS);
     }
 
     setIsOpen(false);
+  }
+
+  function showError(field, text) {
+    setErrorField(field);
+    setMessage(text);
+    (field === "email" ? emailRef : consentRef).current?.focus();
   }
 
   function handleSubmit(event) {
@@ -145,17 +160,17 @@ export default function HomeSignupPopup() {
     const normalizedEmail = email.trim().toLowerCase();
 
     if (!isValidEmail(normalizedEmail)) {
-      setMessage(copy.invalidEmail);
+      showError("email", copy.invalidEmail);
       return;
     }
 
     // The offer is a marketing offer, so it needs a clear, separate yes to marketing emails.
     if (!agreeMarketing) {
-      setMessage(copy.needConsent);
+      showError("consent", copy.needConsent);
       return;
     }
 
-    suppressPopup(hideTodayRef.current ? ONE_DAY_MS : THIRTY_DAYS_MS);
+    suppressPopup(THIRTY_DAYS_MS);
     writeStorage("sessionStorage", EMAIL_HANDOFF_KEY, normalizedEmail);
     writeStorage("sessionStorage", CONSENT_HANDOFF_KEY, "1");
 
@@ -166,7 +181,7 @@ export default function HomeSignupPopup() {
 
   return (
     <div className="home-signup-popup" role="presentation">
-      <button className="home-signup-popup__backdrop" type="button" tabIndex={-1} aria-hidden="true" onClick={closePopup} />
+      <button className="home-signup-popup__backdrop" type="button" tabIndex={-1} aria-hidden="true" onClick={() => closePopup(false)} />
       <section
         className="home-signup-popup__dialog"
         role="dialog"
@@ -185,7 +200,7 @@ export default function HomeSignupPopup() {
         </div>
 
         <div className="home-signup-popup__content">
-          <button className="home-signup-popup__close" type="button" aria-label={copy.close} onClick={closePopup}>
+          <button className="home-signup-popup__close" type="button" aria-label={copy.close} onClick={() => closePopup(false)}>
             &times;
           </button>
 
@@ -215,37 +230,50 @@ export default function HomeSignupPopup() {
             </div>
           </div>
 
-          <form className="home-signup-popup__form" onSubmit={handleSubmit} noValidate>
-            <label className="sr-only" htmlFor={emailId}>{copy.emailAddress}</label>
-            <input
-              id={emailId}
-              name="email"
-              type="email"
-              autoComplete="email"
-              placeholder={copy.emailPlaceholder}
-              value={email}
-              onChange={(event) => {
-                setEmail(event.target.value);
-                setMessage("");
-              }}
-              required
-            />
-            <button type="submit">{copy.submit}</button>
+          <form className="home-signup-popup__signup" onSubmit={handleSubmit} noValidate>
+            {/* The consent is required, so it comes before the button that submits it. */}
+            <label className="home-signup-popup__remember home-signup-popup__consent">
+              <input
+                ref={consentRef}
+                type="checkbox"
+                checked={agreeMarketing}
+                aria-invalid={errorField === "consent" ? "true" : undefined}
+                aria-describedby={errorField === "consent" ? messageId : undefined}
+                onChange={(event) => {
+                  setAgreeMarketing(event.target.checked);
+                  setMessage("");
+                  setErrorField("");
+                }}
+              />
+              <span>{copy.consent}</span>
+            </label>
+
+            <div className="home-signup-popup__form">
+              <label className="sr-only" htmlFor={emailId}>{copy.emailAddress}</label>
+              <input
+                ref={emailRef}
+                id={emailId}
+                name="email"
+                type="email"
+                autoComplete="email"
+                placeholder={copy.emailPlaceholder}
+                value={email}
+                aria-invalid={errorField === "email" ? "true" : undefined}
+                aria-describedby={errorField === "email" ? messageId : undefined}
+                onChange={(event) => {
+                  setEmail(event.target.value);
+                  setMessage("");
+                  setErrorField("");
+                }}
+                required
+              />
+              <button type="submit">{copy.submit}</button>
+            </div>
+
+            <p className="home-signup-popup__note">{copy.accountNote}</p>
+            {/* Always mounted with a reserved height, so an error never shifts the layout. */}
+            <p id={messageId} className="home-signup-popup__message" role="alert">{message}</p>
           </form>
-
-          {message && <p className="home-signup-popup__message" role="alert">{message}</p>}
-
-          <label className="home-signup-popup__remember home-signup-popup__consent">
-            <input
-              type="checkbox"
-              checked={agreeMarketing}
-              onChange={(event) => {
-                setAgreeMarketing(event.target.checked);
-                setMessage("");
-              }}
-            />
-            <span>{copy.consent}</span>
-          </label>
 
           <p className="home-signup-popup__privacy">
             {copy.privacyBefore} <a href={href("/privacy-policy")}>{copy.privacyPolicy}</a>.
@@ -263,7 +291,7 @@ export default function HomeSignupPopup() {
             <span>{copy.hideToday}</span>
           </label>
 
-          <button className="home-signup-popup__decline" type="button" onClick={closePopup}>{copy.decline}</button>
+          <button className="home-signup-popup__decline" type="button" onClick={() => closePopup(true)}>{copy.decline}</button>
         </div>
       </section>
     </div>

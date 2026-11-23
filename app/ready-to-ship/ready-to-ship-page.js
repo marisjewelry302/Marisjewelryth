@@ -17,18 +17,20 @@ export function buildReadyToShipMetadata(locale = "en") {
   });
 }
 
+// A database error and an empty shelf look the same as a product list, so the
+// caller is told which one it was and the page can say so honestly.
 async function getReadyToShipProducts() {
   try {
     const result = await readReadyToShipProducts();
-    return result.products;
+    return { products: result.products, failed: result.status === "unavailable" };
   } catch (error) {
-    return [];
+    return { products: [], failed: true };
   }
 }
 
 export default async function ReadyToShipPageView({ locale = "en" }) {
   const copy = uiText[locale === THAI_LOCALE ? "th" : "en"].readyToShip;
-  const products = await getReadyToShipProducts();
+  const { products, failed } = await getReadyToShipProducts();
 
   return (
     <>
@@ -39,7 +41,7 @@ export default async function ReadyToShipPageView({ locale = "en" }) {
           <p className="category-lead">{copy.lead}</p>
         </section>
 
-        <ReadyToShipGrid products={products} />
+        <ReadyToShipGrid products={products} loadFailed={failed} />
       </main>
     </>
   );

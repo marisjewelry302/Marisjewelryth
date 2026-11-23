@@ -11,7 +11,7 @@ assert.ok(categorySectionIndex > -1, "Homepage should render a Shop by Category 
 assert.match(pageSource, /<h2 id="shop-category-heading">\{c\.shopHeading\}<\/h2>/);
 assert.match(
   pageSource,
-  /From classic earstuds to chandeliers, from timeless bracelet to chic bangles\./
+  /From classic stud earrings to chandeliers, timeless bracelets to chic bangles/
 );
 assert.match(pageSource, /className="shop-category-grid"/);
 

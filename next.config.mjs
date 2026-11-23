@@ -5,12 +5,13 @@ const projectRoot = path.dirname(fileURLToPath(import.meta.url));
 const isProduction = process.env.NODE_ENV === "production";
 const contentSecurityPolicy = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${isProduction ? "" : " 'unsafe-eval'"}`,
+  // Google Analytics 4 (gtag.js), loaded only after the visitor allows analytics.
+  `script-src 'self' 'unsafe-inline' https://www.googletagmanager.com${isProduction ? "" : " 'unsafe-eval'"}`,
   // next/font self-hosts Urbanist and Anuphan, so no Google Fonts origin is needed.
   "style-src 'self' 'unsafe-inline'",
   "font-src 'self' data:",
-  "img-src 'self' data: blob: https://*.supabase.co",
-  "connect-src 'self' https://*.supabase.co",
+  "img-src 'self' data: blob: https://*.supabase.co https://*.google-analytics.com",
+  "connect-src 'self' https://*.supabase.co https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com",
   // Turntable videos stream from Supabase Storage; admin previews a picked
   // file from a blob: URL before it uploads.
   "media-src 'self' blob: https://*.supabase.co",
@@ -126,6 +127,17 @@ const nextConfig = {
         destination: "/our-service",
         permanent: true
       },
+      // The Wholesale & Retail explainer was folded into the wholesale page.
+      {
+        source: "/wholesale-retail",
+        destination: "/wholesale",
+        permanent: true
+      },
+      {
+        source: "/th/wholesale-retail",
+        destination: "/th/wholesale",
+        permanent: true
+      },
       ...[
         ["wedding-set", "/category/wedding-set"],
         ["engagement-ring", "/category/engagement-ring"],
@@ -144,7 +156,7 @@ const nextConfig = {
         ["shipping", "/shipping"],
         ["our-service", "/our-service"],
         ["oem-jewelry", "/oem-jewelry"],
-        ["wholesale-retail", "/wholesale-retail"],
+        ["wholesale-retail", "/wholesale"],
         ["newsletter", "/newsletter"],
         ["request-quote", "/request-quote"],
         ["shopping-bag", "/shopping-bag"],

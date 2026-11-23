@@ -66,6 +66,7 @@ export function normalizeInquiryInput(input = {}) {
     email: normalizeEmail(raw.email ?? input.email),
     phone,
     phoneDigits: digitsOf(phone),
+    preferredContact: cleanText(raw.preferred_contact, 40),
     subject: cleanText(input.subject, 200),
     sourcePage: cleanText(input.sourcePage, 300),
     // Only picks the language of the confirmation email; it is not stored.
@@ -78,10 +79,21 @@ export function normalizeInquiryInput(input = {}) {
 export function validateInquiry(inquiry) {
   const errors = [];
 
-  if (!inquiry.fullName) errors.push({ field: "name", message: "Name is required." });
-  if (!inquiry.email) errors.push({ field: "email", message: "Email is required." });
-  else if (!isValidEmail(inquiry.email)) errors.push({ field: "email", message: "Email is not valid." });
-  if (!INQUIRY_KINDS.has(inquiry.kind)) errors.push({ field: "kind", message: "Unsupported inquiry type." });
+  // "code" is stable: the browser maps it to the visitor's language and never
+  // shows "message" directly.
+  if (!inquiry.fullName) errors.push({ field: "name", code: "name_required", message: "Name is required." });
+  if (!inquiry.email) errors.push({ field: "email", code: "email_required", message: "Email is required." });
+  else if (!isValidEmail(inquiry.email)) errors.push({ field: "email", code: "email_invalid", message: "Email is not valid." });
+  if (!INQUIRY_KINDS.has(inquiry.kind)) errors.push({ field: "kind", code: "kind_unsupported", message: "Unsupported inquiry type." });
+
+  // The atelier needs a way to answer on the channel the visitor picked.
+  const preferred = inquiry.preferredContact;
+  if ((preferred === "Phone" || preferred === "WhatsApp") && !inquiry.phone) {
+    errors.push({ field: "phone", code: "phone_required", message: "Phone number is required for this contact method." });
+  }
+  if (preferred === "Line" && !inquiry.fields?.line_id) {
+    errors.push({ field: "line_id", code: "line_id_required", message: "Line ID is required for this contact method." });
+  }
 
   return errors;
 }
@@ -125,7 +137,31 @@ async function countRecent(supabase, column, value, now) {
   return count || 0;
 }
 
-export async function createInquiry(input, { env = process.env, client, now = () => new Date(), sendEmails } = {}) {
+// A signed-in customer id may be passed as an option. It comes from the verified
+// session cookie in the route, never from the request body (normalizeInquiryInput
+// ignores any customer id in the payload), and it is dropped unless it names a
+// customer that still exists, so a stale cookie cannot break the insert.
+async function resolveCustomerId(supabase, customerId) {
+  const id = cleanText(customerId, 80);
+
+  if (!id) {
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from("customers")
+    .select("id")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message || "Customer lookup failed.");
+  }
+
+  return data?.id || null;
+}
+
+export async function createInquiry(input, { env = process.env, client, now = () => new Date(), sendEmails, customerId = null } = {}) {
   const inquiry = normalizeInquiryInput(input);
   const errors = validateInquiry(inquiry);
 
@@ -159,6 +195,7 @@ export async function createInquiry(input, { env = process.env, client, now = ()
   const { data, error } = await supabase
     .from("inquiries")
     .insert({
+      customer_id: await resolveCustomerId(supabase, customerId),
       kind: inquiry.kind,
       full_name: inquiry.fullName,
       email: inquiry.email,

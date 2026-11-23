@@ -138,6 +138,17 @@ body {
   z-index: 0;
 }
 
+/* Scrim behind the white header text and icons: the photos have cream areas
+   that otherwise swallow them. Sits above the slides, below the hit buttons. */
+.hero-slider::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(180deg, rgba(8, 18, 15, 0.45) 0, rgba(8, 18, 15, 0) 220px);
+  pointer-events: none;
+}
+
 .hero-slide {
   background-position: var(--hero-position-start, center);
   background-repeat: no-repeat;
@@ -1181,8 +1192,55 @@ body {
       background-position: center top;
     }
 
+  /* Phones autoplay too, so the pause control and dots stay available:
+     compact, bottom-right, 44px targets, clear of the hero copy. */
   .hero-slide-control {
+    right: 4px;
+    bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 0;
+    width: auto;
+  }
+
+  .hero-slide-dot {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    padding: 0;
+    font-size: 0;
+    gap: 0;
+  }
+
+  .hero-slide-dot > span {
     display: none;
+  }
+
+  .hero-slide-dot::after {
+    width: 20px;
+    height: 2px;
+    transform: none;
+    opacity: 0.7;
+  }
+
+  .hero-slide-dot.is-active::after {
+    opacity: 1;
+  }
+
+  .hero-slide-toggle {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0 6px;
+    font-size: 11px;
+  }
+
+  .hero-slider::after {
+    background:
+      linear-gradient(180deg, rgba(8, 18, 15, 0.45) 0, rgba(8, 18, 15, 0) 170px),
+      linear-gradient(180deg, rgba(0, 49, 39, 0) 45%, rgba(0, 49, 39, 0.55) 100%);
   }
 
   .hero-slide {
@@ -1859,10 +1917,31 @@ body {
   cursor: pointer;
 }
 
+.home-signup-popup__signup {
+  display: grid;
+  justify-items: center;
+  width: 100%;
+  max-width: 430px;
+}
+
+.home-signup-popup__signup > .home-signup-popup__form {
+  margin-top: clamp(0.4rem, 1.2dvh, 0.7rem);
+}
+
+.home-signup-popup__note {
+  margin-top: 0.45rem;
+  color: rgba(16, 41, 35, 0.62);
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+/* Two lines of room are always reserved, so an error never moves the controls below. */
 .home-signup-popup__message {
-  margin-top: 0.55rem;
+  min-height: 2.1em;
+  margin-top: 0.35rem;
   color: #9d3131;
   font-size: 0.75rem;
+  line-height: 1.05;
 }
 
 .home-signup-popup__privacy {
@@ -2024,6 +2103,9 @@ body {
 
 .best-seller-carousel {
   overflow: hidden;
+  /* clip (unlike hidden) is not a scroll container, so tabbing to an off-screen
+     card cannot scroll it and desync the JS transform. */
+  overflow: clip;
   padding-left: var(--best-seller-side);
   padding-right: var(--best-seller-side);
   padding-top: 1.7rem;
@@ -2060,14 +2142,22 @@ body {
   max-width: 814px;
   min-width: 0;
   transform: scale(0.84);
+  transition: transform 560ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
+/* Only the picture fades and blurs; the caption stays fully legible. */
+.best-seller-card .best-seller-image-frame {
   opacity: 0.42;
   filter: blur(3px) saturate(0.74);
-  transition: transform 560ms cubic-bezier(0.22, 1, 0.36, 1), opacity 360ms ease, filter 360ms ease;
-  will-change: transform, filter;
+  transition: opacity 360ms ease, filter 360ms ease;
 }
 
 .best-seller-card[data-focus="side"] {
   transform: scale(0.88);
+}
+
+.best-seller-card[data-focus="side"] .best-seller-image-frame {
   opacity: 0.58;
   filter: blur(2px) saturate(0.82);
 }
@@ -2075,6 +2165,9 @@ body {
 .best-seller-card[data-focus="center"] {
   z-index: 2;
   transform: scale(1.08);
+}
+
+.best-seller-card[data-focus="center"] .best-seller-image-frame {
   opacity: 1;
   filter: blur(0) saturate(1);
 }
@@ -2122,6 +2215,41 @@ body {
   line-height: 1.15;
 }
 
+/* Prev / Pause / Next under the track: 44px targets in the section's quiet style. */
+.best-seller-controls {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: 4px var(--best-seller-side) 0;
+}
+
+.best-seller-control {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid rgba(0, 73, 58, 0.32);
+  background: transparent;
+  color: var(--maris-teal);
+  font-family: var(--maris-font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.24s ease, color 0.24s ease, border-color 0.24s ease;
+}
+
+.best-seller-control:hover {
+  background: var(--maris-teal);
+  border-color: var(--maris-teal);
+  color: #fffaf6;
+}
+
+.best-seller-control:focus-visible {
+  outline: 2px solid var(--maris-teal);
+  outline-offset: 3px;
+}
+
 .best-seller-empty-label {
   color: rgba(16, 41, 35, 0.34);
   font-size: 0.75rem;
@@ -2163,6 +2291,9 @@ body {
 
   .best-seller-card[data-focus="side"] {
     transform: scale(0.82);
+  }
+
+  .best-seller-card[data-focus="side"] .best-seller-image-frame {
     opacity: 0.42;
     filter: blur(2.5px) saturate(0.74);
   }
@@ -2932,6 +3063,14 @@ body:has(.site-header--home) .hero-utility-bar__divider,
 html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+  /* In-page anchors (#shop-category-heading) must clear the fixed header. */
+  scroll-padding-top: 120px;
+}
+
+@media (max-width: 767px) {
+  html {
+    scroll-padding-top: 90px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -3015,6 +3154,23 @@ html {
   display: grid;
   gap: 6px;
   align-content: start;
+}
+
+/* Home headings (h2 kicker, h3 items) keep the strip's original look. */
+.product-promises h2.section-kicker {
+  margin-top: 0;
+  font-family: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+}
+
+.product-promise-list h3 {
+  margin: 0;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--maris-ink);
 }
 
 .product-promise-list strong {

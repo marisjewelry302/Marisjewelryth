@@ -1,12 +1,13 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import vm from "node:vm";
+import { readAdminSource } from "./lib/admin-i18n-source.mjs";
 
 const { createAdminProduct, readPublicProductBySlug, updateAdminProduct } = await import("../app/lib/maris-database.js");
 const { formatGemCarat, normalizeGemReport, toPublicGemReport } = await import("../app/lib/gem-report.js");
 
-const adminHtml = await readFile(new URL("../app/admin/page.js", import.meta.url), "utf8");
-const adminJs = await readFile(new URL("../assets/js/admin-page.js", import.meta.url), "utf8");
+const adminHtml = await readAdminSource("app/admin/page.js");
+const adminJs = await readAdminSource("assets/js/admin-page.js");
 const productPage = await readFile(new URL("../app/product/[slug]/product-slug-page.js", import.meta.url), "utf8");
 const parserSource = await readFile(new URL("../assets/js/admin-gem-report-parser.js", import.meta.url), "utf8");
 

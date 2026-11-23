@@ -44,7 +44,6 @@ export default async function sitemap() {
     "oem-jewelry",
     "ready-to-ship",
     "collections",
-    "wholesale-retail",
     "wholesale",
     "newsletter",
     "request-quote",

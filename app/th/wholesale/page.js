@@ -2,11 +2,10 @@ import WholesaleClient from "../../wholesale/WholesaleClient";
 import { buildPageMetadata } from "../../lib/seo";
 
 export const metadata = buildPageMetadata({
-  title: "พอร์ทัลขายส่ง | Maris Jewelry",
-  description: "สมัครบัญชีขายส่ง Maris Jewelry ดูราคาพาร์ทเนอร์ และส่งใบสั่งซื้อ",
+  title: "ขายส่ง | Maris Jewelry",
+  description: "เครื่องประดับ Fine Jewelry ขายส่งจากอะเทลิเยร์ Maris สำหรับร้านค้าและแบรนด์ ส่งคำสอบถามก่อน แล้วสมัครบัญชีขายส่งเพื่อดูราคาพาร์ทเนอร์และส่งใบสั่งซื้อ",
   path: "/wholesale",
-  locale: "th",
-  noindex: true
+  locale: "th"
 });
 
 export default function WholesaleThaiPage() {

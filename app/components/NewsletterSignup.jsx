@@ -51,7 +51,14 @@ export default function NewsletterSignup({
         return;
       }
 
-      report(payload.error || copy.failure, "error");
+      // The API's English error strings are never shown: each status maps to localized copy.
+      const statusMessages = {
+        invalid: copy.invalid,
+        rate_limited: copy.rateLimited,
+        not_configured: copy.notConfigured
+      };
+
+      report(statusMessages[payload.status] || copy.failure, "error");
     } catch {
       report(`${copy.failure} ${copy.connection}`, "error");
     } finally {
