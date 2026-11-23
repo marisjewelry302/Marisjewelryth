@@ -225,7 +225,7 @@ export default function AccountClient() {
     let handoffConsent = false;
     try {
       handoffEmail = window.sessionStorage.getItem("marisSignupPopupEmail") || "";
-      // The pop-up only records this after the visitor ticked its own marketing box.
+      // The pop-up records this on submit; its form states that submitting signs up for emails.
       handoffConsent = window.sessionStorage.getItem("marisSignupPopupConsent") === "1";
       window.sessionStorage.removeItem("marisSignupPopupEmail");
       window.sessionStorage.removeItem("marisSignupPopupConsent");

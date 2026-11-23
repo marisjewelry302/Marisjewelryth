@@ -3060,19 +3060,6 @@ html {
   }
 }
 
-/* The marketing consent is a sentence, not a short label, so it wraps. */
-.home-signup-popup__remember.home-signup-popup__consent {
-  display: flex;
-  align-items: flex-start;
-  text-align: left;
-  line-height: 1.35;
-}
-
-.home-signup-popup__consent input {
-  flex: 0 0 auto;
-  margin-top: 0.12rem;
-}
-
 /* "Maris Promise" strip: shared by the home page and product pages. */
 .product-promises {
   display: grid;

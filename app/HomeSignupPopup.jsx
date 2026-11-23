@@ -11,7 +11,7 @@ import { hasCookieConsentDecision, onCookieConsentChange } from "./lib/cookie-co
 const CLOSED_KEY = "marisSignupPopupClosedUntil";
 // The email travels to /account through sessionStorage so it never lands in the URL.
 const EMAIL_HANDOFF_KEY = "marisSignupPopupEmail";
-// Set only when the visitor ticked the marketing box, so the sign-up page can carry that choice over.
+// Submitting the popup signs the visitor up for emails (the form says so), so the sign-up page carries that over.
 const CONSENT_HANDOFF_KEY = "marisSignupPopupConsent";
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 const SEVEN_DAYS_MS = 7 * ONE_DAY_MS;
@@ -53,8 +53,8 @@ export default function HomeSignupPopup() {
   const copy = t.popup;
   const emailId = useId();
   const messageId = useId();
+  const noticeId = useId();
   const emailRef = useRef(null);
-  const consentRef = useRef(null);
   // Signed-in customers already have an account, so the offer is not shown to them.
   const { isLoggedIn, isLoading: sessionLoading } = useCustomerSession();
   const titleId = useId();
@@ -65,10 +65,7 @@ export default function HomeSignupPopup() {
   const [isOpen, setIsOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [hideToday, setHideToday] = useState(false);
-  const [agreeMarketing, setAgreeMarketing] = useState(false);
   const [message, setMessage] = useState("");
-  // Which field the current message is about, so aria-invalid points at the right one.
-  const [errorField, setErrorField] = useState("");
 
   useEffect(() => {
     if (sessionLoading || isLoggedIn || shouldSuppressPopup()) return undefined;
@@ -149,24 +146,13 @@ export default function HomeSignupPopup() {
     setIsOpen(false);
   }
 
-  function showError(field, text) {
-    setErrorField(field);
-    setMessage(text);
-    (field === "email" ? emailRef : consentRef).current?.focus();
-  }
-
   function handleSubmit(event) {
     event.preventDefault();
     const normalizedEmail = email.trim().toLowerCase();
 
     if (!isValidEmail(normalizedEmail)) {
-      showError("email", copy.invalidEmail);
-      return;
-    }
-
-    // The offer is a marketing offer, so it needs a clear, separate yes to marketing emails.
-    if (!agreeMarketing) {
-      showError("consent", copy.needConsent);
+      setMessage(copy.invalidEmail);
+      emailRef.current?.focus();
       return;
     }
 
@@ -212,23 +198,6 @@ export default function HomeSignupPopup() {
           <p className="home-signup-popup__suboffer">{copy.subOffer}</p>
 
           <form className="home-signup-popup__signup" onSubmit={handleSubmit} noValidate>
-            {/* The consent is required, so it comes before the button that submits it. */}
-            <label className="home-signup-popup__remember home-signup-popup__consent">
-              <input
-                ref={consentRef}
-                type="checkbox"
-                checked={agreeMarketing}
-                aria-invalid={errorField === "consent" ? "true" : undefined}
-                aria-describedby={errorField === "consent" ? messageId : undefined}
-                onChange={(event) => {
-                  setAgreeMarketing(event.target.checked);
-                  setMessage("");
-                  setErrorField("");
-                }}
-              />
-              <span>{copy.consent}</span>
-            </label>
-
             <div className="home-signup-popup__form">
               <label className="sr-only" htmlFor={emailId}>{copy.emailAddress}</label>
               <input
@@ -239,19 +208,19 @@ export default function HomeSignupPopup() {
                 autoComplete="email"
                 placeholder={copy.emailPlaceholder}
                 value={email}
-                aria-invalid={errorField === "email" ? "true" : undefined}
-                aria-describedby={errorField === "email" ? messageId : undefined}
+                aria-invalid={message ? "true" : undefined}
+                aria-describedby={message ? `${noticeId} ${messageId}` : noticeId}
                 onChange={(event) => {
                   setEmail(event.target.value);
                   setMessage("");
-                  setErrorField("");
                 }}
                 required
               />
               <button type="submit">{copy.submit}</button>
             </div>
 
-            <p className="home-signup-popup__note">{copy.accountNote}</p>
+            {/* Submitting is the sign-up to marketing emails, so the notice sits right under the button. */}
+            <p id={noticeId} className="home-signup-popup__note">{copy.signupNotice}</p>
             {/* Always mounted with a reserved height, so an error never shifts the layout. */}
             <p id={messageId} className="home-signup-popup__message" role="alert">{message}</p>
           </form>
