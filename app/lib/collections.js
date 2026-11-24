@@ -61,7 +61,7 @@ export const COLLECTIONS = {
     shortTitle: "Rings",
     lead: "Fine rings for gifting, stacking, and personal milestones.",
     prefixes: ["RG"],
-    suffixes: ["RG"]
+    suffixes: ["RG", "SG"]
   }
 };
 

@@ -202,6 +202,7 @@ const ADMIN_PRODUCT_COLLECTION_ALIASES = Object.freeze({
   earrings: "earrings",
   se: "earrings",
   rg: "rings",
+  sg: "rings",
   sr: "rings",
   ring: "rings",
   rings: "rings"
