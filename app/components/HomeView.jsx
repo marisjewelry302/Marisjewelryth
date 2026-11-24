@@ -43,10 +43,10 @@ const heroSlides = [
 const atelierFallbackHrefs = ["/category/engagement-ring", "/contact-us", "/about-us"];
 
 const shopCategoryItems = [
-  { href: "/category/rings", image: "/assets/images/home/optimized/category-focus-rings-box-v3-720.webp" },
-  { href: "/category/earrings", image: "/assets/images/home/optimized/category-focus-earrings-scene-v6-720.webp" },
-  { href: "/category/necklaces-pendants", image: "/assets/images/home/optimized/category-focus-pendants-scene-v6-720.webp" },
-  { href: "/category/bracelets", image: "/assets/images/home/optimized/category-focus-bracelets-scene-v7-720.webp" }
+  { href: "/category/rings", image: "/assets/images/home/optimized/category-focus-rings-box-v3-photo-720.webp" },
+  { href: "/category/earrings", image: "/assets/images/home/optimized/category-focus-earrings-scene-v6-photo-720.webp" },
+  { href: "/category/necklaces-pendants", image: "/assets/images/home/optimized/category-focus-pendants-scene-v6-photo-720.webp" },
+  { href: "/category/bracelets", image: "/assets/images/home/optimized/category-focus-bracelets-scene-v7-photo-720.webp" }
 ];
 
 const valueHrefs = ["#shop-category-heading", "/our-service", "/oem-jewelry", "/contact-us"];
