@@ -37,7 +37,7 @@ export const homeCopy = {
       "Quietly elegant diamond jewelry for proposals, vows, and the intimate milestones held closest to the heart.",
     heroPrimary: "Find Your Wedding Set",
     heroSecondary: "Discover Maris",
-    shopHeading: "Shop By Category",
+    shopHeading: "Shop Unique Gifts",
     shopLead:
       "From classic stud earrings to chandeliers, timeless bracelets to chic bangles — shop our full selection.",
     categories: [
@@ -112,7 +112,7 @@ export const homeCopy = {
       "เครื่องประดับเพชรที่งดงามอย่างเรียบง่าย สำหรับวันขอแต่งงาน คำสัญญา และก้าวสำคัญที่ใกล้ชิดหัวใจที่สุด",
     heroPrimary: "เลือกเซ็ตแหวนคู่ของคุณ",
     heroSecondary: "ทำความรู้จัก Maris",
-    shopHeading: "เลือกซื้อตามหมวดหมู่",
+    shopHeading: "เลือกซื้อของขวัญที่ไม่เหมือนใคร",
     shopLead:
       "ตั้งแต่ต่างหูเม็ดเดี่ยวคลาสสิกไปจนถึงต่างหูแชนเดอเลียร์ จากสร้อยข้อมือเหนือกาลเวลาไปจนถึงกำไลสุดเก๋ เลือกชมเครื่องประดับของเราได้หลากหลาย",
     categories: [
