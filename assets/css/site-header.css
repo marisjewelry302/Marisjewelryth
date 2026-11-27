@@ -192,7 +192,14 @@ body.is-page-scrolled .navbar .nav .nav-dropdown-trigger {
   pointer-events: auto;
 }
 
+/* The links sit in an inner wrapper; without this they flow inline side by side. */
+.navbar .nav .nav-dropdown__inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .navbar .nav .nav-dropdown a {
+  display: block;
   padding: 10px 18px;
   color: var(--maris-ink);
   font-size: 12px;

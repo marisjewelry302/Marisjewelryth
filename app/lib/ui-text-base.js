@@ -39,7 +39,8 @@ const en = {
           { href: "/category/necklaces-pendants", label: "Necklaces & Pendants" },
           { href: "/category/bracelets", label: "Bracelets" },
           { href: "/category/earrings", label: "Earrings" },
-          { href: "/category/rings", label: "Rings" }
+          { href: "/category/rings", label: "Rings" },
+          { href: "/collections", label: "Collections" }
         ]
       },
       {
@@ -314,7 +315,8 @@ const th = {
           { href: "/category/necklaces-pendants", label: "สร้อยคอและจี้" },
           { href: "/category/bracelets", label: "สร้อยข้อมือ" },
           { href: "/category/earrings", label: "ต่างหู" },
-          { href: "/category/rings", label: "แหวน" }
+          { href: "/category/rings", label: "แหวน" },
+          { href: "/collections", label: "คอลเลกชัน" }
         ]
       },
       {
